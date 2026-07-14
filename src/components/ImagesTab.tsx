@@ -125,13 +125,13 @@ export default function ImagesTab({ images, onUpdateImages, showToast }: ImagesT
                 />
               </div>
 
-              {/* Overlay controls - absolute positioned at the bottom, semi-transparent */}
-              <div className="absolute bottom-0 inset-x-0 p-2.5 z-10 bg-black/40 dark:bg-black/60 backdrop-blur-md flex items-center justify-between gap-2 border-t border-white/10">
+              {/* Overlay controls - absolute positioned at the bottom, transparent container with floating styled elements */}
+              <div className="absolute bottom-0 inset-x-0 p-2.5 z-10 flex items-center justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <select
                     value={img.category}
                     onChange={(e) => handleCategoryChange(img.id, e.target.value as any)}
-                    className="text-[11px] bg-white/10 hover:bg-white/25 text-white border border-white/20 rounded-xl px-2 py-1.5 focus:outline-none focus:border-[var(--lavenderAccent)] font-medium cursor-pointer w-full transition-all [&>option]:bg-zinc-950 [&>option]:text-white"
+                    className="text-[11px] bg-black/50 hover:bg-black/70 text-white border border-white/10 backdrop-blur-md rounded-xl px-2 py-1.5 focus:outline-none focus:border-[var(--lavenderAccent)] font-medium cursor-pointer w-full transition-all [&>option]:bg-zinc-950 [&>option]:text-white"
                   >
                     <option value="arches">Арки и фотозоны</option>
                     <option value="tables">Гостевые столы</option>
@@ -142,7 +142,7 @@ export default function ImagesTab({ images, onUpdateImages, showToast }: ImagesT
 
                 <button
                   onClick={() => handleDeleteImage(img.id)}
-                  className="p-2 text-rose-200 hover:text-white hover:bg-rose-600/30 rounded-xl border border-white/20 hover:border-rose-500/40 backdrop-blur-sm transition-all cursor-pointer shrink-0"
+                  className="p-2 text-rose-200 hover:text-white bg-black/50 hover:bg-rose-600/70 rounded-xl border border-white/10 backdrop-blur-md transition-all cursor-pointer shrink-0"
                   title="Удалить"
                 >
                   <Trash2 className="w-4 h-4" />
