@@ -109,10 +109,10 @@ export default function ImagesTab({ images, onUpdateImages, showToast }: ImagesT
           {filteredImages.map((img) => (
             <div
               key={img.id}
-              className="glass-panel rounded-2xl overflow-hidden border border-zinc-100 dark:border-zinc-800 relative flex flex-col justify-between group"
+              className="glass-panel rounded-2xl overflow-hidden border border-zinc-100 dark:border-zinc-800 relative aspect-square group"
             >
               {/* Photo Box (1:1 aspect square) */}
-              <div className="aspect-square w-full relative overflow-hidden bg-zinc-100 dark:bg-zinc-950 flex items-center justify-center">
+              <div className="absolute inset-0 w-full h-full overflow-hidden bg-zinc-100 dark:bg-zinc-950 flex items-center justify-center">
                 {img.bgRemoved ? (
                   <div className="absolute inset-0 bg-[radial-gradient(#ddd_1px,transparent_1px)] dark:bg-[radial-gradient(#333_1px,transparent_1px)] [background-size:12px_12px] bg-white dark:bg-zinc-950 z-0" />
                 ) : null}
@@ -125,13 +125,13 @@ export default function ImagesTab({ images, onUpdateImages, showToast }: ImagesT
                 />
               </div>
 
-              {/* Editable Category & Delete button */}
-              <div className="p-3.5 relative z-10 bg-white/40 dark:bg-zinc-900/20 flex items-center justify-between gap-2 border-t border-zinc-100/50 dark:border-zinc-800/40">
+              {/* Overlay controls - absolute positioned at the bottom, semi-transparent */}
+              <div className="absolute bottom-0 inset-x-0 p-2.5 z-10 bg-black/40 dark:bg-black/60 backdrop-blur-md flex items-center justify-between gap-2 border-t border-white/10">
                 <div className="flex-1 min-w-0">
                   <select
                     value={img.category}
                     onChange={(e) => handleCategoryChange(img.id, e.target.value as any)}
-                    className="text-[11px] bg-white/80 dark:bg-zinc-900/60 text-[var(--ink)] border border-zinc-200/60 dark:border-zinc-800/60 rounded-xl px-2 py-1.5 focus:outline-none focus:border-[var(--lavenderAccent)] font-medium cursor-pointer w-full transition-all"
+                    className="text-[11px] bg-white/10 hover:bg-white/25 text-white border border-white/20 rounded-xl px-2 py-1.5 focus:outline-none focus:border-[var(--lavenderAccent)] font-medium cursor-pointer w-full transition-all [&>option]:bg-zinc-950 [&>option]:text-white"
                   >
                     <option value="arches">Арки и фотозоны</option>
                     <option value="tables">Гостевые столы</option>
@@ -142,7 +142,7 @@ export default function ImagesTab({ images, onUpdateImages, showToast }: ImagesT
 
                 <button
                   onClick={() => handleDeleteImage(img.id)}
-                  className="p-2 text-rose-400 dark:text-rose-500/80 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl border border-zinc-200/40 dark:border-zinc-800/40 hover:border-rose-100 dark:hover:border-rose-900/30 transition-all cursor-pointer shrink-0"
+                  className="p-2 text-rose-200 hover:text-white hover:bg-rose-600/30 rounded-xl border border-white/20 hover:border-rose-500/40 backdrop-blur-sm transition-all cursor-pointer shrink-0"
                   title="Удалить"
                 >
                   <Trash2 className="w-4 h-4" />
