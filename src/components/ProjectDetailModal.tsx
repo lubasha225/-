@@ -405,7 +405,7 @@ export default function ProjectDetailModal({
                 navigator.clipboard.writeText(`https://fleur-decor.ru/share/${project.id}`);
                 showToast('Ссылка скопирована', 'Гостевая ссылка сохранена в буфер обмена.', 'success');
               }}
-              className="px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200/50 dark:border-zinc-700 hover:bg-zinc-50 text-zinc-800 dark:text-zinc-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer"
+              className="px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200/50 dark:border-zinc-700 hover:bg-zinc-50 text-zinc-800 dark:text-zinc-200 rounded-full text-xs font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer"
             >
               <Share2 className="w-3.5 h-3.5 text-violet-500" /> Поделиться
             </button>
@@ -486,7 +486,7 @@ export default function ProjectDetailModal({
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id as any)}
-                      className={`w-full flex items-center justify-between p-2.5 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
+                      className={`w-full flex items-center justify-between p-2.5 rounded-full text-xs font-bold transition-all text-left cursor-pointer ${
                         isActive
                           ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 shadow-sm'
                           : 'text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/30'
@@ -544,14 +544,14 @@ export default function ProjectDetailModal({
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => setBriefCollapsed(!briefCollapsed)}
-                      className="px-3 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 hover:bg-zinc-50 text-zinc-700 dark:text-zinc-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer"
+                      className="px-3 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 hover:bg-zinc-50 text-zinc-700 dark:text-zinc-200 rounded-full text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer"
                     >
                       <span>{briefCollapsed ? 'Развернуть' : 'Свернуть'}</span>
                       <ChevronUp className={`w-3.5 h-3.5 text-zinc-500 transition-transform ${briefCollapsed ? 'transform rotate-180' : ''}`} />
                     </button>
                     <button
                       onClick={() => setIsBriefEditOpen(true)}
-                      className="px-3 py-1.5 bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-950 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                      className="px-3 py-1.5 bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-950 rounded-full text-xs font-bold transition-all cursor-pointer"
                     >
                       Редактировать
                     </button>
@@ -1274,7 +1274,7 @@ export default function ProjectDetailModal({
                     type="text"
                     value={project.clientName}
                     onChange={(e) => onUpdateProject({ ...project, clientName: e.target.value })}
-                    className="w-full bg-zinc-100 dark:bg-zinc-950/30 border border-zinc-200 dark:border-zinc-800 rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-violet-500 text-zinc-800 dark:text-zinc-100"
+                    className="w-full bg-zinc-100 dark:bg-zinc-950/30 border border-zinc-200 dark:border-zinc-800 rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-[var(--lavenderAccent)] text-zinc-800 dark:text-zinc-100"
                   />
                 </div>
 
@@ -1287,7 +1287,7 @@ export default function ProjectDetailModal({
                       ...project,
                       brief: { ...project.brief, style: e.target.value }
                     })}
-                    className="w-full bg-zinc-100 dark:bg-zinc-950/30 border border-zinc-200 dark:border-zinc-800 rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-violet-500 text-zinc-800 dark:text-zinc-100"
+                    className="w-full bg-zinc-100 dark:bg-zinc-950/30 border border-zinc-200 dark:border-zinc-800 rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-[var(--lavenderAccent)] text-zinc-800 dark:text-zinc-100"
                   />
                 </div>
 
@@ -1300,7 +1300,7 @@ export default function ProjectDetailModal({
                       ...project,
                       brief: { ...project.brief, colors: e.target.value.split(',').map(s => s.trim()) }
                     })}
-                    className="w-full bg-zinc-100 dark:bg-zinc-950/30 border border-zinc-200 dark:border-zinc-800 rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-violet-500 text-zinc-800 dark:text-zinc-100"
+                    className="w-full bg-zinc-100 dark:bg-zinc-950/30 border border-zinc-200 dark:border-zinc-800 rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-[var(--lavenderAccent)] text-zinc-800 dark:text-zinc-100"
                   />
                 </div>
 
@@ -1314,7 +1314,7 @@ export default function ProjectDetailModal({
                         ...project,
                         brief: { ...project.brief, guestsCount: parseInt(e.target.value) || 0 }
                       })}
-                      className="w-full bg-zinc-100 dark:bg-zinc-950/30 border border-zinc-200 dark:border-zinc-800 rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-violet-500 text-zinc-800 dark:text-zinc-100"
+                      className="w-full bg-zinc-100 dark:bg-zinc-950/30 border border-zinc-200 dark:border-zinc-800 rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-[var(--lavenderAccent)] text-zinc-800 dark:text-zinc-100"
                     />
                   </div>
                   <div className="space-y-1">
@@ -1323,7 +1323,7 @@ export default function ProjectDetailModal({
                       type="text"
                       value={project.venue}
                       onChange={(e) => onUpdateProject({ ...project, venue: e.target.value })}
-                      className="w-full bg-zinc-100 dark:bg-zinc-950/30 border border-zinc-200 dark:border-zinc-800 rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-violet-500 text-zinc-800 dark:text-zinc-100"
+                      className="w-full bg-zinc-100 dark:bg-zinc-950/30 border border-zinc-200 dark:border-zinc-800 rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-[var(--lavenderAccent)] text-zinc-800 dark:text-zinc-100"
                     />
                   </div>
                 </div>
@@ -1337,7 +1337,7 @@ export default function ProjectDetailModal({
                       ...project,
                       brief: { ...project.brief, flowers: e.target.value.split(',').map(s => s.trim()) }
                     })}
-                    className="w-full bg-zinc-100 dark:bg-zinc-950/30 border border-zinc-200 dark:border-zinc-800 rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-violet-500 text-zinc-800 dark:text-zinc-100"
+                    className="w-full bg-zinc-100 dark:bg-zinc-950/30 border border-zinc-200 dark:border-zinc-800 rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-[var(--lavenderAccent)] text-zinc-800 dark:text-zinc-100"
                   />
                 </div>
 
@@ -1350,7 +1350,7 @@ export default function ProjectDetailModal({
                       ...project,
                       brief: { ...project.brief, specialRequests: e.target.value }
                     })}
-                    className="w-full bg-zinc-100 dark:bg-zinc-950/30 border border-zinc-200 dark:border-zinc-800 rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-violet-500 resize-none text-zinc-800 dark:text-zinc-100"
+                    className="w-full bg-zinc-100 dark:bg-zinc-950/30 border border-zinc-200 dark:border-zinc-800 rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-[var(--lavenderAccent)] resize-none text-zinc-800 dark:text-zinc-100"
                   />
                 </div>
               </div>
@@ -1358,7 +1358,7 @@ export default function ProjectDetailModal({
               <div className="p-4 border-t border-zinc-200/50 dark:border-zinc-800/50 flex justify-end gap-2 bg-zinc-50 dark:bg-zinc-900/50">
                 <button
                   onClick={() => setIsBriefEditOpen(false)}
-                  className="px-4 py-2 bg-zinc-200/60 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-bold rounded-xl transition-all cursor-pointer"
+                  className="px-4 py-2 bg-zinc-200/60 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-bold rounded-full transition-all cursor-pointer"
                 >
                   Отмена
                 </button>
@@ -1368,7 +1368,7 @@ export default function ProjectDetailModal({
                     addJournalLog("Карточка брифа отредактирована декоратором", "system");
                     showToast('Обновлено!', 'Данные технического брифа сохранены.', 'success');
                   }}
-                  className="px-5 py-2 bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold rounded-xl transition-all shadow-md cursor-pointer"
+                  className="px-5 py-2 bg-[var(--lavDeep)] hover:opacity-90 text-white text-xs font-bold rounded-full transition-all shadow-md cursor-pointer"
                 >
                   Сохранить изменения
                 </button>

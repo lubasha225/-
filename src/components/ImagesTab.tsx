@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { UploadCloud, Trash2, Plus, Pencil, Check, X } from 'lucide-react';
+import { UploadCloud, Trash2, Plus, Pencil, Check, X, ChevronDown } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { ImageItem } from '../types';
 
 interface CategoryItem {
@@ -23,6 +24,7 @@ interface ImagesTabProps {
 
 export default function ImagesTab({ images, onUpdateImages, showToast, setHeaderActions }: ImagesTabProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [activeDropdownImageId, setActiveDropdownImageId] = useState<string | null>(null);
   
   // Custom categories state
   const [customCategories, setCustomCategories] = useState<CategoryItem[]>(() => {
@@ -295,10 +297,12 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
           {filteredImages.map((img) => (
             <div
               key={img.id}
-              className="glass-panel rounded-2xl overflow-hidden border border-zinc-100 dark:border-zinc-800 relative aspect-square group"
+              className={`glass-panel rounded-2xl border border-zinc-100 dark:border-zinc-800 relative aspect-square group transition-all duration-300 ${
+                activeDropdownImageId === img.id ? 'z-30 overflow-visible' : 'overflow-hidden'
+              }`}
             >
               {/* Photo Box (1:1 aspect square) */}
-              <div className="absolute inset-0 w-full h-full overflow-hidden bg-zinc-100 dark:bg-zinc-950 flex items-center justify-center">
+              <div className="absolute inset-0 w-full h-full overflow-hidden bg-zinc-100 dark:bg-zinc-950 flex items-center justify-center rounded-2xl">
                 {img.bgRemoved ? (
                   <div className="absolute inset-0 bg-[radial-gradient(#ddd_1px,transparent_1px)] dark:bg-[radial-gradient(#333_1px,transparent_1px)] [background-size:12px_12px] bg-white dark:bg-zinc-950 z-0" />
                 ) : null}
@@ -313,23 +317,60 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
 
               {/* Overlay controls - absolute positioned at the bottom, transparent container with floating styled elements */}
               <div className="absolute bottom-0 inset-x-0 p-2.5 z-10 flex items-center justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <select
-                    value={img.category}
-                    onChange={(e) => handleCategoryChange(img.id, e.target.value)}
-                    className="text-[11px] bg-black/50 hover:bg-black/70 text-white border border-white/10 backdrop-blur-md rounded-xl px-2 py-1.5 focus:outline-none focus:border-[var(--lavenderAccent)] font-medium cursor-pointer w-full transition-all [&>option]:bg-zinc-950 [&>option]:text-white"
+                <div className="flex-1 min-w-0 relative">
+                  <button
+                    type="button"
+                    onClick={() => setActiveDropdownImageId(activeDropdownImageId === img.id ? null : img.id)}
+                    className="text-[11px] bg-black/55 hover:bg-black/75 text-white border border-white/10 backdrop-blur-md rounded-xl px-2.5 py-1.5 focus:outline-none font-semibold cursor-pointer w-full transition-all flex items-center justify-between gap-1 text-left"
                   >
-                    {customCategories.map((cat) => (
-                      <option key={cat.key} value={cat.key}>
-                        {cat.label}
-                      </option>
-                    ))}
-                  </select>
+                    <span className="truncate">
+                      {customCategories.find(c => c.key === img.category)?.label || img.category}
+                    </span>
+                    <ChevronDown className={`w-3.5 h-3.5 text-white/70 transition-transform duration-200 shrink-0 ${activeDropdownImageId === img.id ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  <AnimatePresence>
+                    {activeDropdownImageId === img.id && (
+                      <>
+                        {/* Overlay to catch clicks outside to close */}
+                        <div className="fixed inset-0 z-40" onClick={() => setActiveDropdownImageId(null)} />
+                        <motion.div
+                          initial={{ opacity: 0, y: 5, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 5, scale: 0.95 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute bottom-10 left-0 right-0 bg-zinc-900/90 dark:bg-zinc-950/90 backdrop-blur-md border border-white/10 rounded-xl p-1 shadow-xl z-50 overflow-hidden max-h-36 overflow-y-auto"
+                        >
+                          {customCategories.map((cat) => {
+                            const isSelected = img.category === cat.key;
+                            return (
+                              <button
+                                key={cat.key}
+                                type="button"
+                                onClick={() => {
+                                  handleCategoryChange(img.id, cat.key);
+                                  setActiveDropdownImageId(null);
+                                }}
+                                className={`w-full text-left px-2 py-1.5 rounded-lg text-[10px] font-semibold transition-all flex items-center justify-between cursor-pointer ${
+                                  isSelected
+                                    ? 'bg-[var(--lavDeep)] text-white'
+                                    : 'text-zinc-200 hover:bg-[var(--lavDeep)]/40 hover:text-white'
+                                }`}
+                              >
+                                <span className="truncate">{cat.label}</span>
+                                {isSelected && <Check className="w-3 h-3 text-white shrink-0" />}
+                              </button>
+                            );
+                          })}
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>
                 </div>
 
                 <button
                   onClick={() => handleDeleteImage(img.id)}
-                  className="p-2 text-rose-200 hover:text-white bg-black/50 hover:bg-rose-600/70 rounded-xl border border-white/10 backdrop-blur-md transition-all cursor-pointer shrink-0"
+                  className="p-2 text-rose-200 hover:text-white bg-black/50 hover:bg-rose-600/70 rounded-full border border-white/10 backdrop-blur-md transition-all cursor-pointer shrink-0"
                   title="Удалить"
                 >
                   <Trash2 className="w-4 h-4" />

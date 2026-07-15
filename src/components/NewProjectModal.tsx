@@ -89,7 +89,7 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
               placeholder="например, Свадьба в лесу или День Рождения"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl bg-zinc-100/50 dark:bg-zinc-950/35 border border-zinc-200/50 dark:border-zinc-800/50 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-violet-400 text-sm"
+              className="w-full px-4 py-2.5 rounded-xl bg-zinc-100/50 dark:bg-zinc-950/35 border border-zinc-200/50 dark:border-zinc-800/50 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-[var(--lavenderAccent)] text-sm"
             />
           </div>
 
@@ -104,7 +104,7 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
                   placeholder="Анна К."
                   value={clientName}
                   onChange={(e) => setClientName(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-zinc-100/50 dark:bg-zinc-950/35 border border-zinc-200/50 dark:border-zinc-800/50 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-violet-400 text-sm"
+                  className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-zinc-100/50 dark:bg-zinc-950/35 border border-zinc-200/50 dark:border-zinc-800/50 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-[var(--lavenderAccent)] text-sm"
                 />
               </div>
             </div>
@@ -118,7 +118,7 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
                   placeholder="anna@example.com"
                   value={clientEmail}
                   onChange={(e) => setClientEmail(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-zinc-100/50 dark:bg-zinc-950/35 border border-zinc-200/50 dark:border-zinc-800/50 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-violet-400 text-sm"
+                  className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-zinc-100/50 dark:bg-zinc-950/35 border border-zinc-200/50 dark:border-zinc-800/50 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-[var(--lavenderAccent)] text-sm"
                 />
               </div>
             </div>
@@ -135,7 +135,7 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
                   placeholder="Лофт «Верх», Краснодар"
                   value={venue}
                   onChange={(e) => setVenue(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-zinc-100/50 dark:bg-zinc-950/35 border border-zinc-200/50 dark:border-zinc-800/50 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-violet-400 text-sm"
+                  className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-zinc-100/50 dark:bg-zinc-950/35 border border-zinc-200/50 dark:border-zinc-800/50 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-[var(--lavenderAccent)] text-sm"
                 />
               </div>
             </div>
@@ -148,7 +148,7 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-zinc-100/50 dark:bg-zinc-950/35 border border-zinc-200/50 dark:border-zinc-800/50 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-violet-400 text-sm"
+                  className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-zinc-100/50 dark:bg-zinc-950/35 border border-zinc-200/50 dark:border-zinc-800/50 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavenderAccent)] text-sm"
                 />
               </div>
             </div>
@@ -165,7 +165,7 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
                   min="0"
                   value={budget}
                   onChange={(e) => setBudget(Number(e.target.value))}
-                  className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-zinc-100/50 dark:bg-zinc-950/35 border border-zinc-200/50 dark:border-zinc-800/50 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-violet-400 text-sm"
+                  className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-zinc-100/50 dark:bg-zinc-950/35 border border-zinc-200/50 dark:border-zinc-800/50 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavenderAccent)] text-sm"
                 />
               </div>
             </div>
@@ -175,7 +175,7 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as ProjectStatus)}
-                className="w-full px-3 py-2.5 rounded-xl bg-zinc-100/50 dark:bg-zinc-950/35 border border-zinc-200/50 dark:border-zinc-800/50 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-violet-400 text-sm"
+                className="w-full px-3 py-2.5 rounded-xl bg-zinc-100/50 dark:bg-zinc-950/35 border border-zinc-200/50 dark:border-zinc-800/50 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavenderAccent)] text-sm"
               >
                 <option value="progress">В работе</option>
                 <option value="waiting">Ждёт клиента</option>
@@ -194,9 +194,9 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
                   key={index}
                   type="button"
                   onClick={() => setCurrentStep(index)}
-                  className={`py-2 px-1 rounded-xl border text-center text-xs font-medium transition-all ${
+                  className={`py-2 px-1 rounded-full border text-center text-xs font-medium transition-all ${
                     currentStep === index
-                      ? 'bg-violet-600 text-white border-violet-600 shadow-md shadow-violet-500/20'
+                      ? 'bg-[var(--lavDeep)] text-white border-[var(--lavDeep)] shadow-md shadow-[var(--lavDeep)]/20'
                       : 'bg-zinc-100 dark:bg-zinc-800/40 border-zinc-200 dark:border-zinc-800/40 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200'
                   }`}
                 >
@@ -211,13 +211,13 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800/55 transition-colors text-sm"
+              className="flex-1 py-3 rounded-full border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800/55 transition-colors text-sm"
             >
               Отмена
             </button>
             <button
               type="submit"
-              className="flex-1 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-medium transition-all shadow-md shadow-violet-600/10 text-sm"
+              className="flex-1 py-3 rounded-full bg-[var(--lavDeep)] hover:opacity-90 text-white font-medium transition-all shadow-md shadow-[var(--lavDeep)]/10 text-sm"
             >
               Создать проект
             </button>

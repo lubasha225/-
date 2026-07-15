@@ -1176,7 +1176,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
 
           <button
             onClick={() => setIsAiModalOpen(true)}
-            className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 hover:opacity-90 text-white text-xs font-bold transition-all shadow-md shadow-violet-500/10 cursor-pointer"
+            className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-full bg-gradient-to-r from-violet-600 to-pink-600 hover:opacity-90 text-white text-xs font-bold transition-all shadow-md shadow-violet-500/10 cursor-pointer"
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>ИИ визуализация</span>
@@ -1184,7 +1184,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
           
           <button
             onClick={handleSaveProjectCollage}
-            className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/60 dark:bg-zinc-900/60 hover:bg-white/90 border border-[var(--glass-edge)] text-[var(--ink)] text-xs font-bold transition-all cursor-pointer"
+            className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-full bg-white/60 dark:bg-zinc-900/60 hover:bg-white/90 border border-[var(--glass-edge)] text-[var(--ink)] text-xs font-bold transition-all cursor-pointer"
           >
             <Save className="w-3.5 h-3.5 text-blue-500" />
             <span>Сохранить</span>
@@ -1192,7 +1192,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
 
           <button
             onClick={handleDownloadLayout}
-            className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/60 dark:bg-zinc-900/60 hover:bg-white/90 border border-[var(--glass-edge)] text-[var(--ink)] text-xs font-bold transition-all cursor-pointer"
+            className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-full bg-white/60 dark:bg-zinc-900/60 hover:bg-white/90 border border-[var(--glass-edge)] text-[var(--ink)] text-xs font-bold transition-all cursor-pointer"
           >
             <Download className="w-3.5 h-3.5 text-emerald-500" />
             <span>Скачать</span>
@@ -1223,7 +1223,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setActiveWorkspaceTab('scene-1')}
-                className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                   activeWorkspaceTab === 'scene-1'
                     ? 'bg-[var(--lavDeep)] text-white shadow-sm'
                     : 'text-[var(--soft)] hover:text-[var(--ink)] hover:bg-white/40 dark:hover:bg-black/20'
@@ -1233,7 +1233,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
               </button>
               <button
                 onClick={() => setActiveWorkspaceTab('scene-2')}
-                className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                   activeWorkspaceTab === 'scene-2'
                     ? 'bg-[var(--lavDeep)] text-white shadow-sm'
                     : 'text-[var(--soft)] hover:text-[var(--ink)] hover:bg-white/40 dark:hover:bg-black/20'
@@ -1246,7 +1246,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                   setActiveWorkspaceTab('floorplan');
                   setSelectedId(null);
                 }}
-                className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                   activeWorkspaceTab === 'floorplan'
                     ? 'bg-indigo-600 text-white shadow-sm'
                     : 'text-[var(--soft)] hover:text-[var(--ink)] hover:bg-white/40 dark:hover:bg-black/20'
@@ -1298,7 +1298,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                 className={`relative bg-zinc-950/60 dark:bg-black/40 rounded-3xl overflow-hidden flex items-center justify-center h-full min-h-0 border border-zinc-200/20 dark:border-zinc-800/20 select-none p-4 ${isPanning ? 'cursor-grabbing' : 'cursor-grab'}`}
               >
                 {/* Zoom Controls Overlay */}
-                <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5 bg-black/70 backdrop-blur-md px-2.5 py-1.5 rounded-xl border border-white/10 text-white text-[11px] font-semibold">
+                <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5 bg-black/70 backdrop-blur-md px-2.5 py-1.5 rounded-full border border-white/10 text-white text-[11px] font-semibold">
                   <span>Масштаб: {Math.round(zoomScale * 100)}%</span>
                   <button
                     onClick={(e) => {
@@ -1307,7 +1307,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                       setPanX(0);
                       setPanY(0);
                     }}
-                    className="ml-1.5 bg-white/20 hover:bg-white/30 text-white px-2 py-0.5 rounded text-[10px] transition-colors cursor-pointer"
+                    className="ml-1.5 bg-white/20 hover:bg-white/30 text-white px-2 py-0.5 rounded-full text-[10px] transition-colors cursor-pointer"
                     title="Сбросить масштаб и положение"
                   >
                     Сбросить
@@ -1631,7 +1631,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                 {/* Toggles */}
                 <button
                   onClick={() => setGridVisible(!gridVisible)}
-                  className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
+                  className={`p-1.5 rounded-full border transition-all cursor-pointer ${
                     gridVisible
                       ? 'bg-[var(--lavSoft)] border-[var(--lavenderAccent)] text-[var(--lavDeep)]'
                       : 'border-[var(--glass-edge)] text-[var(--faint)] hover:text-[var(--ink)]'
@@ -1643,7 +1643,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
 
                 <button
                   onClick={() => setHumanVisible(!humanVisible)}
-                  className={`px-2.5 py-1 rounded-lg border transition-all text-[11px] font-bold cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-full border transition-all text-[11px] font-bold cursor-pointer ${
                     humanVisible
                       ? 'bg-[var(--lavSoft)] border-[var(--lavenderAccent)] text-[var(--lavDeep)]'
                       : 'border-[var(--glass-edge)] text-[var(--faint)] hover:text-[var(--ink)]'
@@ -1935,7 +1935,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
 
                 {/* Sticky summary cost calculator footer */}
                 <div className="pt-4 border-t border-[var(--glass-edge)]">
-                  <div className="bg-violet-600 dark:bg-violet-700 text-white p-4 rounded-2xl flex items-center justify-between shadow-lg shadow-violet-500/10">
+                  <div className="bg-[var(--lavDeep)] text-white p-4 rounded-2xl flex items-center justify-between shadow-lg shadow-violet-500/10">
                     <div className="flex flex-col">
                       <span className="text-[10px] font-bold text-violet-200 uppercase tracking-wider">ИТОГО К ОПЛАТЕ:</span>
                       <span className="text-lg font-extrabold font-mono tracking-tight">
@@ -1944,7 +1944,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                     </div>
                     <button 
                       onClick={handleSaveProjectCollage}
-                      className="px-4 py-2 rounded-xl bg-white hover:bg-zinc-100 text-violet-700 font-extrabold text-xs transition-all shadow-sm active:scale-95 cursor-pointer"
+                      className="px-4 py-2 rounded-full bg-white hover:bg-zinc-100 text-[var(--lavDeep)] font-extrabold text-xs transition-all shadow-sm active:scale-95 cursor-pointer"
                     >
                       Сохранить
                     </button>
@@ -2000,7 +2000,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                           <button
                             type="button"
                             onClick={() => setIsRatioLocked(!isRatioLocked)}
-                            className={`p-2 rounded-xl border transition-all ${
+                            className={`p-2 rounded-full border transition-all ${
                               isRatioLocked
                                 ? 'bg-violet-50 dark:bg-violet-950/40 border-violet-300 text-violet-600'
                                 : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-600'
@@ -2042,7 +2042,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                       <span className="text-[11px] font-bold text-[var(--faint)] block">Операции</span>
                       <div className="grid grid-cols-3 gap-2">
                         {/* Undo / Redo */}
-                        <div className="flex rounded-xl overflow-hidden border border-[var(--glass-edge)] bg-white dark:bg-zinc-900">
+                        <div className="flex rounded-full overflow-hidden border border-[var(--glass-edge)] bg-white dark:bg-zinc-900">
                           <button
                             onClick={handleUndo}
                             disabled={historyIndex === 0}
@@ -2065,7 +2065,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                         {/* Alignment (Center) */}
                         <button
                           onClick={() => handleAlignSelected('center')}
-                          className="py-2 rounded-xl border border-[var(--glass-edge)] bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex flex-col items-center justify-center gap-1 text-[var(--soft)] hover:text-[var(--ink)] cursor-pointer"
+                          className="py-2 rounded-full border border-[var(--glass-edge)] bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex flex-col items-center justify-center gap-1 text-[var(--soft)] hover:text-[var(--ink)] cursor-pointer"
                           title="Центрировать"
                         >
                           <AlignCenter className="w-4 h-4" />
@@ -2077,7 +2077,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                           onClick={() => {
                             updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, isFlippedH: !item.isFlippedH } : item));
                           }}
-                          className="py-2 rounded-xl border border-[var(--glass-edge)] bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex flex-col items-center justify-center gap-1 text-[var(--soft)] hover:text-[var(--ink)] cursor-pointer"
+                          className="py-2 rounded-full border border-[var(--glass-edge)] bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex flex-col items-center justify-center gap-1 text-[var(--soft)] hover:text-[var(--ink)] cursor-pointer"
                           title="Отразить зеркально"
                         >
                           <FlipHorizontal className="w-4 h-4" />
@@ -2090,7 +2090,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                             updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, isLocked: !item.isLocked } : item));
                             setSelectedId(null);
                           }}
-                          className="py-2 rounded-xl border border-[var(--glass-edge)] bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex flex-col items-center justify-center gap-1 text-[var(--soft)] hover:text-[var(--ink)] cursor-pointer"
+                          className="py-2 rounded-full border border-[var(--glass-edge)] bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex flex-col items-center justify-center gap-1 text-[var(--soft)] hover:text-[var(--ink)] cursor-pointer"
                           title="Заблокировать"
                         >
                           {selectedElem.isLocked ? <Lock className="w-4 h-4 text-rose-500" /> : <Unlock className="w-4 h-4" />}
@@ -2110,7 +2110,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                             setSelectedId(copyEl.id);
                             showToast('Дублировано', 'Создан дубликат выбранного декора.', 'success');
                           }}
-                          className="py-2 rounded-xl border border-[var(--glass-edge)] bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex flex-col items-center justify-center gap-1 text-[var(--soft)] hover:text-[var(--ink)] cursor-pointer"
+                          className="py-2 rounded-full border border-[var(--glass-edge)] bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex flex-col items-center justify-center gap-1 text-[var(--soft)] hover:text-[var(--ink)] cursor-pointer"
                           title="Дублировать"
                         >
                           <Copy className="w-4 h-4" />
@@ -2124,7 +2124,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                             setSelectedId(null);
                             showToast('Удалено', 'Элемент удален с холста.', 'info');
                           }}
-                          className="py-2 rounded-xl border border-rose-100 bg-rose-50 dark:border-rose-950/40 dark:bg-rose-950/20 hover:bg-rose-100 dark:hover:bg-rose-950/40 flex flex-col items-center justify-center gap-1 text-rose-600 dark:text-rose-400 cursor-pointer"
+                          className="py-2 rounded-full border border-rose-100 bg-rose-50 dark:border-rose-950/40 dark:bg-rose-950/20 hover:bg-rose-100 dark:hover:bg-rose-950/40 flex flex-col items-center justify-center gap-1 text-rose-600 dark:text-rose-400 cursor-pointer"
                           title="Удалить со сцены"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -2443,7 +2443,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
 
                     <button
                       onClick={handleStartAiGeneration}
-                      className="w-full py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                      className="w-full py-2.5 rounded-full bg-[var(--lavDeep)] hover:opacity-90 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
                     >
                       <Wand2 className="w-3.5 h-3.5" />
                       <span>Сгенерировать интерьер</span>

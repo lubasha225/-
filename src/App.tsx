@@ -95,6 +95,7 @@ export default function App() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(2);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   // Notification lists
   const [notifications, setNotifications] = useState([
@@ -581,18 +582,65 @@ export default function App() {
               <span className="font-bold text-[var(--ink)] text-sm">Флёр Деко</span>
             </div>
 
-            <select
-              value={activeTab}
-              onChange={(e) => setActiveTab(e.target.value as any)}
-              className="text-xs bg-zinc-100 dark:bg-zinc-800 border-none rounded-xl py-2 px-3 focus:outline-none text-[var(--ink)] font-semibold"
-            >
-              <option value="projects">Мои проекты</option>
-              <option value="moodboard">Конструктор арок</option>
-              <option value="warehouse">Мой склад</option>
-              <option value="images">Мои изображения</option>
-              <option value="documents">Мои документы</option>
-              <option value="profile">Профиль бренда</option>
-            </select>
+            <div className="relative z-30">
+              <button
+                onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}
+                className="flex items-center gap-2 text-xs bg-zinc-100/80 dark:bg-zinc-800/80 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50 border border-zinc-200/50 dark:border-zinc-800/40 rounded-xl py-2 px-3 focus:outline-none text-[var(--ink)] font-semibold transition-all cursor-pointer"
+              >
+                <span>
+                  {activeTab === 'projects' && 'Мои проекты'}
+                  {activeTab === 'moodboard' && 'Конструктор арок'}
+                  {activeTab === 'warehouse' && 'Мой склад'}
+                  {activeTab === 'images' && 'Мои изображения'}
+                  {activeTab === 'documents' && 'Мои документы'}
+                  {activeTab === 'profile' && 'Профиль бренда'}
+                </span>
+                <ChevronDown className={`w-3.5 h-3.5 text-zinc-500 transition-transform duration-200 ${isMobileNavOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              <AnimatePresence>
+                {isMobileNavOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setIsMobileNavOpen(false)} />
+                    <motion.div
+                      initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 mt-1.5 w-52 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-zinc-200/50 dark:border-zinc-800/50 rounded-2xl shadow-xl p-1.5 z-50 overflow-hidden"
+                    >
+                      {[
+                        { value: 'projects', label: 'Мои проекты' },
+                        { value: 'moodboard', label: 'Конструктор арок' },
+                        { value: 'warehouse', label: 'Мой склад' },
+                        { value: 'images', label: 'Мои изображения' },
+                        { value: 'documents', label: 'Мои документы' },
+                        { value: 'profile', label: 'Профиль бренда' }
+                      ].map((item) => {
+                        const isSelected = activeTab === item.value;
+                        return (
+                          <button
+                            key={item.value}
+                            onClick={() => {
+                              setActiveTab(item.value as any);
+                              setIsMobileNavOpen(false);
+                            }}
+                            className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-between cursor-pointer ${
+                              isSelected
+                                ? 'bg-[var(--lavDeep)] text-white'
+                                : 'text-zinc-700 dark:text-zinc-300 hover:bg-[var(--lavenderSoft)] hover:text-[var(--lavDeep)] dark:hover:bg-[var(--lavDeep)]/20 dark:hover:text-zinc-100'
+                            }`}
+                          >
+                            <span>{item.label}</span>
+                            {isSelected && <Check className="w-3.5 h-3.5" />}
+                          </button>
+                        );
+                      })}
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
 
           {/* MAIN PANEL TOP NAVBAR Header */}
@@ -820,7 +868,7 @@ export default function App() {
                               key={pill.key}
                               onClick={() => setProjectFilter(pill.key as any)}
                               style={customStyle}
-                              className={`px-4 py-2 rounded-xl text-xs font-light tracking-wide border transition-all duration-300 cursor-pointer flex items-center gap-2 ${
+                              className={`px-4 py-2 rounded-full text-xs font-light tracking-wide border transition-all duration-300 cursor-pointer flex items-center gap-2 ${
                                 isActive
                                   ? 'bg-[var(--lavDeep)] text-white border-[var(--lavDeep)] shadow-sm'
                                   : 'bg-white/30 dark:bg-zinc-900/20 border-zinc-200/50 dark:border-zinc-800/50 hover:text-[var(--ink)] hover:border-[var(--lavenderAccent)]'

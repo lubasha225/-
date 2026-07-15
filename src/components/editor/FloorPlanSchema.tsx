@@ -217,7 +217,7 @@ export default function FloorPlanSchema({ initialElements = [], onSave, showToas
               <button
                 key={tmpl.type}
                 onClick={() => handleAddTemplate(tmpl)}
-                className="flex items-center gap-2.5 p-2.5 rounded-xl border border-zinc-200/60 dark:border-zinc-800/60 bg-zinc-50/50 dark:bg-zinc-950/20 hover:border-violet-500 hover:bg-violet-500/5 dark:hover:bg-violet-500/10 transition-all text-left cursor-pointer text-xs font-semibold text-zinc-700 dark:text-zinc-200 group"
+                className="flex items-center gap-2.5 p-2.5 rounded-full border border-zinc-200/60 dark:border-zinc-800/60 bg-zinc-50/50 dark:bg-zinc-950/20 hover:border-violet-500 hover:bg-violet-500/5 dark:hover:bg-violet-500/10 transition-all text-left cursor-pointer text-xs font-semibold text-zinc-700 dark:text-zinc-200 group"
               >
                 <div className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 shadow-sm ${tmpl.color}`}>
                   <Icon className="w-4 h-4 text-zinc-600 dark:text-zinc-300 group-hover:text-violet-600 dark:group-hover:text-violet-400" />
@@ -267,7 +267,7 @@ export default function FloorPlanSchema({ initialElements = [], onSave, showToas
           <div className="flex items-center gap-3">
             <button
               onClick={() => setGridVisible(!gridVisible)}
-              className={`px-3 py-1.5 rounded-lg font-bold text-[10px] uppercase flex items-center gap-1.5 border transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-full font-bold text-[10px] uppercase flex items-center gap-1.5 border transition-all cursor-pointer ${
                 gridVisible
                   ? 'bg-violet-600 text-white border-violet-600 shadow-sm'
                   : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700'
@@ -282,7 +282,7 @@ export default function FloorPlanSchema({ initialElements = [], onSave, showToas
             <button
               onClick={handleClearAll}
               disabled={elements.length === 0}
-              className="px-2.5 py-1.5 rounded-lg border border-rose-500/10 hover:bg-rose-500/10 text-rose-600 font-bold text-[10px] uppercase transition-colors cursor-pointer disabled:opacity-40"
+              className="px-2.5 py-1.5 rounded-full border border-rose-500/10 hover:bg-rose-500/10 text-rose-600 font-bold text-[10px] uppercase transition-colors cursor-pointer disabled:opacity-40"
             >
               Очистить
             </button>
@@ -441,7 +441,7 @@ export default function FloorPlanSchema({ initialElements = [], onSave, showToas
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={handleRotateSelected}
-                    className="flex items-center justify-center gap-1.5 p-2 rounded-xl border border-zinc-200 dark:border-zinc-700 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:border-violet-500 hover:text-violet-500 transition-all cursor-pointer"
+                    className="flex items-center justify-center gap-1.5 p-2 rounded-full border border-zinc-200 dark:border-zinc-700 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:border-violet-500 hover:text-violet-500 transition-all cursor-pointer"
                   >
                     <RotateCw className="w-3.5 h-3.5" /> Поворот 45°
                   </button>
@@ -454,7 +454,7 @@ export default function FloorPlanSchema({ initialElements = [], onSave, showToas
 
             <button
               onClick={handleDeleteSelected}
-              className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500 hover:text-white border border-rose-500/10 hover:border-rose-500 text-rose-600 text-xs font-bold transition-all cursor-pointer mt-auto"
+              className="w-full flex items-center justify-center gap-2 p-2.5 rounded-full bg-rose-500/10 hover:bg-rose-500 hover:text-white border border-rose-500/10 hover:border-rose-500 text-rose-600 text-xs font-bold transition-all cursor-pointer mt-auto"
             >
               <Trash2 className="w-3.5 h-3.5" /> Удалить объект
             </button>

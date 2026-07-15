@@ -153,8 +153,8 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
 
             {/* Entity Selector (Premium Pill Design) */}
             <div className="space-y-2">
-              <label className="text-xs font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">Организационно-правовая форма</label>
-              <div className="grid grid-cols-4 gap-1 p-1 bg-zinc-100/50 dark:bg-zinc-950/30 rounded-xl border border-zinc-200/30 dark:border-zinc-800/20">
+              <label className="text-[10px] font-normal text-[#6B6B6B] dark:text-[#6B6B6B]/90 uppercase tracking-wider block">Организационно-правовая форма</label>
+              <div className="grid grid-cols-4 gap-1 p-1 bg-zinc-100/50 dark:bg-zinc-950/30 rounded-full border border-zinc-200/30 dark:border-zinc-800/20">
                 {(['IP', 'OOO', 'Self', 'Individual'] as EntityType[]).map((type) => {
                   const labels: Record<EntityType, string> = {
                     IP: 'ИП',
@@ -168,7 +168,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                       key={type}
                       type="button"
                       onClick={() => handleEntityTypeChange(type)}
-                      className={`py-2 px-1 rounded-lg text-xs font-medium tracking-wide transition-all cursor-pointer text-center ${
+                      className={`py-2 px-1 rounded-full text-xs font-medium tracking-wide transition-all cursor-pointer text-center ${
                         isActive
                           ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 shadow-xs'
                           : 'text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
@@ -187,7 +187,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
               {/* Full Legal Name */}
               <div className="space-y-1.5">
                 <div className="flex justify-between items-center">
-                  <label className="text-xs font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">Официальное наименование</label>
+                  <label className="text-[10px] font-normal text-[#6B6B6B] dark:text-[#6B6B6B]/90 uppercase tracking-wider">Официальное наименование</label>
                   <span className="text-xs text-zinc-400 italic">Для первого абзаца договора</span>
                 </div>
                 <div className="relative">
@@ -196,7 +196,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                     value={requisites.name}
                     onChange={(e) => handleFieldChange('name', e.target.value)}
                     placeholder="ИП Сагидуллина Алина Александровна"
-                    className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-white/40 dark:bg-zinc-950/10 border border-zinc-200/60 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavDeep)] dark:focus:border-[var(--lavenderAccent)] focus:ring-1 focus:ring-[var(--lavDeep)]/20 text-xs font-medium transition-all"
+                    className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-white/40 dark:bg-zinc-950/10 border border-zinc-200/60 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavDeep)] dark:focus:border-[var(--lavenderAccent)] focus:ring-1 focus:ring-[var(--lavDeep)]/20 text-[14px] font-medium transition-all"
                   />
                   <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400">
                     <User className="w-4 h-4" />
@@ -207,17 +207,17 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
               {/* Triple Row: INN, OGRN, Phone */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">ИНН</label>
+                  <label className="text-[10px] font-normal text-[#6B6B6B] dark:text-[#6B6B6B]/90 uppercase tracking-wider">ИНН</label>
                   <input
                     type="text"
                     value={requisites.inn}
                     onChange={(e) => handleFieldChange('inn', e.target.value)}
                     placeholder="12 или 10 цифр"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-white/40 dark:bg-zinc-950/10 border border-zinc-200/60 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavDeep)] dark:focus:border-[var(--lavenderAccent)] focus:ring-1 focus:ring-[var(--lavDeep)]/20 text-xs font-medium transition-all"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white/40 dark:bg-zinc-950/10 border border-zinc-200/60 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavDeep)] dark:focus:border-[var(--lavenderAccent)] focus:ring-1 focus:ring-[var(--lavDeep)]/20 text-[14px] font-medium transition-all"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+                  <label className="text-[10px] font-normal text-[#6B6B6B] dark:text-[#6B6B6B]/90 uppercase tracking-wider">
                     {requisites.entityType === 'OOO' ? 'ОГРН' : 'ОГРНИП'}
                   </label>
                   <input
@@ -225,36 +225,36 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                     value={requisites.ogrn}
                     onChange={(e) => handleFieldChange('ogrn', e.target.value)}
                     placeholder="Номер регистрации"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-white/40 dark:bg-zinc-950/10 border border-zinc-200/60 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavDeep)] dark:focus:border-[var(--lavenderAccent)] focus:ring-1 focus:ring-[var(--lavDeep)]/20 text-xs font-medium transition-all"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white/40 dark:bg-zinc-950/10 border border-zinc-200/60 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavDeep)] dark:focus:border-[var(--lavenderAccent)] focus:ring-1 focus:ring-[var(--lavDeep)]/20 text-[14px] font-medium transition-all"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">Телефон контакта</label>
+                  <label className="text-[10px] font-normal text-[#6B6B6B] dark:text-[#6B6B6B]/90 uppercase tracking-wider">Телефон контакта</label>
                   <input
                     type="text"
                     value={requisites.phone}
                     onChange={(e) => handleFieldChange('phone', e.target.value)}
                     placeholder="+7 900 000-00-00"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-white/40 dark:bg-zinc-950/10 border border-zinc-200/60 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavDeep)] dark:focus:border-[var(--lavenderAccent)] focus:ring-1 focus:ring-[var(--lavDeep)]/20 text-xs font-medium transition-all"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white/40 dark:bg-zinc-950/10 border border-zinc-200/60 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavDeep)] dark:focus:border-[var(--lavenderAccent)] focus:ring-1 focus:ring-[var(--lavDeep)]/20 text-[14px] font-medium transition-all"
                   />
                 </div>
               </div>
 
               {/* Legal Address */}
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">Юридический адрес регистрации</label>
+                <label className="text-[10px] font-normal text-[#6B6B6B] dark:text-[#6B6B6B]/90 uppercase tracking-wider">Юридический адрес регистрации</label>
                 <input
                   type="text"
                   value={requisites.address}
                   onChange={(e) => handleFieldChange('address', e.target.value)}
                   placeholder="Индекс, город, улица, дом..."
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-white/40 dark:bg-zinc-950/10 border border-zinc-200/60 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavDeep)] dark:focus:border-[var(--lavenderAccent)] focus:ring-1 focus:ring-[var(--lavDeep)]/20 text-xs font-medium transition-all"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white/40 dark:bg-zinc-950/10 border border-zinc-200/60 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavDeep)] dark:focus:border-[var(--lavenderAccent)] focus:ring-1 focus:ring-[var(--lavDeep)]/20 text-[14px] font-medium transition-all"
                 />
               </div>
 
               {/* Banking details block */}
               <div className="p-4 bg-zinc-50/50 dark:bg-zinc-950/10 rounded-2xl border border-zinc-100 dark:border-zinc-800/40 space-y-3">
-                <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">Банковские реквизиты</span>
+                <span className="text-[10px] font-normal text-[#6B6B6B] dark:text-[#6B6B6B]/90 uppercase tracking-wider block">Банковские реквизиты</span>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div className="space-y-1">
                     <label className="text-xs text-zinc-400">Расчётный счёт</label>
@@ -294,8 +294,8 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
             {/* Dynamic Taxation Section inside the same panel */}
             <div className="pt-6 border-t border-zinc-100 dark:border-zinc-800/50 space-y-4">
               <div className="space-y-1">
-                <h4 className="font-medium text-sm text-zinc-900 dark:text-zinc-50 tracking-tight flex items-center gap-2">
-                  <Coins className="w-4 h-4 text-[var(--sage)]" />
+                <h4 className="font-medium text-base text-zinc-900 dark:text-zinc-50 tracking-tight flex items-center gap-2">
+                  <Coins className="w-4.5 h-4.5 text-[var(--sage)]" />
                   <span>Налоговый режим</span>
                 </h4>
                 <p className="text-xs text-zinc-400 leading-normal">
@@ -306,11 +306,11 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* VAT */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">Налог на добавленную стоимость (НДС)</label>
+                  <label className="text-[10px] font-normal text-[#6B6B6B] dark:text-[#6B6B6B]/90 uppercase tracking-wider">Налог на добавленную стоимость (НДС)</label>
                   <select
                     value={requisites.vat}
                     onChange={(e) => handleFieldChange('vat', e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-white/40 dark:bg-zinc-950/10 border border-zinc-200/60 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none text-xs font-medium cursor-pointer [&>option]:bg-zinc-900 [&>option]:text-white"
+                    className="w-full px-3 py-2.5 rounded-xl bg-white/40 dark:bg-zinc-950/10 border border-zinc-200/60 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none text-[14px] font-medium cursor-pointer [&>option]:bg-zinc-900 [&>option]:text-white"
                   >
                     <option value="Без НДС">Без НДС</option>
                     <option value="5%">5%</option>
@@ -325,11 +325,11 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
 
                 {/* USN */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">Упрощенная система (УСН)</label>
+                  <label className="text-[10px] font-normal text-[#6B6B6B] dark:text-[#6B6B6B]/90 uppercase tracking-wider">Упрощенная система (УСН)</label>
                   <select
                     value={requisites.usn}
                     onChange={(e) => handleFieldChange('usn', e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-white/40 dark:bg-zinc-950/10 border border-zinc-200/60 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none text-xs font-medium cursor-pointer [&>option]:bg-zinc-900 [&>option]:text-white"
+                    className="w-full px-3 py-2.5 rounded-xl bg-white/40 dark:bg-zinc-950/10 border border-zinc-200/60 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none text-[14px] font-medium cursor-pointer [&>option]:bg-zinc-900 [&>option]:text-white"
                   >
                     <option value="Нет">Нет</option>
                     <option value="6% (Доходы)">6% (Доходы)</option>
@@ -361,14 +361,14 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                   <FileText className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">Шаблон Договора</h4>
+                  <h4 className="font-medium text-base text-zinc-900 dark:text-zinc-100">Шаблон Договора</h4>
                   <p className="text-xs text-zinc-400">Формат шаблона .docx для автозаполнения</p>
                 </div>
               </div>
-              <div className="flex bg-zinc-100/80 dark:bg-zinc-950/40 p-0.5 rounded-lg border border-zinc-200/40 dark:border-zinc-800/40 shrink-0">
+              <div className="flex bg-zinc-100/80 dark:bg-zinc-950/40 p-0.5 rounded-full border border-zinc-200/40 dark:border-zinc-800/40 shrink-0">
                 <button
                   onClick={() => setContractType('standard')}
-                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${
+                  className={`px-3 py-1 text-xs font-medium rounded-full transition-all cursor-pointer ${
                     contractType === 'standard'
                       ? 'bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-xs'
                       : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
@@ -378,7 +378,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                 </button>
                 <button
                   onClick={() => setContractType('custom')}
-                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${
+                  className={`px-3 py-1 text-xs font-medium rounded-full transition-all cursor-pointer ${
                     contractType === 'custom'
                       ? 'bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-xs'
                       : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
@@ -433,14 +433,14 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                   <FileSpreadsheet className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">Шаблон Акта выполненных работ</h4>
+                  <h4 className="font-medium text-base text-zinc-900 dark:text-zinc-100">Шаблон Акта выполненных работ</h4>
                   <p className="text-xs text-zinc-400">Формат шаблона .docx для автозаполнения</p>
                 </div>
               </div>
-              <div className="flex bg-zinc-100/80 dark:bg-zinc-950/40 p-0.5 rounded-lg border border-zinc-200/40 dark:border-zinc-800/40 shrink-0">
+              <div className="flex bg-zinc-100/80 dark:bg-zinc-950/40 p-0.5 rounded-full border border-zinc-200/40 dark:border-zinc-800/40 shrink-0">
                 <button
                   onClick={() => setActType('standard')}
-                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${
+                  className={`px-3 py-1 text-xs font-medium rounded-full transition-all cursor-pointer ${
                     actType === 'standard'
                       ? 'bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-xs'
                       : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
@@ -450,7 +450,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                 </button>
                 <button
                   onClick={() => setActType('custom')}
-                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${
+                  className={`px-3 py-1 text-xs font-medium rounded-full transition-all cursor-pointer ${
                     actType === 'custom'
                       ? 'bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-xs'
                       : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
@@ -500,7 +500,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
           {/* Card 3: Auto-completion Card (Now placed below the Act card in Right Column, with super compact spacing) */}
           <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[24px] p-4.5 border border-zinc-200/50 dark:border-zinc-800/40 space-y-3.5 shadow-xs w-full">
             <div className="space-y-1">
-              <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider block">Переменная автозаполнения</span>
+              <span className="text-base font-medium text-zinc-900 dark:text-zinc-100 block">Переменная автозаполнения</span>
               <p className="text-xs text-zinc-400 leading-normal">
                 Вставьте эту метку в ваш шаблон для автоматической подстановки данных.
               </p>

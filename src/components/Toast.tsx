@@ -35,7 +35,7 @@ export default function Toast({ toast, onClose }: ToastProps) {
         </div>
         <button
           onClick={onClose}
-          className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
+          className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors p-1 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800"
         >
           <X className="w-4 h-4" />
         </button>

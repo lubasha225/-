@@ -351,7 +351,7 @@ export default function WarehouseTab({
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
                   style={customStyle}
-                  className={`px-4 py-2 rounded-xl text-xs font-light tracking-wide border transition-all duration-300 cursor-pointer flex items-center gap-2 ${
+                  className={`px-4 py-2 rounded-full text-xs font-light tracking-wide border transition-all duration-300 cursor-pointer flex items-center gap-2 ${
                     isActive
                       ? 'bg-[var(--lavDeep)] text-white border-[var(--lavDeep)] shadow-sm'
                       : 'bg-white/30 dark:bg-zinc-900/20 border-zinc-200/50 dark:border-zinc-800/50 hover:text-[var(--ink)] hover:border-[var(--lavenderAccent)]'
@@ -387,10 +387,10 @@ export default function WarehouseTab({
           </div>
 
           {/* View Mode Switcher */}
-          <div className="flex items-center gap-1 bg-zinc-100/80 dark:bg-zinc-800/60 p-1 rounded-xl border border-zinc-200/30 dark:border-zinc-800/30 shrink-0">
+          <div className="flex items-center gap-1 bg-zinc-100/80 dark:bg-zinc-800/60 p-1 rounded-full border border-zinc-200/30 dark:border-zinc-800/30 shrink-0">
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+              className={`p-1.5 rounded-full transition-all cursor-pointer ${
                 viewMode === 'grid'
                   ? 'bg-white dark:bg-zinc-900 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] shadow-sm'
                   : 'text-[var(--soft)] hover:text-[var(--ink)]'
@@ -401,7 +401,7 @@ export default function WarehouseTab({
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+              className={`p-1.5 rounded-full transition-all cursor-pointer ${
                 viewMode === 'list'
                   ? 'bg-white dark:bg-zinc-900 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] shadow-sm'
                   : 'text-[var(--soft)] hover:text-[var(--ink)]'
@@ -491,8 +491,8 @@ export default function WarehouseTab({
                             setOriginalImgBeforeBgRemoval('');
                             setHasRemovedBg(false);
                           }}
-                          className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 text-white hover:bg-black/80 transition-colors cursor-pointer"
-                          title="Удалить фото"
+                          className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors cursor-pointer"
+                          title="Удалить photo"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
@@ -526,7 +526,7 @@ export default function WarehouseTab({
                       <button
                         type="button"
                         onClick={handleBgRemoval}
-                        className="w-full bg-gradient-to-r from-violet-600 to-[var(--lavDeep)] hover:from-violet-700 hover:to-[var(--ink)] text-white text-xs font-medium py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg hover:scale-[1.01] active:scale-95 cursor-pointer"
+                        className="w-full bg-gradient-to-r from-[var(--lavenderAccent)] to-[var(--lavDeep)] hover:opacity-90 text-white text-xs font-medium py-2.5 px-4 rounded-full flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg hover:scale-[1.01] active:scale-95 cursor-pointer"
                       >
                         <Sparkles className="w-4 h-4" />
                         Удалить фон с помощью ИИ
@@ -551,7 +551,7 @@ export default function WarehouseTab({
                         <button
                           type="button"
                           onClick={handleRestoreOriginal}
-                          className="w-full bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-xs py-2 px-4 rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                          className="w-full bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-xs py-2 px-4 rounded-full flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                         >
                           <RotateCcw className="w-3.5 h-3.5" />
                           Восстановить оригинал
@@ -656,13 +656,13 @@ export default function WarehouseTab({
                       setHasRemovedBg(false);
                       setIsAdding(false);
                     }}
-                    className="bg-white/50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 text-[var(--soft)] rounded-xl py-2.5 px-5 text-xs font-medium border border-zinc-200/40 dark:border-zinc-800/40 cursor-pointer transition-colors"
+                    className="bg-white/50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 text-[var(--soft)] rounded-full py-2.5 px-5 text-xs font-medium border border-zinc-200/40 dark:border-zinc-800/40 cursor-pointer transition-colors"
                   >
                     Отмена
                   </button>
                   <button
                     type="submit"
-                    className="bg-[var(--lavDeep)] hover:bg-[var(--ink)] text-white rounded-xl py-2.5 px-6 text-xs font-medium flex items-center gap-2 shadow-sm cursor-pointer transition-colors"
+                    className="bg-[var(--lavDeep)] hover:opacity-90 text-white rounded-full py-2.5 px-6 text-xs font-medium flex items-center gap-2 shadow-sm cursor-pointer transition-colors"
                   >
                     <Check className="w-4 h-4" />
                     Добавить позицию
@@ -725,7 +725,7 @@ export default function WarehouseTab({
                         <button
                           type="button"
                           onClick={() => handleSaveQty(item.id)}
-                          className="p-1 text-emerald-400 hover:text-emerald-500 rounded cursor-pointer transition-colors"
+                          className="p-1 text-emerald-400 hover:text-emerald-500 rounded-full cursor-pointer transition-colors"
                         >
                           <Check className="w-4 h-4" />
                         </button>
@@ -781,7 +781,7 @@ export default function WarehouseTab({
                             <button
                               type="button"
                               onClick={() => handleSavePrice(item.id)}
-                              className="p-1 text-emerald-500 hover:text-emerald-600 rounded bg-emerald-500/10 hover:bg-emerald-500/20 shrink-0 cursor-pointer"
+                              className="p-1 text-emerald-500 hover:text-emerald-600 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 shrink-0 cursor-pointer"
                             >
                               <Check className="w-3.5 h-3.5" />
                             </button>
@@ -811,7 +811,7 @@ export default function WarehouseTab({
                           e.stopPropagation();
                           handleDeleteItem(item.id, item.name);
                         }}
-                        className="p-1.5 text-rose-400 dark:text-rose-500/80 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg border border-transparent hover:border-rose-100 dark:hover:border-rose-900/30 transition-all cursor-pointer"
+                        className="p-1.5 text-rose-400 dark:text-rose-500/80 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-full border border-transparent hover:border-rose-100 dark:hover:border-rose-900/30 transition-all cursor-pointer"
                         title="Удалить позицию"
                       >
                         <Trash2 className="w-5 h-5" />
@@ -873,7 +873,7 @@ export default function WarehouseTab({
                             <button
                               type="button"
                               onClick={() => handleSaveQty(item.id)}
-                              className="p-1 text-emerald-500 hover:text-emerald-600 rounded bg-emerald-500/10 shrink-0 cursor-pointer"
+                              className="p-1 text-emerald-500 hover:text-emerald-600 rounded-full bg-emerald-500/10 shrink-0 cursor-pointer"
                             >
                               <Check className="w-3.5 h-3.5" />
                             </button>
@@ -918,7 +918,7 @@ export default function WarehouseTab({
                             <button
                               type="button"
                               onClick={() => handleSavePrice(item.id)}
-                              className="p-1 text-emerald-500 hover:text-emerald-600 rounded bg-emerald-500/10 hover:bg-emerald-500/20 shrink-0 cursor-pointer"
+                              className="p-1 text-emerald-500 hover:text-emerald-600 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 shrink-0 cursor-pointer"
                             >
                               <Check className="w-3.5 h-3.5" />
                             </button>
@@ -948,7 +948,7 @@ export default function WarehouseTab({
                           e.stopPropagation();
                           handleDeleteItem(item.id, item.name);
                         }}
-                        className="p-1.5 text-rose-400 dark:text-rose-500/80 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-all cursor-pointer"
+                        className="p-1.5 text-rose-400 dark:text-rose-500/80 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-full transition-all cursor-pointer"
                         title="Удалить позицию"
                       >
                         <Trash2 className="w-4.5 h-4.5" />
@@ -973,7 +973,7 @@ export default function WarehouseTab({
               <button
                 type="button"
                 onClick={() => setDeletingItem(null)}
-                className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 transition-colors cursor-pointer"
+                className="p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -990,14 +990,14 @@ export default function WarehouseTab({
               <button
                 type="button"
                 onClick={() => setDeletingItem(null)}
-                className="px-4 py-2.5 text-xs font-medium text-zinc-500 hover:text-zinc-700 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-800/50 dark:hover:bg-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 rounded-xl transition-colors cursor-pointer"
+                className="px-4 py-2.5 text-xs font-medium text-zinc-500 hover:text-zinc-700 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-800/50 dark:hover:bg-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 rounded-full transition-colors cursor-pointer"
               >
                 Отмена
               </button>
               <button
                 type="button"
                 onClick={confirmDeleteItem}
-                className="px-5 py-2.5 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-sm transition-colors cursor-pointer"
+                className="px-5 py-2.5 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-full shadow-sm transition-colors cursor-pointer"
               >
                 Удалить позицию
               </button>
