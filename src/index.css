@@ -1,74 +1,94 @@
-@import url('https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Jost", "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-sans: "Jost", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Jost", ui-sans-serif, system-ui, sans-serif;
 }
 
 :root {
-  --ink: #2C2738;
-  --soft: #5F586E;
-  --faint: #A8A2B5;
-  --lavenderAccent: #C08EF4;
+  --ink: #1C1824;
+  --soft: #423C4F;
+  --faint: #6A6375;
+  --lavenderAccent: #A855F7;
   --lavenderSoft: #F6EEFF;
-  --lavDeep: #7A5C9E;
-  --warn: #C39197;
-  --warnSoft: #FDF7F8;
-  --sage: #6E8276;
-  --sageSoft: #F2F5F3;
+  --lavDeep: #6B21A8;
+  --warn: #B45309;
+  --warnSoft: #FEF3C7;
+  --sage: #15803D;
+  --sageSoft: #F0FDF4;
 
   /* Metrics */
-  --metricGreenBg: #F2F6F3;
-  --metricGreenText: #4C6053;
+  --metricGreenBg: #DCFCE7;
+  --metricGreenText: #14532D;
 
   --bg1: #FAF9FC;
   --bg2: #EDEAF2;
   --bg3: #F5F3F8;
-  --glass: rgba(255, 255, 255, 0.45);
-  --glass-strong: rgba(255, 255, 255, 0.72);
-  --glass-edge: rgba(255, 255, 255, 0.85);
-  --line: rgba(255, 255, 255, 0.6);
+  --glass: rgba(255, 255, 255, 0.6);
+  --glass-strong: rgba(255, 255, 255, 0.85);
+  --glass-edge: rgba(255, 255, 255, 0.9);
+  --line: rgba(44, 39, 56, 0.08);
   --shadow: 0 20px 50px -25px rgba(44, 39, 56, 0.12);
   --shadow-sm: 0 8px 22px -14px rgba(44, 39, 56, 0.08);
 
-  --sidebar-bg: rgba(255, 255, 255, 0.25);
-  --sidebar-border: rgba(44, 39, 56, 0.08);
+  --sidebar-bg: rgba(255, 255, 255, 0.4);
+  --sidebar-border: rgba(44, 39, 56, 0.06);
 }
 
 /* Soft and comfortable graphite dark theme */
 .dark {
-  --ink: #E4E4E7;
-  --soft: #A1A1AA;
-  --faint: #71717A;
-  --lavenderAccent: #A78BFA;
+  --ink: #FAFAFA;
+  --soft: #E4E4E7;
+  --faint: #A1A1AA;
+  --lavenderAccent: #C08EF4;
   --lavenderSoft: #2E2541;
-  --lavDeep: #8B5CF6;
-  --warn: #E0A6AD;
-  --warnSoft: #2E1E22;
-  --sage: #8CA395;
-  --sageSoft: #1B2420;
+  --lavDeep: #A78BFA;
+  --warn: #FCA5A5;
+  --warnSoft: #451A03;
+  --sage: #86EFAC;
+  --sageSoft: #14532D;
 
-  --metricGreenBg: #1B2420;
-  --metricGreenText: #A3C2AE;
+  --metricGreenBg: #14532D;
+  --metricGreenText: #86EFAC;
 
-  --bg1: #131316;
-  --bg2: #1C1C21;
-  --bg3: #18181B;
-  --glass: rgba(28, 28, 33, 0.65);
-  --glass-strong: rgba(38, 38, 44, 0.85);
-  --glass-edge: rgba(255, 255, 255, 0.06);
-  --line: rgba(255, 255, 255, 0.04);
+  --bg1: #09090B;
+  --bg2: #18181B;
+  --bg3: #121214;
+  --glass: rgba(24, 24, 27, 0.7);
+  --glass-strong: rgba(30, 30, 36, 0.9);
+  --glass-edge: rgba(255, 255, 255, 0.08);
+  --line: rgba(255, 255, 255, 0.06);
   --shadow: 0 20px 50px -25px rgba(0, 0, 0, 0.6);
   --shadow-sm: 0 8px 22px -14px rgba(0, 0, 0, 0.4);
 
-  --sidebar-bg: rgba(19, 19, 22, 0.5);
-  --sidebar-border: rgba(255, 255, 255, 0.05);
+  --sidebar-bg: rgba(9, 9, 11, 0.6);
+  --sidebar-border: rgba(255, 255, 255, 0.06);
 }
 
 html, body {
   min-height: 100vh;
-  font-family: "Jost", "Inter", sans-serif;
+  font-family: "Jost", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Global Bold Overrides: Avoid bold weights (700+) to preserve fine-tuned, sleek architecture */
+b, strong, h1, h2, h3, h4, h5, h6, th {
+  font-weight: 500 !important;
+}
+
+/* Map Tailwind classes */
+.font-bold {
+  font-weight: 500 !important;
+}
+
+.font-extrabold {
+  font-weight: 600 !important;
+}
+
+.font-semibold {
+  font-weight: 500 !important;
 }
 
 body {

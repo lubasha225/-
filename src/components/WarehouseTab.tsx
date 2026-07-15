@@ -359,7 +359,7 @@ export default function WarehouseTab({
                 >
                   <span>{cat === 'all' ? 'Общее количество' : cat}</span>
                   <span
-                    className={`inline-flex items-center justify-center rounded-full text-[10px] font-semibold min-w-[20px] h-5 px-1.5 transition-all duration-300 ${
+                    className={`inline-flex items-center justify-center rounded-full text-xs font-medium min-w-[20px] h-5 px-1.5 transition-all duration-300 ${
                       isActive
                         ? 'bg-white text-[var(--lavDeep)]'
                         : 'bg-[#43384A]/10 text-[#43384A]'
@@ -432,7 +432,7 @@ export default function WarehouseTab({
           <div className="bg-white dark:bg-zinc-900 rounded-[32px] max-w-4xl w-full p-6 md:p-8 shadow-2xl border border-zinc-200/50 dark:border-zinc-800/50 relative animate-fadeIn max-h-[90vh] overflow-y-auto">
             {/* Header */}
             <div className="flex items-center justify-between pb-4 mb-6 border-b border-zinc-100 dark:border-zinc-800/60">
-              <h3 className="text-lg font-bold text-[var(--ink)] tracking-tight">Добавить новый товар</h3>
+              <h3 className="text-lg font-semibold text-[var(--ink)] tracking-tight">Добавить новый товар</h3>
               <button
                 type="button"
                 onClick={() => {
@@ -452,7 +452,7 @@ export default function WarehouseTab({
             <form onSubmit={handleAddNewItem} className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 text-left animate-fadeIn">
               {/* Left Column: Image Area */}
               <div className="md:col-span-5 flex flex-col gap-4">
-                <span className="text-[10px] font-semibold text-[var(--soft)] uppercase tracking-wider block">
+                <span className="text-xs font-medium text-[var(--soft)] uppercase tracking-wider block">
                   Изображение товара
                 </span>
                 
@@ -505,7 +505,7 @@ export default function WarehouseTab({
                       </div>
                       <div className="space-y-1">
                         <p className="text-xs font-medium text-[var(--ink)]">Загрузить фото</p>
-                        <p className="text-[10px] text-[var(--soft)] max-w-[150px] leading-relaxed mx-auto">
+                        <p className="text-xs text-[var(--soft)] max-w-[150px] leading-relaxed mx-auto">
                           Перетащите или нажмите для выбора
                         </p>
                       </div>
@@ -534,11 +534,11 @@ export default function WarehouseTab({
                     ) : (
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-semibold text-zinc-500 flex items-center gap-1.5">
+                          <span className="text-xs font-medium text-zinc-500 flex items-center gap-1.5">
                             <Sliders className="w-3.5 h-3.5" />
                             Точность удаления (допуск)
                           </span>
-                          <span className="text-xs font-bold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">{bgRemovalTolerance}</span>
+                          <span className="text-xs font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">{bgRemovalTolerance}</span>
                         </div>
                         <input
                           type="range"
@@ -563,7 +563,7 @@ export default function WarehouseTab({
 
                 {/* Optional URL pasting input */}
                 <div className="space-y-1">
-                  <span className="text-[9px] font-normal text-[var(--soft)] uppercase tracking-wider block">
+                  <span className="text-xs font-normal text-[var(--soft)] uppercase tracking-wider block">
                     Или вставьте ссылку на изображение
                   </span>
                   <input
@@ -575,7 +575,7 @@ export default function WarehouseTab({
                       setOriginalImgBeforeBgRemoval('');
                       setHasRemovedBg(false);
                     }}
-                    className="w-full text-[11px] px-3 py-1.5 rounded-xl bg-white/80 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 text-[var(--ink)] placeholder:text-zinc-400 focus:outline-none focus:border-[var(--lavenderAccent)] transition-all"
+                    className="w-full text-xs px-3 py-1.5 rounded-xl bg-white/80 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 text-[var(--ink)] placeholder:text-zinc-400 focus:outline-none focus:border-[var(--lavenderAccent)] transition-all"
                   />
                 </div>
               </div>
@@ -584,7 +584,7 @@ export default function WarehouseTab({
               <div className="md:col-span-7 flex flex-col justify-between gap-5">
                 <div className="grid grid-cols-1 sm:grid-cols-6 gap-4">
                   <div className="sm:col-span-6 space-y-1.5">
-                    <label className="text-[10px] font-semibold text-[var(--soft)] uppercase tracking-wider block">Наименование инвентаря</label>
+                    <label className="text-xs font-semibold text-[var(--soft)] uppercase tracking-wider block">Наименование инвентаря</label>
                     <input
                       type="text"
                       required
@@ -596,7 +596,7 @@ export default function WarehouseTab({
                   </div>
 
                   <div className="sm:col-span-6 space-y-1.5">
-                    <label className="text-[10px] font-semibold text-[var(--soft)] uppercase tracking-wider block">Краткое описание</label>
+                    <label className="text-xs font-semibold text-[var(--soft)] uppercase tracking-wider block">Краткое описание</label>
                     <textarea
                       placeholder="например, Классический декор, золото"
                       value={newItemDescription}
@@ -607,7 +607,7 @@ export default function WarehouseTab({
                   </div>
 
                   <div className="sm:col-span-2 space-y-1.5">
-                    <label className="text-[10px] font-semibold text-[var(--soft)] uppercase tracking-wider block">Категория</label>
+                    <label className="text-xs font-semibold text-[var(--soft)] uppercase tracking-wider block">Категория</label>
                     <select
                       value={newItemCat}
                       onChange={(e) => setNewItemCat(e.target.value)}
@@ -622,7 +622,7 @@ export default function WarehouseTab({
                   </div>
 
                   <div className="sm:col-span-2 space-y-1.5">
-                    <label className="text-[10px] font-semibold text-[var(--soft)] uppercase tracking-wider block">Количество всего</label>
+                    <label className="text-xs font-semibold text-[var(--soft)] uppercase tracking-wider block">Количество всего</label>
                     <input
                       type="number"
                       min="1"
@@ -633,7 +633,7 @@ export default function WarehouseTab({
                   </div>
 
                   <div className="sm:col-span-2 space-y-1.5">
-                    <label className="text-[10px] font-semibold text-[var(--soft)] uppercase tracking-wider block">Стоимость ₽</label>
+                    <label className="text-xs font-semibold text-[var(--soft)] uppercase tracking-wider block">Стоимость ₽</label>
                     <input
                       type="number"
                       min="0"
@@ -662,7 +662,7 @@ export default function WarehouseTab({
                   </button>
                   <button
                     type="submit"
-                    className="bg-[var(--lavDeep)] hover:bg-[var(--ink)] text-white rounded-xl py-2.5 px-6 text-xs font-semibold flex items-center gap-2 shadow-sm cursor-pointer transition-colors"
+                    className="bg-[var(--lavDeep)] hover:bg-[var(--ink)] text-white rounded-xl py-2.5 px-6 text-xs font-medium flex items-center gap-2 shadow-sm cursor-pointer transition-colors"
                   >
                     <Check className="w-4 h-4" />
                     Добавить позицию
@@ -701,19 +701,19 @@ export default function WarehouseTab({
                     <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent" />
                     
                     {/* Floating Category Badge (matching brown/dark capsule in top-right) */}
-                    <span className="absolute top-3 right-3 text-[9px] font-normal tracking-wider text-white bg-[#5D544F]/90 dark:bg-stone-800/90 backdrop-blur-md px-2.5 py-1 rounded-[6px] uppercase select-none">
+                    <span className="absolute top-3 right-3 text-xs font-medium tracking-wider text-white bg-[#5D544F]/90 dark:bg-stone-800/90 backdrop-blur-md px-2.5 py-1 rounded-[6px] uppercase select-none">
                       {item.category}
                     </span>
 
                     {/* Floating Quantity Capsule on Bottom Right (matching screenshot style with dot and edit) */}
                     {editingQtyId === item.id ? (
-                      <div 
+                       <div 
                         className="absolute bottom-3 right-3 flex items-center gap-1 bg-black/90 backdrop-blur-md px-2 py-1 rounded-lg shadow-lg border border-white/10"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <input
                           type="number"
-                          className="w-14 px-1.5 py-0.5 text-xs bg-white text-black rounded font-bold focus:outline-none"
+                          className="w-14 px-1.5 py-0.5 text-xs bg-white text-black rounded font-medium focus:outline-none"
                           value={tempQty}
                           onChange={(e) => setTempQty(e.target.value)}
                           onKeyDown={(e) => {
@@ -741,7 +741,7 @@ export default function WarehouseTab({
                         title="Изменить общее количество (нажмите для редактирования)"
                       >
                         <span className="w-2.5 h-2.5 rounded-full bg-[#52D18D] shadow-[0_0_8px_#52D18D]" />
-                        <span className="text-[13px] font-normal tracking-wide">
+                        <span className="text-xs font-medium tracking-wide">
                           {item.available} шт.
                         </span>
                         <Pencil className="w-3 h-3 text-zinc-200 hover:text-white shrink-0 ml-0.5" />
@@ -756,7 +756,7 @@ export default function WarehouseTab({
                       <h4 className="font-medium text-[14px] sm:text-[15px] text-[var(--ink)] leading-snug tracking-tight line-clamp-2 hover:text-[var(--lavDeep)] transition-colors duration-300">
                         {item.name}
                       </h4>
-                      <p className="text-[11px] sm:text-[11.5px] text-zinc-500 dark:text-zinc-400 font-light leading-snug line-clamp-2">
+                      <p className="text-xs sm:text-xs text-zinc-500 dark:text-zinc-400 font-light leading-snug line-clamp-2">
                         {item.description || 'Классический элемент оформления для создания великолепных свадебных концепций.'}
                       </p>
                     </div>
@@ -769,7 +769,7 @@ export default function WarehouseTab({
                           <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                             <input
                               type="number"
-                              className="w-20 px-2 py-0.5 text-xs bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-left font-bold focus:outline-none text-[var(--ink)] focus:border-[var(--lavenderAccent)]"
+                              className="w-20 px-2 py-0.5 text-xs bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-left font-medium focus:outline-none text-[var(--ink)] focus:border-[var(--lavenderAccent)]"
                               value={tempPrice}
                               onChange={(e) => setTempPrice(e.target.value)}
                               onKeyDown={(e) => {
@@ -796,7 +796,7 @@ export default function WarehouseTab({
                             }}
                             title="Изменить стоимость"
                           >
-                            <span className="text-[17px] sm:text-[18px] font-extrabold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] tracking-tight">
+                            <span className="text-base sm:text-lg font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] tracking-tight">
                               {item.pricePerDay.toLocaleString('ru')} ₽
                             </span>
                             <Pencil className="w-3 h-3 text-zinc-400 dark:text-zinc-500 group-hover/price:text-[var(--lavDeep)] dark:group-hover/price:text-[var(--lavenderAccent)] transition-colors shrink-0" />
@@ -845,7 +845,7 @@ export default function WarehouseTab({
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-103"
                       referrerPolicy="no-referrer" 
                     />
-                    <span className="absolute top-1 left-1 text-[8px] font-normal tracking-wider text-white bg-black/60 px-1.5 py-0.5 rounded uppercase select-none">
+                    <span className="absolute top-1 left-1 text-xs font-medium tracking-wider text-white bg-black/60 px-1.5 py-0.5 rounded uppercase select-none">
                       {item.category}
                     </span>
                   </div>
@@ -861,7 +861,7 @@ export default function WarehouseTab({
                           <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                             <input
                               type="number"
-                              className="w-14 px-1.5 py-0.5 text-xs bg-white text-black border border-zinc-300 rounded font-bold focus:outline-none"
+                              className="w-14 px-1.5 py-0.5 text-xs bg-white text-black border border-zinc-300 rounded font-medium focus:outline-none"
                               value={tempQty}
                               onChange={(e) => setTempQty(e.target.value)}
                               onKeyDown={(e) => {
@@ -888,14 +888,14 @@ export default function WarehouseTab({
                             className="flex items-center gap-1.5 cursor-pointer hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] transition-colors select-none"
                             title="Изменить общее количество (нажмите для редактирования)"
                           >
-                            <span>Количество: <span className="font-normal text-zinc-900 dark:text-zinc-100 text-[13px] sm:text-[14px]">{item.total}</span> шт.</span>
+                            <span>Количество: <span className="font-medium text-zinc-900 dark:text-zinc-100 text-xs sm:text-sm">{item.total}</span> шт.</span>
                             <Pencil className="w-3 h-3 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 shrink-0" />
                           </div>
                         )}
                       </div>
                     </div>
                     
-                    <p className="text-[11.5px] sm:text-xs text-zinc-500 dark:text-zinc-400 font-light leading-relaxed line-clamp-1 mt-1">
+                    <p className="text-xs sm:text-xs text-zinc-500 dark:text-zinc-400 font-light leading-relaxed line-clamp-1 mt-1">
                       {item.description || 'Классический элемент оформления для создания великолепных свадебных концепций.'}
                     </p>
 
@@ -906,7 +906,7 @@ export default function WarehouseTab({
                           <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                             <input
                               type="number"
-                              className="w-20 px-2 py-0.5 text-xs bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-left font-bold focus:outline-none text-[var(--ink)] focus:border-[var(--lavenderAccent)]"
+                              className="w-20 px-2 py-0.5 text-xs bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-left font-medium focus:outline-none text-[var(--ink)] focus:border-[var(--lavenderAccent)]"
                               value={tempPrice}
                               onChange={(e) => setTempPrice(e.target.value)}
                               onKeyDown={(e) => {
@@ -933,7 +933,7 @@ export default function WarehouseTab({
                             }}
                             title="Изменить стоимость"
                           >
-                            <span className="text-[15px] sm:text-[16px] font-extrabold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] tracking-tight">
+                            <span className="text-sm sm:text-base font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] tracking-tight">
                               {item.pricePerDay.toLocaleString('ru')} ₽
                             </span>
                             <Pencil className="w-3 h-3 text-zinc-400 dark:text-zinc-500 group-hover/price:text-[var(--lavDeep)] dark:group-hover/price:text-[var(--lavenderAccent)] transition-colors shrink-0" />

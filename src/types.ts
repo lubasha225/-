@@ -66,7 +66,7 @@ export interface DocumentItem {
 export interface ImageItem {
   id: string;
   title: string;
-  category: 'arches' | 'tables' | 'bouquets' | 'render';
+  category: string;
   url: string;
   bgRemoved?: boolean;
 }

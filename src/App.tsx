@@ -86,6 +86,7 @@ export default function App() {
   const [isRightSidebarExpanded, setIsRightSidebarExpanded] = useState(true);
   const [selectedCalendarDay, setSelectedCalendarDay] = useState<number>(18);
   const [moodboardHeaderActions, setMoodboardHeaderActions] = useState<ReactNode | null>(null);
+  const [imagesHeaderActions, setImagesHeaderActions] = useState<ReactNode | null>(null);
 
   // Modals & overlay states
   const [isNewProjOpen, setIsNewProjOpen] = useState(false);
@@ -422,7 +423,7 @@ export default function App() {
               </div>
               <div className="min-w-0">
                 <span className="font-semibold text-[#1B0E20] dark:text-zinc-100 text-[15px] tracking-tight leading-tight block">Флёр Деко</span>
-                <span className="text-[10px] text-[var(--faint)] leading-none mt-0.5 block">премиум</span>
+                <span className="text-xs text-[var(--faint)] leading-none mt-0.5 block">премиум</span>
               </div>
             </div>
             <button
@@ -491,24 +492,24 @@ export default function App() {
               className="flex items-center justify-between cursor-pointer"
             >
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-full bg-[var(--lavenderSoft)] text-[var(--lavDeep)] flex items-center justify-center font-semibold text-[12px] shrink-0">ДС</div>
+                <div className="w-9 h-9 rounded-full bg-[var(--lavenderSoft)] text-[var(--lavDeep)] flex items-center justify-center font-medium text-xs shrink-0">ДС</div>
                 <div className="min-w-0">
-                  <p className="font-medium text-[var(--ink)] text-[12.5px] truncate">Денис С.</p>
-                  <p className="text-[10.5px] text-[var(--faint)] truncate">denis@example.com</p>
+                  <p className="font-medium text-[var(--ink)] text-sm truncate">Денис С.</p>
+                  <p className="text-xs text-[var(--faint)] truncate">denis@example.com</p>
                 </div>
               </div>
               <ChevronDown className={`w-3.5 h-3.5 text-[var(--faint)] transition-transform duration-300 ${isProfileExpanded ? 'rotate-180' : ''}`} />
             </div>
 
             {/* Always Visible Tariff Block */}
-            <div className="flex items-center justify-between text-[11.5px] border-t border-[var(--glass-edge)] pt-2.5 mt-2.5" style={{ borderTopColor: 'var(--line)' }}>
+            <div className="flex items-center justify-between text-xs border-t border-[var(--glass-edge)] pt-2.5 mt-2.5" style={{ borderTopColor: 'var(--line)' }}>
               <div className="flex items-center gap-1.5">
                 <span className="text-[var(--soft)]">Тариф</span>
-                <span className="text-[9.5px] font-bold bg-[var(--lavDeep)] text-white px-2 py-0.5 rounded-full tracking-wide">PRO</span>
+                <span className="text-xs font-semibold bg-[var(--lavDeep)] text-white px-2 py-0.5 rounded-full tracking-wide">PRO</span>
               </div>
               <button
                 onClick={() => showToast('Смена плана', 'Раздел управления тарифом появится совсем скоро.', 'info')}
-                className="text-[11px] text-[var(--lavenderAccent)] hover:underline font-medium"
+                className="text-xs text-[var(--lavenderAccent)] hover:underline font-medium"
               >
                 сменить
               </button>
@@ -519,12 +520,12 @@ export default function App() {
               <div className="h-px bg-[var(--glass-edge)] mt-2.5" style={{ background: 'var(--line)' }} />
 
               <div className="flex items-center justify-between">
-                <span className="text-[11px] text-[var(--soft)]">Лимиты на месяц</span>
+                <span className="text-xs text-[var(--soft)]">Лимиты на месяц</span>
               </div>
 
               <div className="space-y-2.5">
                 <div>
-                  <div className="flex justify-between text-[10.5px] text-[var(--soft)] mb-1">
+                  <div className="flex justify-between text-xs text-[var(--soft)] mb-1">
                     <span>ИИ-визуализация</span>
                     <span className="font-medium text-[var(--ink)]">2 / 10</span>
                   </div>
@@ -533,7 +534,7 @@ export default function App() {
                   </div>
                 </div>
                 <div>
-                  <div className="flex justify-between text-[10.5px] text-[var(--soft)] mb-1">
+                  <div className="flex justify-between text-xs text-[var(--soft)] mb-1">
                     <span>Обрезка фона</span>
                     <span className="font-medium text-[var(--ink)]">12 / 20</span>
                   </div>
@@ -542,11 +543,11 @@ export default function App() {
                   </div>
                 </div>
               </div>
-              <div className="text-[10px] text-[var(--faint)] -mt-1.5">обновится 3 авг</div>
+              <div className="text-xs text-[var(--faint)] -mt-1.5">обновится 3 авг</div>
 
               <button
                 onClick={() => showToast('До встречи!', 'Вы вышли из личного кабинета.', 'info')}
-                className="w-full glass-interactive bg-white/30 hover:bg-white/50 rounded-xl py-2 text-[12.5px] font-medium text-[var(--ink)] flex items-center justify-center gap-2"
+                className="w-full glass-interactive bg-white/30 hover:bg-white/50 rounded-xl py-2 text-xs font-medium text-[var(--ink)] flex items-center justify-center gap-2"
               >
                 Выйти
               </button>
@@ -556,7 +557,7 @@ export default function App() {
           <button
             onClick={() => setIsLeftSidebarExpanded(true)}
             title="Денис С. (Тариф PRO)"
-            className="w-10 h-10 rounded-full bg-[var(--lavenderSoft)] text-[var(--lavDeep)] flex items-center justify-center font-semibold text-[12.5px] shrink-0 hover:scale-105 transition-transform cursor-pointer"
+            className="w-10 h-10 rounded-full bg-[var(--lavenderSoft)] text-[var(--lavDeep)] flex items-center justify-center font-semibold text-xs shrink-0 hover:scale-105 transition-transform cursor-pointer"
           >
             ДС
           </button>
@@ -603,7 +604,7 @@ export default function App() {
                   {activeTab === 'moodboard' && 'Конструктор 2D арок'}
                   {activeTab === 'warehouse' && 'Складской инвентарь'}
                   {activeTab === 'images' && 'Галерея'}
-                  {activeTab === 'documents' && 'Документы и сметы'}
+                  {activeTab === 'documents' && 'Мои документы'}
                   {activeTab === 'profile' && 'Профиль бренда'}
                 </h1>
                 
@@ -631,11 +632,11 @@ export default function App() {
                           className="absolute right-0 mt-2 w-80 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-[var(--glass-edge)] rounded-2xl shadow-2xl p-4 z-40 space-y-3"
                         >
                           <div className="flex justify-between items-center pb-2 border-b border-[var(--glass-edge)]">
-                            <span className="text-xs font-bold text-[var(--ink)]">События клиентов</span>
+                            <span className="text-xs font-semibold text-[var(--ink)]">События клиентов</span>
                             {unreadNotificationsCount > 0 && (
                               <button
                                 onClick={handleMarkAllNotificationsAsRead}
-                                className="text-[10px] text-[var(--lavenderAccent)] font-bold hover:underline"
+                                className="text-xs text-[var(--lavenderAccent)] font-medium hover:underline"
                               >
                                 Прочитать все
                               </button>
@@ -651,11 +652,11 @@ export default function App() {
                                   notif.read ? 'bg-zinc-50/55 dark:bg-zinc-950/20' : 'bg-[var(--lavenderSoft)] border-l-2 border-[var(--lavDeep)]'
                                 }`}
                               >
-                                <div className="flex justify-between font-semibold text-[var(--ink)]">
+                                <div className="flex justify-between font-medium text-[var(--ink)]">
                                   <span>{notif.title}</span>
-                                  <span className="text-[9.5px] text-[var(--faint)] font-normal">{notif.time}</span>
+                                  <span className="text-xs text-[var(--faint)] font-normal">{notif.time}</span>
                                 </div>
-                                <p className="text-[var(--soft)] text-[11px] mt-0.5 leading-snug">{notif.msg}</p>
+                                <p className="text-[var(--soft)] text-xs mt-0.5 leading-snug">{notif.msg}</p>
                               </div>
                             ))}
                           </div>
@@ -679,7 +680,7 @@ export default function App() {
                 {activeTab === 'moodboard' && 'Интерактивный конструктор свадебных арок и фотозон для быстрой визуализации клиенту.'}
                 {activeTab === 'warehouse' && 'Каталог вашего декора, флористики и оборудования. Учет остатков и задействованных в проектах позиций.'}
                 {activeTab === 'images' && 'Коллекция декоративных элементов, арок, флористики и рендеров для оформления проектов.'}
-                {activeTab === 'documents' && 'Автоматические PDF акты, договора и сметные ведомости по вашим заказам.'}
+                {activeTab === 'documents' && 'Реквизиты, на кого оформляется договор, шаблоны договора и акта. Только автоматическая генерация и печать, оплата не принимается в сервисе.'}
                 {activeTab === 'profile' && 'Настройки реквизитов и контактов студии для формирования коммерческих предложений.'}
               </p>
             </div>
@@ -707,6 +708,12 @@ export default function App() {
                 {moodboardHeaderActions}
               </div>
             )}
+
+            {activeTab === 'images' && imagesHeaderActions && (
+              <div className="shrink-0 flex items-center gap-2">
+                {imagesHeaderActions}
+              </div>
+            )}
           </div>
 
           {/* QUICK METRICS DASHBOARD ROW */}
@@ -717,38 +724,38 @@ export default function App() {
               <div className="glass-panel p-4 pb-5 rounded-2xl flex flex-col justify-between min-h-[140px] hover:shadow-md transition-all duration-300">
                 <div className="flex items-center gap-2 text-[var(--faint)] mb-2">
                   <Zap className="w-3.5 h-3.5 text-amber-500" />
-                  <span className="text-[10px] font-bold tracking-wider uppercase">В работе</span>
+                  <span className="text-xs font-semibold tracking-wider uppercase">В работе</span>
                 </div>
                 <div className="my-auto">
                   <span className="text-4xl font-semibold text-[var(--ink)] tracking-tight leading-none">{metrics.inProgress}</span>
                 </div>
-                <span className="text-[11px] text-[var(--soft)] mt-2">+1 новый на этой неделе</span>
+                <span className="text-xs text-[var(--soft)] mt-2">+1 новый на этой неделе</span>
               </div>
               
               {/* Metric 2: СУММА В РАБОТЕ */}
               <div className="glass-panel p-4 pb-5 rounded-2xl flex flex-col justify-between min-h-[140px] hover:shadow-md transition-all duration-300">
                 <div className="flex items-center gap-2 text-[var(--faint)] mb-2">
                   <FolderKanban className="w-3.5 h-3.5 text-indigo-400" />
-                  <span className="text-[10px] font-bold tracking-wider uppercase">Сумма в работе</span>
+                  <span className="text-xs font-semibold tracking-wider uppercase">Сумма в работе</span>
                 </div>
                 <div className="my-auto flex items-baseline gap-1">
                   <span className="text-4xl font-semibold text-[var(--ink)] tracking-tight leading-none">{(inProgressSum / 1000).toFixed(0)}</span>
                   <span className="text-sm font-medium text-[var(--soft)]">тыс. ₽</span>
                 </div>
-                <span className="text-[11px] text-[var(--soft)] mt-2">по {metrics.inProgress} активным сметам</span>
+                <span className="text-xs text-[var(--soft)] mt-2">по {metrics.inProgress} активным сметам</span>
               </div>
               
               {/* Metric 3: ВЫПОЛНЕНО */}
               <div className="glass-panel p-4 pb-5 rounded-2xl flex flex-col justify-between min-h-[140px] hover:shadow-md transition-all duration-300">
                 <div className="flex items-center gap-2 text-[var(--faint)] mb-2">
                   <Check className="w-3.5 h-3.5 text-emerald-500" />
-                  <span className="text-[10px] font-bold tracking-wider uppercase">Выполнено</span>
+                  <span className="text-xs font-semibold tracking-wider uppercase">Выполнено</span>
                 </div>
                 <div className="my-auto flex items-baseline gap-1">
                   <span className="text-4xl font-semibold text-[var(--ink)] tracking-tight leading-none">{(approvedSum / 1000).toFixed(0)}</span>
                   <span className="text-sm font-medium text-[var(--soft)]">тыс. ₽</span>
                 </div>
-                <span className="text-[11px] text-[var(--soft)] mt-2">закрытых проектов: {projects.filter(p => p.status === 'approved').length}</span>
+                <span className="text-xs text-[var(--soft)] mt-2">закрытых проектов: {projects.filter(p => p.status === 'approved').length}</span>
               </div>
               
               {/* Metric 4: ПРИБЫЛЬ */}
@@ -758,13 +765,13 @@ export default function App() {
               >
                 <div className="flex items-center gap-2 mb-2" style={{ color: 'var(--metricGreenText)' }}>
                   <TrendingUp className="w-3.5 h-3.5" />
-                  <span className="text-[10px] font-bold tracking-wider uppercase opacity-90">Прибыль</span>
+                  <span className="text-xs font-semibold tracking-wider uppercase opacity-90">Прибыль</span>
                 </div>
                 <div className="my-auto flex items-baseline gap-1">
                   <span className="text-4xl font-semibold tracking-tight leading-none" style={{ color: 'var(--metricGreenText)' }}>{(profitSum / 1000).toFixed(0)}</span>
                   <span className="text-sm font-medium" style={{ color: 'var(--metricGreenText)', opacity: 0.9 }}>тыс. ₽</span>
                 </div>
-                <span className="text-[11px] mt-2 opacity-80" style={{ color: 'var(--metricGreenText)' }}>чистая, по закрытым</span>
+                <span className="text-xs mt-2 opacity-85 font-medium" style={{ color: 'var(--metricGreenText)' }}>чистая, по закрытым</span>
               </div>
 
             </div>
@@ -821,7 +828,7 @@ export default function App() {
                             >
                               <span>{pill.label}</span>
                               <span
-                                className={`inline-flex items-center justify-center rounded-full text-[10px] font-semibold min-w-[20px] h-5 px-1.5 transition-all duration-300 ${
+                                className={`inline-flex items-center justify-center rounded-full text-xs font-semibold min-w-[20px] h-5 px-1.5 transition-all duration-300 ${
                                   isActive
                                     ? 'bg-white text-[var(--lavDeep)]'
                                     : 'bg-[#43384A]/10 text-[#43384A]'
@@ -917,7 +924,7 @@ export default function App() {
                                 referrerPolicy="no-referrer"
                               />
                               {/* Overlay Status Badge */}
-                              <span className={`absolute top-3 left-3 text-[11px] font-medium px-3 py-1 rounded-full ${
+                              <span className={`absolute top-3 left-3 text-xs font-medium px-3 py-1 rounded-full ${
                                 p.status === 'progress' ? 'bg-[var(--warnSoft)] text-[var(--warn)]' :
                                 p.status === 'waiting' ? 'bg-[var(--warnSoft)] text-[var(--warn)]' :
                                 p.status === 'approved' ? 'bg-[var(--sageSoft)] text-[var(--sage)]' :
@@ -937,7 +944,7 @@ export default function App() {
                               </button>
 
                               {/* Date Tag */}
-                              <span className="absolute bottom-3 right-3 text-[10px] bg-zinc-900/60 backdrop-blur-md text-white font-bold px-2.5 py-1 rounded-md">
+                              <span className="absolute bottom-3 right-3 text-xs bg-zinc-900/60 backdrop-blur-md text-white font-medium px-2.5 py-1 rounded-md">
                                 {new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'short' })}
                               </span>
                             </div>
@@ -945,8 +952,8 @@ export default function App() {
                             {/* Info area */}
                             <div className="p-5 space-y-4 flex-1 flex flex-col justify-between">
                               <div className="space-y-1">
-                                <h3 className="font-semibold text-[var(--ink)] text-[16px] leading-tight truncate">{p.name}</h3>
-                                <p className="text-[11.5px] text-[var(--faint)] truncate">{p.venue}</p>
+                                <h3 className="font-medium text-[var(--ink)] text-base leading-tight truncate">{p.name}</h3>
+                                <p className="text-xs text-[var(--faint)] truncate">{p.venue}</p>
                               </div>
 
                               {/* Custom Stepper with connecting line and dots */}
@@ -974,9 +981,9 @@ export default function App() {
                                         }`}
                                       />
                                       <span
-                                        className={`text-[10px] font-medium tracking-tight transition-colors duration-300 ${
+                                        className={`text-xs font-medium tracking-tight transition-colors duration-300 ${
                                           isDone || isCurrent
-                                            ? 'text-[var(--ink)] font-semibold'
+                                            ? 'text-[var(--ink)] font-medium'
                                             : 'text-[var(--faint)]'
                                         }`}
                                       >
@@ -989,10 +996,10 @@ export default function App() {
 
                               {/* Footer stats metadata */}
                               <div className="flex flex-wrap gap-1.5 pt-1">
-                                <span className="text-[11px] text-[var(--soft)] bg-white/40 dark:bg-black/20 border border-[var(--glass-edge)] px-2.5 py-1 rounded-lg">
+                                <span className="text-xs text-[var(--soft)] bg-white/40 dark:bg-black/20 border border-[var(--glass-edge)] px-2.5 py-1 rounded-lg">
                                   {new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'long', year: 'numeric' })}
                                 </span>
-                                <span className="text-[11px] text-[var(--soft)] bg-white/40 dark:bg-black/20 border border-[var(--glass-edge)] px-2.5 py-1 rounded-lg">
+                                <span className="text-xs text-[var(--soft)] bg-white/40 dark:bg-black/20 border border-[var(--glass-edge)] px-2.5 py-1 rounded-lg">
                                   Бюджет: {displayPrice.toLocaleString('ru')} ₽
                                 </span>
                               </div>
@@ -1044,7 +1051,7 @@ export default function App() {
                                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                 referrerPolicy="no-referrer"
                               />
-                              <span className={`absolute top-1.5 left-1.5 text-[9px] font-medium px-2 py-0.5 rounded ${
+                              <span className={`absolute top-1.5 left-1.5 text-xs font-medium px-2 py-0.5 rounded ${
                                 p.status === 'progress' ? 'bg-[var(--warnSoft)] text-[var(--warn)]' :
                                 p.status === 'waiting' ? 'bg-[var(--warnSoft)] text-[var(--warn)]' :
                                 p.status === 'approved' ? 'bg-[var(--sageSoft)] text-[var(--sage)]' :
@@ -1059,13 +1066,13 @@ export default function App() {
                             {/* Right part - Details */}
                             <div className="flex-1 min-w-0 flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
                               <div className="space-y-1 min-w-0">
-                                <h3 className="font-semibold text-[var(--ink)] text-base leading-tight truncate group-hover:text-[var(--lavDeep)] dark:group-hover:text-[var(--lavenderAccent)] transition-colors duration-300">{p.name}</h3>
+                                <h3 className="font-medium text-[var(--ink)] text-base leading-tight truncate group-hover:text-[var(--lavDeep)] dark:group-hover:text-[var(--lavenderAccent)] transition-colors duration-300">{p.name}</h3>
                                 <p className="text-xs text-[var(--faint)] truncate">{p.venue}</p>
                                 <div className="flex flex-wrap items-center gap-2 mt-1">
-                                  <span className="text-[10px] text-[var(--soft)] bg-zinc-100 dark:bg-zinc-800/60 px-2 py-0.5 rounded">
+                                  <span className="text-xs text-[var(--soft)] bg-zinc-100 dark:bg-zinc-800/60 px-2 py-0.5 rounded">
                                     {new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'long', year: 'numeric' })}
                                   </span>
-                                  <span className="text-[10px] text-[var(--soft)] bg-zinc-100 dark:bg-zinc-800/60 px-2 py-0.5 rounded font-medium">
+                                  <span className="text-xs text-[var(--soft)] bg-zinc-100 dark:bg-zinc-800/60 px-2 py-0.5 rounded font-medium">
                                     Бюджет: {displayPrice.toLocaleString('ru')} ₽
                                   </span>
                                 </div>
@@ -1098,7 +1105,7 @@ export default function App() {
                                     );
                                   })}
                                 </div>
-                                <div className="text-center text-[10px] text-[var(--faint)] mt-1">
+                                <div className="text-center text-xs text-[var(--faint)] mt-1">
                                   Этап: {stepsList[p.currentStep] || 'Завершен'}
                                 </div>
                               </div>
@@ -1185,6 +1192,7 @@ export default function App() {
                     images={images}
                     onUpdateImages={setImages}
                     showToast={showToast}
+                    setHeaderActions={setImagesHeaderActions}
                   />
                 </motion.div>
               )}
@@ -1199,7 +1207,6 @@ export default function App() {
                   transition={{ duration: 0.3 }}
                 >
                   <DocumentsTab
-                    documents={documents}
                     showToast={showToast}
                   />
                 </motion.div>
@@ -1256,18 +1263,18 @@ export default function App() {
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-[var(--ink)]">Июль 2026</span>
                     <div className="flex gap-1">
-                      <button onClick={() => showToast('Календарь', 'Прошлый месяц', 'info')} className="p-1 text-[var(--faint)] hover:text-[var(--ink)] text-[10px] focus:outline-none"><ChevronDown className="w-3 h-3 rotate-90" /></button>
-                      <button onClick={() => showToast('Календарь', 'Следующий месяц', 'info')} className="p-1 text-[var(--faint)] hover:text-[var(--ink)] text-[10px] focus:outline-none"><ChevronDown className="w-3 h-3 -rotate-90" /></button>
+                      <button onClick={() => showToast('Календарь', 'Прошлый месяц', 'info')} className="p-1 text-[var(--faint)] hover:text-[var(--ink)] text-xs focus:outline-none"><ChevronDown className="w-3 h-3 rotate-90" /></button>
+                      <button onClick={() => showToast('Календарь', 'Следующий месяц', 'info')} className="p-1 text-[var(--faint)] hover:text-[var(--ink)] text-xs focus:outline-none"><ChevronDown className="w-3 h-3 -rotate-90" /></button>
                     </div>
                   </div>
                   
                   {/* Week days */}
-                  <div className="grid grid-cols-7 text-center text-[10px] font-semibold text-[var(--faint)] border-b pb-1.5" style={{ borderColor: 'var(--line)' }}>
+                  <div className="grid grid-cols-7 text-center text-xs font-semibold text-[var(--faint)] border-b pb-1.5" style={{ borderColor: 'var(--line)' }}>
                     <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
                   </div>
                   
                   {/* Days grid with prominent marks and dynamic click event */}
-                  <div className="grid grid-cols-7 text-center gap-y-2 text-[11px] font-medium text-[var(--soft)] mt-1">
+                  <div className="grid grid-cols-7 text-center gap-y-2 text-xs font-medium text-[var(--soft)] mt-1">
                     {calendarDays.map((day, idx) => {
                       const isSelected = selectedCalendarDay === day.num && day.currentMonth;
                       const hasEvent = day.currentMonth && calendarEvents[day.num];
@@ -1278,16 +1285,16 @@ export default function App() {
 
                       if (day.currentMonth && day.eventType) {
                         if (day.eventType === 'warn') {
-                          bgStyle = 'bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-200 border border-rose-500/40 font-bold';
+                          bgStyle = 'bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-200 border border-rose-500/40 font-medium';
                           dotStyle = 'bg-rose-600';
                         } else if (day.eventType === 'indigo') {
-                          bgStyle = 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/70 dark:text-indigo-200 border border-indigo-500/40 font-bold';
+                          bgStyle = 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/70 dark:text-indigo-200 border border-indigo-500/40 font-medium';
                           dotStyle = 'bg-indigo-600';
                         } else if (day.eventType === 'lavender') {
-                          bgStyle = 'bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-200 border border-purple-500/40 font-bold';
+                          bgStyle = 'bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-200 border border-purple-500/40 font-medium';
                           dotStyle = 'bg-purple-600';
                         } else if (day.eventType === 'sage') {
-                          bgStyle = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-200 border border-emerald-500/40 font-bold';
+                          bgStyle = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-200 border border-emerald-500/40 font-medium';
                           dotStyle = 'bg-emerald-600';
                         }
                       }
@@ -1310,7 +1317,7 @@ export default function App() {
 
                 {/* Dynamic event display area */}
                 <div className="glass-panel p-3.5 rounded-2xl bg-white/20 dark:bg-black/20 border border-[var(--glass-edge)] mt-2">
-                  <p className="text-[10.5px] font-bold text-[var(--ink)] uppercase tracking-wider mb-2">
+                  <p className="text-xs font-semibold text-[var(--ink)] uppercase tracking-wider mb-2">
                     События: {selectedCalendarDay} июля 2026
                   </p>
                   {calendarEvents[selectedCalendarDay] ? (
@@ -1329,10 +1336,10 @@ export default function App() {
                             style={{ borderLeftColor: borderCol, backgroundColor: bgCol }}
                           >
                             <div className="flex justify-between items-center mb-1">
-                              <span className="font-semibold text-[11.5px]">{ev.title}</span>
-                              <span className="text-[9.5px] font-bold opacity-85">{ev.time}</span>
+                              <span className="font-medium text-xs">{ev.title}</span>
+                              <span className="text-xs font-medium opacity-85">{ev.time}</span>
                             </div>
-                            <p className="text-[10.5px] text-[var(--soft)]">{ev.desc}</p>
+                            <p className="text-xs text-[var(--soft)]">{ev.desc}</p>
                           </div>
                         );
                       })}
@@ -1351,7 +1358,7 @@ export default function App() {
                   <h2 className="text-base font-semibold text-[var(--ink)] tracking-tight flex items-center gap-2">
                     <CheckSquare className="w-4 h-4 text-[var(--lavenderAccent)]" />
                     <span>Задачи</span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 bg-[var(--lavenderSoft)] text-[var(--lavDeep)] dark:bg-purple-950/40 dark:text-[var(--lavenderAccent)] rounded-full select-none shrink-0">
+                    <span className="text-xs font-semibold px-2 py-0.5 bg-[var(--lavenderSoft)] text-[var(--lavDeep)] dark:bg-purple-950/40 dark:text-[var(--lavenderAccent)] rounded-full select-none shrink-0">
                       {tasks.filter(t => !t.completed).length}
                     </span>
                   </h2>
@@ -1379,14 +1386,14 @@ export default function App() {
 
                       {/* Text details */}
                       <div className="flex-1 min-w-0">
-                        <h4 className={`text-[12px] font-semibold text-[var(--ink)] leading-snug truncate ${task.completed ? 'line-through text-[var(--faint)]' : ''}`}>
+                        <h4 className={`text-xs font-medium text-[var(--ink)] leading-snug truncate ${task.completed ? 'line-through text-[var(--faint)]' : ''}`}>
                           {task.title}
                         </h4>
-                        <div className="flex items-center gap-1.5 text-[10px] text-[var(--soft)] mt-0.5 font-medium">
+                        <div className="flex items-center gap-1.5 text-xs text-[var(--soft)] mt-0.5 font-medium">
                           <span className="truncate">{task.projectRelation}</span>
                           <span>•</span>
                           <span 
-                            className="px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0"
+                            className="px-1.5 py-0.5 rounded text-xs font-medium shrink-0"
                             style={{
                               backgroundColor: task.color === 'warn' ? 'var(--warnSoft)' : task.color === 'sage' ? 'var(--sageSoft)' : 'var(--lavenderSoft)',
                               color: task.color === 'warn' ? 'var(--warn)' : task.color === 'sage' ? 'var(--sage)' : 'var(--lavDeep)'
