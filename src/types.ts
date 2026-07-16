@@ -1,4 +1,4 @@
-export type ProjectStatus = 'progress' | 'waiting' | 'approved' | 'archive';
+export type ProjectStatus = 'progress' | 'waiting' | 'approved' | 'archive' | 'trash';
 
 export interface EstimateItem {
   id: string;
@@ -69,4 +69,6 @@ export interface ImageItem {
   category: string;
   url: string;
   bgRemoved?: boolean;
+  isAiGenerated?: boolean;
+  projectName?: string;
 }

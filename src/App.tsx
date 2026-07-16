@@ -27,6 +27,7 @@ import {
   Zap,
   Calendar,
   Eye,
+  Trash2,
   Copy,
   LayoutGrid,
   List
@@ -77,7 +78,7 @@ export default function App() {
 
   // Search & Filters on Projects
   const [projectQuery, setProjectQuery] = useState('');
-  const [projectFilter, setProjectFilter] = useState<'all' | 'progress' | 'waiting' | 'approved' | 'archive'>('all');
+  const [projectFilter, setProjectFilter] = useState<'all' | 'progress' | 'waiting' | 'approved' | 'archive' | 'trash'>('all');
   const [projectSort, setProjectSort] = useState<'date' | 'status' | 'name'>('date');
 
   // Premium collapsible layout and calendar states
@@ -187,6 +188,16 @@ export default function App() {
     }
   };
 
+  const handleTrashClick = (p: Project) => {
+    if (p.status === 'trash') {
+      setProjects(prev => prev.filter(item => item.id !== p.id));
+      showToast('Удалено навсегда', `Проект «${p.name}» удален окончательно.`, 'warn');
+    } else {
+      setProjects(prev => prev.map(item => item.id === p.id ? { ...item, status: 'trash' as const } : item));
+      showToast('Перемещено в корзину', `Проект «${p.name}» перемещен в корзину.`, 'info');
+    }
+  };
+
   // Visualizer editor attachment: updates project image mock, estimate list and budget
   const handleAttachVisualizerToProject = useCallback((projectId: string, imageUrl: string, estimateItems?: EstimateItem[], budget?: number) => {
     setProjects(prev => prev.map(p => {
@@ -243,7 +254,9 @@ export default function App() {
     let list = [...projects];
 
     // Filter
-    if (projectFilter !== 'all') {
+    if (projectFilter === 'all') {
+      list = list.filter(p => p.status !== 'trash');
+    } else {
       list = list.filter(p => p.status === projectFilter);
     }
 
@@ -275,21 +288,23 @@ export default function App() {
   // Counting badges for filter pills
   const counts = useMemo(() => {
     return {
-      all: projects.length,
+      all: projects.filter(p => p.status !== 'trash').length,
       progress: projects.filter(p => p.status === 'progress').length,
       waiting: projects.filter(p => p.status === 'waiting').length,
       approved: projects.filter(p => p.status === 'approved').length,
-      archive: projects.filter(p => p.status === 'archive').length
+      archive: projects.filter(p => p.status === 'archive').length,
+      trash: projects.filter(p => p.status === 'trash').length
     };
   }, [projects]);
 
   // Dynamic quick metrics calculators
   const metrics = useMemo(() => {
-    const inProgress = projects.filter(p => p.status === 'progress').length;
-    const waiting = projects.filter(p => p.status === 'waiting').length;
-    const totalBudget = projects.reduce((sum, p) => sum + p.budget, 0);
-    const approvedCount = projects.filter(p => p.status === 'approved').length;
-    const successPercent = Math.round((approvedCount / (projects.length || 1)) * 100);
+    const activeProjects = projects.filter(p => p.status !== 'trash');
+    const inProgress = activeProjects.filter(p => p.status === 'progress').length;
+    const waiting = activeProjects.filter(p => p.status === 'waiting').length;
+    const totalBudget = activeProjects.reduce((sum, p) => sum + p.budget, 0);
+    const approvedCount = activeProjects.filter(p => p.status === 'approved').length;
+    const successPercent = Math.round((approvedCount / (activeProjects.length || 1)) * 100);
 
     return { inProgress, waiting, totalBudget, successPercent };
   }, [projects]);
@@ -727,7 +742,7 @@ export default function App() {
                 {activeTab === 'projects' && 'Создавайте макеты, открывайте сметный калькулятор и возвращайтесь к ним в любой момент.'}
                 {activeTab === 'moodboard' && 'Интерактивный конструктор свадебных арок и фотозон для быстрой визуализации клиенту.'}
                 {activeTab === 'warehouse' && 'Каталог вашего декора, флористики и оборудования. Учет остатков и задействованных в проектах позиций.'}
-                {activeTab === 'images' && 'Коллекция декоративных элементов, арок, флористики и рендеров для оформления проектов.'}
+                {activeTab === 'images' && 'Ваша галерея загруженных референсов, сгенерированных ИИ фонов, элементов флористики и декора для оформления.'}
                 {activeTab === 'documents' && 'Реквизиты, на кого оформляется договор, шаблоны договора и акта. Только автоматическая генерация и печать, оплата не принимается в сервисе.'}
                 {activeTab === 'profile' && 'Настройки реквизитов и контактов студии для формирования коммерческих предложений.'}
               </p>
@@ -849,7 +864,8 @@ export default function App() {
                           { key: 'progress', label: 'В работе', count: counts.progress },
                           { key: 'waiting', label: 'Ждут ответа', count: counts.waiting },
                           { key: 'approved', label: 'Согласованы', count: counts.approved },
-                          { key: 'archive', label: 'Архив', count: counts.archive }
+                          { key: 'archive', label: 'Архив', count: counts.archive },
+                          { key: 'trash', label: 'Корзина', count: counts.trash }
                         ].map((pill, index) => {
                           const isActive = projectFilter === pill.key;
                           let customStyle: React.CSSProperties = {
@@ -976,19 +992,21 @@ export default function App() {
                                 p.status === 'progress' ? 'bg-[var(--warnSoft)] text-[var(--warn)]' :
                                 p.status === 'waiting' ? 'bg-[var(--warnSoft)] text-[var(--warn)]' :
                                 p.status === 'approved' ? 'bg-[var(--sageSoft)] text-[var(--sage)]' :
+                                p.status === 'trash' ? 'bg-red-100/90 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
                                 'bg-zinc-100/80 text-zinc-500 dark:bg-zinc-800/80 dark:text-zinc-400'
                               }`}>
                                 {p.status === 'progress' ? 'В работе' :
                                  p.status === 'waiting' ? 'Бриф' :
-                                 p.status === 'approved' ? 'Согласован' : 'Архив'}
+                                 p.status === 'approved' ? 'Согласован' :
+                                 p.status === 'trash' ? 'Корзина' : 'Архив'}
                               </span>
                               
                               <button
-                                onClick={() => setSelectedProject(p)}
-                                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/70 dark:bg-black/30 backdrop-blur flex items-center justify-center text-[var(--ink)] hover:text-[var(--lavenderAccent)] transition-colors"
-                                title="Быстрый просмотр"
+                                onClick={() => handleTrashClick(p)}
+                                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/70 dark:bg-black/30 backdrop-blur flex items-center justify-center text-[var(--ink)] hover:text-red-500 transition-colors z-10"
+                                title={p.status === 'trash' ? "Удалить навсегда" : "Переместить в корзину"}
                               >
-                                <Eye className="w-3.5 h-3.5" />
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
 
                               {/* Date Tag */}
@@ -1054,25 +1072,51 @@ export default function App() {
 
                               {/* Buttons */}
                               <div className="flex gap-2 pt-1.5">
-                                <button
-                                  onClick={() => {
-                                    setSelectedProject(p);
-                                    setActiveTab('projects');
-                                  }}
-                                  className="flex-1 bg-[var(--lavDeep)] hover:opacity-90 text-white rounded-xl py-2.5 text-[12.5px] font-medium transition-all cursor-pointer"
-                                >
-                                  Открыть проект
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    navigator.clipboard.writeText(`https://fleur-decor.ru/brief/${p.id}`);
-                                    showToast('Бриф скопирован', 'Отправьте ссылку клиенту для прохождения опроса.', 'success');
-                                  }}
-                                  className="w-10 shrink-0 rounded-xl bg-white/30 hover:bg-white/50 dark:bg-white/5 border border-[var(--glass-edge)] text-[var(--ink)] transition-all flex items-center justify-center cursor-pointer"
-                                  title="Копировать бриф"
-                                >
-                                  <Copy className="w-3.5 h-3.5" />
-                                </button>
+                                {p.status === 'trash' ? (
+                                  <>
+                                    <button
+                                      onClick={() => {
+                                        setProjects(prev => prev.map(item => item.id === p.id ? { ...item, status: 'progress' as const } : item));
+                                        showToast('Проект восстановлен', `Проект «${p.name}» возвращен в работу.`, 'success');
+                                      }}
+                                      className="flex-1 bg-[var(--sage)] hover:opacity-90 text-white rounded-xl py-2.5 text-[12.5px] font-medium transition-all cursor-pointer text-center"
+                                    >
+                                      Восстановить
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setProjects(prev => prev.filter(item => item.id !== p.id));
+                                        showToast('Удалено навсегда', `Проект «${p.name}» удален окончательно.`, 'warn');
+                                      }}
+                                      className="w-10 shrink-0 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 transition-all flex items-center justify-center cursor-pointer"
+                                      title="Удалить навсегда"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <button
+                                      onClick={() => {
+                                        setSelectedProject(p);
+                                        setActiveTab('projects');
+                                      }}
+                                      className="flex-1 bg-[var(--lavDeep)] hover:opacity-90 text-white rounded-xl py-2.5 text-[12.5px] font-medium transition-all cursor-pointer"
+                                    >
+                                      Открыть проект
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        navigator.clipboard.writeText(`https://fleur-decor.ru/brief/${p.id}`);
+                                        showToast('Бриф скопирован', 'Отправьте ссылку клиенту для прохождения опроса.', 'success');
+                                      }}
+                                      className="w-10 shrink-0 rounded-xl bg-white/30 hover:bg-white/50 dark:bg-white/5 border border-[var(--glass-edge)] text-[var(--ink)] transition-all flex items-center justify-center cursor-pointer"
+                                      title="Копировать бриф"
+                                    >
+                                      <Copy className="w-3.5 h-3.5" />
+                                    </button>
+                                  </>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -1106,19 +1150,22 @@ export default function App() {
                                     ? 'bg-[#E8F8F2] text-[#0A7B5C]'
                                     : p.status === 'progress' || p.status === 'waiting'
                                     ? 'bg-[#FEF3C7] text-[#D97706]'
+                                    : p.status === 'trash'
+                                    ? 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400'
                                     : 'bg-zinc-100/90 text-zinc-500 dark:bg-zinc-800/90 dark:text-zinc-400'
                                 }`}>
                                   {p.status === 'approved' ? 'Согласован' :
                                    p.status === 'progress' ? 'В работе' :
-                                   p.status === 'waiting' ? 'Бриф' : 'Архив'}
+                                   p.status === 'waiting' ? 'Бриф' :
+                                   p.status === 'trash' ? 'Корзина' : 'Архив'}
                                 </span>
 
                                 <button
-                                  onClick={() => setSelectedProject(p)}
-                                  className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-white/75 dark:bg-black/35 backdrop-blur flex items-center justify-center text-[var(--ink)] hover:text-[var(--lavenderAccent)] transition-colors z-10"
-                                  title="Быстрый просмотр"
+                                  onClick={() => handleTrashClick(p)}
+                                  className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-white/75 dark:bg-black/35 backdrop-blur flex items-center justify-center text-[var(--ink)] hover:text-red-500 transition-colors z-10"
+                                  title={p.status === 'trash' ? "Удалить навсегда" : "Переместить в корзину"}
                                 >
-                                  <Eye className="w-3.5 h-3.5" />
+                                  <Trash2 className="w-3.5 h-3.5" />
                                 </button>
 
                                 {/* Date Tag */}
@@ -1189,15 +1236,39 @@ export default function App() {
                                       Бюджет: {displayPrice.toLocaleString('ru')} ₽
                                     </span>
                                   </div>
-                                  <button
-                                    onClick={() => {
-                                      setSelectedProject(p);
-                                      setActiveTab('projects');
-                                    }}
-                                    className="bg-[#5D3E8D] hover:bg-[#4E3175] text-white rounded-full font-semibold text-[11px] py-1.5 px-5 shadow-sm transition-colors cursor-pointer shrink-0"
-                                  >
-                                    Открыть
-                                  </button>
+                                  {p.status === 'trash' ? (
+                                    <div className="flex gap-1.5 shrink-0">
+                                      <button
+                                        onClick={() => {
+                                          setProjects(prev => prev.map(item => item.id === p.id ? { ...item, status: 'progress' as const } : item));
+                                          showToast('Проект восстановлен', `Проект «${p.name}» возвращен в работу.`, 'success');
+                                        }}
+                                        className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-semibold text-[10px] py-1.5 px-3 shadow-sm transition-colors cursor-pointer"
+                                      >
+                                        Восст.
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          setProjects(prev => prev.filter(item => item.id !== p.id));
+                                          showToast('Удалено навсегда', `Проект «${p.name}» удален окончательно.`, 'warn');
+                                        }}
+                                        className="bg-red-500 hover:bg-red-600 text-white rounded-full font-semibold text-[10px] py-1.5 px-2 shadow-sm transition-colors cursor-pointer"
+                                        title="Удалить навсегда"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      onClick={() => {
+                                        setSelectedProject(p);
+                                        setActiveTab('projects');
+                                      }}
+                                      className="bg-[#5D3E8D] hover:bg-[#4E3175] text-white rounded-full font-semibold text-[11px] py-1.5 px-5 shadow-sm transition-colors cursor-pointer shrink-0"
+                                    >
+                                      Открыть
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -1218,19 +1289,21 @@ export default function App() {
                                    p.status === 'progress' ? 'bg-[var(--warnSoft)] text-[var(--warn)]' :
                                    p.status === 'waiting' ? 'bg-[var(--warnSoft)] text-[var(--warn)]' :
                                    p.status === 'approved' ? 'bg-[var(--sageSoft)] text-[var(--sage)]' :
+                                   p.status === 'trash' ? 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400' :
                                    'bg-zinc-100/80 text-zinc-500 dark:bg-zinc-800/80 dark:text-zinc-400'
                                  }`}>
                                    {p.status === 'progress' ? 'В работе' :
                                     p.status === 'waiting' ? 'Бриф' :
-                                    p.status === 'approved' ? 'Согласован' : 'Архив'}
+                                    p.status === 'approved' ? 'Согласован' :
+                                    p.status === 'trash' ? 'Корзина' : 'Архив'}
                                  </span>
 
                                  <button
-                                   onClick={() => setSelectedProject(p)}
-                                   className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-white/75 dark:bg-black/35 backdrop-blur flex items-center justify-center text-[var(--ink)] hover:text-[var(--lavenderAccent)] transition-colors z-10"
-                                   title="Быстрый просмотр"
+                                   onClick={() => handleTrashClick(p)}
+                                   className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-white/75 dark:bg-black/35 backdrop-blur flex items-center justify-center text-[var(--ink)] hover:text-red-500 transition-colors z-10"
+                                   title={p.status === 'trash' ? "Удалить навсегда" : "Переместить в корзину"}
                                  >
-                                   <Eye className="w-3.5 h-3.5" />
+                                   <Trash2 className="w-3.5 h-3.5" />
                                  </button>
                                </div>
 
@@ -1283,25 +1356,51 @@ export default function App() {
 
                                  {/* Action buttons */}
                                  <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
-                                   <button
-                                     onClick={() => {
-                                       setSelectedProject(p);
-                                       setActiveTab('projects');
-                                     }}
-                                     className="flex-1 sm:flex-initial bg-[var(--lavDeep)] hover:opacity-90 text-white rounded-xl px-4 py-2 text-xs font-medium transition-all cursor-pointer whitespace-nowrap"
-                                   >
-                                     Открыть проект
-                                   </button>
-                                   <button
-                                     onClick={() => {
-                                       navigator.clipboard.writeText(`https://fleur-decor.ru/brief/${p.id}`);
-                                       showToast('Бриф скопирован', 'Отправьте ссылку клиенту для прохождения опроса.', 'success');
-                                     }}
-                                     className="p-2 rounded-xl bg-white/30 hover:bg-white/50 dark:bg-white/5 border border-[var(--glass-edge)] text-[var(--ink)] transition-all flex items-center justify-center cursor-pointer shrink-0"
-                                     title="Копировать бриф"
-                                   >
-                                     <Copy className="w-3.5 h-3.5" />
-                                   </button>
+                                   {p.status === 'trash' ? (
+                                     <>
+                                       <button
+                                         onClick={() => {
+                                           setProjects(prev => prev.map(item => item.id === p.id ? { ...item, status: 'progress' as const } : item));
+                                           showToast('Проект восстановлен', `Проект «${p.name}» возвращен в работу.`, 'success');
+                                         }}
+                                         className="flex-1 sm:flex-initial bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-4 py-2 text-xs font-medium transition-all cursor-pointer whitespace-nowrap"
+                                       >
+                                         Восстановить
+                                       </button>
+                                       <button
+                                         onClick={() => {
+                                           setProjects(prev => prev.filter(item => item.id !== p.id));
+                                           showToast('Удалено навсегда', `Проект «${p.name}» удален окончательно.`, 'warn');
+                                         }}
+                                         className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 transition-all flex items-center justify-center cursor-pointer shrink-0"
+                                         title="Удалить навсегда"
+                                       >
+                                         <Trash2 className="w-3.5 h-3.5" />
+                                       </button>
+                                     </>
+                                   ) : (
+                                     <>
+                                       <button
+                                         onClick={() => {
+                                           setSelectedProject(p);
+                                           setActiveTab('projects');
+                                         }}
+                                         className="flex-1 sm:flex-initial bg-[var(--lavDeep)] hover:opacity-90 text-white rounded-xl px-4 py-2 text-xs font-medium transition-all cursor-pointer whitespace-nowrap"
+                                       >
+                                         Открыть проект
+                                       </button>
+                                       <button
+                                         onClick={() => {
+                                           navigator.clipboard.writeText(`https://fleur-decor.ru/brief/${p.id}`);
+                                           showToast('Бриф скопирован', 'Отправьте ссылку клиенту для прохождения опроса.', 'success');
+                                         }}
+                                         className="p-2 rounded-xl bg-white/30 hover:bg-white/50 dark:bg-white/5 border border-[var(--glass-edge)] text-[var(--ink)] transition-all flex items-center justify-center cursor-pointer shrink-0"
+                                         title="Копировать бриф"
+                                       >
+                                         <Copy className="w-3.5 h-3.5" />
+                                       </button>
+                                     </>
+                                   )}
                                  </div>
                                </div>
                              </div>
@@ -1324,19 +1423,22 @@ export default function App() {
                                      ? 'bg-[#E8F8F2] text-[#0A7B5C]'
                                      : p.status === 'progress' || p.status === 'waiting'
                                      ? 'bg-[#FEF3C7] text-[#D97706]'
+                                     : p.status === 'trash'
+                                     ? 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400 shadow-sm'
                                      : 'bg-zinc-100/90 text-zinc-500 dark:bg-zinc-800/90 dark:text-zinc-400'
                                  }`}>
                                    {p.status === 'approved' ? 'Согласован' :
                                     p.status === 'progress' ? 'В работе' :
-                                    p.status === 'waiting' ? 'Бриф' : 'Архив'}
+                                    p.status === 'waiting' ? 'Бриф' :
+                                    p.status === 'trash' ? 'Корзина' : 'Архив'}
                                  </span>
 
                                  <button
-                                   onClick={() => setSelectedProject(p)}
-                                   className="absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-white/75 dark:bg-black/35 backdrop-blur flex items-center justify-center text-[var(--ink)] hover:text-[var(--lavenderAccent)] transition-colors z-10"
-                                   title="Быстрый просмотр"
+                                   onClick={() => handleTrashClick(p)}
+                                   className="absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-white/75 dark:bg-black/35 backdrop-blur flex items-center justify-center text-[var(--ink)] hover:text-red-500 transition-colors z-10"
+                                   title={p.status === 'trash' ? "Удалить навсегда" : "Переместить в корзину"}
                                  >
-                                   <Eye className="w-3.5 h-3.5" />
+                                   <Trash2 className="w-3.5 h-3.5" />
                                  </button>
 
                                  {/* Date Tag on Bottom Right */}
@@ -1418,15 +1520,38 @@ export default function App() {
                                        Бюджет: {displayPrice.toLocaleString('ru')} ₽
                                      </span>
                                    </div>
-                                   <button
-                                     onClick={() => {
-                                       setSelectedProject(p);
-                                       setActiveTab('projects');
-                                     }}
-                                     className="bg-[#5D3E8D] hover:bg-[#4E3175] text-white rounded-full font-semibold text-[12px] py-2 px-5.5 shadow-sm transition-colors cursor-pointer shrink-0"
-                                   >
-                                     Открыть проект
-                                   </button>
+                                   {p.status === 'trash' ? (
+                                     <div className="flex gap-2 shrink-0">
+                                       <button
+                                         onClick={() => {
+                                           setProjects(prev => prev.map(item => item.id === p.id ? { ...item, status: 'progress' as const } : item));
+                                           showToast('Проект восстановлен', `Проект «${p.name}» возвращен в работу.`, 'success');
+                                         }}
+                                         className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-semibold text-[12px] py-2 px-5.5 shadow-sm transition-colors cursor-pointer"
+                                       >
+                                         Восстановить
+                                       </button>
+                                       <button
+                                         onClick={() => {
+                                           setProjects(prev => prev.filter(item => item.id !== p.id));
+                                           showToast('Удалено навсегда', `Проект «${p.name}» удален окончательно.`, 'warn');
+                                         }}
+                                         className="bg-red-500 hover:bg-red-600 text-white rounded-full font-semibold text-[12px] py-2 px-3 shadow-sm transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                                       >
+                                         <Trash2 className="w-4 h-4" /> Удалить
+                                       </button>
+                                     </div>
+                                   ) : (
+                                     <button
+                                       onClick={() => {
+                                         setSelectedProject(p);
+                                         setActiveTab('projects');
+                                       }}
+                                       className="bg-[#5D3E8D] hover:bg-[#4E3175] text-white rounded-full font-semibold text-[12px] py-2 px-5.5 shadow-sm transition-colors cursor-pointer shrink-0"
+                                     >
+                                       Открыть проект
+                                     </button>
+                                   )}
                                  </div>
                                </div>
                              </div>
@@ -1453,6 +1578,18 @@ export default function App() {
                     onSaveToProject={handleAttachVisualizerToProject}
                     showToast={showToast}
                     setHeaderActions={setMoodboardHeaderActions}
+                    onAddAiImage={(url: string, prompt: string, projectName: string) => {
+                      const newImage: ImageItem = {
+                        id: 'ai_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+                        title: `ИИ: ${prompt.trim()}`,
+                        category: 'render',
+                        url: url,
+                        bgRemoved: false,
+                        isAiGenerated: true,
+                        projectName: projectName
+                      };
+                      setImages(prev => [newImage, ...prev]);
+                    }}
                   />
                 </motion.div>
               )}

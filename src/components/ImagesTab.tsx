@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UploadCloud, Trash2, Plus, Pencil, Check, X, ChevronDown } from 'lucide-react';
+import { UploadCloud, Trash2, Plus, Pencil, Check, X, ChevronDown, Sparkles, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ImageItem } from '../types';
 
@@ -24,7 +24,9 @@ interface ImagesTabProps {
 
 export default function ImagesTab({ images, onUpdateImages, showToast, setHeaderActions }: ImagesTabProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [sourceFilter, setSourceFilter] = useState<'all' | 'uploaded' | 'ai'>('all');
   const [activeDropdownImageId, setActiveDropdownImageId] = useState<string | null>(null);
+  const [zoomedImage, setZoomedImage] = useState<ImageItem | null>(null);
   
   // Custom categories state
   const [customCategories, setCustomCategories] = useState<CategoryItem[]>(() => {
@@ -44,8 +46,15 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
   }, [customCategories]);
 
   const getCategoryCount = (catKey: string) => {
-    if (catKey === 'all') return images.length;
-    return images.filter(img => img.category === catKey).length;
+    let baseImages = images;
+    if (sourceFilter === 'ai') {
+      baseImages = images.filter(img => img.isAiGenerated);
+    } else if (sourceFilter === 'uploaded') {
+      baseImages = images.filter(img => !img.isAiGenerated);
+    }
+    
+    if (catKey === 'all') return baseImages.length;
+    return baseImages.filter(img => img.category === catKey).length;
   };
 
   const handleCategoryChange = (imgId: string, newCategory: string) => {
@@ -153,7 +162,15 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
     showToast('Категория удалена', `Категория "${label}" была удалена.`, 'info');
   };
 
-  const filteredImages = images.filter(img => selectedCategory === 'all' || img.category === selectedCategory);
+  const filteredImages = images.filter(img => {
+    const matchCategory = selectedCategory === 'all' || img.category === selectedCategory;
+    const matchSource = sourceFilter === 'all' 
+      ? true 
+      : sourceFilter === 'ai' 
+        ? img.isAiGenerated === true 
+        : !img.isAiGenerated;
+    return matchCategory && matchSource;
+  });
 
   // Helper list to map categories for rendering tabs
   const allCategoriesList = [
@@ -163,6 +180,53 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
 
   return (
     <div className="space-y-6">
+      {/* Top filter row */}
+      <div className="flex justify-end">
+        {/* Source Segmented Control */}
+        <div className="flex bg-zinc-100/80 dark:bg-zinc-800/40 p-1 rounded-xl border border-[var(--glass-edge)]/30 shadow-sm overflow-x-auto max-w-full">
+          <button
+            onClick={() => {
+              setSourceFilter('all');
+              setSelectedCategory('all');
+            }}
+            className={`px-3.5 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+              sourceFilter === 'all'
+                ? 'bg-white dark:bg-zinc-900 text-[var(--ink)] shadow-sm'
+                : 'text-zinc-500 hover:text-[var(--ink)]'
+            }`}
+          >
+            Все ({images.length})
+          </button>
+          <button
+            onClick={() => {
+              setSourceFilter('uploaded');
+              setSelectedCategory('all');
+            }}
+            className={`px-3.5 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+              sourceFilter === 'uploaded'
+                ? 'bg-white dark:bg-zinc-900 text-[var(--ink)] shadow-sm'
+                : 'text-zinc-500 hover:text-[var(--ink)]'
+            }`}
+          >
+            Загруженные ({images.filter(img => !img.isAiGenerated).length})
+          </button>
+          <button
+            onClick={() => {
+              setSourceFilter('ai');
+              setSelectedCategory('all');
+            }}
+            className={`px-3.5 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
+              sourceFilter === 'ai'
+                ? 'bg-white dark:bg-zinc-900 text-violet-600 dark:text-violet-400 shadow-sm'
+                : 'text-zinc-500 hover:text-[var(--ink)]'
+            }`}
+          >
+            <Sparkles className="w-3 h-3 text-violet-500 shrink-0 animate-pulse" />
+            <span>Создано ИИ ({images.filter(img => img.isAiGenerated).length})</span>
+          </button>
+        </div>
+      </div>
+
       {/* Categories Bar */}
       <div className="flex flex-wrap gap-2 items-center bg-white/10 dark:bg-zinc-900/5 p-3 rounded-2xl border border-[var(--glass-edge)]/40 justify-between">
         <div className="flex flex-wrap gap-2 items-center">
@@ -301,6 +365,34 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
                 activeDropdownImageId === img.id ? 'z-30 overflow-visible' : 'overflow-hidden'
               }`}
             >
+              {/* Top badges and actions */}
+              <div className="absolute top-2.5 left-2.5 right-2.5 z-10 flex items-center justify-between pointer-events-none gap-2">
+                {img.projectName ? (
+                  <span className="bg-black/65 backdrop-blur-md text-white text-[9px] font-semibold px-2 py-0.5 rounded-md truncate shadow-sm">
+                    {img.projectName}
+                  </span>
+                ) : <div />}
+                <div className="flex items-center gap-1.5 pointer-events-auto">
+                  {img.isAiGenerated && (
+                    <span className="bg-violet-600/90 backdrop-blur-md text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1 shrink-0">
+                      <Sparkles className="w-2.5 h-2.5 text-white animate-pulse" />
+                      <span>ИИ</span>
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setZoomedImage(img);
+                    }}
+                    className="p-1.5 rounded-lg bg-black/60 hover:bg-black/85 text-white border border-white/15 backdrop-blur-md shadow-sm transition-all cursor-pointer hover:scale-105 active:scale-95"
+                    title="Увеличить"
+                  >
+                    <Search className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
               {/* Photo Box (1:1 aspect square) */}
               <div className="absolute inset-0 w-full h-full overflow-hidden bg-zinc-100 dark:bg-zinc-950 flex items-center justify-center rounded-2xl">
                 {img.bgRemoved ? (
@@ -380,6 +472,77 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
           ))}
         </div>
       )}
+
+      {/* Zoom Modal */}
+      <AnimatePresence>
+        {zoomedImage && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setZoomedImage(null)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            />
+            
+            {/* Modal Content */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: "spring", duration: 0.4 }}
+              className="relative max-w-4xl w-full max-h-[85vh] bg-zinc-950 rounded-2xl border border-zinc-800 overflow-hidden flex flex-col shadow-2xl z-10"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setZoomedImage(null)}
+                className="absolute top-3 right-3 p-2 rounded-full bg-black/50 hover:bg-black/80 text-white/80 hover:text-white border border-white/10 backdrop-blur-md transition-all cursor-pointer z-20"
+                title="Закрыть"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              {/* Image Container */}
+              <div className="flex-1 overflow-auto flex items-center justify-center bg-zinc-950 p-4 min-h-0">
+                <img
+                  src={zoomedImage.url}
+                  alt={zoomedImage.title}
+                  className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg select-none"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+
+              {/* Footer / Description */}
+              <div className="bg-zinc-900 px-6 py-4 border-t border-zinc-800 text-left">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h4 className="text-sm font-semibold text-zinc-100 truncate">
+                      {zoomedImage.title || 'Изображение'}
+                    </h4>
+                    <p className="text-xs text-zinc-400 mt-1">
+                      Категория: {customCategories.find(c => c.key === zoomedImage.category)?.label || zoomedImage.category}
+                    </p>
+                    {zoomedImage.projectName && (
+                      <span className="inline-block mt-1 text-[10px] bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded font-medium">
+                        Проект: {zoomedImage.projectName}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {zoomedImage.isAiGenerated && (
+                      <span className="bg-violet-600/90 text-white text-[10px] font-extrabold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1 shrink-0">
+                        <Sparkles className="w-3 h-3 text-white animate-pulse" />
+                        <span>Сгенерировано ИИ</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

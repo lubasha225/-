@@ -58,6 +58,7 @@ interface MoodboardEditorProps {
   onSaveToProject: (projectId: string, imageUrl: string, estimateItems?: EstimateItem[], budget?: number) => void;
   showToast: (title: string, message: string, type?: 'success' | 'info' | 'warn') => void;
   setHeaderActions?: (actions: React.ReactNode) => void;
+  onAddAiImage?: (url: string, prompt: string, projectName: string) => void;
 }
 
 export interface CanvasElement {
@@ -364,7 +365,7 @@ const CUSTOM_LIBRARY_ITEMS: LibraryItem[] = [
   }
 ];
 
-export default function MoodboardEditor({ projects, onSaveToProject, showToast, setHeaderActions }: MoodboardEditorProps) {
+export default function MoodboardEditor({ projects, onSaveToProject, showToast, setHeaderActions, onAddAiImage }: MoodboardEditorProps) {
   // Top Active Mode / Scene Tabs: "scene-1" | "scene-2" | "floorplan"
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<string>('scene-1');
 
@@ -836,10 +837,13 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
       }
 
       handleCanvasBackdropChange('image', selectedBg);
+      if (onAddAiImage) {
+        onAddAiImage(selectedBg, aiPrompt, currentProject?.name || 'Основной проект');
+      }
       setIsAiGenerating(false);
       setIsAiModalOpen(false);
       setAiPrompt('');
-      showToast('ИИ генерация завершена', 'Задний фон сцены успешно обновлен по вашему запросу.', 'success');
+      showToast('ИИ генерация завершена', 'Фон обновлен и автоматически сохранен в «Мои изображения» в раздел ИИ.', 'success');
     }, 2400);
   };
 
