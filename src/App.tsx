@@ -1080,108 +1080,357 @@ export default function App() {
                       })}
                     </div>
                   ) : (
-                    <div className="space-y-4 animate-fadeIn">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 animate-fadeIn">
                       {processedProjects.map((p) => {
                         const totalSum = p.estimate.reduce((sum, item) => sum + (item.quantity * item.price), 0);
                         const displayPrice = totalSum > 0 ? totalSum : p.budget;
                         const projectImg = getProjectImage(p.id);
 
                         return (
-                          <div
-                            key={p.id}
-                            className="glass-panel p-4 rounded-[20px] flex flex-col sm:flex-row items-center gap-5 border border-[var(--glass-edge)]/70 hover:border-[var(--lavenderAccent)]/50 transition-all duration-300 w-full text-left bg-white dark:bg-zinc-900/25 group"
-                          >
-                            {/* Left part - Small preview - horizontal 4:3 Ratio */}
-                            <div className="w-24 sm:w-32 aspect-[4/3] rounded-xl overflow-hidden shrink-0 relative bg-zinc-100/10 dark:bg-zinc-800/20 border border-[var(--glass-edge)]/40">
-                              <img
-                                src={projectImg}
-                                alt={p.name}
-                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                referrerPolicy="no-referrer"
-                              />
-                              <span className={`absolute top-1.5 left-1.5 text-xs font-medium px-2 py-0.5 rounded ${
-                                p.status === 'progress' ? 'bg-[var(--warnSoft)] text-[var(--warn)]' :
-                                p.status === 'waiting' ? 'bg-[var(--warnSoft)] text-[var(--warn)]' :
-                                p.status === 'approved' ? 'bg-[var(--sageSoft)] text-[var(--sage)]' :
-                                'bg-zinc-100/80 text-zinc-500 dark:bg-zinc-800/80 dark:text-zinc-400'
-                              }`}>
-                                {p.status === 'progress' ? 'В работе' :
-                                 p.status === 'waiting' ? 'Бриф' :
-                                 p.status === 'approved' ? 'Согласован' : 'Архив'}
-                              </span>
-                            </div>
+                          <React.Fragment key={p.id}>
+                            {/* Mobile Card Layout (Strict adherence to Figma screenshot) */}
+                            <div
+                              className="md:hidden flex flex-row items-stretch border border-white/90 dark:border-zinc-800/90 shadow-lg text-left bg-white/75 dark:bg-zinc-900/75 h-[142px] rounded-[24px] overflow-hidden w-full relative"
+                            >
+                              {/* Left Image Section */}
+                              <div className="w-[135px] shrink-0 relative overflow-hidden bg-zinc-100 dark:bg-zinc-850">
+                                <img
+                                  src={projectImg}
+                                  alt={p.name}
+                                  className="w-full h-full object-cover"
+                                  referrerPolicy="no-referrer"
+                                />
+                                {/* Status Badge */}
+                                <span className={`absolute top-2.5 left-2.5 text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${
+                                  p.status === 'approved'
+                                    ? 'bg-[#E8F8F2] text-[#0A7B5C]'
+                                    : p.status === 'progress' || p.status === 'waiting'
+                                    ? 'bg-[#FEF3C7] text-[#D97706]'
+                                    : 'bg-zinc-100/90 text-zinc-500 dark:bg-zinc-800/90 dark:text-zinc-400'
+                                }`}>
+                                  {p.status === 'approved' ? 'Согласован' :
+                                   p.status === 'progress' ? 'В работе' :
+                                   p.status === 'waiting' ? 'Бриф' : 'Архив'}
+                                </span>
 
-                            {/* Right part - Details */}
-                            <div className="flex-1 min-w-0 flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
-                              <div className="space-y-1 min-w-0">
-                                <h3 className="font-medium text-[var(--ink)] text-base leading-tight truncate group-hover:text-[var(--lavDeep)] dark:group-hover:text-[var(--lavenderAccent)] transition-colors duration-300">{p.name}</h3>
-                                <p className="text-xs text-[var(--faint)] truncate">{p.venue}</p>
-                                <div className="flex flex-wrap items-center gap-2 mt-1">
-                                  <span className="text-xs text-[var(--soft)] bg-zinc-100 dark:bg-zinc-800/60 px-2 py-0.5 rounded">
-                                    {new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'long', year: 'numeric' })}
-                                  </span>
-                                  <span className="text-xs text-[var(--soft)] bg-zinc-100 dark:bg-zinc-800/60 px-2 py-0.5 rounded font-medium">
-                                    Бюджет: {displayPrice.toLocaleString('ru')} ₽
-                                  </span>
-                                </div>
+                                <button
+                                  onClick={() => setSelectedProject(p)}
+                                  className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-white/75 dark:bg-black/35 backdrop-blur flex items-center justify-center text-[var(--ink)] hover:text-[var(--lavenderAccent)] transition-colors z-10"
+                                  title="Быстрый просмотр"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </button>
+
+                                {/* Date Tag */}
+                                <span className="absolute bottom-2.5 left-2.5 text-[10px] bg-black/40 backdrop-blur-md text-white font-medium px-2 py-0.5 rounded-full">
+                                  {new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'short' })}
+                                </span>
                               </div>
-                              
-                              {/* Stepper progress in the middle (only on medium screens or wider) */}
-                              <div className="hidden md:block w-48 shrink-0">
-                                <div className="flex items-center justify-between relative py-1">
-                                  <div className="absolute top-[8px] left-1 right-1 h-[2px] bg-zinc-100 dark:bg-zinc-800/60 z-0 rounded-full" />
+
+                              {/* Right Content Section */}
+                              <div className="p-3.5 pr-4 flex flex-col justify-between flex-1 min-w-0">
+                                {/* Row 1: Title, Venue, Copy button */}
+                                <div className="flex items-start justify-between gap-1">
+                                  <div className="min-w-0">
+                                    <h3 className="font-bold text-[15px] text-[var(--ink)] leading-tight truncate">
+                                      {p.name}
+                                    </h3>
+                                    <p className="text-[11px] text-[var(--soft)] mt-0.5 truncate">
+                                      {p.venue}
+                                    </p>
+                                  </div>
+                                  <button
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(`https://fleur-decor.ru/brief/${p.id}`);
+                                      showToast('Бриф скопирован', 'Отправьте ссылку клиенту для прохождения опроса.', 'success');
+                                    }}
+                                    className="w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 text-[var(--ink)] flex items-center justify-center transition-colors shrink-0 cursor-pointer"
+                                    title="Копировать бриф"
+                                  >
+                                    <Copy className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+
+                                {/* Row 2: Custom Compact Stepper */}
+                                <div className="relative flex items-center justify-between w-32 py-1">
+                                  {/* Background Line */}
+                                  <div className="absolute left-1 right-1 top-1/2 -translate-y-1/2 h-[2px] bg-zinc-100 dark:bg-zinc-800" />
+                                  {/* Progress Line */}
                                   <div
-                                    className="absolute top-[8px] left-1 h-[2px] bg-[var(--sage)] z-0 rounded-full transition-all duration-500"
-                                    style={{ width: `${(p.currentStep / 4) * 92}%` }}
+                                    className="absolute left-1 top-1/2 -translate-y-1/2 h-[2px] bg-[#0A7B5C] transition-all duration-500"
+                                    style={{ width: `${(p.currentStep / 4) * 100}%` }}
                                   />
-                                  {stepsList.map((stepName, idx) => {
+                                  {Array.from({ length: 5 }).map((_, idx) => {
                                     const isDone = idx < p.currentStep;
                                     const isCurrent = idx === p.currentStep;
                                     return (
-                                      <div key={idx} className="flex flex-col items-center gap-1 relative z-10 flex-1">
+                                      <div key={idx} className="relative z-10 flex items-center justify-center">
                                         <div
-                                          className={`w-[8px] h-[8px] rounded-full border transition-all duration-300 ${
+                                          className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
                                             isDone
-                                              ? 'bg-[var(--sage)] border-[var(--sage)]'
+                                              ? 'bg-[#0A7B5C]'
                                               : isCurrent
-                                              ? 'bg-[var(--lavenderAccent)] border-[var(--lavenderAccent)]'
-                                              : 'bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700'
+                                              ? 'bg-[#8B5CF6] ring-[4px] ring-[#8B5CF6]/20'
+                                              : 'bg-white dark:bg-zinc-900 border-2 border-zinc-200 dark:border-zinc-800'
                                           }`}
-                                          title={stepName}
                                         />
                                       </div>
                                     );
                                   })}
                                 </div>
-                                <div className="text-center text-xs text-[var(--faint)] mt-1">
-                                  Этап: {stepsList[p.currentStep] || 'Завершен'}
+
+                                {/* Row 3: Metadata tags on left, Open button on right */}
+                                <div className="flex items-end justify-between gap-2 mt-1">
+                                  <div className="flex flex-col gap-0.5 min-w-0">
+                                    <span className="text-[9px] text-[var(--soft)] bg-zinc-100/70 dark:bg-zinc-800/40 px-2 py-0.5 rounded-md w-max truncate">
+                                      {new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                    </span>
+                                    <span className="text-[9px] text-[var(--soft)] bg-zinc-100/70 dark:bg-zinc-800/40 px-2 py-0.5 rounded-md w-max font-semibold truncate">
+                                      Бюджет: {displayPrice.toLocaleString('ru')} ₽
+                                    </span>
+                                  </div>
+                                  <button
+                                    onClick={() => {
+                                      setSelectedProject(p);
+                                      setActiveTab('projects');
+                                    }}
+                                    className="bg-[#5D3E8D] hover:bg-[#4E3175] text-white rounded-full font-semibold text-[11px] py-1.5 px-5 shadow-sm transition-colors cursor-pointer shrink-0"
+                                  >
+                                    Открыть
+                                  </button>
                                 </div>
                               </div>
-
-                              {/* Action buttons */}
-                              <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
-                                <button
-                                  onClick={() => {
-                                    setSelectedProject(p);
-                                    setActiveTab('projects');
-                                  }}
-                                  className="flex-1 sm:flex-initial bg-[var(--lavDeep)] hover:opacity-90 text-white rounded-xl px-4 py-2 text-xs font-medium transition-all cursor-pointer whitespace-nowrap"
-                                >
-                                  Открыть проект
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    navigator.clipboard.writeText(`https://fleur-decor.ru/brief/${p.id}`);
-                                    showToast('Бриф скопирован', 'Отправьте ссылку клиенту для прохождения опроса.', 'success');
-                                  }}
-                                  className="p-2 rounded-xl bg-white/30 hover:bg-white/50 dark:bg-white/5 border border-[var(--glass-edge)] text-[var(--ink)] transition-all flex items-center justify-center cursor-pointer shrink-0"
-                                  title="Копировать бриф"
-                                >
-                                  <Copy className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
                             </div>
-                          </div>
+
+                             {/* Tablet Card Layout (Unchanged structure, shown only on tablet) */}
+                             <div
+                               className="glass-panel p-4 rounded-[20px] hidden md:flex lg:hidden items-center gap-5 border border-[var(--glass-edge)]/70 hover:border-[var(--lavenderAccent)]/50 transition-all duration-300 w-full text-left bg-white dark:bg-zinc-900/25 group"
+                             >
+                               {/* Left part - Small preview - horizontal 4:3 Ratio */}
+                               <div className="w-24 sm:w-32 aspect-[4/3] rounded-xl overflow-hidden shrink-0 relative bg-zinc-100/10 dark:bg-zinc-800/20 border border-[var(--glass-edge)]/40">
+                                 <img
+                                   src={projectImg}
+                                   alt={p.name}
+                                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                   referrerPolicy="no-referrer"
+                                 />
+                                 <span className={`absolute top-1.5 left-1.5 text-xs font-medium px-2 py-0.5 rounded ${
+                                   p.status === 'progress' ? 'bg-[var(--warnSoft)] text-[var(--warn)]' :
+                                   p.status === 'waiting' ? 'bg-[var(--warnSoft)] text-[var(--warn)]' :
+                                   p.status === 'approved' ? 'bg-[var(--sageSoft)] text-[var(--sage)]' :
+                                   'bg-zinc-100/80 text-zinc-500 dark:bg-zinc-800/80 dark:text-zinc-400'
+                                 }`}>
+                                   {p.status === 'progress' ? 'В работе' :
+                                    p.status === 'waiting' ? 'Бриф' :
+                                    p.status === 'approved' ? 'Согласован' : 'Архив'}
+                                 </span>
+
+                                 <button
+                                   onClick={() => setSelectedProject(p)}
+                                   className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-white/75 dark:bg-black/35 backdrop-blur flex items-center justify-center text-[var(--ink)] hover:text-[var(--lavenderAccent)] transition-colors z-10"
+                                   title="Быстрый просмотр"
+                                 >
+                                   <Eye className="w-3.5 h-3.5" />
+                                 </button>
+                               </div>
+
+                               {/* Right part - Details */}
+                               <div className="flex-1 min-w-0 flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
+                                 <div className="space-y-1 min-w-0">
+                                   <h3 className="font-medium text-[var(--ink)] text-base leading-tight truncate group-hover:text-[var(--lavDeep)] dark:group-hover:text-[var(--lavenderAccent)] transition-colors duration-300">{p.name}</h3>
+                                   <p className="text-xs text-[var(--faint)] truncate">{p.venue}</p>
+                                   <div className="flex flex-wrap items-center gap-2 mt-1">
+                                     <span className="text-xs text-[var(--soft)] bg-zinc-100 dark:bg-zinc-800/60 px-2 py-0.5 rounded">
+                                       {new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                     </span>
+                                     <span className="text-xs text-[var(--soft)] bg-zinc-100 dark:bg-zinc-800/60 px-2 py-0.5 rounded font-medium">
+                                       Бюджет: {displayPrice.toLocaleString('ru')} ₽
+                                     </span>
+                                   </div>
+                                 </div>
+                                 
+                                 {/* Stepper progress in the middle (only on medium screens or wider) */}
+                                 <div className="hidden md:block w-48 shrink-0">
+                                   <div className="flex items-center justify-between relative py-1">
+                                     <div className="absolute top-[8px] left-1 right-1 h-[2px] bg-zinc-100 dark:bg-zinc-800/60 z-0 rounded-full" />
+                                     <div
+                                       className="absolute top-[8px] left-1 h-[2px] bg-[var(--sage)] z-0 rounded-full transition-all duration-500"
+                                       style={{ width: `${(p.currentStep / 4) * 92}%` }}
+                                     />
+                                     {stepsList.map((stepName, idx) => {
+                                       const isDone = idx < p.currentStep;
+                                       const isCurrent = idx === p.currentStep;
+                                       return (
+                                         <div key={idx} className="flex flex-col items-center gap-1 relative z-10 flex-1">
+                                           <div
+                                             className={`w-[8px] h-[8px] rounded-full border transition-all duration-300 ${
+                                               isDone
+                                                 ? 'bg-[var(--sage)] border-[var(--sage)]'
+                                                 : isCurrent
+                                                 ? 'bg-[var(--lavenderAccent)] border-[var(--lavenderAccent)]'
+                                                 : 'bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700'
+                                             }`}
+                                             title={stepName}
+                                           />
+                                         </div>
+                                       );
+                                     })}
+                                   </div>
+                                   <div className="text-center text-xs text-[var(--faint)] mt-1">
+                                     Этап: {stepsList[p.currentStep] || 'Завершен'}
+                                   </div>
+                                 </div>
+
+                                 {/* Action buttons */}
+                                 <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+                                   <button
+                                     onClick={() => {
+                                       setSelectedProject(p);
+                                       setActiveTab('projects');
+                                     }}
+                                     className="flex-1 sm:flex-initial bg-[var(--lavDeep)] hover:opacity-90 text-white rounded-xl px-4 py-2 text-xs font-medium transition-all cursor-pointer whitespace-nowrap"
+                                   >
+                                     Открыть проект
+                                   </button>
+                                   <button
+                                     onClick={() => {
+                                       navigator.clipboard.writeText(`https://fleur-decor.ru/brief/${p.id}`);
+                                       showToast('Бриф скопирован', 'Отправьте ссылку клиенту для прохождения опроса.', 'success');
+                                     }}
+                                     className="p-2 rounded-xl bg-white/30 hover:bg-white/50 dark:bg-white/5 border border-[var(--glass-edge)] text-[var(--ink)] transition-all flex items-center justify-center cursor-pointer shrink-0"
+                                     title="Копировать бриф"
+                                   >
+                                     <Copy className="w-3.5 h-3.5" />
+                                   </button>
+                                 </div>
+                               </div>
+                             </div>
+
+                             {/* Desktop Card Layout (Strictly matches the layout in the second screenshot) */}
+                             <div
+                               className="hidden lg:flex flex-row items-stretch border border-zinc-200/85 dark:border-zinc-800 shadow-[0_8px_30px_rgba(0,0,0,0.03)] bg-white dark:bg-zinc-900/40 backdrop-blur-md h-[168px] rounded-[24px] overflow-hidden w-full relative group hover:border-[var(--lavenderAccent)]/40 transition-all duration-300 text-left"
+                             >
+                               {/* Left Image Section */}
+                               <div className="w-[180px] shrink-0 relative overflow-hidden bg-zinc-100 dark:bg-zinc-850">
+                                 <img
+                                   src={projectImg}
+                                   alt={p.name}
+                                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-102"
+                                   referrerPolicy="no-referrer"
+                                 />
+                                 {/* Status Badge */}
+                                 <span className={`absolute top-3.5 left-3.5 text-[11px] font-bold px-3 py-1 rounded-full shadow-sm ${
+                                   p.status === 'approved'
+                                     ? 'bg-[#E8F8F2] text-[#0A7B5C]'
+                                     : p.status === 'progress' || p.status === 'waiting'
+                                     ? 'bg-[#FEF3C7] text-[#D97706]'
+                                     : 'bg-zinc-100/90 text-zinc-500 dark:bg-zinc-800/90 dark:text-zinc-400'
+                                 }`}>
+                                   {p.status === 'approved' ? 'Согласован' :
+                                    p.status === 'progress' ? 'В работе' :
+                                    p.status === 'waiting' ? 'Бриф' : 'Архив'}
+                                 </span>
+
+                                 <button
+                                   onClick={() => setSelectedProject(p)}
+                                   className="absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-white/75 dark:bg-black/35 backdrop-blur flex items-center justify-center text-[var(--ink)] hover:text-[var(--lavenderAccent)] transition-colors z-10"
+                                   title="Быстрый просмотр"
+                                 >
+                                   <Eye className="w-3.5 h-3.5" />
+                                 </button>
+
+                                 {/* Date Tag on Bottom Right */}
+                                 <span className="absolute bottom-3.5 right-3.5 text-[11px] bg-black/40 backdrop-blur-md text-white font-semibold px-2.5 py-0.5 rounded-full">
+                                   {new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'short' })}
+                                 </span>
+                               </div>
+
+                               {/* Right Content Section */}
+                               <div className="p-4 pr-5 flex flex-col justify-between flex-1 min-w-0">
+                                 {/* Row 1: Title, Venue on left, copy brief button on right */}
+                                 <div className="flex items-start justify-between gap-3">
+                                   <div className="min-w-0">
+                                     <h3 className="font-bold text-[17px] text-[var(--ink)] leading-tight truncate">
+                                       {p.name}
+                                     </h3>
+                                     <p className="text-[12px] text-[var(--soft)] mt-0.5 truncate">
+                                       {p.venue}
+                                     </p>
+                                   </div>
+                                   <button
+                                     onClick={() => {
+                                       navigator.clipboard.writeText(`https://fleur-decor.ru/brief/${p.id}`);
+                                       showToast('Бриф скопирован', 'Отправьте ссылку клиенту для прохождения опроса.', 'success');
+                                     }}
+                                     className="w-[38px] h-[38px] rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors shrink-0 cursor-pointer shadow-sm text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+                                     title="Копировать бриф"
+                                   >
+                                     <Copy className="w-4 h-4" />
+                                   </button>
+                                 </div>
+
+                                 {/* Row 2: Custom Horizontal Stepper with labels underneath */}
+                                 <div className="relative px-[10px] mt-1">
+                                   {/* Background Line */}
+                                   <div className="absolute left-[15px] right-[15px] top-[5px] h-[2px] bg-zinc-200 dark:bg-zinc-800/80" />
+                                   {/* Progress Line */}
+                                   <div
+                                     className="absolute left-[15px] top-[5px] h-[2px] bg-[#0A7B5C] transition-all duration-500"
+                                     style={{ width: `${p.currentStep * 25}%` }}
+                                   />
+                                   <div className="flex items-center justify-between relative z-10">
+                                     {stepsList.map((stepName, idx) => {
+                                       const isDone = idx < p.currentStep;
+                                       const isCurrent = idx === p.currentStep;
+                                       return (
+                                         <div key={idx} className="flex flex-col items-center select-none">
+                                           <div
+                                             className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                                               isDone
+                                                 ? 'bg-[#0A7B5C]'
+                                                 : isCurrent
+                                                 ? 'bg-[#8B5CF6] ring-[4px] ring-[#8B5CF6]/20'
+                                                 : 'bg-white dark:bg-zinc-900 border-2 border-zinc-200 dark:border-zinc-800'
+                                             }`}
+                                           />
+                                           <span className={`text-[10px] mt-1.5 font-bold transition-colors ${
+                                             isCurrent
+                                               ? 'text-[#8B5CF6]'
+                                               : isDone
+                                               ? 'text-zinc-700 dark:text-zinc-300'
+                                               : 'text-zinc-400 dark:text-zinc-500'
+                                           }`}>
+                                             {stepName}
+                                           </span>
+                                         </div>
+                                       );
+                                     })}
+                                   </div>
+                                 </div>
+
+                                 {/* Row 3: Metadata chips on left, "Открыть проект" on right */}
+                                 <div className="flex items-center justify-between gap-4 mt-1.5">
+                                   <div className="flex items-center gap-2 min-w-0">
+                                     <span className="text-[11px] text-zinc-600 dark:text-zinc-400 bg-[#F8F9FA] dark:bg-zinc-850 px-3 py-1.5 rounded-xl border border-zinc-100 dark:border-zinc-800/40 truncate">
+                                       {new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                     </span>
+                                     <span className="text-[11px] text-zinc-600 dark:text-zinc-400 bg-[#F8F9FA] dark:bg-zinc-850 px-3 py-1.5 rounded-xl border border-zinc-100 dark:border-zinc-800/40 font-bold truncate">
+                                       Бюджет: {displayPrice.toLocaleString('ru')} ₽
+                                     </span>
+                                   </div>
+                                   <button
+                                     onClick={() => {
+                                       setSelectedProject(p);
+                                       setActiveTab('projects');
+                                     }}
+                                     className="bg-[#5D3E8D] hover:bg-[#4E3175] text-white rounded-full font-semibold text-[12px] py-2 px-5.5 shadow-sm transition-colors cursor-pointer shrink-0"
+                                   >
+                                     Открыть проект
+                                   </button>
+                                 </div>
+                               </div>
+                             </div>
+                          </React.Fragment>
                         );
                       })}
                     </div>

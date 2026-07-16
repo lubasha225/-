@@ -824,9 +824,9 @@ export default function WarehouseTab({
           )}
         </div>
       ) : (
-        <div className="space-y-4 animate-fadeIn">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-fadeIn">
           {filteredItems.length === 0 ? (
-            <div className="py-16 text-center text-[var(--faint)] text-xs tracking-wide">
+            <div className="col-span-full py-16 text-center text-[var(--faint)] text-xs tracking-wide">
               На складе нет товаров по выбранному критерию.
             </div>
           ) : (
@@ -835,28 +835,37 @@ export default function WarehouseTab({
               return (
                 <div 
                   key={item.id} 
-                  className="glass-panel p-4 rounded-[20px] flex flex-col sm:flex-row items-center gap-5 border border-[var(--glass-edge)]/70 hover:border-[var(--lavenderAccent)]/50 transition-all duration-300 w-full text-left bg-white dark:bg-zinc-900/25 group"
+                  className="glass-panel rounded-[24px] overflow-hidden flex flex-row items-stretch border border-zinc-200/85 dark:border-zinc-800 shadow-[0_8px_30px_rgba(0,0,0,0.03)] bg-white dark:bg-zinc-900/40 backdrop-blur-md h-[142px] sm:h-[152px] w-full relative group hover:border-[var(--lavenderAccent)]/50 transition-all duration-300 text-left"
                 >
-                  {/* Left part - Small preview */}
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shrink-0 relative bg-zinc-100/10 dark:bg-zinc-800/20 border border-[var(--glass-edge)]/40">
+                  {/* Left part - Image section without padding */}
+                  <div className="w-[115px] sm:w-[150px] shrink-0 relative overflow-hidden bg-zinc-100 dark:bg-zinc-850">
                     <img 
                       src={itemImage} 
                       alt={item.name} 
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-103"
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-103"
                       referrerPolicy="no-referrer" 
                     />
-                    <span className="absolute top-1 left-1 text-xs font-medium tracking-wider text-white bg-black/60 px-1.5 py-0.5 rounded uppercase select-none">
+                    {/* Category overlay label */}
+                    <span className="absolute top-2.5 left-2.5 text-[9px] sm:text-[10px] font-bold tracking-wider text-white bg-black/50 backdrop-blur-md px-2 py-0.5 rounded-full uppercase select-none">
                       {item.category}
                     </span>
                   </div>
 
                   {/* Right part - Details */}
-                  <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5 h-full w-full">
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-1.5 sm:gap-4">
-                      <h4 className="font-medium text-sm sm:text-base text-[var(--ink)] tracking-tight leading-snug truncate" title={item.name}>
-                        {item.name}
-                      </h4>
-                      <div className="text-xs sm:text-[13px] text-zinc-400 dark:text-zinc-500 font-medium shrink-0">
+                  <div className="flex-1 min-w-0 flex flex-col justify-between p-3.5 sm:p-4 h-full w-full">
+                    <div className="space-y-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <h4 className="font-bold text-[14px] sm:text-[15px] text-[var(--ink)] leading-snug tracking-tight line-clamp-1 group-hover:text-[var(--lavDeep)] dark:group-hover:text-[var(--lavenderAccent)] transition-colors duration-300" title={item.name}>
+                          {item.name}
+                        </h4>
+                      </div>
+                      
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 font-light leading-snug line-clamp-1 sm:line-clamp-2 mt-0.5">
+                        {item.description || 'Классический элемент оформления для создания великолепных свадебных концепций.'}
+                      </p>
+
+                      {/* Quantity field inside a pill badge */}
+                      <div className="mt-1.5 sm:mt-2">
                         {editingQtyId === item.id ? (
                           <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                             <input
@@ -873,7 +882,7 @@ export default function WarehouseTab({
                             <button
                               type="button"
                               onClick={() => handleSaveQty(item.id)}
-                              className="p-1 text-emerald-500 hover:text-emerald-600 rounded-full bg-emerald-500/10 shrink-0 cursor-pointer"
+                              className="p-1 text-emerald-500 hover:text-emerald-600 rounded-full bg-emerald-500/10 shrink-0 cursor-pointer animate-scaleIn"
                             >
                               <Check className="w-3.5 h-3.5" />
                             </button>
@@ -885,21 +894,17 @@ export default function WarehouseTab({
                               setEditingQtyId(item.id);
                               setTempQty(String(item.total));
                             }}
-                            className="flex items-center gap-1.5 cursor-pointer hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] transition-colors select-none"
+                            className="inline-flex items-center gap-1.5 bg-zinc-100/70 dark:bg-zinc-800/40 hover:bg-zinc-200/70 dark:hover:bg-zinc-700/40 px-2 py-0.5 sm:py-1 rounded-md cursor-pointer hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] transition-colors select-none text-[10px] sm:text-xs text-[var(--soft)]"
                             title="Изменить общее количество (нажмите для редактирования)"
                           >
-                            <span>Количество: <span className="font-medium text-zinc-900 dark:text-zinc-100 text-xs sm:text-sm">{item.total}</span> шт.</span>
-                            <Pencil className="w-3 h-3 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 shrink-0" />
+                            <span>Количество: <span className="font-semibold text-zinc-900 dark:text-zinc-100">{item.total}</span> шт.</span>
+                            <Pencil className="w-2.5 h-2.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 shrink-0" />
                           </div>
                         )}
                       </div>
                     </div>
-                    
-                    <p className="text-xs sm:text-xs text-zinc-500 dark:text-zinc-400 font-light leading-relaxed line-clamp-1 mt-1">
-                      {item.description || 'Классический элемент оформления для создания великолепных свадебных концепций.'}
-                    </p>
 
-                    <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-zinc-100 dark:border-zinc-800/40">
+                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-[var(--glass-edge)]/15">
                       {/* Price section */}
                       <div className="min-w-0">
                         {editingPriceId === item.id ? (
@@ -948,10 +953,10 @@ export default function WarehouseTab({
                           e.stopPropagation();
                           handleDeleteItem(item.id, item.name);
                         }}
-                        className="p-1.5 text-rose-400 dark:text-rose-500/80 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-full transition-all cursor-pointer"
+                        className="p-1.5 text-rose-400 dark:text-rose-500/80 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-full border border-transparent hover:border-rose-100 dark:hover:border-rose-900/30 transition-all cursor-pointer"
                         title="Удалить позицию"
                       >
-                        <Trash2 className="w-4.5 h-4.5" />
+                        <Trash2 className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
                       </button>
                     </div>
                   </div>
