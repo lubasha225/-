@@ -700,8 +700,8 @@ export default function WarehouseTab({
                     {/* Subtle bottom dark overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent" />
                     
-                    {/* Floating Category Badge (matching brown/dark capsule in top-right) */}
-                    <span className="absolute top-3 right-3 text-xs font-medium tracking-wider text-white bg-[#5D544F]/90 dark:bg-stone-800/90 backdrop-blur-md px-2.5 py-1 rounded-[6px] uppercase select-none">
+                    {/* Floating Category Badge (matching transparent/blur capsule in top-right) */}
+                    <span className="absolute top-3 right-3 text-[10px] font-light tracking-wider text-white bg-black/60 backdrop-blur-md border border-white/10 px-2 py-0.5 rounded-[6px] uppercase select-none">
                       {item.category}
                     </span>
 
@@ -737,7 +737,7 @@ export default function WarehouseTab({
                           setEditingQtyId(item.id);
                           setTempQty(String(item.total));
                         }}
-                        className="absolute bottom-3 right-3 flex items-center gap-2 bg-black/75 backdrop-blur-md px-3.5 py-2 rounded-xl text-white select-none cursor-pointer hover:bg-black/85 hover:scale-105 transition-all duration-200 shadow-md shadow-black/20"
+                        className="absolute bottom-3 right-3 flex items-center gap-2 bg-black/60 backdrop-blur-md border border-white/10 px-3.5 py-2 rounded-xl text-white select-none cursor-pointer hover:bg-black/75 hover:scale-105 transition-all duration-200 shadow-md shadow-black/20"
                         title="Изменить общее количество (нажмите для редактирования)"
                       >
                         <span className="w-2.5 h-2.5 rounded-full bg-[#52D18D] shadow-[0_0_8px_#52D18D]" />
@@ -846,7 +846,7 @@ export default function WarehouseTab({
                       referrerPolicy="no-referrer" 
                     />
                     {/* Category overlay label */}
-                    <span className="absolute top-2.5 left-2.5 text-[9px] sm:text-[10px] font-bold tracking-wider text-white bg-black/50 backdrop-blur-md px-2 py-0.5 rounded-full uppercase select-none">
+                    <span className="absolute top-2.5 left-2.5 text-[9px] sm:text-[10px] font-light tracking-wider text-white bg-black/60 backdrop-blur-md border border-white/10 px-2 py-0.5 rounded-full uppercase select-none">
                       {item.category}
                     </span>
                   </div>
