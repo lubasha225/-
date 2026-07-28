@@ -47,7 +47,22 @@ import {
   Link,
   ChevronUp,
   ChevronDown,
-  Volume2
+  Volume2,
+  GripVertical,
+  Sun,
+  Contrast,
+  Palette,
+  Target,
+  Droplet,
+  ZoomIn,
+  Bell,
+  Moon,
+  ArrowLeft,
+  Pencil,
+  Undo2,
+  Redo2,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import { Project, EstimateItem } from '../types';
 import { CATALOG_ASSETS, LibraryItem } from './editor/EditorLibraryData';
@@ -71,12 +86,15 @@ export interface CanvasElement {
   h: number;
   rotation: number;
   exposure: number;
+  contrast?: number;
   hue: number;
   temp: number;
   saturate: number;
   opacity: number;
   price: number;
   comment: string;
+  code?: string;
+  sourceType?: string;
   isLocked: boolean;
   isVisible: boolean;
   isFlippedH: boolean;
@@ -449,6 +467,14 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
 
   // Selection ID on the Canvas
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  // Expanded project element in right sidebar
+  const [expandedElementId, setExpandedElementId] = useState<string | null>(null);
+  const [draftPrice, setDraftPrice] = useState<string>('');
+  const [draftNote, setDraftNote] = useState<string>('');
+
+  // Active adjustment floating tool
+  const [activeFilterTool, setActiveFilterTool] = useState<'brightness' | 'contrast' | 'saturate' | 'hue' | 'opacity' | 'zoom' | null>(null);
 
   // Undo/Redo Stacking
   const [history, setHistory] = useState<EditorScene[][]>([JSON.parse(JSON.stringify(scenes))]);
@@ -1162,25 +1188,9 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
     if (setHeaderActions) {
       setHeaderActions(
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-          <div className="flex items-center gap-1.5 bg-white/50 dark:bg-black/20 p-1.5 rounded-xl border border-[var(--glass-edge)]">
-            <span className="text-[10px] font-semibold px-1.5 text-[var(--faint)]">Проект:</span>
-            <select
-              value={activeProjectId}
-              onChange={(e) => {
-                setActiveProjectId(e.target.value);
-                showToast('Смена проекта', `Активный проект переключен.`, 'info');
-              }}
-              className="text-xs font-bold bg-transparent text-[var(--ink)] focus:outline-none cursor-pointer pr-4"
-            >
-              {projects.map(p => (
-                <option key={p.id} value={p.id} className="dark:bg-zinc-950 text-xs font-medium text-black dark:text-zinc-100">{p.name}</option>
-              ))}
-            </select>
-          </div>
-
           <button
             onClick={() => setIsAiModalOpen(true)}
-            className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-full bg-gradient-to-r from-violet-600 to-pink-600 hover:opacity-90 text-white text-xs font-bold transition-all shadow-md shadow-violet-500/10 cursor-pointer"
+            className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 rounded-full bg-[var(--lavDeep)] hover:bg-[var(--lavenderAccent)] text-white text-xs font-bold transition-all shadow-md shadow-[var(--lavDeep)]/20 cursor-pointer"
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>ИИ визуализация</span>
@@ -1188,18 +1198,32 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
           
           <button
             onClick={handleSaveProjectCollage}
-            className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-full bg-white/60 dark:bg-zinc-900/60 hover:bg-white/90 border border-[var(--glass-edge)] text-[var(--ink)] text-xs font-bold transition-all cursor-pointer"
+            className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full bg-white dark:bg-zinc-900 hover:bg-zinc-50 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-200 text-xs font-semibold transition-all shadow-xs cursor-pointer"
           >
-            <Save className="w-3.5 h-3.5 text-blue-500" />
-            <span>Сохранить</span>
+            <Check className="w-3.5 h-3.5 text-emerald-500" />
+            <span>Сохранено</span>
           </button>
 
           <button
             onClick={handleDownloadLayout}
-            className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-full bg-white/60 dark:bg-zinc-900/60 hover:bg-white/90 border border-[var(--glass-edge)] text-[var(--ink)] text-xs font-bold transition-all cursor-pointer"
+            className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full bg-white dark:bg-zinc-900 hover:bg-zinc-50 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-200 text-xs font-semibold transition-all shadow-xs cursor-pointer"
           >
-            <Download className="w-3.5 h-3.5 text-emerald-500" />
+            <Download className="w-3.5 h-3.5 text-zinc-500" />
             <span>Скачать</span>
+          </button>
+
+          <button
+            onClick={() => {
+              if (window.history.length > 1) {
+                window.history.back();
+              } else {
+                showToast('Проект', 'Возврат к списку проектов', 'info');
+              }
+            }}
+            className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full bg-white dark:bg-zinc-900 hover:bg-zinc-50 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-200 text-xs font-semibold transition-all shadow-xs cursor-pointer"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 text-zinc-500" />
+            <span>в проект</span>
           </button>
         </div>
       );
@@ -1214,50 +1238,51 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
   const selectedElem = activeScene.elements.find(el => el.id === selectedId);
 
   return (
-    <div className="flex-1 flex flex-col gap-4 min-h-0 h-full pb-1 print:pb-0" onMouseMove={handleCanvasMouseMove} onMouseUp={handleCanvasMouseUp}>
+    <div className="flex-1 flex flex-col gap-2.5 min-h-0 min-w-0 h-full pb-1 print:pb-0" onMouseMove={handleCanvasMouseMove} onMouseUp={handleCanvasMouseUp}>
 
       {/* MAIN TWO-COLUMN SPLIT */}
-      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-4 print:hidden">
+      <div className="flex-1 min-h-0 min-w-0 h-full grid grid-cols-1 lg:grid-cols-12 gap-3 print:hidden">
         
         {/* LEFT COLUMN: ACTIVE WORKSPACE (70% WIDTH) */}
-        <div className="lg:col-span-8 flex flex-col gap-3 h-full min-h-0">
+        <div className="lg:col-span-8 flex flex-col gap-2.5 h-full min-h-0 min-w-0">
           
           {/* Top workspace navigation bar */}
-          <div className="flex items-center justify-between bg-white/30 dark:bg-zinc-900/5 border border-[var(--glass-edge)] p-2 rounded-2xl shrink-0">
-            <div className="flex items-center gap-1.5">
+          <div className="flex items-center justify-between bg-white/40 dark:bg-zinc-900/10 border border-[var(--glass-edge)] p-1.5 rounded-2xl shrink-0 backdrop-blur-md">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  showToast('Новая сцена', 'Создана новая визуализация', 'info');
+                }}
+                className="w-7 h-7 rounded-full bg-white/60 dark:bg-zinc-800/60 hover:bg-white border border-[var(--glass-edge)] flex items-center justify-center text-[var(--soft)] hover:text-[var(--ink)] transition-all cursor-pointer"
+                title="Добавить визуализацию"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+
               <button
                 onClick={() => setActiveWorkspaceTab('scene-1')}
-                className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                   activeWorkspaceTab === 'scene-1'
                     ? 'bg-[var(--lavDeep)] text-white shadow-sm'
                     : 'text-[var(--soft)] hover:text-[var(--ink)] hover:bg-white/40 dark:hover:bg-black/20'
                 }`}
               >
-                Визуализация 1
+                <span>Визуализация 1</span>
+                <Pencil className="w-3 h-3 opacity-70" />
               </button>
-              <button
-                onClick={() => setActiveWorkspaceTab('scene-2')}
-                className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                  activeWorkspaceTab === 'scene-2'
-                    ? 'bg-[var(--lavDeep)] text-white shadow-sm'
-                    : 'text-[var(--soft)] hover:text-[var(--ink)] hover:bg-white/40 dark:hover:bg-black/20'
-                }`}
-              >
-                Визуализация 2
-              </button>
+
               <button
                 onClick={() => {
                   setActiveWorkspaceTab('floorplan');
                   setSelectedId(null);
                 }}
-                className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
                   activeWorkspaceTab === 'floorplan'
-                    ? 'bg-indigo-600 text-white shadow-sm'
+                    ? 'bg-[var(--lavDeep)] text-white shadow-sm'
                     : 'text-[var(--soft)] hover:text-[var(--ink)] hover:bg-white/40 dark:hover:bg-black/20'
                 }`}
               >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Схема рассадки</span>
+                <span>Схема</span>
               </button>
             </div>
 
@@ -1285,9 +1310,9 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
           </div>
 
           {/* MAIN CANVAS AREA / SEATING ARRANGEMENT VIEW */}
-          <div className="flex-1 min-h-0 relative">
+          <div className="flex-1 min-h-0 min-w-0 relative h-full flex flex-col">
             {activeWorkspaceTab === 'floorplan' ? (
-              <div className="glass-panel rounded-3xl overflow-hidden h-full min-h-0">
+              <div className="glass-panel rounded-3xl overflow-hidden h-full min-h-0 min-w-0">
                 <FloorPlanSchema
                   initialElements={floorPlanElements}
                   onSave={setFloorPlanElements}
@@ -1299,7 +1324,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
               <div
                 ref={viewportRef}
                 onMouseDown={handleViewportMouseDown}
-                className={`relative bg-zinc-950/60 dark:bg-black/40 rounded-3xl overflow-hidden flex items-center justify-center h-full min-h-0 border border-zinc-200/20 dark:border-zinc-800/20 select-none p-4 ${isPanning ? 'cursor-grabbing' : 'cursor-grab'}`}
+                className={`relative bg-zinc-950/60 dark:bg-black/40 rounded-3xl overflow-hidden flex items-center justify-center flex-1 h-full min-h-0 min-w-0 w-full border border-zinc-200/20 dark:border-zinc-800/20 select-none ${isPanning ? 'cursor-grabbing' : 'cursor-grab'}`}
               >
                 {/* Zoom Controls Overlay */}
                 <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5 bg-black/70 backdrop-blur-md px-2.5 py-1.5 rounded-full border border-white/10 text-white text-[11px] font-semibold">
@@ -1318,16 +1343,18 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                   </button>
                 </div>
 
-                <div
-                  ref={canvasContainerRef}
-                  className={`relative bg-zinc-900/90 rounded-2xl shadow-2xl border border-zinc-950/85 overflow-hidden shrink-0 select-none ${isPanning ? '' : 'transition-transform duration-200'}`}
-                  style={{
-                    width: `${canvasWidthMm / 10}px`,
-                    height: `${canvasHeightMm / 10}px`,
-                    transform: `translate(${panX}px, ${panY}px) scale(${canvasScale * zoomScale})`,
-                  }}
-                  onClick={() => setSelectedId(null)}
-                >
+                {/* Absolute centering wrapper so canvas element unscaled width/height never expands grid/flex layout */}
+                <div className="absolute inset-0 flex items-center justify-center overflow-hidden pointer-events-none p-4">
+                  <div
+                    ref={canvasContainerRef}
+                    className={`relative bg-zinc-900/90 rounded-2xl shadow-2xl border border-zinc-950/85 overflow-hidden shrink-0 select-none pointer-events-auto ${isPanning ? '' : 'transition-transform duration-200'}`}
+                    style={{
+                      width: `${canvasWidthMm / 10}px`,
+                      height: `${canvasHeightMm / 10}px`,
+                      transform: `translate(${panX}px, ${panY}px) scale(${canvasScale * zoomScale})`,
+                    }}
+                    onClick={() => setSelectedId(null)}
+                  >
                 {/* Backdrop Layer */}
                 {activeScene.backdropType === 'image' && activeScene.backdropImage ? (
                   <img
@@ -1405,18 +1432,18 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                       {isSelected && (
                         <>
                           {/* Outer Border Outline */}
-                          <div className="absolute inset-0 border border-violet-600 pointer-events-none" />
+                          <div className="absolute inset-0 border border-[var(--lavDeep)] pointer-events-none" />
 
                           {/* 8 Resizing handles */}
                           {[
-                            { id: 'tl', cursor: 'nwse-resize', class: 'top-0 left-0 -translate-x-1/2 -translate-y-1/2 rounded-full w-3 h-3 bg-white border-2 border-violet-600' },
-                            { id: 'tr', cursor: 'nesw-resize', class: 'top-0 right-0 translate-x-1/2 -translate-y-1/2 rounded-full w-3 h-3 bg-white border-2 border-violet-600' },
-                            { id: 'bl', cursor: 'nesw-resize', class: 'bottom-0 left-0 -translate-x-1/2 translate-y-1/2 rounded-full w-3 h-3 bg-white border-2 border-violet-600' },
-                            { id: 'br', cursor: 'nwse-resize', class: 'bottom-0 right-0 translate-x-1/2 translate-y-1/2 rounded-full w-3 h-3 bg-white border-2 border-violet-600' },
-                            { id: 't', cursor: 'ns-resize', class: 'top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white border border-violet-600' },
-                            { id: 'b', cursor: 'ns-resize', class: 'bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-2.5 h-2.5 bg-white border border-violet-600' },
-                            { id: 'l', cursor: 'ew-resize', class: 'top-1/2 left-0 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white border border-violet-600' },
-                            { id: 'r', cursor: 'ew-resize', class: 'top-1/2 right-0 translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white border border-violet-600' }
+                            { id: 'tl', cursor: 'nwse-resize', class: 'top-0 left-0 -translate-x-1/2 -translate-y-1/2 rounded-full w-3 h-3 bg-white border-2 border-[var(--lavDeep)]' },
+                            { id: 'tr', cursor: 'nesw-resize', class: 'top-0 right-0 translate-x-1/2 -translate-y-1/2 rounded-full w-3 h-3 bg-white border-2 border-[var(--lavDeep)]' },
+                            { id: 'bl', cursor: 'nesw-resize', class: 'bottom-0 left-0 -translate-x-1/2 translate-y-1/2 rounded-full w-3 h-3 bg-white border-2 border-[var(--lavDeep)]' },
+                            { id: 'br', cursor: 'nwse-resize', class: 'bottom-0 right-0 translate-x-1/2 translate-y-1/2 rounded-full w-3 h-3 bg-white border-2 border-[var(--lavDeep)]' },
+                            { id: 't', cursor: 'ns-resize', class: 'top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white border border-[var(--lavDeep)]' },
+                            { id: 'b', cursor: 'ns-resize', class: 'bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-2.5 h-2.5 bg-white border border-[var(--lavDeep)]' },
+                            { id: 'l', cursor: 'ew-resize', class: 'top-1/2 left-0 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white border border-[var(--lavDeep)]' },
+                            { id: 'r', cursor: 'ew-resize', class: 'top-1/2 right-0 translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white border border-[var(--lavDeep)]' }
                           ].map((handle) => (
                             <div
                               key={handle.id}
@@ -1441,9 +1468,9 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                           ))}
 
                           {/* Rotation handle and line */}
-                          <div className="absolute top-0 left-1/2 w-[1.5px] h-6 bg-violet-600 -translate-x-1/2 -translate-y-6 pointer-events-none" />
+                          <div className="absolute top-0 left-1/2 w-[1.5px] h-6 bg-[var(--lavDeep)] -translate-x-1/2 -translate-y-6 pointer-events-none" />
                           <div
-                            className="absolute top-0 left-1/2 w-5 h-5 rounded-full bg-white border-2 border-violet-600 shadow-md -translate-x-1/2 -translate-y-9 flex items-center justify-center hover:bg-violet-50 hover:scale-110 active:scale-95 transition-transform cursor-grab active:cursor-grabbing z-40"
+                            className="absolute top-0 left-1/2 w-5 h-5 rounded-full bg-white border-2 border-[var(--lavDeep)] shadow-md -translate-x-1/2 -translate-y-9 flex items-center justify-center hover:bg-[var(--lavenderSoft)] hover:scale-110 active:scale-95 transition-transform cursor-grab active:cursor-grabbing z-40"
                             title="Повернуть"
                             onMouseDown={(e) => {
                               e.stopPropagation();
@@ -1465,7 +1492,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                               }
                             }}
                           >
-                            <RefreshCw className="w-2.5 h-2.5 text-violet-600 animate-spin-slow" />
+                            <RefreshCw className="w-2.5 h-2.5 text-[var(--lavDeep)] animate-spin-slow" />
                           </div>
 
                           {/* FLOATING QUICK TOOLBAR */}
@@ -1516,18 +1543,233 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                   );
                 })}
                 </div>
-              </div>
+                {/* FLOATING VERTICAL TOOLBAR STACK ON CANVAS */}
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-3">
+                  {/* TOP ACTIONS STACK */}
+                  <div className="flex flex-col gap-1.5 bg-white/95 dark:bg-zinc-900/95 p-1 rounded-full shadow-lg border border-zinc-200/80 dark:border-zinc-800 backdrop-blur-md">
+                    <button
+                      onClick={() => {
+                        if (selectedId) {
+                          updateActiveSceneElements(prev => prev.filter(item => item.id !== selectedId));
+                          setSelectedId(null);
+                          showToast('Удалено', 'Элемент удален со сцены', 'info');
+                        } else {
+                          showToast('Выберите элемент', 'Кликните на элемент для удаления', 'warn');
+                        }
+                      }}
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all cursor-pointer"
+                      title="Удалить выбранный элемент"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (selectedElem) handleDuplicateElement(selectedElem);
+                        else showToast('Выберите элемент', 'Кликните на элемент для копирования', 'warn');
+                      }}
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] hover:bg-[var(--lavenderSoft)] dark:hover:bg-[var(--lavDeep)]/30 transition-all cursor-pointer"
+                      title="Копировать элемент"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (selectedId) {
+                          const idx = activeScene.elements.findIndex(e => e.id === selectedId);
+                          if (idx > 0) handleMoveLayer(idx, 'down');
+                        }
+                      }}
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] hover:bg-[var(--lavenderSoft)] dark:hover:bg-[var(--lavDeep)]/30 transition-all cursor-pointer"
+                      title="Опустить слой назад"
+                    >
+                      <ArrowDown className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (selectedId) {
+                          const idx = activeScene.elements.findIndex(e => e.id === selectedId);
+                          if (idx !== -1 && idx < activeScene.elements.length - 1) handleMoveLayer(idx, 'up');
+                        }
+                      }}
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] hover:bg-[var(--lavenderSoft)] dark:hover:bg-[var(--lavDeep)]/30 transition-all cursor-pointer"
+                      title="Поднять слой вперед"
+                    >
+                      <ArrowUp className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (selectedId) {
+                          updateActiveSceneElements(prev => prev.map(item => item.id === selectedId ? { ...item, isFlippedH: !item.isFlippedH } : item));
+                        }
+                      }}
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] hover:bg-[var(--lavenderSoft)] dark:hover:bg-[var(--lavDeep)]/30 transition-all cursor-pointer"
+                      title="Отразить по горизонтали"
+                    >
+                      <FlipHorizontal className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={handleUndo}
+                      disabled={historyIndex <= 0}
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] hover:bg-[var(--lavenderSoft)] dark:hover:bg-[var(--lavDeep)]/30 disabled:opacity-30 transition-all cursor-pointer"
+                      title="Отменить действие"
+                    >
+                      <Undo2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={handleRedo}
+                      disabled={historyIndex >= history.length - 1}
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] hover:bg-[var(--lavenderSoft)] dark:hover:bg-[var(--lavDeep)]/30 disabled:opacity-30 transition-all cursor-pointer"
+                      title="Повторить действие"
+                    >
+                      <Redo2 className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* BOTTOM ADJUSTMENT STACK */}
+                  <div className="flex flex-col gap-1.5 bg-white/95 dark:bg-zinc-900/95 p-1 rounded-full shadow-lg border border-zinc-200/80 dark:border-zinc-800 backdrop-blur-md">
+                    <button
+                      onClick={() => setActiveFilterTool(activeFilterTool === 'brightness' ? null : 'brightness')}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                        activeFilterTool === 'brightness' ? 'bg-[var(--lavDeep)] text-white' : 'text-zinc-600 dark:text-zinc-300 hover:text-[var(--lavDeep)] hover:bg-[var(--lavenderSoft)]'
+                      }`}
+                      title="Яркость"
+                    >
+                      <Sun className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setActiveFilterTool(activeFilterTool === 'contrast' ? null : 'contrast')}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                        activeFilterTool === 'contrast' ? 'bg-[var(--lavDeep)] text-white' : 'text-zinc-600 dark:text-zinc-300 hover:text-[var(--lavDeep)] hover:bg-[var(--lavenderSoft)]'
+                      }`}
+                      title="Контрастность"
+                    >
+                      <Contrast className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setActiveFilterTool(activeFilterTool === 'saturate' ? null : 'saturate')}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                        activeFilterTool === 'saturate' ? 'bg-[var(--lavDeep)] text-white' : 'text-zinc-600 dark:text-zinc-300 hover:text-[var(--lavDeep)] hover:bg-[var(--lavenderSoft)]'
+                      }`}
+                      title="Насыщенность"
+                    >
+                      <Palette className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setActiveFilterTool(activeFilterTool === 'hue' ? null : 'hue')}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                        activeFilterTool === 'hue' ? 'bg-[var(--lavDeep)] text-white' : 'text-zinc-600 dark:text-zinc-300 hover:text-[var(--lavDeep)] hover:bg-[var(--lavenderSoft)]'
+                      }`}
+                      title="Цветовой тон"
+                    >
+                      <Target className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setActiveFilterTool(activeFilterTool === 'opacity' ? null : 'opacity')}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                        activeFilterTool === 'opacity' ? 'bg-[var(--lavDeep)] text-white' : 'text-zinc-600 dark:text-zinc-300 hover:text-[var(--lavDeep)] hover:bg-[var(--lavenderSoft)]'
+                      }`}
+                      title="Прозрачность"
+                    >
+                      <Droplet className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setZoomScale(1);
+                        setPanX(0);
+                        setPanY(0);
+                      }}
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:text-[var(--lavDeep)] hover:bg-[var(--lavenderSoft)] transition-all cursor-pointer"
+                      title="Масштабирование"
+                    >
+                      <ZoomIn className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* SLIDER POPUP FOR SELECTED ADJUSTMENT TOOL */}
+                {selectedElem && activeFilterTool && (
+                  <div className="absolute right-16 top-1/2 -translate-y-1/2 z-40 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-3 rounded-2xl shadow-xl flex flex-col gap-2 w-48">
+                    <div className="flex justify-between items-center text-xs font-bold text-zinc-700 dark:text-zinc-200">
+                      <span>
+                        {activeFilterTool === 'brightness' && 'Яркость'}
+                        {activeFilterTool === 'contrast' && 'Контрастность'}
+                        {activeFilterTool === 'saturate' && 'Насыщенность'}
+                        {activeFilterTool === 'hue' && 'Цветовой тон'}
+                        {activeFilterTool === 'opacity' && 'Прозрачность'}
+                      </span>
+                      <button onClick={() => setActiveFilterTool(null)} className="text-zinc-400 hover:text-zinc-600">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    {activeFilterTool === 'brightness' && (
+                      <input
+                        type="range"
+                        min="-50"
+                        max="50"
+                        value={selectedElem.exposure}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value);
+                          updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, exposure: val } : item));
+                        }}
+                        className="w-full accent-[var(--lavDeep)] cursor-pointer"
+                      />
+                    )}
+                    {activeFilterTool === 'opacity' && (
+                      <input
+                        type="range"
+                        min="10"
+                        max="100"
+                        value={selectedElem.opacity}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value);
+                          updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, opacity: val } : item));
+                        }}
+                        className="w-full accent-[var(--lavDeep)] cursor-pointer"
+                      />
+                    )}
+                    {activeFilterTool === 'saturate' && (
+                      <input
+                        type="range"
+                        min="0"
+                        max="200"
+                        value={selectedElem.saturate}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value);
+                          updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, saturate: val } : item));
+                        }}
+                        className="w-full accent-[var(--lavDeep)] cursor-pointer"
+                      />
+                    )}
+                    {activeFilterTool === 'hue' && (
+                      <input
+                        type="range"
+                        min="-180"
+                        max="180"
+                        value={selectedElem.hue}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value);
+                          updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, hue: val } : item));
+                        }}
+                        className="w-full accent-[var(--lavDeep)] cursor-pointer"
+                      />
+                    )}
+                  </div>
+                )}
+
+                  </div>
+                </div>
             )}
           </div>
 
-          {/* CANVAS BOTTOM TOOLBAR (Width/Height mm configurations, grid toggling) */}
+          {/* CANVAS BOTTOM TOOLBAR */}
           {activeWorkspaceTab !== 'floorplan' && (
-            <div className="flex flex-wrap items-center justify-between gap-4 bg-white/40 dark:bg-zinc-900/10 border border-[var(--glass-edge)] p-4 rounded-2xl backdrop-blur-md">
+            <div className="flex flex-wrap items-center justify-between gap-4 bg-white/70 dark:bg-zinc-900/60 border border-[var(--glass-edge)] px-5 py-2.5 rounded-full backdrop-blur-md shadow-xs shrink-0">
               
-              {/* Width and Height dimensions */}
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] font-bold text-[var(--soft)]">Ш:</span>
+              {/* Размер поля */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-[var(--ink)]">Размер поля</span>
+                <div className="flex items-center gap-1.5 ml-1">
+                  <span className="text-xs font-bold text-[var(--soft)]">Ш</span>
                   <input
                     type="text"
                     value={canvasWidthInput}
@@ -1536,31 +1778,16 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                       const parsed = parseFloat(canvasWidthInput);
                       if (!isNaN(parsed)) {
                         const mm = fromDisplayValue(parsed);
-                        const validated = Math.max(1000, Math.min(15000, mm));
-                        setCanvasWidthMm(validated);
-                      } else {
-                        setCanvasWidthInput(toDisplayValue(canvasWidthMm).toString());
+                        setCanvasWidthMm(Math.max(1000, Math.min(15000, mm)));
                       }
                     }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        const parsed = parseFloat(canvasWidthInput);
-                        if (!isNaN(parsed)) {
-                          const mm = fromDisplayValue(parsed);
-                          const validated = Math.max(1000, Math.min(15000, mm));
-                          setCanvasWidthMm(validated);
-                        } else {
-                          setCanvasWidthInput(toDisplayValue(canvasWidthMm).toString());
-                        }
-                        (e.target as HTMLInputElement).blur();
-                      }
-                    }}
-                    className="w-20 px-2 py-1 rounded-lg bg-white/60 dark:bg-zinc-950/40 border border-[var(--glass-edge)] text-xs font-semibold text-[var(--ink)] focus:outline-none"
-                    title="Ширина сцены в выбранных единицах"
+                    className="w-16 px-2.5 py-1 rounded-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs font-bold text-[var(--ink)] text-center focus:outline-none"
                   />
+                  <span className="text-xs font-bold text-[var(--soft)]">см</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] font-bold text-[var(--soft)]">В:</span>
+
+                <div className="flex items-center gap-1.5 ml-2">
+                  <span className="text-xs font-bold text-[var(--soft)]">В</span>
                   <input
                     type="text"
                     value={canvasHeightInput}
@@ -1569,93 +1796,63 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                       const parsed = parseFloat(canvasHeightInput);
                       if (!isNaN(parsed)) {
                         const mm = fromDisplayValue(parsed);
-                        const validated = Math.max(1000, Math.min(10000, mm));
-                        setCanvasHeightMm(validated);
-                      } else {
-                        setCanvasHeightInput(toDisplayValue(canvasHeightMm).toString());
+                        setCanvasHeightMm(Math.max(1000, Math.min(10000, mm)));
                       }
                     }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        const parsed = parseFloat(canvasHeightInput);
-                        if (!isNaN(parsed)) {
-                          const mm = fromDisplayValue(parsed);
-                          const validated = Math.max(1000, Math.min(10000, mm));
-                          setCanvasHeightMm(validated);
-                        } else {
-                          setCanvasHeightInput(toDisplayValue(canvasHeightMm).toString());
-                        }
-                        (e.target as HTMLInputElement).blur();
-                      }
-                    }}
-                    className="w-20 px-2 py-1 rounded-lg bg-white/60 dark:bg-zinc-950/40 border border-[var(--glass-edge)] text-xs font-semibold text-[var(--ink)] focus:outline-none"
-                    title="Высота сцены в выбранных единицах"
+                    className="w-16 px-2.5 py-1 rounded-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs font-bold text-[var(--ink)] text-center focus:outline-none"
                   />
+                  <span className="text-xs font-bold text-[var(--soft)]">см</span>
                 </div>
-                
-                {/* Unit Selector dropdown */}
-                <select
-                  value={activeUnit}
-                  onChange={(e) => setActiveUnit(e.target.value as any)}
-                  className="px-2 py-1 rounded-lg bg-white/60 dark:bg-zinc-950/40 border border-[var(--glass-edge)] text-xs font-semibold text-[var(--ink)] focus:outline-none cursor-pointer"
-                >
-                  <option value="mm">мм</option>
-                  <option value="cm">см</option>
-                  <option value="m">м</option>
-                </select>
               </div>
 
-              {/* Dynamic backdrop triggers */}
+              {/* Фон с плюсом и ползунком */}
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 bg-white/30 dark:bg-black/10 p-1 rounded-lg border border-[var(--glass-edge)]">
-                  <span className="text-[10px] font-semibold text-[var(--faint)] px-1.5">Фон:</span>
-                  <input
-                    type="color"
-                    value={activeScene.backdropColor}
-                    onChange={(e) => handleCanvasBackdropChange('color', e.target.value)}
-                    className="w-6 h-6 rounded-md border border-zinc-300 dark:border-zinc-700 cursor-pointer overflow-hidden"
-                    title="Выбрать заливку цвета"
-                  />
+                <span className="text-xs font-bold text-[var(--ink)]">Фон</span>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-6 h-6 rounded-full bg-[var(--lavenderSoft)] dark:bg-[var(--lavDeep)]/30 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] flex items-center justify-center hover:bg-[var(--lavBorder)] transition-colors cursor-pointer"
+                  title="Загрузить изображение фона"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleUploadCanvasBackdrop}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={50}
+                  onChange={() => {}}
+                  className="w-24 accent-[var(--lavDeep)] cursor-pointer"
+                />
+              </div>
+
+              {/* Сетка & Человек тумблеры */}
+              <div className="flex items-center gap-5">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <span className="text-xs font-bold text-[var(--ink)]">Сетка</span>
                   <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="p-1 text-[var(--soft)] hover:text-[var(--ink)] rounded-md hover:bg-white/40 dark:hover:bg-zinc-800 transition-colors"
-                    title="Загрузить собственное изображение фона"
+                    onClick={() => setGridVisible(!gridVisible)}
+                    className={`w-10 h-5 rounded-full transition-colors relative p-0.5 cursor-pointer ${gridVisible ? 'bg-[var(--lavDeep)]' : 'bg-zinc-300 dark:bg-zinc-700'}`}
                   >
-                    <Upload className="w-3.5 h-3.5" />
+                    <div className={`w-4 h-4 rounded-full bg-white transition-transform ${gridVisible ? 'translate-x-5' : 'translate-x-0'}`} />
                   </button>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleUploadCanvasBackdrop}
-                    accept="image/*"
-                    className="hidden"
-                  />
-                </div>
+                </label>
 
-                {/* Toggles */}
-                <button
-                  onClick={() => setGridVisible(!gridVisible)}
-                  className={`p-1.5 rounded-full border transition-all cursor-pointer ${
-                    gridVisible
-                      ? 'bg-[var(--lavSoft)] border-[var(--lavenderAccent)] text-[var(--lavDeep)]'
-                      : 'border-[var(--glass-edge)] text-[var(--faint)] hover:text-[var(--ink)]'
-                  }`}
-                  title="Показать/скрыть сетку"
-                >
-                  <Grid className="w-3.5 h-3.5" />
-                </button>
-
-                <button
-                  onClick={() => setHumanVisible(!humanVisible)}
-                  className={`px-2.5 py-1 rounded-full border transition-all text-[11px] font-bold cursor-pointer ${
-                    humanVisible
-                      ? 'bg-[var(--lavSoft)] border-[var(--lavenderAccent)] text-[var(--lavDeep)]'
-                      : 'border-[var(--glass-edge)] text-[var(--faint)] hover:text-[var(--ink)]'
-                  }`}
-                  title="Масштабная фигура человека"
-                >
-                  Человек
-                </button>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <span className="text-xs font-bold text-[var(--ink)]">Человек</span>
+                  <button
+                    onClick={() => setHumanVisible(!humanVisible)}
+                    className={`w-10 h-5 rounded-full transition-colors relative p-0.5 cursor-pointer ${humanVisible ? 'bg-[var(--lavDeep)]' : 'bg-zinc-300 dark:bg-zinc-700'}`}
+                  >
+                    <div className={`w-4 h-4 rounded-full bg-white transition-transform ${humanVisible ? 'translate-x-5' : 'translate-x-0'}`} />
+                  </button>
+                </label>
               </div>
 
             </div>
@@ -1664,7 +1861,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
         </div>
 
         {/* RIGHT COLUMN: CONTROL SIDE PANEL (30% WIDTH) */}
-        <div className="lg:col-span-4 flex flex-col bg-white/40 dark:bg-zinc-900/10 border border-[var(--glass-edge)] rounded-3xl overflow-hidden shadow-sm backdrop-blur-md h-full min-h-0">
+        <div className="lg:col-span-4 flex flex-col bg-white/40 dark:bg-zinc-900/10 border border-[var(--glass-edge)] rounded-3xl overflow-hidden shadow-sm backdrop-blur-md h-full min-h-0 min-w-0">
           
           {/* TAB BAR SELECTORS */}
           <div className="grid grid-cols-3 border-b border-[var(--glass-edge)] bg-white/20 dark:bg-black/10">
@@ -1672,7 +1869,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
               onClick={() => setActiveSidebarTab('library')}
               className={`py-3.5 text-xs font-bold transition-all cursor-pointer border-b-2 flex items-center justify-center gap-1.5 ${
                 activeSidebarTab === 'library'
-                  ? 'border-violet-600 text-violet-600 bg-white/20 dark:bg-white/5'
+                  ? 'border-[var(--lavDeep)] text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] bg-white/20 dark:bg-white/5'
                   : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
               }`}
             >
@@ -1682,12 +1879,12 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
               onClick={() => setActiveSidebarTab('layers')}
               className={`py-3.5 text-xs font-bold transition-all cursor-pointer border-b-2 flex items-center justify-center gap-1.5 ${
                 activeSidebarTab === 'layers'
-                  ? 'border-violet-600 text-violet-600 bg-white/20 dark:bg-white/5'
+                  ? 'border-[var(--lavDeep)] text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] bg-white/20 dark:bg-white/5'
                   : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
               }`}
             >
               <span>Элементы проекта</span>
-              <span className="px-1.5 py-0.5 rounded-full bg-violet-600 text-white text-[9px] font-extrabold leading-none">
+              <span className="px-1.5 py-0.5 rounded-full bg-[var(--lavDeep)] text-white text-[9px] font-extrabold leading-none">
                 {activeScene.elements.length}
               </span>
             </button>
@@ -1695,7 +1892,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
               onClick={() => setActiveSidebarTab('tools')}
               className={`py-3.5 text-xs font-bold transition-all cursor-pointer border-b-2 flex items-center justify-center gap-1.5 ${
                 activeSidebarTab === 'tools'
-                  ? 'border-violet-600 text-violet-600 bg-white/20 dark:bg-white/5'
+                  ? 'border-[var(--lavDeep)] text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] bg-white/20 dark:bg-white/5'
                   : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
               }`}
             >
@@ -1726,8 +1923,8 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                         <div
                           className={`w-12 h-12 rounded-full flex items-center justify-center border transition-all ${
                             isSelected
-                              ? 'bg-violet-600 border-violet-600 text-white shadow-md shadow-violet-500/20 scale-105'
-                              : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-violet-600 hover:border-violet-300 dark:hover:bg-zinc-850'
+                              ? 'bg-[var(--lavDeep)] border-[var(--lavDeep)] text-white shadow-md shadow-[var(--lavDeep)]/20 scale-105'
+                              : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-[var(--lavDeep)] hover:border-[var(--lavBorder)] dark:hover:bg-zinc-850'
                           }`}
                         >
                           {cat.id === 'favorites' && <Heart className={`w-5 h-5 ${isSelected ? 'fill-white text-white' : 'text-rose-500 fill-rose-500'}`} />}
@@ -1747,7 +1944,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                           {cat.id === 'balloons' && <CircleDot className="w-5 h-5" />}
                           {cat.id === 'themes' && <Tag className="w-5 h-5" />}
                         </div>
-                        <span className={`text-[10px] font-semibold text-center transition-colors ${isSelected ? 'text-violet-600 dark:text-violet-400 font-bold' : 'text-zinc-500 group-hover:text-zinc-800 dark:group-hover:text-zinc-300'}`}>
+                        <span className={`text-[10px] font-semibold text-center transition-colors ${isSelected ? 'text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] font-bold' : 'text-zinc-500 group-hover:text-zinc-800 dark:group-hover:text-zinc-300'}`}>
                           {cat.title}
                         </span>
                       </button>
@@ -1810,11 +2007,11 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                         <div className="flex justify-between items-end gap-1.5 mt-1">
                           <span className="text-[9.5px] font-bold text-[var(--ink)] leading-tight truncate flex-1">{item.name}</span>
                           {item.price === 0 ? (
-                            <span className="text-[8px] font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-800/60 px-1.5 py-0.5 rounded-lg leading-none shrink-0">
+                            <span className="text-[8px] font-bold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] bg-[var(--lavenderSoft)] dark:bg-[var(--lavDeep)]/30 border border-[var(--lavBorder)] dark:border-[var(--lavDeep)]/50 px-1.5 py-0.5 rounded-lg leading-none shrink-0">
                               введите цену
                             </span>
                           ) : (
-                            <span className="text-[9px] font-extrabold text-white bg-violet-600 dark:bg-violet-500 px-2 py-0.5 rounded-full leading-none shrink-0">
+                            <span className="text-[9px] font-extrabold text-white bg-[var(--lavDeep)] px-2 py-0.5 rounded-full leading-none shrink-0">
                               {item.price.toLocaleString('ru')} ₽
                             </span>
                           )}
@@ -1827,9 +2024,9 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
               </div>
             )}
 
-            {/* TAB 2: ACTIVE LAYERS LAYER MANAGER */}
+            {/* TAB 2: ACTIVE LAYERS / PROJECT ELEMENTS */}
             {activeSidebarTab === 'layers' && (
-              <div className="flex flex-col justify-between h-full space-y-4">
+              <div className="flex flex-col justify-between h-full min-h-0 space-y-4">
                 
                 {activeScene.elements.length === 0 ? (
                   <div className="py-12 text-center text-xs text-[var(--faint)] space-y-2">
@@ -1838,121 +2035,161 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                     <p className="text-[10px]">Выберите любой декор из вкладки "Библиотека".</p>
                   </div>
                 ) : (
-                  <div className="space-y-3 flex-1 overflow-y-auto max-h-[420px] pr-1">
-                    {activeScene.elements.map((el, idx) => (
-                      <div
-                        key={el.id}
-                        onClick={() => setSelectedId(el.id)}
-                        className={`flex items-center justify-between p-3 rounded-2xl border transition-all cursor-pointer ${
-                          el.id === selectedId
-                            ? 'bg-[var(--lavSoft)] border-[var(--lavenderAccent)] text-[var(--lavDeep)] shadow-xs'
-                            : 'bg-white/40 dark:bg-black/10 border-[var(--glass-edge)]'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                          
-                          {/* Mini Graphics Visual representation */}
-                          <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center shrink-0 border border-zinc-200/40 p-0.5">
-                            {el.customImage ? (
-                              <img src={el.customImage} className="w-full h-full object-contain" referrerPolicy="no-referrer" />
-                            ) : (
-                              <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: el.svgMarkup }} />
-                            )}
-                          </div>
+                  <div className="space-y-2.5 flex-1 min-h-0 overflow-y-auto pr-1 scrollbar-thin">
+                    {activeScene.elements.map((el, idx) => {
+                      const isExpanded = expandedElementId === el.id;
 
-                          {/* Editable Details */}
-                          <div className="flex-1 min-w-0 space-y-1">
-                            <input
-                              type="text"
-                              value={el.name}
-                              onChange={(e) => {
-                                const nextVal = e.target.value;
-                                updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, name: nextVal } : item));
-                              }}
-                              className="w-full text-xs font-bold text-[var(--ink)] bg-transparent focus:underline focus:outline-none py-0 truncate"
-                            />
-                            
-                            {/* Cost Input Field */}
-                            <div className="flex items-center gap-1">
-                              <span className="text-[10px] text-[var(--faint)]">Стоимость:</span>
-                              <input
-                                type="number"
-                                value={el.price}
-                                onChange={(e) => {
-                                  const nextPrice = parseInt(e.target.value) || 0;
-                                  updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, price: nextPrice } : item));
+                      return (
+                        <div
+                          key={el.id}
+                          className="rounded-2xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden shadow-2xs transition-all"
+                        >
+                          {/* COLLAPSED ROW BAR */}
+                          <div
+                            onClick={() => {
+                              setSelectedId(el.id);
+                              if (isExpanded) {
+                                setExpandedElementId(null);
+                              } else {
+                                setExpandedElementId(el.id);
+                                setDraftPrice(el.price.toString());
+                                setDraftNote(el.comment || '');
+                              }
+                            }}
+                            className={`flex items-center justify-between p-2.5 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-850 transition-colors ${
+                              el.id === selectedId ? 'bg-[var(--lavenderSoft)] dark:bg-[var(--lavDeep)]/20' : ''
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              {/* Grip Handle */}
+                              <GripVertical className="w-4 h-4 text-zinc-400 shrink-0 cursor-grab" />
+
+                              {/* Thumbnail preview */}
+                              <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center shrink-0 overflow-hidden border border-zinc-200/50 p-0.5">
+                                {el.customImage ? (
+                                  <img src={el.customImage} className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+                                ) : (
+                                  <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: el.svgMarkup }} />
+                                )}
+                              </div>
+
+                              {/* Title */}
+                              <span className="text-xs font-bold text-zinc-800 dark:text-zinc-100 truncate flex-1">
+                                {el.name}
+                              </span>
+
+                              {/* Chevron Arrow */}
+                              {isExpanded ? (
+                                <ChevronUp className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                              ) : (
+                                <ChevronDown className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                              )}
+                            </div>
+
+                            {/* Price badge and Visibility */}
+                            <div className="flex items-center gap-2 shrink-0 pl-3">
+                              <span className="text-xs font-extrabold text-zinc-900 dark:text-zinc-100">
+                                {el.price > 0 ? `${el.price.toLocaleString('ru')} ₽` : '0 ₽'}
+                              </span>
+
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, isVisible: !item.isVisible } : item));
                                 }}
-                                className="w-16 text-[10px] font-extrabold text-[var(--lavDeep)] bg-transparent focus:underline focus:outline-none"
-                              />
+                                className="p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 cursor-pointer"
+                                title="Показать / скрыть"
+                              >
+                                {el.isVisible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5 text-rose-500" />}
+                              </button>
                             </div>
                           </div>
+
+                          {/* EXPANDED DETAIL CARD */}
+                          {isExpanded && (
+                            <div className="p-3.5 border-t border-zinc-100 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-black/20 space-y-3">
+                              <div className="flex gap-3">
+                                {/* Left Large Preview */}
+                                <div className="w-16 h-16 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center p-1 shrink-0">
+                                  {el.customImage ? (
+                                    <img src={el.customImage} className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+                                  ) : (
+                                    <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: el.svgMarkup }} />
+                                  )}
+                                </div>
+
+                                {/* Right Meta information */}
+                                <div className="flex-1 min-w-0 space-y-1">
+                                  <h4 className="text-xs font-extrabold text-zinc-900 dark:text-zinc-100">{el.name}</h4>
+                                  <p className="text-[10px] text-zinc-500 leading-tight">
+                                    ID детали: <span className="font-semibold text-zinc-700 dark:text-zinc-300">{el.code || 'ЦК0155'}</span>. Готовые сцены.
+                                  </p>
+                                  <p className="text-[10px] text-zinc-500 leading-tight">
+                                    Тип источника: <span className="font-semibold text-zinc-700 dark:text-zinc-300">{el.sourceType || 'аренда'}</span>.
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Price input field */}
+                              <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-zinc-500">Сумма (₽)</label>
+                                <input
+                                  type="number"
+                                  value={draftPrice}
+                                  onChange={(e) => setDraftPrice(e.target.value)}
+                                  placeholder="Введите стоимость..."
+                                  className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-bold text-zinc-800 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavDeep)]"
+                                />
+                              </div>
+
+                              {/* Note comment field */}
+                              <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-zinc-500">Заметка</label>
+                                <input
+                                  type="text"
+                                  value={draftNote}
+                                  onChange={(e) => setDraftNote(e.target.value)}
+                                  placeholder="Добавить комментарий к декору..."
+                                  className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs text-zinc-800 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavDeep)]"
+                                />
+                              </div>
+
+                              {/* Action buttons */}
+                              <div className="flex items-center justify-end gap-2 pt-1">
+                                <button
+                                  onClick={() => setExpandedElementId(null)}
+                                  className="px-3 py-1.5 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 transition-colors cursor-pointer"
+                                >
+                                  Отмена
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    const parsedPrice = parseInt(draftPrice) || 0;
+                                    updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, price: parsedPrice, comment: draftNote } : item));
+                                    setExpandedElementId(null);
+                                    showToast('Сохранено', 'Параметры элемента обновлены', 'info');
+                                  }}
+                                  className="px-4 py-1.5 rounded-full bg-[var(--lavDeep)] hover:bg-[var(--lavenderAccent)] text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+                                >
+                                  Сохранить
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
-
-                        {/* Order & visibility control panel */}
-                        <div className="flex items-center gap-1.5 shrink-0 pl-2">
-                          
-                          {/* Arrow buttons for precise z-index stacked reordering */}
-                          <div className="flex flex-col gap-0.5">
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleMoveLayer(idx, 'up'); }}
-                              disabled={idx === activeScene.elements.length - 1}
-                              className="p-0.5 rounded hover:bg-white/40 dark:hover:bg-zinc-800 text-[var(--faint)] hover:text-[var(--ink)] disabled:opacity-20"
-                            >
-                              <ChevronUp className="w-3 h-3" />
-                            </button>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleMoveLayer(idx, 'down'); }}
-                              disabled={idx === 0}
-                              className="p-0.5 rounded hover:bg-white/40 dark:hover:bg-zinc-800 text-[var(--faint)] hover:text-[var(--ink)] disabled:opacity-20"
-                            >
-                              <ChevronDown className="w-3 h-3" />
-                            </button>
-                          </div>
-
-                          {/* Lock Trigger */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, isLocked: !item.isLocked } : item));
-                            }}
-                            className="p-1.5 text-[var(--faint)] hover:text-[var(--ink)]"
-                            title={el.isLocked ? "Заблокировано" : "Активно"}
-                          >
-                            {el.isLocked ? <Lock className="w-3.5 h-3.5 text-rose-500" /> : <Unlock className="w-3.5 h-3.5 text-zinc-400" />}
-                          </button>
-
-                          {/* Visibility Trigger */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, isVisible: !item.isVisible } : item));
-                            }}
-                            className="p-1.5 text-[var(--faint)] hover:text-[var(--ink)]"
-                          >
-                            {el.isVisible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5 text-rose-500" />}
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
 
-                {/* Sticky summary cost calculator footer */}
-                <div className="pt-4 border-t border-[var(--glass-edge)]">
-                  <div className="bg-[var(--lavDeep)] text-white p-4 rounded-2xl flex items-center justify-between shadow-lg shadow-violet-500/10">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-bold text-violet-200 uppercase tracking-wider">ИТОГО К ОПЛАТЕ:</span>
-                      <span className="text-lg font-extrabold font-mono tracking-tight">
-                        {sceneTotalCost.toLocaleString('ru')} ₽
-                      </span>
-                    </div>
-                    <button 
-                      onClick={handleSaveProjectCollage}
-                      className="px-4 py-2 rounded-full bg-white hover:bg-zinc-100 text-[var(--lavDeep)] font-extrabold text-xs transition-all shadow-sm active:scale-95 cursor-pointer"
-                    >
-                      Сохранить
-                    </button>
-                  </div>
+                {/* Sticky summary total cost full-width button */}
+                <div className="pt-2 border-t border-[var(--glass-edge)]">
+                  <button
+                    onClick={handleSaveProjectCollage}
+                    className="w-full py-3 px-5 rounded-2xl bg-[var(--lavDeep)] hover:bg-[var(--lavenderAccent)] text-white flex items-center justify-center gap-2 shadow-lg shadow-[var(--lavDeep)]/20 transition-all cursor-pointer font-extrabold text-sm uppercase tracking-wide"
+                  >
+                    <span>итого: {sceneTotalCost.toLocaleString('ru')} ₽</span>
+                  </button>
                 </div>
 
               </div>
@@ -2006,7 +2243,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                             onClick={() => setIsRatioLocked(!isRatioLocked)}
                             className={`p-2 rounded-full border transition-all ${
                               isRatioLocked
-                                ? 'bg-violet-50 dark:bg-violet-950/40 border-violet-300 text-violet-600'
+                                ? 'bg-[var(--lavenderSoft)] dark:bg-[var(--lavDeep)]/40 border-[var(--lavBorder)] text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]'
                                 : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-600'
                             }`}
                             title="Сохранять пропорции"
@@ -2152,7 +2389,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                           const val = parseInt(e.target.value);
                           updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, rotation: val } : item));
                         }}
-                        className="w-full h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-violet-600"
+                        className="w-full h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-[var(--lavDeep)]"
                       />
                     </div>
 
@@ -2175,7 +2412,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                             const val = parseInt(e.target.value);
                             updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, exposure: val } : item));
                           }}
-                          className="w-full h-1 bg-zinc-200 dark:bg-zinc-850 rounded appearance-none cursor-pointer accent-violet-600"
+                          className="w-full h-1 bg-zinc-200 dark:bg-zinc-850 rounded appearance-none cursor-pointer accent-[var(--lavDeep)]"
                           style={{ background: 'linear-gradient(to right, #3f3f46, #a1a1aa, #fef08a)' }}
                         />
                       </div>
@@ -2195,7 +2432,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                             const val = parseInt(e.target.value);
                             updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, hue: val } : item));
                           }}
-                          className="w-full h-1 bg-zinc-200 dark:bg-zinc-850 rounded appearance-none cursor-pointer accent-violet-600"
+                          className="w-full h-1 bg-zinc-200 dark:bg-zinc-850 rounded appearance-none cursor-pointer accent-[var(--lavDeep)]"
                           style={{ background: 'linear-gradient(to right, #ef4444, #eab308, #22c55e, #06b6d4, #3b82f6, #a855f7, #ef4444)' }}
                         />
                       </div>
@@ -2215,7 +2452,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                             const val = parseInt(e.target.value);
                             updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, temp: val } : item));
                           }}
-                          className="w-full h-1 bg-zinc-200 dark:bg-zinc-850 rounded appearance-none cursor-pointer accent-violet-600"
+                          className="w-full h-1 bg-zinc-200 dark:bg-zinc-850 rounded appearance-none cursor-pointer accent-[var(--lavDeep)]"
                           style={{ background: 'linear-gradient(to right, #3b82f6, #eff6ff, #f59e0b)' }}
                         />
                       </div>
@@ -2235,7 +2472,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                             const val = parseInt(e.target.value);
                             updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, saturate: val } : item));
                           }}
-                          className="w-full h-1 bg-zinc-200 dark:bg-zinc-850 rounded appearance-none cursor-pointer accent-violet-600"
+                          className="w-full h-1 bg-zinc-200 dark:bg-zinc-850 rounded appearance-none cursor-pointer accent-[var(--lavDeep)]"
                           style={{ background: 'linear-gradient(to right, #a1a1aa, #c084fc, #8b5cf6)' }}
                         />
                       </div>
@@ -2255,7 +2492,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                             const val = parseInt(e.target.value);
                             updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, opacity: val } : item));
                           }}
-                          className="w-full h-1 bg-zinc-200 dark:bg-zinc-850 rounded appearance-none cursor-pointer accent-violet-600"
+                          className="w-full h-1 bg-zinc-200 dark:bg-zinc-850 rounded appearance-none cursor-pointer accent-[var(--lavDeep)]"
                           style={{ background: 'linear-gradient(to right, rgba(139, 92, 246, 0.1), rgba(139, 92, 246, 1))' }}
                         />
                       </div>
@@ -2346,7 +2583,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
               ))}
               <tr className="border-t-2 border-zinc-300 font-bold bg-zinc-50">
                 <td colSpan={3} className="py-3 px-3 text-right uppercase">Итого спецификация:</td>
-                <td className="py-3 px-3 text-right text-base text-violet-700 font-mono">{sceneTotalCost.toLocaleString('ru')} ₽</td>
+                <td className="py-3 px-3 text-right text-base text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] font-mono">{sceneTotalCost.toLocaleString('ru')} ₽</td>
               </tr>
             </tbody>
           </table>
@@ -2377,7 +2614,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
               
               <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-violet-600" />
+                  <Sparkles className="w-5 h-5 text-[var(--lavDeep)]" />
                   <h3 className="font-extrabold text-[var(--ink)] text-base">ИИ-Визуализация интерьера</h3>
                 </div>
                 <button
@@ -2391,7 +2628,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
               {/* Progress loader */}
               {isAiGenerating ? (
                 <div className="py-8 text-center space-y-4">
-                  <RefreshCw className="w-8 h-8 text-violet-600 animate-spin mx-auto" />
+                  <RefreshCw className="w-8 h-8 text-[var(--lavDeep)] animate-spin mx-auto" />
                   <div className="space-y-1">
                     <p className="text-sm font-bold text-[var(--ink)]">ИИ Генерирует фон...</p>
                     <p className="text-xs text-[var(--faint)]">Создаем фотореалистичное пространство по вашему описанию.</p>
@@ -2400,7 +2637,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                   {/* Visual Progress percentage slider line */}
                   <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-2 rounded-full overflow-hidden max-w-xs mx-auto">
                     <div
-                      className="bg-gradient-to-r from-violet-600 to-pink-600 h-full transition-all duration-300"
+                      className="bg-gradient-to-r from-[var(--lavDeep)] to-[var(--lavenderAccent)] h-full transition-all duration-300"
                       style={{ width: `${aiGeneratingProgress}%` }}
                     />
                   </div>
@@ -2414,7 +2651,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                     <h4 className="text-xs font-bold text-[var(--ink)]">Загрузить фон реального проекта</h4>
                     <p className="text-[11px] text-[var(--faint)]">Используйте фотографию реального пустого зала ресторана, предоставленную клиентом, чтобы наложить вашу арку прямо в интерьер.</p>
                     
-                    <label className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950/40 hover:border-violet-500 cursor-pointer transition-all text-xs font-bold text-[var(--lavDeep)]">
+                    <label className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950/40 hover:border-[var(--lavDeep)] cursor-pointer transition-all text-xs font-bold text-[var(--lavDeep)]">
                       <FileImage className="w-4 h-4" />
                       <span>Выбрать фото зала</span>
                       <input
@@ -2430,8 +2667,8 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                   </div>
 
                   {/* OPTION B: WRITE PROMPT TO SIMULATE GENERATOR */}
-                  <div className="p-4 rounded-2xl bg-violet-50/40 dark:bg-violet-950/10 border border-violet-100 dark:border-violet-900/40 space-y-3">
-                    <span className="text-[10px] uppercase tracking-wider font-extrabold text-violet-500 block">Вариант Б</span>
+                  <div className="p-4 rounded-2xl bg-[var(--lavenderSoft)] dark:bg-[var(--lavDeep)]/10 border border-[var(--lavBorder)] dark:border-[var(--lavDeep)]/30 space-y-3">
+                    <span className="text-[10px] uppercase tracking-wider font-extrabold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] block">Вариант Б</span>
                     <h4 className="text-xs font-bold text-[var(--ink)]">Сгенерировать подходящий фон ИИ</h4>
                     <p className="text-[11px] text-[var(--faint)]">Опишите стиль банкетного зала или локации. Нейросеть смоделирует идеальный интерьер для презентации вашего концепта.</p>
                     

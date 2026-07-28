@@ -701,19 +701,19 @@ export default function WarehouseTab({
                     <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent" />
                     
                     {/* Floating Category Badge (matching transparent/blur capsule in top-right) */}
-                    <span className="absolute top-3 right-3 text-[10px] font-light tracking-wider text-white bg-black/60 backdrop-blur-md border border-white/10 px-2 py-0.5 rounded-[6px] uppercase select-none">
+                    <span className="absolute top-3 right-3 text-[10px] font-light tracking-wider text-white bg-black/60 backdrop-blur-md border border-white/10 px-2 py-0.5 rounded-full uppercase select-none">
                       {item.category}
                     </span>
 
                     {/* Floating Quantity Capsule on Bottom Right (matching screenshot style with dot and edit) */}
                     {editingQtyId === item.id ? (
                        <div 
-                        className="absolute bottom-3 right-3 flex items-center gap-1 bg-black/90 backdrop-blur-md px-2 py-1 rounded-lg shadow-lg border border-white/10"
+                        className="absolute bottom-3 right-3 flex items-center gap-1 bg-black/90 backdrop-blur-md px-2.5 py-1 rounded-full shadow-lg border border-white/10"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <input
                           type="number"
-                          className="w-14 px-1.5 py-0.5 text-xs bg-white text-black rounded font-medium focus:outline-none"
+                          className="w-14 px-2 py-0.5 text-xs bg-white text-black rounded-full font-medium focus:outline-none"
                           value={tempQty}
                           onChange={(e) => setTempQty(e.target.value)}
                           onKeyDown={(e) => {
@@ -737,7 +737,7 @@ export default function WarehouseTab({
                           setEditingQtyId(item.id);
                           setTempQty(String(item.total));
                         }}
-                        className="absolute bottom-3 right-3 flex items-center gap-2 bg-black/60 backdrop-blur-md border border-white/10 px-3.5 py-2 rounded-xl text-white select-none cursor-pointer hover:bg-black/75 hover:scale-105 transition-all duration-200 shadow-md shadow-black/20"
+                        className="absolute bottom-3 right-3 flex items-center gap-2 bg-black/60 backdrop-blur-md border border-white/10 px-3.5 py-2 rounded-full text-white select-none cursor-pointer hover:bg-black/75 hover:scale-105 transition-all duration-200 shadow-md shadow-black/20"
                         title="Изменить общее количество (нажмите для редактирования)"
                       >
                         <span className="w-2.5 h-2.5 rounded-full bg-[#52D18D] shadow-[0_0_8px_#52D18D]" />
@@ -894,7 +894,7 @@ export default function WarehouseTab({
                               setEditingQtyId(item.id);
                               setTempQty(String(item.total));
                             }}
-                            className="inline-flex items-center gap-1.5 bg-zinc-100/70 dark:bg-zinc-800/40 hover:bg-zinc-200/70 dark:hover:bg-zinc-700/40 px-2 py-0.5 sm:py-1 rounded-md cursor-pointer hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] transition-colors select-none text-[10px] sm:text-xs text-[var(--soft)]"
+                            className="inline-flex items-center gap-1.5 bg-zinc-100/70 dark:bg-zinc-800/40 hover:bg-zinc-200/70 dark:hover:bg-zinc-700/40 px-2.5 py-0.5 sm:py-1 rounded-full cursor-pointer hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] transition-colors select-none text-[10px] sm:text-xs text-[var(--soft)]"
                             title="Изменить общее количество (нажмите для редактирования)"
                           >
                             <span>Количество: <span className="font-semibold text-zinc-900 dark:text-zinc-100">{item.total}</span> шт.</span>

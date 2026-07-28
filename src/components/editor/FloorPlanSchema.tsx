@@ -204,10 +204,10 @@ export default function FloorPlanSchema({ initialElements = [], onSave, showToas
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 h-[calc(100vh-190px)] min-h-[480px]">
       
       {/* 1. LEFT TOOLBOX PALETTE */}
-      <div className="lg:col-span-3 flex flex-col gap-4 bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 p-4 rounded-2xl shadow-sm overflow-y-auto max-h-full">
-        <div className="space-y-1 pb-3 border-b border-zinc-100 dark:border-zinc-800">
-          <h3 className="text-xs font-bold uppercase text-zinc-400 dark:text-zinc-500 tracking-wider">Палитра расстановки</h3>
-          <p className="text-[10px] text-zinc-400">Нажимайте для добавления на план</p>
+      <div className="lg:col-span-3 flex flex-col gap-4 bg-white/40 dark:bg-zinc-900/10 border border-[var(--glass-edge)] p-4 rounded-3xl shadow-sm backdrop-blur-md overflow-y-auto max-h-full">
+        <div className="space-y-1 pb-3 border-b border-[var(--glass-edge)]">
+          <h3 className="text-xs font-bold uppercase text-[var(--soft)] tracking-wider">Палитра расстановки</h3>
+          <p className="text-[10px] text-[var(--faint)]">Нажимайте для добавления на план</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2">
@@ -217,14 +217,14 @@ export default function FloorPlanSchema({ initialElements = [], onSave, showToas
               <button
                 key={tmpl.type}
                 onClick={() => handleAddTemplate(tmpl)}
-                className="flex items-center gap-2.5 p-2.5 rounded-full border border-zinc-200/60 dark:border-zinc-800/60 bg-zinc-50/50 dark:bg-zinc-950/20 hover:border-violet-500 hover:bg-violet-500/5 dark:hover:bg-violet-500/10 transition-all text-left cursor-pointer text-xs font-semibold text-zinc-700 dark:text-zinc-200 group"
+                className="flex items-center gap-2.5 p-2.5 rounded-full border border-[var(--glass-edge)] bg-white/40 dark:bg-zinc-950/20 hover:border-[var(--lavenderAccent)] hover:bg-[var(--lavenderSoft)]/50 transition-all text-left cursor-pointer text-xs font-semibold text-[var(--ink)] group"
               >
-                <div className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 shadow-sm ${tmpl.color}`}>
-                  <Icon className="w-4 h-4 text-zinc-600 dark:text-zinc-300 group-hover:text-violet-600 dark:group-hover:text-violet-400" />
+                <div className={`w-8 h-8 rounded-full border flex items-center justify-center shrink-0 shadow-sm ${tmpl.color}`}>
+                  <Icon className="w-4 h-4 text-zinc-600 dark:text-zinc-300 group-hover:text-[var(--lavDeep)] dark:group-hover:text-[var(--lavenderAccent)]" />
                 </div>
                 <div className="min-w-0">
                   <p className="truncate">{tmpl.name}</p>
-                  <p className="text-[9px] text-zinc-400 font-mono leading-none mt-0.5">
+                  <p className="text-[9px] text-[var(--soft)] font-mono leading-none mt-0.5">
                     {tmpl.w / 10}м × {tmpl.h / 10}м
                   </p>
                 </div>
@@ -234,27 +234,27 @@ export default function FloorPlanSchema({ initialElements = [], onSave, showToas
         </div>
 
         {/* Dynamic Statistics Panel */}
-        <div className="mt-auto pt-4 border-t border-zinc-100 dark:border-zinc-800 space-y-2.5 bg-violet-500/5 dark:bg-violet-950/10 p-3.5 rounded-2xl border border-violet-500/10">
-          <span className="text-[9px] uppercase tracking-wider font-bold text-violet-700 dark:text-violet-400 flex items-center gap-1.5 leading-none">
+        <div className="mt-auto pt-4 border-t border-[var(--glass-edge)] space-y-2.5 bg-[var(--lavSoft)]/30 p-3.5 rounded-3xl border border-[var(--lavenderAccent)]/20">
+          <span className="text-[9px] uppercase tracking-wider font-bold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] flex items-center gap-1.5 leading-none">
             <Users className="w-3.5 h-3.5" /> Спецификация рассадки
           </span>
 
           <div className="grid grid-cols-2 gap-2 text-[10.5px]">
-            <div className="bg-white/80 dark:bg-zinc-900/60 p-2 rounded-xl border border-zinc-200/20 shadow-sm">
-              <span className="text-zinc-400 block text-[9px] uppercase">Всего мест</span>
-              <span className="font-bold text-zinc-800 dark:text-zinc-100 text-sm font-mono">{guestCapacity} чел.</span>
+            <div className="bg-white/60 dark:bg-zinc-900/60 p-2.5 rounded-2xl border border-[var(--glass-edge)] shadow-sm">
+              <span className="text-[var(--soft)] block text-[9px] uppercase font-bold">Всего мест</span>
+              <span className="font-bold text-[var(--ink)] text-sm font-mono">{guestCapacity} чел.</span>
             </div>
-            <div className="bg-white/80 dark:bg-zinc-900/60 p-2 rounded-xl border border-zinc-200/20 shadow-sm">
-              <span className="text-zinc-400 block text-[9px] uppercase">Гостевые столы</span>
-              <span className="font-bold text-zinc-800 dark:text-zinc-100 text-sm font-mono">{totalTables} шт.</span>
+            <div className="bg-white/60 dark:bg-zinc-900/60 p-2.5 rounded-2xl border border-[var(--glass-edge)] shadow-sm">
+              <span className="text-[var(--soft)] block text-[9px] uppercase font-bold">Гостевые столы</span>
+              <span className="font-bold text-[var(--ink)] text-sm font-mono">{totalTables} шт.</span>
             </div>
-            <div className="bg-white/80 dark:bg-zinc-900/60 p-2 rounded-xl border border-zinc-200/20 shadow-sm">
-              <span className="text-zinc-400 block text-[9px] uppercase">Президиумы</span>
-              <span className="font-bold text-zinc-800 dark:text-zinc-100 text-sm font-mono">{totalPresidiums} шт.</span>
+            <div className="bg-white/60 dark:bg-zinc-900/60 p-2.5 rounded-2xl border border-[var(--glass-edge)] shadow-sm">
+              <span className="text-[var(--soft)] block text-[9px] uppercase font-bold">Президиумы</span>
+              <span className="font-bold text-[var(--ink)] text-sm font-mono">{totalPresidiums} шт.</span>
             </div>
-            <div className="bg-white/80 dark:bg-zinc-900/60 p-2 rounded-xl border border-zinc-200/20 shadow-sm">
-              <span className="text-zinc-400 block text-[9px] uppercase">Точки питания</span>
-              <span className="font-bold text-zinc-800 dark:text-zinc-100 text-sm font-mono">{totalSockets} шт.</span>
+            <div className="bg-white/60 dark:bg-zinc-900/60 p-2.5 rounded-2xl border border-[var(--glass-edge)] shadow-sm">
+              <span className="text-[var(--soft)] block text-[9px] uppercase font-bold">Точки питания</span>
+              <span className="font-bold text-[var(--ink)] text-sm font-mono">{totalSockets} шт.</span>
             </div>
           </div>
         </div>
@@ -263,26 +263,26 @@ export default function FloorPlanSchema({ initialElements = [], onSave, showToas
       {/* 2. CENTRAL INTERACTIVE 2D CANVAS */}
       <div className="lg:col-span-6 flex flex-col gap-3 relative">
         {/* Canvas Toolbar Controls */}
-        <div className="flex items-center justify-between bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 p-2.5 rounded-xl text-xs shrink-0">
+        <div className="flex items-center justify-between bg-white/40 dark:bg-zinc-900/10 border border-[var(--glass-edge)] p-2.5 rounded-full text-xs shrink-0 backdrop-blur-md">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setGridVisible(!gridVisible)}
-              className={`px-3 py-1.5 rounded-full font-bold text-[10px] uppercase flex items-center gap-1.5 border transition-all cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-full font-bold text-[10px] uppercase flex items-center gap-1.5 border transition-all cursor-pointer ${
                 gridVisible
-                  ? 'bg-violet-600 text-white border-violet-600 shadow-sm'
-                  : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700'
+                  ? 'bg-[var(--lavDeep)] text-white border-[var(--lavDeep)] shadow-sm'
+                  : 'bg-white/60 dark:bg-zinc-800/60 text-[var(--soft)] border-[var(--glass-edge)] hover:text-[var(--ink)]'
               }`}
             >
               <Grid className="w-3.5 h-3.5" /> Сетка {gridVisible ? 'ВКЛ' : 'ВЫКЛ'}
             </button>
-            <span className="text-[10px] text-zinc-400 font-mono">Размер зала: 12.0 × 9.0 метров</span>
+            <span className="text-[10px] text-[var(--soft)] font-mono">Размер зала: 12.0 × 9.0 метров</span>
           </div>
 
           <div className="flex gap-1.5">
             <button
               onClick={handleClearAll}
               disabled={elements.length === 0}
-              className="px-2.5 py-1.5 rounded-full border border-rose-500/10 hover:bg-rose-500/10 text-rose-600 font-bold text-[10px] uppercase transition-colors cursor-pointer disabled:opacity-40"
+              className="px-3 py-1.5 rounded-full border border-rose-500/20 hover:bg-rose-500/10 text-rose-500 font-bold text-[10px] uppercase transition-colors cursor-pointer disabled:opacity-40"
             >
               Очистить
             </button>
@@ -390,10 +390,10 @@ export default function FloorPlanSchema({ initialElements = [], onSave, showToas
       </div>
 
       {/* 3. RIGHT SIDEBAR DETAILS PANEL */}
-      <div className="lg:col-span-3 flex flex-col bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 p-4 rounded-2xl shadow-sm max-h-full overflow-y-auto">
-        <div className="space-y-1 pb-3 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
-          <h3 className="text-xs font-bold uppercase text-zinc-400 dark:text-zinc-500 tracking-wider flex items-center gap-1.5">
-            <Compass className="w-3.5 h-3.5" /> Свойства объекта
+      <div className="lg:col-span-3 flex flex-col bg-white/40 dark:bg-zinc-900/10 border border-[var(--glass-edge)] p-4 rounded-3xl shadow-sm backdrop-blur-md max-h-full overflow-y-auto">
+        <div className="space-y-1 pb-3 border-b border-[var(--glass-edge)] shrink-0">
+          <h3 className="text-xs font-bold uppercase text-[var(--soft)] tracking-wider flex items-center gap-1.5">
+            <Compass className="w-3.5 h-3.5 text-[var(--lavDeep)]" /> Свойства объекта
           </h3>
         </div>
 
@@ -401,32 +401,32 @@ export default function FloorPlanSchema({ initialElements = [], onSave, showToas
           <div className="flex-1 flex flex-col justify-between py-3 space-y-4">
             <div className="space-y-3.5">
               {/* Type and Name ID tags */}
-              <div className="flex justify-between items-center bg-zinc-50 dark:bg-zinc-950 p-2 rounded-xl border border-zinc-200/50 dark:border-zinc-800/50">
-                <span className="text-[10px] font-bold text-zinc-500">{selectedElem.name}</span>
-                <span className="text-[8.5px] font-mono font-bold bg-zinc-200 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-600">
+              <div className="flex justify-between items-center bg-white/50 dark:bg-zinc-950/40 p-2.5 rounded-2xl border border-[var(--glass-edge)]">
+                <span className="text-[10px] font-bold text-[var(--ink)]">{selectedElem.name}</span>
+                <span className="text-[8.5px] font-mono font-bold bg-[var(--lavSoft)] text-[var(--lavDeep)] px-2 py-0.5 rounded-full">
                   ID: {selectedElem.id.split('-')[0]}
                 </span>
               </div>
 
               {/* Editable Label value */}
               <div>
-                <label className="block text-[8.5px] font-bold text-zinc-400 uppercase tracking-wide mb-1">Метка на схеме</label>
+                <label className="block text-[8.5px] font-bold text-[var(--soft)] uppercase tracking-wide mb-1">Метка на схеме</label>
                 <input
                   type="text"
                   value={selectedElem.label}
                   onChange={(e) => handleLabelChange(e.target.value)}
-                  className="w-full bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-800 dark:text-zinc-100 font-semibold focus:outline-none focus:border-violet-500 transition-all"
+                  className="w-full bg-white/60 dark:bg-zinc-950/40 border border-[var(--glass-edge)] rounded-full px-4 py-2 text-xs text-[var(--ink)] font-semibold focus:outline-none focus:border-[var(--lavenderAccent)] transition-all"
                 />
               </div>
 
               {/* Table capacity counter (only for roundTable templates) */}
               {selectedElem.type === 'roundTable' && (
                 <div>
-                  <label className="block text-[8.5px] font-bold text-zinc-400 uppercase tracking-wide mb-1">Гостей за столом</label>
+                  <label className="block text-[8.5px] font-bold text-[var(--soft)] uppercase tracking-wide mb-1">Гостей за столом</label>
                   <select
                     value={selectedElem.capacity || 8}
                     onChange={(e) => handleCapacityChange(parseInt(e.target.value))}
-                    className="w-full bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-800 dark:text-zinc-100 font-semibold focus:outline-none focus:border-violet-500 transition-all cursor-pointer"
+                    className="w-full bg-white/60 dark:bg-zinc-950/40 border border-[var(--glass-edge)] rounded-full px-4 py-2 text-xs text-[var(--ink)] font-semibold focus:outline-none focus:border-[var(--lavenderAccent)] transition-all cursor-pointer"
                   >
                     {[4, 6, 8, 10, 12].map(n => (
                       <option key={n} value={n}>{n} мест</option>
@@ -437,15 +437,15 @@ export default function FloorPlanSchema({ initialElements = [], onSave, showToas
 
               {/* Rotate and Positioning tweaks */}
               <div className="space-y-1.5">
-                <span className="block text-[8.5px] font-bold text-zinc-400 uppercase tracking-wide">Геометрия</span>
+                <span className="block text-[8.5px] font-bold text-[var(--soft)] uppercase tracking-wide">Геометрия</span>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={handleRotateSelected}
-                    className="flex items-center justify-center gap-1.5 p-2 rounded-full border border-zinc-200 dark:border-zinc-700 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:border-violet-500 hover:text-violet-500 transition-all cursor-pointer"
+                    className="flex items-center justify-center gap-1.5 p-2 rounded-full border border-[var(--glass-edge)] text-xs font-bold text-[var(--ink)] hover:border-[var(--lavenderAccent)] hover:text-[var(--lavDeep)] transition-all cursor-pointer bg-white/40 dark:bg-zinc-900/40"
                   >
                     <RotateCw className="w-3.5 h-3.5" /> Поворот 45°
                   </button>
-                  <div className="flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-[11px] font-mono font-bold text-zinc-500">
+                  <div className="flex items-center justify-center bg-white/40 dark:bg-zinc-950/40 border border-[var(--glass-edge)] rounded-full text-[11px] font-mono font-bold text-[var(--soft)]">
                     Угол: {selectedElem.rotation}°
                   </div>
                 </div>
@@ -454,16 +454,16 @@ export default function FloorPlanSchema({ initialElements = [], onSave, showToas
 
             <button
               onClick={handleDeleteSelected}
-              className="w-full flex items-center justify-center gap-2 p-2.5 rounded-full bg-rose-500/10 hover:bg-rose-500 hover:text-white border border-rose-500/10 hover:border-rose-500 text-rose-600 text-xs font-bold transition-all cursor-pointer mt-auto"
+              className="w-full flex items-center justify-center gap-2 p-2.5 rounded-full bg-rose-500/10 hover:bg-rose-500 hover:text-white border border-rose-500/10 hover:border-rose-500 text-rose-500 text-xs font-bold transition-all cursor-pointer mt-auto"
             >
               <Trash2 className="w-3.5 h-3.5" /> Удалить объект
             </button>
           </div>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-center p-4 text-zinc-400 h-full mt-10">
-            <Compass className="w-8 h-8 text-zinc-200 dark:text-zinc-800 mb-2" />
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-4 text-[var(--soft)] h-full mt-10">
+            <Compass className="w-8 h-8 text-[var(--faint)] mb-2" />
             <p className="text-[10px] uppercase font-bold tracking-wide">Ничего не выбрано</p>
-            <p className="text-[9px] text-zinc-400 mt-1">Кликните на любой объект в зале для редактирования свойств.</p>
+            <p className="text-[9px] text-[var(--faint)] mt-1">Кликните на любой объект в зале для редактирования свойств.</p>
           </div>
         )}
       </div>

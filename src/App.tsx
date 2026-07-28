@@ -405,7 +405,7 @@ export default function App() {
       {/* Background Decorative Abstract Soft Spheres/Blobs for Glassmorphism */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10 select-none">
         {/* Top Lilac Sphere */}
-        <div className="absolute top-[2%] left-[8%] w-[32vw] h-[32vw] max-w-[480px] max-h-[480px] rounded-full bg-violet-300/35 dark:bg-violet-950/20 blur-[60px] animate-float-slow" />
+        <div className="absolute top-[2%] left-[8%] w-[32vw] h-[32vw] max-w-[480px] max-h-[480px] rounded-full bg-[var(--lavBorder)]/35 dark:bg-[var(--lavDeep)]/20 blur-[60px] animate-float-slow" />
         {/* Pearl Sphere right next to it for a visible transition */}
         <div className="absolute top-[5%] left-[32%] w-[28vw] h-[28vw] max-w-[420px] max-h-[420px] rounded-full bg-[#EBE7F1]/65 dark:bg-white/10 blur-[50px] animate-float-medium" />
         {/* Pale Sand Sphere */}
@@ -600,7 +600,7 @@ export default function App() {
             <div className="relative z-30">
               <button
                 onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}
-                className="flex items-center gap-2 text-xs bg-zinc-100/80 dark:bg-zinc-800/80 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50 border border-zinc-200/50 dark:border-zinc-800/40 rounded-xl py-2 px-3 focus:outline-none text-[var(--ink)] font-semibold transition-all cursor-pointer"
+                className="flex items-center gap-2 text-xs bg-zinc-100/80 dark:bg-zinc-800/80 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50 border border-zinc-200/50 dark:border-zinc-800/40 rounded-full py-2 px-3.5 focus:outline-none text-[var(--ink)] font-semibold transition-all cursor-pointer"
               >
                 <span>
                   {activeTab === 'projects' && 'Мои проекты'}
@@ -622,7 +622,7 @@ export default function App() {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 8, scale: 0.95 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute right-0 mt-1.5 w-52 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-zinc-200/50 dark:border-zinc-800/50 rounded-2xl shadow-xl p-1.5 z-50 overflow-hidden"
+                      className="absolute right-0 mt-1.5 w-52 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-zinc-200/50 dark:border-zinc-800/50 rounded-3xl shadow-xl p-1.5 z-50 overflow-hidden"
                     >
                       {[
                         { value: 'projects', label: 'Мои проекты' },
@@ -640,7 +640,7 @@ export default function App() {
                               setActiveTab(item.value as any);
                               setIsMobileNavOpen(false);
                             }}
-                            className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-between cursor-pointer ${
+                            className={`w-full text-left px-3.5 py-2.5 rounded-full text-xs font-semibold transition-all flex items-center justify-between cursor-pointer ${
                               isSelected
                                 ? 'bg-[var(--lavDeep)] text-white'
                                 : 'text-zinc-700 dark:text-zinc-300 hover:bg-[var(--lavenderSoft)] hover:text-[var(--lavDeep)] dark:hover:bg-[var(--lavDeep)]/20 dark:hover:text-zinc-100'
@@ -659,7 +659,7 @@ export default function App() {
           </div>
 
           {/* MAIN PANEL TOP NAVBAR Header */}
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 shrink-0">
             <div>
               <div className="flex items-center gap-3">
                 <h1 className="text-3xl font-semibold tracking-tight text-[var(--ink)]">
@@ -751,7 +751,7 @@ export default function App() {
             {activeTab === 'projects' && (
               <button
                 onClick={() => setIsNewProjOpen(true)}
-                className="shrink-0 bg-[var(--lavDeep)] hover:bg-[var(--lavDeep)]/90 text-white rounded-xl px-5 py-3 text-[13px] font-medium shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="shrink-0 bg-[var(--lavDeep)] hover:bg-[var(--lavDeep)]/90 text-white rounded-full px-6 py-3 text-[13px] font-medium shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Plus className="w-4 h-4" /> Новый проект
               </button>
@@ -760,7 +760,7 @@ export default function App() {
             {activeTab === 'warehouse' && (
               <button
                 onClick={() => setIsWarehouseAdding(true)}
-                className="shrink-0 bg-[var(--lavDeep)] hover:bg-[var(--lavDeep)]/90 text-white rounded-xl px-5 py-3 text-[13px] font-medium shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="shrink-0 bg-[var(--lavDeep)] hover:bg-[var(--lavDeep)]/90 text-white rounded-full px-6 py-3 text-[13px] font-medium shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Plus className="w-4 h-4" /> Новый товар
               </button>
@@ -841,7 +841,7 @@ export default function App() {
           )}
 
           {/* 3. DYNAMIC CONTENT SECTION BY ACTIVE TAB */}
-          <div className="flex-1">
+          <div className={`flex-1 ${activeTab === 'moodboard' ? 'flex flex-col min-h-0 h-full overflow-hidden' : ''}`}>
             <AnimatePresence mode="wait">
               
               {/* PROJECTS TAB */}
@@ -907,7 +907,7 @@ export default function App() {
                     </div>
 
                     {/* Row 2: Search Input, Sorting Select, and View Mode Switcher */}
-                    <div className="flex items-center justify-between gap-3 bg-white/10 dark:bg-zinc-900/5 p-2 rounded-2xl border border-[var(--glass-edge)]/40">
+                    <div className="flex items-center justify-between gap-3 bg-white/10 dark:bg-zinc-900/5 p-2 rounded-full border border-[var(--glass-edge)]/40">
                       <div className="flex flex-1 items-center gap-3 max-w-xl">
                         <div className="relative flex-1">
                           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
@@ -916,14 +916,14 @@ export default function App() {
                             placeholder="Поиск по клиенту, площадке..."
                             value={projectQuery}
                             onChange={(e) => setProjectQuery(e.target.value)}
-                            className="pl-9 pr-4 py-1.5 rounded-xl text-xs bg-white/30 dark:bg-zinc-900/20 border border-zinc-200/50 dark:border-zinc-800/50 text-[var(--ink)] placeholder:text-zinc-400 focus:outline-none focus:border-[var(--lavenderAccent)] w-full transition-colors"
+                            className="pl-9 pr-4 py-1.5 rounded-full text-xs bg-white/30 dark:bg-zinc-900/20 border border-zinc-200/50 dark:border-zinc-800/50 text-[var(--ink)] placeholder:text-zinc-400 focus:outline-none focus:border-[var(--lavenderAccent)] w-full transition-colors"
                           />
                         </div>
 
                         <select
                           value={projectSort}
                           onChange={(e) => setProjectSort(e.target.value as any)}
-                          className="text-xs bg-white/30 dark:bg-zinc-900/20 border border-zinc-200/50 dark:border-zinc-800/50 rounded-xl py-1.5 px-3 text-[var(--ink)] focus:outline-none focus:border-[var(--lavenderAccent)] font-medium transition-colors"
+                          className="text-xs bg-white/30 dark:bg-zinc-900/20 border border-zinc-200/50 dark:border-zinc-800/50 rounded-full py-1.5 px-3.5 text-[var(--ink)] focus:outline-none focus:border-[var(--lavenderAccent)] font-medium transition-colors"
                         >
                           <option value="date">По дате события</option>
                           <option value="name">По алфавиту</option>
@@ -932,10 +932,10 @@ export default function App() {
                       </div>
 
                       {/* View Mode Switcher */}
-                      <div className="flex items-center gap-1 bg-zinc-100/80 dark:bg-zinc-800/60 p-1 rounded-xl border border-zinc-200/30 dark:border-zinc-800/30 shrink-0">
+                      <div className="flex items-center gap-1 bg-zinc-100/80 dark:bg-zinc-800/60 p-1 rounded-full border border-zinc-200/30 dark:border-zinc-800/30 shrink-0">
                         <button
                           onClick={() => setProjectViewMode('grid')}
-                          className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                          className={`p-1.5 rounded-full transition-all cursor-pointer ${
                             projectViewMode === 'grid'
                               ? 'bg-white dark:bg-zinc-900 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] shadow-sm'
                               : 'text-[var(--soft)] hover:text-[var(--ink)]'
@@ -946,7 +946,7 @@ export default function App() {
                         </button>
                         <button
                           onClick={() => setProjectViewMode('list')}
-                          className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                          className={`p-1.5 rounded-full transition-all cursor-pointer ${
                             projectViewMode === 'list'
                               ? 'bg-white dark:bg-zinc-900 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] shadow-sm'
                               : 'text-[var(--soft)] hover:text-[var(--ink)]'
@@ -1010,7 +1010,7 @@ export default function App() {
                               </button>
 
                               {/* Date Tag */}
-                              <span className="absolute bottom-3 right-3 text-xs bg-zinc-900/60 backdrop-blur-md text-white font-medium px-2.5 py-1 rounded-md">
+                              <span className="absolute bottom-3 right-3 text-xs bg-zinc-900/60 backdrop-blur-md text-white font-medium px-3 py-1 rounded-full border border-white/10">
                                 {new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'short' })}
                               </span>
                             </div>
@@ -1062,10 +1062,10 @@ export default function App() {
 
                               {/* Footer stats metadata */}
                               <div className="flex flex-wrap gap-1.5 pt-1">
-                                <span className="text-xs text-[var(--soft)] bg-white/40 dark:bg-black/20 border border-[var(--glass-edge)] px-2.5 py-1 rounded-lg">
+                                <span className="text-xs text-[var(--soft)] bg-white/40 dark:bg-black/20 border border-[var(--glass-edge)] px-3 py-1 rounded-full">
                                   {new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'long', year: 'numeric' })}
                                 </span>
-                                <span className="text-xs text-[var(--soft)] bg-white/40 dark:bg-black/20 border border-[var(--glass-edge)] px-2.5 py-1 rounded-lg">
+                                <span className="text-xs text-[var(--soft)] bg-white/40 dark:bg-black/20 border border-[var(--glass-edge)] px-3 py-1 rounded-full font-medium">
                                   Бюджет: {displayPrice.toLocaleString('ru')} ₽
                                 </span>
                               </div>
@@ -1079,7 +1079,7 @@ export default function App() {
                                         setProjects(prev => prev.map(item => item.id === p.id ? { ...item, status: 'progress' as const } : item));
                                         showToast('Проект восстановлен', `Проект «${p.name}» возвращен в работу.`, 'success');
                                       }}
-                                      className="flex-1 bg-[var(--sage)] hover:opacity-90 text-white rounded-xl py-2.5 text-[12.5px] font-medium transition-all cursor-pointer text-center"
+                                      className="flex-1 bg-[var(--sage)] hover:opacity-90 text-white rounded-full py-2.5 text-[12.5px] font-medium transition-all cursor-pointer text-center"
                                     >
                                       Восстановить
                                     </button>
@@ -1088,7 +1088,7 @@ export default function App() {
                                         setProjects(prev => prev.filter(item => item.id !== p.id));
                                         showToast('Удалено навсегда', `Проект «${p.name}» удален окончательно.`, 'warn');
                                       }}
-                                      className="w-10 shrink-0 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 transition-all flex items-center justify-center cursor-pointer"
+                                      className="w-10 shrink-0 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 transition-all flex items-center justify-center cursor-pointer"
                                       title="Удалить навсегда"
                                     >
                                       <Trash2 className="w-3.5 h-3.5" />
@@ -1101,7 +1101,7 @@ export default function App() {
                                         setSelectedProject(p);
                                         setActiveTab('projects');
                                       }}
-                                      className="flex-1 bg-[var(--lavDeep)] hover:opacity-90 text-white rounded-xl py-2.5 text-[12.5px] font-medium transition-all cursor-pointer"
+                                      className="flex-1 bg-[var(--lavDeep)] hover:opacity-90 text-white rounded-full py-2.5 text-[12.5px] font-medium transition-all cursor-pointer"
                                     >
                                       Открыть проект
                                     </button>
@@ -1110,7 +1110,7 @@ export default function App() {
                                         navigator.clipboard.writeText(`https://fleur-decor.ru/brief/${p.id}`);
                                         showToast('Бриф скопирован', 'Отправьте ссылку клиенту для прохождения опроса.', 'success');
                                       }}
-                                      className="w-10 shrink-0 rounded-xl bg-white/30 hover:bg-white/50 dark:bg-white/5 border border-[var(--glass-edge)] text-[var(--ink)] transition-all flex items-center justify-center cursor-pointer"
+                                      className="w-10 shrink-0 rounded-full bg-white/30 hover:bg-white/50 dark:bg-white/5 border border-[var(--glass-edge)] text-[var(--ink)] transition-all flex items-center justify-center cursor-pointer"
                                       title="Копировать бриф"
                                     >
                                       <Copy className="w-3.5 h-3.5" />
@@ -1229,10 +1229,10 @@ export default function App() {
                                 {/* Row 3: Metadata tags on left, Open button on right */}
                                 <div className="flex items-end justify-between gap-2 mt-1">
                                   <div className="flex flex-col gap-0.5 min-w-0">
-                                    <span className="text-[9px] text-[var(--soft)] bg-zinc-100/70 dark:bg-zinc-800/40 px-2 py-0.5 rounded-md w-max truncate">
+                                    <span className="text-[9px] text-[var(--soft)] bg-zinc-100/70 dark:bg-zinc-800/40 px-2.5 py-0.5 rounded-full w-max truncate">
                                       {new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'long', year: 'numeric' })}
                                     </span>
-                                    <span className="text-[9px] text-[var(--soft)] bg-zinc-100/70 dark:bg-zinc-800/40 px-2 py-0.5 rounded-md w-max font-semibold truncate">
+                                    <span className="text-[9px] text-[var(--soft)] bg-zinc-100/70 dark:bg-zinc-800/40 px-2.5 py-0.5 rounded-full w-max font-semibold truncate">
                                       Бюджет: {displayPrice.toLocaleString('ru')} ₽
                                     </span>
                                   </div>
@@ -1571,7 +1571,7 @@ export default function App() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -15 }}
                   transition={{ duration: 0.3 }}
-                  className="flex-1 flex flex-col min-h-0"
+                  className="flex-1 flex flex-col min-h-0 h-full"
                 >
                   <MoodboardEditor
                     projects={projects}
@@ -1868,7 +1868,7 @@ export default function App() {
               <button
                 onClick={() => setIsRightSidebarExpanded(true)}
                 title={`Задачи на сегодня (${tasks.filter(t => !t.completed).length} активных)`}
-                className="relative w-10 h-10 rounded-xl bg-white/20 dark:bg-black/20 hover:bg-[var(--lavenderSoft)] dark:hover:bg-zinc-800 flex items-center justify-center text-[var(--soft)] hover:text-[var(--lavDeep)] transition-all cursor-pointer"
+                className="relative w-10 h-10 rounded-full bg-white/20 dark:bg-black/20 hover:bg-[var(--lavenderSoft)] dark:hover:bg-zinc-800 flex items-center justify-center text-[var(--soft)] hover:text-[var(--lavDeep)] transition-all cursor-pointer"
               >
                 <CheckSquare className="w-4 h-4" />
                 {tasks.filter(t => !t.completed).length > 0 && (
@@ -1882,7 +1882,7 @@ export default function App() {
               <button
                 onClick={() => setIsRightSidebarExpanded(true)}
                 title="Календарь на Июль"
-                className="w-10 h-10 rounded-xl bg-white/20 dark:bg-black/20 hover:bg-[var(--lavenderSoft)] dark:hover:bg-zinc-800 flex items-center justify-center text-[var(--soft)] hover:text-[var(--lavDeep)] transition-all cursor-pointer"
+                className="w-10 h-10 rounded-full bg-white/20 dark:bg-black/20 hover:bg-[var(--lavenderSoft)] dark:hover:bg-zinc-800 flex items-center justify-center text-[var(--soft)] hover:text-[var(--lavDeep)] transition-all cursor-pointer"
               >
                 <Calendar className="w-4 h-4" />
               </button>
@@ -1891,7 +1891,7 @@ export default function App() {
               <button
                 onClick={() => showToast('Статистика', 'Раздел отчетов сейчас формируется.', 'info')}
                 title="Статистика за месяц"
-                className="w-10 h-10 rounded-xl bg-white/20 dark:bg-black/20 hover:bg-[var(--lavenderSoft)] dark:hover:bg-zinc-800 flex items-center justify-center text-[var(--soft)] hover:text-[var(--lavDeep)] transition-all cursor-pointer"
+                className="w-10 h-10 rounded-full bg-white/20 dark:bg-black/20 hover:bg-[var(--lavenderSoft)] dark:hover:bg-zinc-800 flex items-center justify-center text-[var(--soft)] hover:text-[var(--lavDeep)] transition-all cursor-pointer"
               >
                 <TrendingUp className="w-4 h-4" />
               </button>
