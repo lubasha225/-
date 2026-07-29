@@ -30,7 +30,8 @@ import {
   Trash2,
   Copy,
   LayoutGrid,
-  List
+  List,
+  MapPin
 } from 'lucide-react';
 
 import { Project, WarehouseItem, Task, DocumentItem, ImageItem, ProjectStatus, EstimateItem } from './types';
@@ -858,44 +859,34 @@ export default function App() {
                   <div className="space-y-4">
                     {/* Row 1: Categories / Status Filter pills */}
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className="flex flex-wrap gap-2">
                         {[
-                          { key: 'all', label: 'Все проекты', count: counts.all },
-                          { key: 'progress', label: 'В работе', count: counts.progress },
-                          { key: 'waiting', label: 'Ждут ответа', count: counts.waiting },
-                          { key: 'approved', label: 'Согласованы', count: counts.approved },
-                          { key: 'archive', label: 'Архив', count: counts.archive },
-                          { key: 'trash', label: 'Корзина', count: counts.trash }
-                        ].map((pill, index) => {
+                          { key: 'all', label: 'Все проекты', count: counts.all, dotColor: 'bg-amber-400' },
+                          { key: 'progress', label: 'В работе', count: counts.progress, dotColor: 'bg-emerald-500' },
+                          { key: 'waiting', label: 'Ждут ответа', count: counts.waiting, dotColor: 'bg-sky-500' },
+                          { key: 'approved', label: 'Согласованы', count: counts.approved, dotColor: 'bg-violet-500' },
+                          { key: 'archive', label: 'Архив', count: counts.archive, dotColor: 'bg-zinc-400' },
+                          { key: 'trash', label: 'Корзина', count: counts.trash, dotColor: 'bg-rose-500' }
+                        ].map((pill) => {
                           const isActive = projectFilter === pill.key;
-                          let customStyle: React.CSSProperties = {
-                            color: isActive ? undefined : '#43384A',
-                          };
-                          if (index === 0) {
-                            customStyle.fontWeight = 'normal';
-                          } else if (index === 1) {
-                            customStyle.fontWeight = 'normal';
-                            customStyle.textDecorationLine = 'none';
-                            customStyle.lineHeight = '16px';
-                          }
 
                           return (
                             <button
                               key={pill.key}
                               onClick={() => setProjectFilter(pill.key as any)}
-                              style={customStyle}
-                              className={`px-4 py-2 rounded-full text-xs font-light tracking-wide border transition-all duration-300 cursor-pointer flex items-center gap-2 ${
+                              className={`px-3.5 py-1.5 rounded-full text-xs font-medium tracking-wide border transition-all duration-300 cursor-pointer flex items-center gap-2 ${
                                 isActive
-                                  ? 'bg-[var(--lavDeep)] text-white border-[var(--lavDeep)] shadow-sm'
-                                  : 'bg-white/30 dark:bg-zinc-900/20 border-zinc-200/50 dark:border-zinc-800/50 hover:text-[var(--ink)] hover:border-[var(--lavenderAccent)]'
+                                  ? 'bg-[var(--lavDeep)] text-white border-[var(--lavDeep)] shadow-md shadow-[var(--lavDeep)]/20 scale-[1.02]'
+                                  : 'bg-white/40 dark:bg-zinc-900/40 border-zinc-200/60 dark:border-zinc-800/60 text-[var(--ink)] hover:border-[var(--lavenderAccent)] hover:bg-white/70'
                               }`}
                             >
+                              <span className={`w-2 h-2 rounded-full ${pill.dotColor} shrink-0 ring-2 ring-white/20`} />
                               <span>{pill.label}</span>
                               <span
-                                className={`inline-flex items-center justify-center rounded-full text-xs font-semibold min-w-[20px] h-5 px-1.5 transition-all duration-300 ${
+                                className={`inline-flex items-center justify-center rounded-full text-[11px] font-bold min-w-[20px] h-5 px-1.5 transition-all duration-300 ${
                                   isActive
-                                    ? 'bg-white text-[var(--lavDeep)]'
-                                    : 'bg-[#43384A]/10 text-[#43384A]'
+                                    ? 'bg-white/20 text-white backdrop-blur-sm'
+                                    : 'bg-zinc-200/60 dark:bg-zinc-800/60 text-[var(--soft)]'
                                 }`}
                               >
                                 {pill.count}
@@ -988,17 +979,25 @@ export default function App() {
                                 referrerPolicy="no-referrer"
                               />
                               {/* Overlay Status Badge */}
-                              <span className={`absolute top-3 left-3 text-xs font-medium px-3 py-1 rounded-full ${
-                                p.status === 'progress' ? 'bg-[var(--warnSoft)] text-[var(--warn)]' :
-                                p.status === 'waiting' ? 'bg-[var(--warnSoft)] text-[var(--warn)]' :
-                                p.status === 'approved' ? 'bg-[var(--sageSoft)] text-[var(--sage)]' :
-                                p.status === 'trash' ? 'bg-red-100/90 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
-                                'bg-zinc-100/80 text-zinc-500 dark:bg-zinc-800/80 dark:text-zinc-400'
+                              <span className={`absolute top-3 left-3 text-xs font-bold px-3 py-1 rounded-full backdrop-blur-md border flex items-center gap-1.5 shadow-md ${
+                                p.status === 'progress' ? 'bg-black/60 text-emerald-300 border-emerald-500/40' :
+                                p.status === 'waiting' ? 'bg-black/60 text-sky-300 border-sky-500/40' :
+                                p.status === 'approved' ? 'bg-black/60 text-violet-300 border-violet-500/40' :
+                                p.status === 'trash' ? 'bg-black/60 text-rose-300 border-rose-500/40' :
+                                'bg-black/60 text-zinc-200 border-zinc-500/40'
                               }`}>
-                                {p.status === 'progress' ? 'В работе' :
-                                 p.status === 'waiting' ? 'Бриф' :
-                                 p.status === 'approved' ? 'Согласован' :
-                                 p.status === 'trash' ? 'Корзина' : 'Архив'}
+                                <span className={`w-2 h-2 rounded-full shrink-0 ${
+                                  p.status === 'progress' ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)]' :
+                                  p.status === 'waiting' ? 'bg-sky-400 shadow-[0_0_6px_rgba(56,189,248,0.9)]' :
+                                  p.status === 'approved' ? 'bg-violet-400 shadow-[0_0_6px_rgba(167,139,250,0.9)]' :
+                                  p.status === 'trash' ? 'bg-rose-400 shadow-[0_0_6px_rgba(251,113,133,0.9)]' : 'bg-zinc-300'
+                                }`} />
+                                <span>
+                                  {p.status === 'progress' ? 'В работе' :
+                                   p.status === 'waiting' ? 'Ждет ответа' :
+                                   p.status === 'approved' ? 'Согласован' :
+                                   p.status === 'trash' ? 'Корзина' : 'Архив'}
+                                </span>
                               </span>
                               
                               <button
@@ -1010,16 +1009,26 @@ export default function App() {
                               </button>
 
                               {/* Date Tag */}
-                              <span className="absolute bottom-3 right-3 text-xs bg-zinc-900/60 backdrop-blur-md text-white font-medium px-3 py-1 rounded-full border border-white/10">
-                                {new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'short' })}
+                              <span className="absolute bottom-3 right-3 text-xs bg-zinc-900/60 backdrop-blur-md text-white font-medium px-3 py-1 rounded-full border border-white/10 flex items-center gap-1.5">
+                                <Calendar className="w-3 h-3 text-white/80 shrink-0" />
+                                <span>{new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'short' })}</span>
                               </span>
                             </div>
 
                             {/* Info area */}
                             <div className="p-5 space-y-4 flex-1 flex flex-col justify-between">
-                              <div className="space-y-1">
-                                <h3 className="font-medium text-[var(--ink)] text-base leading-tight truncate">{p.name}</h3>
-                                <p className="text-xs text-[var(--faint)] truncate">{p.venue}</p>
+                              <div className="space-y-1.5">
+                                {p.client && (
+                                  <div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] uppercase tracking-wider truncate">
+                                    <User className="w-3.5 h-3.5 shrink-0 opacity-75" />
+                                    <span className="truncate">{p.client}</span>
+                                  </div>
+                                )}
+                                <h3 className="font-bold text-[var(--ink)] text-base leading-snug truncate">{p.name}</h3>
+                                <div className="flex items-center gap-1.5 text-xs text-[var(--faint)] truncate">
+                                  <MapPin className="w-3.5 h-3.5 shrink-0 text-zinc-400" />
+                                  <span className="truncate">{p.venue}</span>
+                                </div>
                               </div>
 
                               {/* Custom Stepper with connecting line and dots */}
@@ -1062,10 +1071,11 @@ export default function App() {
 
                               {/* Footer stats metadata */}
                               <div className="flex flex-wrap gap-1.5 pt-1">
-                                <span className="text-xs text-[var(--soft)] bg-white/40 dark:bg-black/20 border border-[var(--glass-edge)] px-3 py-1 rounded-full">
-                                  {new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                <span className="inline-flex items-center gap-1.5 text-xs text-[var(--soft)] bg-white/40 dark:bg-black/20 border border-[var(--glass-edge)] px-3 py-1 rounded-full">
+                                  <Calendar className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                                  <span>{new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                                 </span>
-                                <span className="text-xs text-[var(--soft)] bg-white/40 dark:bg-black/20 border border-[var(--glass-edge)] px-3 py-1 rounded-full font-medium">
+                                <span className="inline-flex items-center gap-1.5 text-xs text-[var(--soft)] bg-white/40 dark:bg-black/20 border border-[var(--glass-edge)] px-3 py-1 rounded-full font-semibold">
                                   Бюджет: {displayPrice.toLocaleString('ru')} ₽
                                 </span>
                               </div>
@@ -1145,19 +1155,25 @@ export default function App() {
                                   referrerPolicy="no-referrer"
                                 />
                                 {/* Status Badge */}
-                                <span className={`absolute top-2.5 left-2.5 text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${
-                                  p.status === 'approved'
-                                    ? 'bg-[#E8F8F2] text-[#0A7B5C]'
-                                    : p.status === 'progress' || p.status === 'waiting'
-                                    ? 'bg-[#FEF3C7] text-[#D97706]'
-                                    : p.status === 'trash'
-                                    ? 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400'
-                                    : 'bg-zinc-100/90 text-zinc-500 dark:bg-zinc-800/90 dark:text-zinc-400'
+                                <span className={`absolute top-2.5 left-2.5 text-[10px] font-bold px-2.5 py-0.5 rounded-full backdrop-blur-md border flex items-center gap-1.5 shadow-md ${
+                                  p.status === 'progress' ? 'bg-black/60 text-emerald-300 border-emerald-500/40' :
+                                  p.status === 'waiting' ? 'bg-black/60 text-sky-300 border-sky-500/40' :
+                                  p.status === 'approved' ? 'bg-black/60 text-violet-300 border-violet-500/40' :
+                                  p.status === 'trash' ? 'bg-black/60 text-rose-300 border-rose-500/40' :
+                                  'bg-black/60 text-zinc-200 border-zinc-500/40'
                                 }`}>
-                                  {p.status === 'approved' ? 'Согласован' :
-                                   p.status === 'progress' ? 'В работе' :
-                                   p.status === 'waiting' ? 'Бриф' :
-                                   p.status === 'trash' ? 'Корзина' : 'Архив'}
+                                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                                    p.status === 'progress' ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)]' :
+                                    p.status === 'waiting' ? 'bg-sky-400 shadow-[0_0_6px_rgba(56,189,248,0.9)]' :
+                                    p.status === 'approved' ? 'bg-violet-400 shadow-[0_0_6px_rgba(167,139,250,0.9)]' :
+                                    p.status === 'trash' ? 'bg-rose-400 shadow-[0_0_6px_rgba(251,113,133,0.9)]' : 'bg-zinc-300'
+                                  }`} />
+                                  <span>
+                                    {p.status === 'approved' ? 'Согласован' :
+                                     p.status === 'progress' ? 'В работе' :
+                                     p.status === 'waiting' ? 'Ждет ответа' :
+                                     p.status === 'trash' ? 'Корзина' : 'Архив'}
+                                  </span>
                                 </span>
 
                                 <button
@@ -1169,8 +1185,9 @@ export default function App() {
                                 </button>
 
                                 {/* Date Tag */}
-                                <span className="absolute bottom-2.5 left-2.5 text-[10px] bg-black/40 backdrop-blur-md text-white font-medium px-2 py-0.5 rounded-full">
-                                  {new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'short' })}
+                                <span className="absolute bottom-2.5 left-2.5 text-[10px] bg-black/50 backdrop-blur-md text-white font-medium px-2 py-0.5 rounded-full border border-white/10 flex items-center gap-1">
+                                  <Calendar className="w-2.5 h-2.5 text-white/80 shrink-0" />
+                                  <span>{new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'short' })}</span>
                                 </span>
                               </div>
 
@@ -1178,13 +1195,20 @@ export default function App() {
                               <div className="p-3.5 pr-4 flex flex-col justify-between flex-1 min-w-0">
                                 {/* Row 1: Title, Venue, Copy button */}
                                 <div className="flex items-start justify-between gap-1">
-                                  <div className="min-w-0">
-                                    <h3 className="font-bold text-[15px] text-[var(--ink)] leading-tight truncate">
+                                  <div className="min-w-0 space-y-0.5">
+                                    {p.client && (
+                                      <div className="flex items-center gap-1 text-[10px] font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] uppercase tracking-wider truncate">
+                                        <User className="w-3 h-3 shrink-0 opacity-75" />
+                                        <span className="truncate">{p.client}</span>
+                                      </div>
+                                    )}
+                                    <h3 className="font-bold text-[14px] text-[var(--ink)] leading-tight truncate">
                                       {p.name}
                                     </h3>
-                                    <p className="text-[11px] text-[var(--soft)] mt-0.5 truncate">
-                                      {p.venue}
-                                    </p>
+                                    <div className="flex items-center gap-1 text-[11px] text-[var(--soft)] truncate">
+                                      <MapPin className="w-3 h-3 shrink-0 text-zinc-400" />
+                                      <span className="truncate">{p.venue}</span>
+                                    </div>
                                   </div>
                                   <button
                                     onClick={() => {
@@ -1285,17 +1309,25 @@ export default function App() {
                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                    referrerPolicy="no-referrer"
                                  />
-                                 <span className={`absolute top-1.5 left-1.5 text-xs font-medium px-2 py-0.5 rounded ${
-                                   p.status === 'progress' ? 'bg-[var(--warnSoft)] text-[var(--warn)]' :
-                                   p.status === 'waiting' ? 'bg-[var(--warnSoft)] text-[var(--warn)]' :
-                                   p.status === 'approved' ? 'bg-[var(--sageSoft)] text-[var(--sage)]' :
-                                   p.status === 'trash' ? 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400' :
-                                   'bg-zinc-100/80 text-zinc-500 dark:bg-zinc-800/80 dark:text-zinc-400'
+                                 <span className={`absolute top-1.5 left-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full backdrop-blur-md border flex items-center gap-1 shadow-md ${
+                                   p.status === 'progress' ? 'bg-black/60 text-emerald-300 border-emerald-500/40' :
+                                   p.status === 'waiting' ? 'bg-black/60 text-sky-300 border-sky-500/40' :
+                                   p.status === 'approved' ? 'bg-black/60 text-violet-300 border-violet-500/40' :
+                                   p.status === 'trash' ? 'bg-black/60 text-rose-300 border-rose-500/40' :
+                                   'bg-black/60 text-zinc-200 border-zinc-500/40'
                                  }`}>
-                                   {p.status === 'progress' ? 'В работе' :
-                                    p.status === 'waiting' ? 'Бриф' :
-                                    p.status === 'approved' ? 'Согласован' :
-                                    p.status === 'trash' ? 'Корзина' : 'Архив'}
+                                   <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                                     p.status === 'progress' ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)]' :
+                                     p.status === 'waiting' ? 'bg-sky-400 shadow-[0_0_6px_rgba(56,189,248,0.9)]' :
+                                     p.status === 'approved' ? 'bg-violet-400 shadow-[0_0_6px_rgba(167,139,250,0.9)]' :
+                                     p.status === 'trash' ? 'bg-rose-400 shadow-[0_0_6px_rgba(251,113,133,0.9)]' : 'bg-zinc-300'
+                                   }`} />
+                                   <span>
+                                     {p.status === 'progress' ? 'В работе' :
+                                      p.status === 'waiting' ? 'Ждет ответа' :
+                                      p.status === 'approved' ? 'Согласован' :
+                                      p.status === 'trash' ? 'Корзина' : 'Архив'}
+                                   </span>
                                  </span>
 
                                  <button
@@ -1418,19 +1450,25 @@ export default function App() {
                                    referrerPolicy="no-referrer"
                                  />
                                  {/* Status Badge */}
-                                 <span className={`absolute top-3.5 left-3.5 text-[11px] font-bold px-3 py-1 rounded-full shadow-sm ${
-                                   p.status === 'approved'
-                                     ? 'bg-[#E8F8F2] text-[#0A7B5C]'
-                                     : p.status === 'progress' || p.status === 'waiting'
-                                     ? 'bg-[#FEF3C7] text-[#D97706]'
-                                     : p.status === 'trash'
-                                     ? 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400 shadow-sm'
-                                     : 'bg-zinc-100/90 text-zinc-500 dark:bg-zinc-800/90 dark:text-zinc-400'
+                                 <span className={`absolute top-3.5 left-3.5 text-[11px] font-bold px-2.5 py-1 rounded-full backdrop-blur-md border flex items-center gap-1.5 shadow-md ${
+                                   p.status === 'progress' ? 'bg-black/60 text-emerald-300 border-emerald-500/40' :
+                                   p.status === 'waiting' ? 'bg-black/60 text-sky-300 border-sky-500/40' :
+                                   p.status === 'approved' ? 'bg-black/60 text-violet-300 border-violet-500/40' :
+                                   p.status === 'trash' ? 'bg-black/60 text-rose-300 border-rose-500/40' :
+                                   'bg-black/60 text-zinc-200 border-zinc-500/40'
                                  }`}>
-                                   {p.status === 'approved' ? 'Согласован' :
-                                    p.status === 'progress' ? 'В работе' :
-                                    p.status === 'waiting' ? 'Бриф' :
-                                    p.status === 'trash' ? 'Корзина' : 'Архив'}
+                                   <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                                     p.status === 'progress' ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)]' :
+                                     p.status === 'waiting' ? 'bg-sky-400 shadow-[0_0_6px_rgba(56,189,248,0.9)]' :
+                                     p.status === 'approved' ? 'bg-violet-400 shadow-[0_0_6px_rgba(167,139,250,0.9)]' :
+                                     p.status === 'trash' ? 'bg-rose-400 shadow-[0_0_6px_rgba(251,113,133,0.9)]' : 'bg-zinc-300'
+                                   }`} />
+                                   <span>
+                                     {p.status === 'approved' ? 'Согласован' :
+                                      p.status === 'progress' ? 'В работе' :
+                                      p.status === 'waiting' ? 'Ждет ответа' :
+                                      p.status === 'trash' ? 'Корзина' : 'Архив'}
+                                   </span>
                                  </span>
 
                                  <button
@@ -1442,8 +1480,9 @@ export default function App() {
                                  </button>
 
                                  {/* Date Tag on Bottom Right */}
-                                 <span className="absolute bottom-3.5 right-3.5 text-[11px] bg-black/40 backdrop-blur-md text-white font-semibold px-2.5 py-0.5 rounded-full">
-                                   {new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'short' })}
+                                 <span className="absolute bottom-3.5 right-3.5 text-[11px] bg-black/50 backdrop-blur-md text-white font-medium px-2.5 py-1 rounded-full border border-white/10 flex items-center gap-1.5">
+                                   <Calendar className="w-3 h-3 text-white/80 shrink-0" />
+                                   <span>{new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'short' })}</span>
                                  </span>
                                </div>
 
@@ -1451,13 +1490,20 @@ export default function App() {
                                <div className="p-4 pr-5 flex flex-col justify-between flex-1 min-w-0">
                                  {/* Row 1: Title, Venue on left, copy brief button on right */}
                                  <div className="flex items-start justify-between gap-3">
-                                   <div className="min-w-0">
-                                     <h3 className="font-bold text-[17px] text-[var(--ink)] leading-tight truncate">
+                                   <div className="min-w-0 space-y-0.5">
+                                     {p.client && (
+                                       <div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] uppercase tracking-wider truncate">
+                                         <User className="w-3.5 h-3.5 shrink-0 opacity-75" />
+                                         <span className="truncate">{p.client}</span>
+                                       </div>
+                                     )}
+                                     <h3 className="font-bold text-[16px] text-[var(--ink)] leading-tight truncate">
                                        {p.name}
                                      </h3>
-                                     <p className="text-[12px] text-[var(--soft)] mt-0.5 truncate">
-                                       {p.venue}
-                                     </p>
+                                     <div className="flex items-center gap-1.5 text-[12px] text-[var(--soft)] truncate">
+                                       <MapPin className="w-3.5 h-3.5 shrink-0 text-zinc-400" />
+                                       <span className="truncate">{p.venue}</span>
+                                     </div>
                                    </div>
                                    <button
                                      onClick={() => {
