@@ -351,18 +351,18 @@ export default function WarehouseTab({
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
                   style={customStyle}
-                  className={`px-4 py-2 rounded-full text-xs font-light tracking-wide border transition-all duration-300 cursor-pointer flex items-center gap-2 ${
+                  className={`rounded-full text-xs font-light tracking-wide border transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
                     isActive
-                      ? 'bg-[var(--lavDeep)] text-white border-[var(--lavDeep)] shadow-sm'
-                      : 'bg-white/30 dark:bg-zinc-900/20 border-zinc-200/50 dark:border-zinc-800/50 hover:text-[var(--ink)] hover:border-[var(--lavenderAccent)]'
+                      ? 'bg-[var(--lavDeep)] text-white border-[var(--lavDeep)] shadow-sm px-3.5 py-1.5 font-medium'
+                      : 'bg-transparent text-[var(--soft)] hover:text-[var(--ink)] border-transparent px-2 py-1'
                   }`}
                 >
                   <span>{cat === 'all' ? 'Общее количество' : cat}</span>
                   <span
-                    className={`inline-flex items-center justify-center rounded-full text-xs font-medium min-w-[20px] h-5 px-1.5 transition-all duration-300 ${
+                    className={`inline-flex items-center justify-center rounded-full text-xs font-medium min-w-[20px] h-5 px-1.5 transition-all duration-200 ${
                       isActive
-                        ? 'bg-white text-[var(--lavDeep)]'
-                        : 'bg-[#43384A]/10 text-[#43384A]'
+                        ? 'bg-white text-[var(--lavDeep)] font-bold'
+                        : 'bg-[var(--lavenderSoft)] text-[var(--lavDeep)] dark:bg-purple-950/60 dark:text-[var(--lavenderAccent)] font-medium'
                     }`}
                   >
                     {count}

@@ -47,6 +47,8 @@ import {
   Link,
   ChevronUp,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Volume2,
   GripVertical,
   Sun,
@@ -62,7 +64,19 @@ import {
   Undo2,
   Redo2,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  ArrowUpToLine,
+  ArrowDownToLine,
+  User,
+  Calendar,
+  MapPin,
+  Paperclip,
+  Maximize2,
+  Group,
+  Ungroup,
+  BoxSelect,
+  FlipVertical,
+  Thermometer
 } from 'lucide-react';
 import { Project, EstimateItem } from '../types';
 import { CATALOG_ASSETS, LibraryItem } from './editor/EditorLibraryData';
@@ -101,6 +115,7 @@ export interface CanvasElement {
   isFlippedV: boolean;
   svgMarkup: string;
   customImage?: string;
+  groupId?: string;
 }
 
 interface EditorScene {
@@ -114,7 +129,7 @@ interface EditorScene {
 
 const NEW_CATALOG_CATEGORIES = [
   { id: 'favorites', title: 'Избранное', icon: 'Heart' },
-  { id: 'text', title: 'Текст', icon: 'Type' },
+  { id: 'warehouse', title: 'Склад', icon: 'Box' },
   { id: 'arches', title: 'Арки', icon: 'Layers' },
   { id: 'stands', title: 'Стойки', icon: 'Columns' },
   { id: 'tables', title: 'Столы', icon: 'Table' },
@@ -465,16 +480,27 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
   // Seating Arrangement Floor Plan
   const [floorPlanElements, setFloorPlanElements] = useState<PlanElement[]>([]);
 
-  // Selection ID on the Canvas
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Selection IDs on the Canvas (Supports multi-selection group)
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const selectedId = selectedIds.length === 1 ? selectedIds[0] : null;
+
+  const setSelectedId = (id: string | null) => {
+    if (id === null) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds([id]);
+    }
+  };
 
   // Expanded project element in right sidebar
   const [expandedElementId, setExpandedElementId] = useState<string | null>(null);
   const [draftPrice, setDraftPrice] = useState<string>('');
   const [draftNote, setDraftNote] = useState<string>('');
 
-  // Active adjustment floating tool
-  const [activeFilterTool, setActiveFilterTool] = useState<'brightness' | 'contrast' | 'saturate' | 'hue' | 'opacity' | 'zoom' | null>(null);
+  // Active popovers & adjustment floating tools
+  const [activeToolPopover, setActiveToolPopover] = useState<'group' | 'layers' | 'flip' | null>(null);
+  const [activeFilterTool, setActiveFilterTool] = useState<'brightness' | 'contrast' | 'saturate' | 'hue' | 'opacity' | 'temp' | null>(null);
+  const [mobileDrawerTab, setMobileDrawerTab] = useState<'library' | 'layers' | 'tools' | null>(null);
 
   // Undo/Redo Stacking
   const [history, setHistory] = useState<EditorScene[][]>([JSON.parse(JSON.stringify(scenes))]);
@@ -484,13 +510,16 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
   const [selectedCategory, setSelectedCategory] = useState<string>('arches');
   const [libSearch, setLibSearch] = useState<string>('');
   const [favoritesList, setFavoritesList] = useState<string[]>(['text-1', 'arch-1']);
+  const categoryScrollRef = useRef<HTMLDivElement>(null);
 
   // Canvas Dimension Configurations
   const [canvasWidthMm, setCanvasWidthMm] = useState<number>(6500);
   const [canvasHeightMm, setCanvasHeightMm] = useState<number>(4400);
   const [gridVisible, setGridVisible] = useState<boolean>(true);
   const [humanVisible, setHumanVisible] = useState<boolean>(true);
-  const [activeUnit, setActiveUnit] = useState<'mm' | 'cm' | 'm'>('mm');
+  const [humanPos, setHumanPos] = useState<{ x: number; y: number } | null>(null);
+  const [isDraggingHuman, setIsDraggingHuman] = useState<boolean>(false);
+  const [activeUnit, setActiveUnit] = useState<'mm' | 'cm' | 'm'>('cm');
 
   // Zooming & Panning states
   const [zoomScale, setZoomScale] = useState<number>(1);
@@ -600,8 +629,56 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
 
   // Set selected element properties and automatically switches to Tools Tab
   const handleSelectElement = (id: string) => {
-    setSelectedId(id);
+    const targetEl = activeScene.elements.find(el => el.id === id);
+    if (targetEl && targetEl.groupId) {
+      const groupElIds = activeScene.elements
+        .filter(el => el.groupId === targetEl.groupId && el.isVisible)
+        .map(el => el.id);
+      setSelectedIds(groupElIds);
+    } else {
+      setSelectedId(id);
+    }
     setActiveSidebarTab('tools');
+  };
+
+  // Grouping & Ungrouping persistent logic
+  const handleGroupSelectedElements = () => {
+    if (selectedIds.length < 2) {
+      showToast('Группировка', 'Для объединения в постоянную группу выберите 2 или более элементов', 'info');
+      return;
+    }
+
+    const newGroupId = `group-${Date.now()}`;
+    updateActiveSceneElements(elements =>
+      elements.map(el =>
+        selectedIds.includes(el.id) ? { ...el, groupId: newGroupId } : el
+      )
+    );
+
+    showToast('Сгруппировано', `${selectedIds.length} элементов сгруппированы. Теперь они перемещаются вместе!`, 'success');
+  };
+
+  const handleUngroupSelectedElements = () => {
+    if (selectedIds.length === 0) {
+      showToast('Разгруппировка', 'Выберите элементы для разгруппировки', 'info');
+      return;
+    }
+
+    const selectedElements = activeScene.elements.filter(el => selectedIds.includes(el.id));
+    const targetGroupIds = new Set(selectedElements.map(el => el.groupId).filter(Boolean));
+
+    if (targetGroupIds.size === 0) {
+      showToast('Разгруппировка', 'Выбранные элементы не состоят в группе', 'info');
+      return;
+    }
+
+    updateActiveSceneElements(elements =>
+      elements.map(el =>
+        el.groupId && targetGroupIds.has(el.groupId) ? { ...el, groupId: undefined } : el
+      )
+    );
+
+    showToast('Разгруппировано', 'Элементы разгруппированы и теперь независимы.', 'info');
   };
 
   // Modifying active scene helper
@@ -639,6 +716,15 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
       const custom = CUSTOM_LIBRARY_ITEMS.filter(i => i.category === selectedCategory);
       let assetItems: LibraryItem[] = [];
       switch (selectedCategory) {
+        case 'warehouse':
+          assetItems = [
+            ...(CATALOG_ASSETS.arches || []),
+            ...(CATALOG_ASSETS.stands || []),
+            ...(CATALOG_ASSETS.tables || []),
+            ...(CATALOG_ASSETS.flowers || []),
+            ...(CATALOG_ASSETS.decor || [])
+          ];
+          break;
         case 'arches':
           assetItems = CATALOG_ASSETS.arches || [];
           break;
@@ -896,8 +982,11 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
   };
 
   // Drag, Resize and Rotate implementation
-  const [activeAction, setActiveAction] = useState<'move' | 'resize' | 'rotate' | null>(null);
+  const [activeAction, setActiveAction] = useState<'move' | 'resize' | 'rotate' | 'move-group' | null>(null);
   const [activeHandle, setActiveHandle] = useState<string | null>(null);
+  const [rotationInputId, setRotationInputId] = useState<string | null>(null);
+
+  const rotateClickStartRef = useRef({ x: 0, y: 0, time: 0 });
   
   const dragStartRef = useRef({
     x: 0,
@@ -909,6 +998,12 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
     rotation: 0
   });
 
+  const dragGroupStartRef = useRef<{
+    mouseX: number;
+    mouseY: number;
+    items: { id: string; x: number; y: number }[];
+  }>({ mouseX: 0, mouseY: 0, items: [] });
+
   const rotateStartRef = useRef({
     startAngle: 0,
     startRotation: 0,
@@ -917,9 +1012,50 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
   });
 
   const handleCanvasMouseDown = (e: React.MouseEvent, el: CanvasElement) => {
-    if (el.isLocked) return;
     e.stopPropagation();
+
+    // Multi-select with Shift/Ctrl
+    if (e.shiftKey || e.ctrlKey || e.metaKey) {
+      if (selectedIds.includes(el.id)) {
+        setSelectedIds(prev => prev.filter(id => id !== el.id));
+      } else {
+        setSelectedIds(prev => [...prev, el.id]);
+      }
+      return;
+    }
+
+    // Determine target selection list (persistent groupId or currently selected group)
+    let targetIds: string[] = [];
+    if (el.groupId) {
+      targetIds = activeScene.elements.filter(item => item.groupId === el.groupId && item.isVisible).map(i => i.id);
+    } else if (selectedIds.length > 1 && selectedIds.includes(el.id)) {
+      targetIds = selectedIds;
+    }
+
+    if (targetIds.length > 1) {
+      setSelectedIds(targetIds);
+      const selectedElements = activeScene.elements.filter(item => targetIds.includes(item.id) && item.isVisible);
+      if (selectedElements.some(item => item.isLocked)) {
+        setActiveAction(null);
+        setActiveHandle(null);
+        return;
+      }
+      setActiveAction('move-group');
+      setActiveHandle(null);
+      dragGroupStartRef.current = {
+        mouseX: e.clientX,
+        mouseY: e.clientY,
+        items: selectedElements.map(item => ({ id: item.id, x: item.x, y: item.y }))
+      };
+      return;
+    }
+
     handleSelectElement(el.id);
+    if (el.isLocked) {
+      setActiveAction(null);
+      setActiveHandle(null);
+      return;
+    }
     setActiveAction('move');
     setActiveHandle(null);
     dragStartRef.current = {
@@ -948,7 +1084,35 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
   };
 
   const handleCanvasMouseMove = (e: React.MouseEvent) => {
-    if (!activeAction || !selectedId) return;
+    if (!activeAction) return;
+
+    if (activeAction === 'move-group') {
+      const dx = (e.clientX - dragGroupStartRef.current.mouseX) / canvasScale;
+      const dy = (e.clientY - dragGroupStartRef.current.mouseY) / canvasScale;
+
+      setScenes(prev => prev.map(s => {
+        if (s.id === activeScene.id) {
+          return {
+            ...s,
+            elements: s.elements.map(el => {
+              const initial = dragGroupStartRef.current.items.find(i => i.id === el.id);
+              if (initial) {
+                return {
+                  ...el,
+                  x: Math.max(0, Math.min(canvasWidthMm / 10 - el.w, initial.x + dx)),
+                  y: Math.max(0, Math.min(canvasHeightMm / 10 - el.h, initial.y + dy))
+                };
+              }
+              return el;
+            })
+          };
+        }
+        return s;
+      }));
+      return;
+    }
+
+    if (!selectedId) return;
 
     if (activeAction === 'move') {
       const dx = (e.clientX - dragStartRef.current.x) / canvasScale;
@@ -1118,6 +1282,26 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
     }
   };
 
+  useEffect(() => {
+    if (!activeAction) return;
+
+    const handleWindowMouseMove = (e: MouseEvent) => {
+      handleCanvasMouseMove(e as unknown as React.MouseEvent);
+    };
+
+    const handleWindowMouseUp = () => {
+      handleCanvasMouseUp();
+    };
+
+    window.addEventListener('mousemove', handleWindowMouseMove);
+    window.addEventListener('mouseup', handleWindowMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleWindowMouseMove);
+      window.removeEventListener('mouseup', handleWindowMouseUp);
+    };
+  }, [activeAction, selectedId, scenes, activeScene]);
+
   // Zooming & Panning logic
   useEffect(() => {
     const viewport = viewportRef.current;
@@ -1187,29 +1371,29 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
   useEffect(() => {
     if (setHeaderActions) {
       setHeaderActions(
-        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto shrink-0">
           <button
             onClick={() => setIsAiModalOpen(true)}
-            className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 rounded-full bg-[var(--lavDeep)] hover:bg-[var(--lavenderAccent)] text-white text-xs font-bold transition-all shadow-md shadow-[var(--lavDeep)]/20 cursor-pointer"
+            className="flex items-center justify-center gap-1.5 px-3.5 h-9 rounded-full bg-[var(--lavDeep)] hover:bg-[var(--lavenderAccent)] text-white text-xs font-bold transition-all shadow-md shadow-[var(--lavDeep)]/20 cursor-pointer whitespace-nowrap shrink-0"
           >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>ИИ визуализация</span>
+            <Sparkles className="w-3.5 h-3.5 shrink-0" />
+            <span className="whitespace-nowrap">ИИ Макет</span>
           </button>
           
           <button
             onClick={handleSaveProjectCollage}
-            className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full bg-white dark:bg-zinc-900 hover:bg-zinc-50 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-200 text-xs font-semibold transition-all shadow-xs cursor-pointer"
+            className="flex items-center justify-center gap-1.5 px-3.5 h-9 rounded-full bg-white dark:bg-zinc-900 hover:bg-zinc-50 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-200 text-xs font-semibold transition-all shadow-xs cursor-pointer whitespace-nowrap shrink-0"
           >
-            <Check className="w-3.5 h-3.5 text-emerald-500" />
-            <span>Сохранено</span>
+            <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+            <span className="whitespace-nowrap">Сохранено</span>
           </button>
 
           <button
             onClick={handleDownloadLayout}
-            className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full bg-white dark:bg-zinc-900 hover:bg-zinc-50 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-200 text-xs font-semibold transition-all shadow-xs cursor-pointer"
+            className="flex items-center justify-center gap-1.5 px-3.5 h-9 rounded-full bg-white dark:bg-zinc-900 hover:bg-zinc-50 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-200 text-xs font-semibold transition-all shadow-xs cursor-pointer whitespace-nowrap shrink-0"
           >
-            <Download className="w-3.5 h-3.5 text-zinc-500" />
-            <span>Скачать</span>
+            <Download className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+            <span className="whitespace-nowrap">Скачать</span>
           </button>
 
           <button
@@ -1220,10 +1404,10 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                 showToast('Проект', 'Возврат к списку проектов', 'info');
               }
             }}
-            className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full bg-white dark:bg-zinc-900 hover:bg-zinc-50 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-200 text-xs font-semibold transition-all shadow-xs cursor-pointer"
+            className="flex items-center justify-center gap-1.5 px-3.5 h-9 rounded-full bg-white dark:bg-zinc-900 hover:bg-zinc-50 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-200 text-xs font-semibold transition-all shadow-xs cursor-pointer whitespace-nowrap shrink-0"
           >
-            <ArrowLeft className="w-3.5 h-3.5 text-zinc-500" />
-            <span>в проект</span>
+            <ArrowLeft className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+            <span className="whitespace-nowrap">в проект</span>
           </button>
         </div>
       );
@@ -1237,77 +1421,690 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
 
   const selectedElem = activeScene.elements.find(el => el.id === selectedId);
 
-  return (
-    <div className="flex-1 flex flex-col gap-2.5 min-h-0 min-w-0 h-full pb-1 print:pb-0" onMouseMove={handleCanvasMouseMove} onMouseUp={handleCanvasMouseUp}>
-
-      {/* MAIN TWO-COLUMN SPLIT */}
-      <div className="flex-1 min-h-0 min-w-0 h-full grid grid-cols-1 lg:grid-cols-12 gap-3 print:hidden">
-        
-        {/* LEFT COLUMN: ACTIVE WORKSPACE (70% WIDTH) */}
-        <div className="lg:col-span-8 flex flex-col gap-2.5 h-full min-h-0 min-w-0">
-          
-          {/* Top workspace navigation bar */}
-          <div className="flex items-center justify-between bg-white/40 dark:bg-zinc-900/10 border border-[var(--glass-edge)] p-1.5 rounded-2xl shrink-0 backdrop-blur-md">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  showToast('Новая сцена', 'Создана новая визуализация', 'info');
-                }}
-                className="w-7 h-7 rounded-full bg-white/60 dark:bg-zinc-800/60 hover:bg-white border border-[var(--glass-edge)] flex items-center justify-center text-[var(--soft)] hover:text-[var(--ink)] transition-all cursor-pointer"
-                title="Добавить визуализацию"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-
-              <button
-                onClick={() => setActiveWorkspaceTab('scene-1')}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                  activeWorkspaceTab === 'scene-1'
-                    ? 'bg-[var(--lavDeep)] text-white shadow-sm'
-                    : 'text-[var(--soft)] hover:text-[var(--ink)] hover:bg-white/40 dark:hover:bg-black/20'
-                }`}
-              >
-                <span>Визуализация 1</span>
-                <Pencil className="w-3 h-3 opacity-70" />
-              </button>
-
-              <button
-                onClick={() => {
-                  setActiveWorkspaceTab('floorplan');
-                  setSelectedId(null);
-                }}
-                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                  activeWorkspaceTab === 'floorplan'
-                    ? 'bg-[var(--lavDeep)] text-white shadow-sm'
-                    : 'text-[var(--soft)] hover:text-[var(--ink)] hover:bg-white/40 dark:hover:bg-black/20'
-                }`}
-              >
-                <span>Схема</span>
-              </button>
+  const renderSidebarTabContent = (targetTab: 'library' | 'layers' | 'tools') => {
+    return (
+      <>
+        {/* TAB 1: LIBRARY CATALOG LISTING */}
+        {targetTab === 'library' && (
+          <div className="flex flex-col gap-3 flex-1 min-h-0 min-w-0 overflow-x-hidden">
+            
+            {/* Filter / Search Bar */}
+            <div className="relative shrink-0">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
+              <input
+                type="text"
+                placeholder="Найти элемент..."
+                value={libSearch}
+                onChange={(e) => setLibSearch(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-xs text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 focus:outline-none shadow-xs"
+              />
             </div>
 
-            {/* Undo/Redo Controls */}
-            {activeWorkspaceTab !== 'floorplan' && (
-              <div className="flex items-center gap-1 pr-1">
-                <button
-                  onClick={handleUndo}
-                  disabled={historyIndex <= 0}
-                  className="p-1.5 rounded-lg hover:bg-white/40 dark:hover:bg-black/20 text-[var(--soft)] disabled:opacity-30 cursor-pointer"
-                  title="Отменить действие (Ctrl+Z)"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={handleRedo}
-                  disabled={historyIndex >= history.length - 1}
-                  className="p-1.5 rounded-lg hover:bg-white/40 dark:hover:bg-black/20 text-[var(--soft)] disabled:opacity-30 cursor-pointer"
-                  title="Повторить действие"
-                >
-                  <RotateCw className="w-3.5 h-3.5" />
-                </button>
+            {/* Vertical Categories (Left) + Catalog Cards Grid (Right) */}
+            <div className="flex gap-2.5 flex-1 min-h-0 items-start overflow-hidden min-w-0">
+              
+              {/* VERTICAL CATEGORY BAR */}
+              <div className="flex flex-col gap-1.5 p-1 bg-zinc-100/90 dark:bg-zinc-900/80 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 shrink-0 overflow-y-auto overflow-x-hidden max-h-full scrollbar-none shadow-2xs">
+                {NEW_CATALOG_CATEGORIES.map((cat) => {
+                  const isSelected = selectedCategory === cat.id;
+                  return (
+                    <div key={cat.id} className="relative group">
+                      <button
+                        onClick={() => {
+                          setSelectedCategory(cat.id);
+                          setLibSearch('');
+                        }}
+                        className={`w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer border ${
+                          isSelected
+                            ? 'bg-[#EAE4F8] text-[#5B3E88] border-[#D4C5ED] dark:bg-purple-950 dark:text-purple-200 dark:border-purple-800 shadow-xs scale-105'
+                            : 'bg-white/80 dark:bg-zinc-800/80 border-transparent text-zinc-600 dark:text-zinc-400 hover:bg-white dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 hover:shadow-2xs'
+                        }`}
+                        title={cat.title}
+                      >
+                        {cat.id === 'favorites' && <Heart className={`w-4 h-4 ${isSelected ? 'fill-[#5B3E88] text-[#5B3E88]' : 'text-rose-500 fill-rose-500'}`} />}
+                        {cat.id === 'warehouse' && <Box className="w-4 h-4 text-amber-500" />}
+                        {cat.id === 'arches' && <Layers className="w-4 h-4 text-indigo-500" />}
+                        {cat.id === 'stands' && <Columns className="w-4 h-4 text-cyan-500" />}
+                        {cat.id === 'tables' && <TableIcon className="w-4 h-4 text-emerald-500" />}
+                        {cat.id === 'screens' && <GridIcon className="w-4 h-4 text-blue-500" />}
+                        {cat.id === 'flowers' && <Flower2 className="w-4 h-4 text-pink-500" />}
+                        {cat.id === 'compositions' && <Sparkles className="w-4 h-4 text-amber-400" />}
+                        {cat.id === 'vases' && <Tag className="w-4 h-4 text-purple-500" />}
+                        {cat.id === 'details' && <Compass className="w-4 h-4 text-teal-500" />}
+                        {cat.id === 'textiles' && <AlignLeft className="w-4 h-4 text-sky-500" />}
+                        {cat.id === 'light' && <Lightbulb className="w-4 h-4 text-yellow-500" />}
+                        {cat.id === 'podiums' && <Columns className="w-4 h-4 text-orange-500" />}
+                        {cat.id === 'furniture' && <Bookmark className="w-4 h-4 text-violet-500" />}
+                        {cat.id === 'balloons' && <CircleDot className="w-4 h-4 text-rose-400" />}
+                        {cat.id === 'themes' && <Sparkles className="w-4 h-4 text-emerald-600" />}
+                      </button>
+
+                      {/* Hover Tooltip showing category name */}
+                      <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity bg-zinc-900 dark:bg-zinc-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg shadow-lg whitespace-nowrap border border-zinc-700/50">
+                        {cat.title}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* CARDS GRID AREA */}
+              <div className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden max-h-full scrollbar-none pr-1">
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(70px,1fr))] gap-2">
+                  {/* Plus item custom upload button */}
+                  <label className="group relative aspect-square w-full rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700 hover:border-[#5B3E88] bg-white/60 dark:bg-zinc-900/60 cursor-pointer transition-all shadow-2xs flex flex-col items-center justify-center p-2 text-center">
+                    <div className="w-8 h-8 rounded-full bg-[#EAE4F8] dark:bg-purple-950/80 text-[#5B3E88] dark:text-purple-300 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
+                      <Plus className="w-4 h-4" />
+                    </div>
+                    <span className="text-[10px] font-bold text-zinc-700 dark:text-zinc-300">Загрузить</span>
+                    <input
+                      type="file"
+                      accept="image/png"
+                      onChange={handleCustomPngUpload}
+                      className="hidden"
+                    />
+                  </label>
+
+                  {getCategoryItems().map((item) => {
+                    const isFav = favoritesList.includes(item.id);
+                    return (
+                      <div
+                        key={item.id}
+                        onClick={() => handleAddElementToScene(item)}
+                        className="group relative aspect-square w-full rounded-2xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-[#5B3E88] hover:shadow-md cursor-pointer transition-all p-1.5 flex items-center justify-center overflow-hidden"
+                        title={item.name}
+                      >
+                        {/* Overlay Header Mini Actions */}
+                        <div className="absolute top-1.5 left-1.5 right-1.5 flex justify-between items-center z-10 pointer-events-none">
+                          <button
+                            onClick={(e) => toggleFavorite(item.id, e)}
+                            className="p-1 rounded-full bg-white/85 dark:bg-zinc-800/85 text-zinc-400 hover:text-rose-500 transition-colors cursor-pointer pointer-events-auto shadow-2xs"
+                            title="В избранное"
+                          >
+                            <Heart className={`w-3 h-3 ${isFav ? 'text-rose-500 fill-rose-500' : ''}`} />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAddElementToScene(item);
+                            }}
+                            className="p-1 rounded-full bg-[#EAE4F8] dark:bg-purple-950 text-[#5B3E88] dark:text-purple-300 hover:scale-110 transition-transform cursor-pointer pointer-events-auto shadow-2xs"
+                            title="Добавить на сцену"
+                          >
+                            <Plus className="w-3 h-3" />
+                          </button>
+                        </div>
+
+                        {/* Element Vector preview */}
+                        <div className="w-full h-full p-2.5 flex items-center justify-center group-hover:scale-105 transition-transform">
+                          <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: item.svgMarkup }} />
+                        </div>
+
+                        {/* Title Caption overlay on hover */}
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-zinc-950/80 to-transparent p-1.5 pt-4 text-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <span className="text-[9px] font-bold text-white truncate block">
+                            {item.name}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        )}
+
+        {/* TAB 2: SCENE ELEMENTS / LAYERS LIST */}
+        {targetTab === 'layers' && (
+          <div className="flex flex-col gap-2 flex-1 min-h-0 min-w-0 overflow-x-hidden">
+            <div className="flex items-center justify-between px-1">
+              <span className="text-xs font-bold text-zinc-500">Слои декора ({activeScene.elements.length})</span>
+              <span className="text-[10px] text-zinc-400">Перетащите для порядка</span>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 min-h-0">
+              {activeScene.elements.length === 0 ? (
+                <div className="py-12 text-center text-xs text-zinc-400 space-y-2">
+                  <Box className="w-6 h-6 mx-auto text-zinc-300 dark:text-zinc-700" />
+                  <p>На сцене пока нет декораций.</p>
+                  <p className="text-[10px] text-zinc-400">Выберите элемент из Библиотеки слева для размещения.</p>
+                </div>
+              ) : (
+                [...activeScene.elements].reverse().map((el, revIdx) => {
+                  const actualIdx = activeScene.elements.length - 1 - revIdx;
+                  const isExpanded = expandedElementId === el.id;
+
+                  return (
+                    <div
+                      key={el.id}
+                      className={`rounded-2xl border transition-all overflow-hidden ${
+                        el.id === selectedId
+                          ? 'border-[var(--lavDeep)] dark:border-[var(--lavenderAccent)] bg-white dark:bg-zinc-900 shadow-xs'
+                          : 'border-zinc-200/80 dark:border-zinc-800/80 bg-white/60 dark:bg-zinc-900/60'
+                      }`}
+                    >
+                      {/* Main Layer Header Strip */}
+                      <div
+                        onClick={() => {
+                          setSelectedId(el.id);
+                          if (isExpanded) {
+                            setExpandedElementId(null);
+                          } else {
+                            setExpandedElementId(el.id);
+                            setDraftPrice(el.price.toString());
+                            setDraftNote(el.comment || '');
+                          }
+                        }}
+                        className={`flex items-center justify-between p-2.5 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-850 transition-colors ${
+                          el.id === selectedId ? 'bg-[var(--lavenderSoft)] dark:bg-[var(--lavDeep)]/20' : ''
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          {/* Grip Handle */}
+                          <GripVertical className="w-4 h-4 text-zinc-400 shrink-0 cursor-grab" />
+
+                          {/* Thumbnail preview */}
+                          <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center shrink-0 overflow-hidden border border-zinc-200/50 p-0.5">
+                            {el.customImage ? (
+                              <img src={el.customImage} className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+                            ) : (
+                              <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: el.svgMarkup }} />
+                            )}
+                          </div>
+
+                          {/* Title */}
+                          <span className="text-xs font-bold text-zinc-800 dark:text-zinc-100 truncate flex-1">
+                            {el.name}
+                          </span>
+
+                          {/* Chevron Arrow */}
+                          {isExpanded ? (
+                            <ChevronUp className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                          ) : (
+                            <ChevronDown className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                          )}
+                        </div>
+
+                        {/* Price badge and Visibility */}
+                        <div className="flex items-center gap-2 shrink-0 pl-3">
+                          <span className="text-xs font-extrabold text-zinc-900 dark:text-zinc-100">
+                            {el.price > 0 ? `${el.price.toLocaleString('ru')} ₽` : '0 ₽'}
+                          </span>
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, isVisible: !item.isVisible } : item));
+                            }}
+                            className="p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 cursor-pointer"
+                            title="Показать / скрыть"
+                          >
+                            {el.isVisible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5 text-rose-500" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* EXPANDED DETAIL CARD */}
+                      {isExpanded && (
+                        <div className="p-3.5 border-t border-zinc-100 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-black/20 space-y-3">
+                          <div className="flex gap-3">
+                            {/* Left Large Preview */}
+                            <div className="w-16 h-16 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center p-1 shrink-0">
+                              {el.customImage ? (
+                                <img src={el.customImage} className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+                              ) : (
+                                <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: el.svgMarkup }} />
+                              )}
+                            </div>
+
+                            {/* Right Meta information */}
+                            <div className="flex-1 min-w-0 space-y-1">
+                              <h4 className="text-xs font-extrabold text-zinc-900 dark:text-zinc-100">{el.name}</h4>
+                              <p className="text-[10px] text-zinc-500 leading-tight">
+                                ID детали: <span className="font-semibold text-zinc-700 dark:text-zinc-300">{el.code || 'ЦК0155'}</span>. Готовые сцены.
+                              </p>
+                              <p className="text-[10px] text-zinc-500 leading-tight">
+                                Тип источника: <span className="font-semibold text-zinc-700 dark:text-zinc-300">{el.sourceType || 'аренда'}</span>.
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Price input field */}
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-zinc-500">Сумма (₽)</label>
+                            <input
+                              type="number"
+                              value={draftPrice}
+                              onChange={(e) => setDraftPrice(e.target.value)}
+                              placeholder="Введите стоимость..."
+                              className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-bold text-zinc-800 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavDeep)]"
+                            />
+                          </div>
+
+                          {/* Note comment field */}
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-zinc-500">Заметка</label>
+                            <input
+                              type="text"
+                              value={draftNote}
+                              onChange={(e) => setDraftNote(e.target.value)}
+                              placeholder="Заметка к элементу..."
+                              className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-800 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavDeep)]"
+                            />
+                          </div>
+
+                          {/* Actions bar: Save price/note & Layer move controls */}
+                          <div className="flex items-center justify-between pt-1 border-t border-zinc-200/50 dark:border-zinc-800">
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => handleMoveLayer(actualIdx, 'up')}
+                                disabled={actualIdx === activeScene.elements.length - 1}
+                                className="p-1 rounded bg-zinc-200/70 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-300 disabled:opacity-30 cursor-pointer"
+                                title="Переместить выше"
+                              >
+                                <ArrowUp className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={() => handleMoveLayer(actualIdx, 'down')}
+                                disabled={actualIdx === 0}
+                                className="p-1 rounded bg-zinc-200/70 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-300 disabled:opacity-30 cursor-pointer"
+                                title="Переместить ниже"
+                              >
+                                <ArrowDown className="w-3 h-3" />
+                              </button>
+                            </div>
+
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => {
+                                  updateActiveSceneElements(prev => prev.filter(item => item.id !== el.id));
+                                  setSelectedId(null);
+                                  showToast('Удалено', 'Элемент удален со сцены', 'info');
+                                }}
+                                className="p-1.5 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50 cursor-pointer"
+                                title="Удалить"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  const priceNum = parseFloat(draftPrice) || 0;
+                                  updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, price: priceNum, comment: draftNote } : item));
+                                  setExpandedElementId(null);
+                                  showToast('Сохранено', 'Параметры элемента обновлены', 'success');
+                                }}
+                                className="px-3 py-1 rounded-xl bg-[var(--lavDeep)] text-white text-xs font-bold hover:bg-[var(--lavenderAccent)] transition-colors cursor-pointer"
+                              >
+                                Сохранить
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: SELECTED ELEMENT TOOLS & ADJUSTMENTS */}
+        {targetTab === 'tools' && (
+          <div className="flex flex-col gap-3 flex-1 min-h-0 min-w-0 overflow-x-hidden">
+            {selectedElem ? (
+              <div className="space-y-4">
+                
+                {/* 1. Header with Selected Thumbnail */}
+                <div className="flex items-center gap-3 p-3 rounded-2xl bg-zinc-100/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800">
+                  <div className="w-12 h-12 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 p-1 flex items-center justify-center shrink-0">
+                    {selectedElem.customImage ? (
+                      <img src={selectedElem.customImage} className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+                    ) : (
+                      <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: selectedElem.svgMarkup }} />
+                    )}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-xs font-extrabold text-[var(--ink)] truncate">{selectedElem.name}</h3>
+                    <p className="text-[10px] text-[var(--soft)]">Текущие размеры и положение</p>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      updateActiveSceneElements(prev => prev.filter(item => item.id !== selectedElem.id));
+                      setSelectedId(null);
+                    }}
+                    className="p-1.5 rounded-full text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50 cursor-pointer shrink-0"
+                    title="Удалить со сцены"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* 2. Position & Size Inputs (Ш x В) */}
+                <div className="p-3 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 space-y-2.5">
+                  <div className="flex items-center justify-between text-xs font-bold text-[var(--ink)]">
+                    <span>Размеры объекта ({activeUnit})</span>
+                    <button
+                      onClick={() => setIsRatioLocked(!isRatioLocked)}
+                      className={`p-1 rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors ${
+                        isRatioLocked ? 'bg-[var(--lavenderSoft)] text-[var(--lavDeep)] dark:bg-[var(--lavDeep)]/30 dark:text-[var(--lavenderAccent)]' : 'text-zinc-400 hover:text-zinc-600'
+                      }`}
+                      title={isRatioLocked ? 'Пропорции заблокированы' : 'Пропорции свободны'}
+                    >
+                      {isRatioLocked ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
+                      <span className="text-[10px]">Пропорции</span>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* Width */}
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-[var(--soft)]">Ширина ({activeUnit})</label>
+                      <input
+                        type="number"
+                        value={toDisplayValue(selectedElem.w * 10)}
+                        onChange={(e) => {
+                          const parsed = parseFloat(e.target.value);
+                          if (isNaN(parsed)) return;
+                          const newWMm = fromDisplayValue(parsed);
+                          const newW = Math.max(10, Math.round(newWMm / 10));
+
+                          if (isRatioLocked && selectedElem.w > 0) {
+                            const ratio = selectedElem.h / selectedElem.w;
+                            const newH = Math.max(10, Math.round(newW * ratio));
+                            updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, w: newW, h: newH } : item));
+                          } else {
+                            updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, w: newW } : item));
+                          }
+                        }}
+                        className="w-full px-2.5 py-1.5 rounded-xl bg-zinc-50 dark:bg-zinc-850 border border-zinc-200 dark:border-zinc-750 text-xs font-bold text-[var(--ink)] focus:outline-none focus:border-[var(--lavDeep)]"
+                      />
+                    </div>
+
+                    {/* Height */}
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-[var(--soft)]">Высота ({activeUnit})</label>
+                      <input
+                        type="number"
+                        value={toDisplayValue(selectedElem.h * 10)}
+                        onChange={(e) => {
+                          const parsed = parseFloat(e.target.value);
+                          if (isNaN(parsed)) return;
+                          const newHMm = fromDisplayValue(parsed);
+                          const newH = Math.max(10, Math.round(newHMm / 10));
+
+                          if (isRatioLocked && selectedElem.h > 0) {
+                            const ratio = selectedElem.w / selectedElem.h;
+                            const newW = Math.max(10, Math.round(newH * ratio));
+                            updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, w: newW, h: newH } : item));
+                          } else {
+                            updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, h: newH } : item));
+                          }
+                        }}
+                        className="w-full px-2.5 py-1.5 rounded-xl bg-zinc-50 dark:bg-zinc-850 border border-zinc-200 dark:border-zinc-750 text-xs font-bold text-[var(--ink)] focus:outline-none focus:border-[var(--lavDeep)]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Quick Flip & Alignment Actions */}
+                <div className="p-3 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 space-y-2">
+                  <span className="text-xs font-bold text-[var(--ink)] block">Трансформация</span>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => {
+                        updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, isFlippedH: !item.isFlippedH } : item));
+                      }}
+                      className={`py-2 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        selectedElem.isFlippedH
+                          ? 'bg-[var(--lavenderSoft)] text-[var(--lavDeep)] border-[var(--lavBorder)] dark:bg-[var(--lavDeep)]/30 dark:text-[var(--lavenderAccent)]'
+                          : 'bg-zinc-50 dark:bg-zinc-850 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100'
+                      }`}
+                    >
+                      <FlipHorizontal className="w-3.5 h-3.5" />
+                      <span>Отразить по Г.</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, isFlippedV: !item.isFlippedV } : item));
+                      }}
+                      className={`py-2 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        selectedElem.isFlippedV
+                          ? 'bg-[var(--lavenderSoft)] text-[var(--lavDeep)] border-[var(--lavBorder)] dark:bg-[var(--lavDeep)]/30 dark:text-[var(--lavenderAccent)]'
+                          : 'bg-zinc-50 dark:bg-zinc-850 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100'
+                      }`}
+                    >
+                      <FlipVertical className="w-3.5 h-3.5" />
+                      <span>Отразить по В.</span>
+                    </button>
+                  </div>
+
+                  {/* Alignment buttons */}
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-[10px] font-bold text-[var(--soft)]">Выравнивание:</span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleAlignSelected('left')}
+                        className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 cursor-pointer"
+                        title="По левому краю"
+                      >
+                        <AlignLeft className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleAlignSelected('center')}
+                        className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 cursor-pointer"
+                        title="По центру"
+                      >
+                        <AlignCenter className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleAlignSelected('right')}
+                        className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 cursor-pointer"
+                        title="По правому краю"
+                      >
+                        <AlignRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. Color Corrections Sliders */}
+                <div className="p-3 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 space-y-3">
+                  <span className="text-xs font-bold text-[var(--ink)] block">Цветокоррекция элемента</span>
+
+                  {/* Exposure / Brightness */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold text-[var(--soft)]">
+                      <span>Экспозиция (Яркость):</span>
+                      <span>{selectedElem.exposure > 0 ? `+${selectedElem.exposure}` : selectedElem.exposure}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="-50"
+                      max="50"
+                      value={selectedElem.exposure}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, exposure: val } : item));
+                      }}
+                      className="w-full h-1 bg-zinc-200 dark:bg-zinc-850 rounded appearance-none cursor-pointer accent-[var(--lavDeep)]"
+                      style={{ background: 'linear-gradient(to right, #27272a, #a1a1aa, #ffffff)' }}
+                    />
+                  </div>
+
+                  {/* Hue Tone */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold text-[var(--soft)]">
+                      <span>Оттенок (Тон):</span>
+                      <span>{selectedElem.hue}°</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="-180"
+                      max="180"
+                      value={selectedElem.hue}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, hue: val } : item));
+                      }}
+                      className="w-full h-1 rounded appearance-none cursor-pointer"
+                      style={{ background: 'linear-gradient(to right, red, yellow, green, cyan, blue, magenta, red)' }}
+                    />
+                  </div>
+
+                  {/* Temperature */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold text-[var(--soft)]">
+                      <span>Теплота (Температура):</span>
+                      <span>{selectedElem.temp > 0 ? `+${selectedElem.temp}` : selectedElem.temp || 0}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="-50"
+                      max="50"
+                      value={selectedElem.temp || 0}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, temp: val } : item));
+                      }}
+                      className="w-full h-1 bg-zinc-200 dark:bg-zinc-850 rounded appearance-none cursor-pointer accent-[var(--lavDeep)]"
+                      style={{ background: 'linear-gradient(to right, #3b82f6, #eff6ff, #f59e0b)' }}
+                    />
+                  </div>
+
+                  {/* Saturation */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold text-[var(--soft)]">
+                      <span>Насыщенность:</span>
+                      <span>{selectedElem.saturate}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="200"
+                      value={selectedElem.saturate}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, saturate: val } : item));
+                      }}
+                      className="w-full h-1 bg-zinc-200 dark:bg-zinc-850 rounded appearance-none cursor-pointer accent-[var(--lavDeep)]"
+                      style={{ background: 'linear-gradient(to right, #a1a1aa, #c084fc, #8b5cf6)' }}
+                    />
+                  </div>
+
+                  {/* Opacity */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold text-[var(--soft)]">
+                      <span>Прозрачность:</span>
+                      <span>{selectedElem.opacity}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="10"
+                      max="100"
+                      value={selectedElem.opacity}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, opacity: val } : item));
+                      }}
+                      className="w-full h-1 bg-zinc-200 dark:bg-zinc-850 rounded appearance-none cursor-pointer accent-[var(--lavDeep)]"
+                      style={{ background: 'linear-gradient(to right, rgba(139, 92, 246, 0.1), rgba(139, 92, 246, 1))' }}
+                    />
+                  </div>
+
+                </div>
+
+              </div>
+            ) : (
+              <div className="py-12 text-center text-xs text-[var(--faint)] space-y-3">
+                <Info className="w-5 h-5 mx-auto text-[var(--faint)]" />
+                <p>Ни один элемент не выбран.</p>
+                <p className="text-[10px]">Нажмите на любую арку или декор на сцене для настройки их размеров и цветокоррекции.</p>
               </div>
             )}
+
           </div>
+        )}
+      </>
+    );
+  };
+
+  return (
+    <div className="flex-1 min-h-0 min-w-0 h-full pb-0.5 print:pb-0 grid grid-cols-1 lg:grid-cols-12 gap-1.5 sm:gap-3 print:hidden" onMouseMove={handleCanvasMouseMove} onMouseUp={handleCanvasMouseUp}>
+      
+      {/* LEFT COLUMN: ACTIVE WORKSPACE & HEADER (70% WIDTH) */}
+      <div className="lg:col-span-8 flex flex-col gap-1 sm:gap-2.5 h-full min-h-0 min-w-0">
+
+        {/* TOP EDITOR HEADER BAR - ULTRA COMPACT FOR MOBILE */}
+        <div className="flex flex-col gap-0.5 py-0 px-0.5 shrink-0 print:hidden">
+          {/* Top Row: Title on Left, Buttons aligned to Right Edge */}
+          <div className="flex items-center justify-between gap-2 w-full">
+            <h1 className="text-lg sm:text-xl font-extrabold tracking-tight text-[var(--ink)] truncate">
+              {currentProject?.name || 'Проект 1'}
+            </h1>
+
+            {/* Right Action Buttons on the same top line */}
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
+              <div
+                title="Сохранено"
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/40 flex items-center justify-center shadow-xs shrink-0 cursor-default"
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(52,211,153,0.8)]" />
+              </div>
+
+              <button
+                onClick={() => setIsAiModalOpen(true)}
+                title="ИИ Макет"
+                aria-label="ИИ Макет"
+                className="flex items-center justify-center gap-1.5 px-3 h-7 sm:h-8 rounded-full bg-[#5B3E88] hover:bg-[#4A3073] text-white text-xs font-bold transition-all shadow-md shadow-[#5B3E88]/20 cursor-pointer shrink-0 hover:scale-105"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-300 fill-amber-300 shrink-0" />
+                <span>ИИ Макет</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  if (window.history.length > 1) {
+                    window.history.back();
+                  } else {
+                    showToast('Проект', 'Возврат к списку проектов', 'info');
+                  }
+                }}
+                title="Назад в проект"
+                aria-label="Назад в проект"
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 flex items-center justify-center transition-all shadow-xs cursor-pointer shrink-0 hover:scale-105"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-300" />
+              </button>
+            </div>
+          </div>
+
+          {/* Bottom Row: Client info */}
+          <div className="flex flex-wrap items-center gap-2.5 text-[11px] text-[var(--soft)] font-medium">
+            <span className="flex items-center gap-1">
+              <User className="w-3.5 h-3.5 text-zinc-400" />
+              Клиент: <strong className="text-[var(--ink)] font-semibold">{currentProject?.clientName || 'Анна Соколова'}</strong>
+            </span>
+            <span className="hidden sm:inline text-zinc-300">·</span>
+            <span className="hidden sm:flex items-center gap-1">
+              <Calendar className="w-3.5 h-3.5 text-zinc-400" />
+              Дата: <strong className="text-[var(--ink)] font-semibold">{currentProject?.date ? new Date(currentProject.date).toLocaleDateString('ru-RU') : '15.08.2026'}</strong>
+            </span>
+            <span className="hidden sm:inline text-zinc-300">·</span>
+            <span className="hidden sm:flex items-center gap-1">
+              <MapPin className="w-3.5 h-3.5 text-zinc-400" />
+              Локация: <strong className="text-[var(--ink)] font-semibold">{currentProject?.venue || 'Ресторан «Сафиса», Москва'}</strong>
+            </span>
+          </div>
+        </div>
 
           {/* MAIN CANVAS AREA / SEATING ARRANGEMENT VIEW */}
           <div className="flex-1 min-h-0 min-w-0 relative h-full flex flex-col">
@@ -1324,72 +2121,626 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
               <div
                 ref={viewportRef}
                 onMouseDown={handleViewportMouseDown}
-                className={`relative bg-zinc-950/60 dark:bg-black/40 rounded-3xl overflow-hidden flex items-center justify-center flex-1 h-full min-h-0 min-w-0 w-full border border-zinc-200/20 dark:border-zinc-800/20 select-none ${isPanning ? 'cursor-grabbing' : 'cursor-grab'}`}
+                className={`relative bg-zinc-950/60 dark:bg-black/40 rounded-3xl overflow-hidden flex items-center justify-center flex-1 h-[380px] sm:h-full min-h-[380px] sm:min-h-0 min-w-0 w-full border border-zinc-200/20 dark:border-zinc-800/20 select-none ${isPanning ? 'cursor-grabbing' : 'cursor-grab'}`}
               >
-                {/* Zoom Controls Overlay */}
-                <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5 bg-black/70 backdrop-blur-md px-2.5 py-1.5 rounded-full border border-white/10 text-white text-[11px] font-semibold">
-                  <span>Масштаб: {Math.round(zoomScale * 100)}%</span>
+                {/* Floating Top-Left Scene Tabs Overlay (Matches Reference Screenshot 2 - Touch Friendly) */}
+                <div className="absolute top-1.5 left-1.5 z-20 flex items-center gap-1 bg-white/80 dark:bg-black/50 backdrop-blur-md p-1 rounded-full border border-white/90 dark:border-zinc-800 shadow-md">
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setZoomScale(1);
-                      setPanX(0);
-                      setPanY(0);
-                    }}
-                    className="ml-1.5 bg-white/20 hover:bg-white/30 text-white px-2 py-0.5 rounded-full text-[10px] transition-colors cursor-pointer"
-                    title="Сбросить масштаб и положение"
+                    onClick={() => showToast('Новая сцена', 'Создана новая визуализация', 'info')}
+                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white dark:bg-zinc-800 hover:bg-zinc-100 flex items-center justify-center text-zinc-700 dark:text-zinc-200 transition-all cursor-pointer shadow-xs active:scale-95"
+                    title="Добавить визуализацию"
                   >
-                    Сбросить
+                    <Plus className="w-3.5 h-3.5" />
                   </button>
+                  <button
+                    onClick={() => setActiveWorkspaceTab('scene-1')}
+                    className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                      activeWorkspaceTab === 'scene-1'
+                        ? 'bg-white text-zinc-900 shadow-xs border border-zinc-200/80'
+                        : 'text-zinc-600 dark:text-zinc-300 hover:text-zinc-900'
+                    }`}
+                  >
+                    <span>Виз. 1</span>
+                    <Paperclip className="w-3 h-3 text-zinc-400" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveWorkspaceTab('floorplan');
+                      setSelectedId(null);
+                    }}
+                    className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                      activeWorkspaceTab === 'floorplan'
+                        ? 'bg-[var(--lavDeep)] text-white shadow-xs'
+                        : 'bg-[#A888DB]/80 text-white hover:bg-[#A888DB]'
+                    }`}
+                  >
+                    <span>Схема</span>
+                  </button>
+                </div>
+
+                {/* FLOATING TOP UNDO/REDO PILL (Shifted left to leave room for the vertical toolbar) */}
+                <div className="absolute top-1.5 right-12 sm:right-13 z-30 pointer-events-auto">
+                  <div className="p-0.5 sm:p-1 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md shadow-md border border-white/80 dark:border-zinc-700/60 flex items-center gap-1">
+                    <button
+                      onClick={handleUndo}
+                      disabled={historyIndex <= 0}
+                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md flex items-center justify-center transition-all cursor-pointer disabled:opacity-30 disabled:hover:shadow-none active:scale-95"
+                      title="Отменить действие (Undo)"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5 stroke-[2.2]" />
+                    </button>
+
+                    <button
+                      onClick={handleRedo}
+                      disabled={historyIndex >= history.length - 1}
+                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md flex items-center justify-center transition-all cursor-pointer disabled:opacity-30 disabled:hover:shadow-none active:scale-95"
+                      title="Повторить действие (Redo)"
+                    >
+                      <RotateCw className="w-3.5 h-3.5 stroke-[2.2]" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* FLOATING RIGHT TOOLBAR - PRESSED TO CANVAS EDGES */}
+                <div className="absolute top-1.5 right-1.5 bottom-1.5 z-30 flex flex-col items-end justify-between pointer-events-none pr-0.5 pb-0.5">
+                  
+                  {/* TOP ITEM: Standalone Zoom/Magnifier Button (Same size as Trash button) */}
+                  <div className="p-0.5 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md shadow-lg border border-white/80 dark:border-zinc-700/60 pointer-events-auto">
+                    <button
+                      onClick={() => { setZoomScale(1); setPanX(0); setPanY(0); showToast('Масштаб', 'Сброшен к 100%', 'info'); }}
+                      className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md flex items-center justify-center transition-all cursor-pointer active:scale-95"
+                      title="Вписать по размеру / Масштаб"
+                    >
+                      <ZoomIn className="w-4 h-4 stroke-[2.2]" />
+                    </button>
+                  </div>
+
+                  {/* MIDDLE MAIN GROUP: Transformation & Layer Tools */}
+                  <div className="p-1 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md shadow-lg border border-white/80 dark:border-zinc-700/60 flex flex-col items-center gap-1 pointer-events-auto my-auto">
+                    
+                    {/* 1. Выбрать все на холсте */}
+                    <button
+                      onClick={() => {
+                        const selectable = activeScene.elements.filter(el => el.isVisible && !el.isLocked);
+                        if (selectable.length > 0) {
+                          const allIds = selectable.map(el => el.id);
+                          setSelectedIds(allIds);
+                          showToast('Выделено всё', `Все элементы (${allIds.length} шт.) помещены в общую рамку`, 'success');
+                        } else if (activeScene.elements.length > 0) {
+                          const allIds = activeScene.elements.filter(el => el.isVisible).map(el => el.id);
+                          setSelectedIds(allIds);
+                          showToast('Выделено всё', `Выделены элементы холста (${allIds.length} шт.)`, 'info');
+                        } else {
+                          showToast('Холст пуст', 'Нет элементов для выбора', 'info');
+                        }
+                      }}
+                      className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
+                        selectedIds.length > 1
+                          ? 'bg-[var(--lavDeep)] text-white shadow-md'
+                          : 'bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                      }`}
+                      title="Выбрать все на холсте (общая рамка)"
+                    >
+                      <BoxSelect className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
+                    </button>
+
+                    {/* 2. Сгруппировать */}
+                    <div className="relative">
+                      <button
+                        onClick={() => {
+                          setActiveToolPopover(prev => prev === 'group' ? null : 'group');
+                          setActiveFilterTool(null);
+                        }}
+                        className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
+                          activeToolPopover === 'group'
+                            ? 'bg-[var(--lavDeep)] text-white shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                        }`}
+                        title="Группировка элементов"
+                      >
+                        <Group className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
+                      </button>
+
+                      {/* Popover Group / Ungroup */}
+                      {activeToolPopover === 'group' && (
+                        <div className="absolute right-9 top-0 z-50 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 p-1.5 rounded-xl shadow-xl flex flex-col gap-1 min-w-[170px]">
+                          <button
+                            onClick={() => {
+                              handleGroupSelectedElements();
+                              setActiveToolPopover(null);
+                            }}
+                            className="w-full px-3 py-2 rounded-lg text-xs font-medium text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-[var(--lavDeep)] flex items-center gap-2 cursor-pointer transition-colors"
+                          >
+                            <Group className="w-4 h-4" />
+                            <span>Сгруппировать</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              handleUngroupSelectedElements();
+                              setActiveToolPopover(null);
+                            }}
+                            className="w-full px-3 py-2 rounded-lg text-xs font-medium text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-[var(--lavDeep)] flex items-center gap-2 cursor-pointer transition-colors"
+                          >
+                            <Ungroup className="w-4 h-4" />
+                            <span>Разгруппировать</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 3. Копировать */}
+                    <button
+                      onClick={() => {
+                        if (selectedIds.length > 1) {
+                          const selectedElements = activeScene.elements.filter(el => selectedIds.includes(el.id) && el.isVisible);
+                          const newElements: CanvasElement[] = [];
+                          const newIds: string[] = [];
+                          selectedElements.forEach(el => {
+                            const dupId = `${el.type}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+                            newIds.push(dupId);
+                            newElements.push({
+                              ...el,
+                              id: dupId,
+                              x: Math.min(canvasWidthMm / 10 - el.w, el.x + 30),
+                              y: Math.min(canvasHeightMm / 10 - el.h, el.y + 30)
+                            });
+                          });
+                          updateActiveSceneElements(prev => [...prev, ...newElements]);
+                          setSelectedIds(newIds);
+                          showToast('Копирование группы', `Скопировано ${selectedElements.length} элементов`, 'success');
+                        } else if (selectedId) {
+                          const elem = activeScene.elements.find(el => el.id === selectedId);
+                          if (elem) {
+                            const dup = { ...elem, id: `${elem.type}-${Date.now()}`, x: elem.x + 20, y: elem.y + 20 };
+                            updateActiveSceneElements(els => [...els, dup]);
+                            setSelectedId(dup.id);
+                            showToast('Копирование', 'Элемент продублирован', 'success');
+                          }
+                        } else {
+                          showToast('Выберите элементы', 'Кликните на элемент или нажмите «Выбрать все»', 'info');
+                        }
+                      }}
+                      className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md flex items-center justify-center transition-all cursor-pointer active:scale-95"
+                      title="Копировать"
+                    >
+                      <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
+                    </button>
+
+                    {/* 4. Слои */}
+                    <div className="relative">
+                      <button
+                        onClick={() => {
+                          setActiveToolPopover(prev => prev === 'layers' ? null : 'layers');
+                          setActiveFilterTool(null);
+                        }}
+                        className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
+                          activeToolPopover === 'layers'
+                            ? 'bg-[var(--lavDeep)] text-white shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                        }`}
+                        title="Слои элементов"
+                      >
+                        <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
+                      </button>
+
+                      {/* Popover Layers */}
+                      {activeToolPopover === 'layers' && (
+                        <div className="absolute right-9 top-0 z-50 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 p-1.5 rounded-xl shadow-xl flex flex-col gap-1 min-w-[160px]">
+                          <button
+                            onClick={() => {
+                              if (selectedId) {
+                                updateActiveSceneElements(els => {
+                                  const idx = els.findIndex(el => el.id === selectedId);
+                                  if (idx !== -1 && idx < els.length - 1) {
+                                    const newEls = [...els];
+                                    const [moved] = newEls.splice(idx, 1);
+                                    newEls.push(moved);
+                                    return newEls;
+                                  }
+                                  return els;
+                                });
+                                showToast('Слои', 'Перемещено на самый верх', 'success');
+                              } else showToast('Выберите элемент', 'Кликните на элемент', 'info');
+                              setActiveToolPopover(null);
+                            }}
+                            className="w-full px-3 py-2 rounded-lg text-xs font-medium text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-[var(--lavDeep)] flex items-center gap-2 cursor-pointer transition-colors"
+                          >
+                            <ArrowUpToLine className="w-4 h-4" />
+                            <span>На самый верх</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              if (selectedId) {
+                                updateActiveSceneElements(els => {
+                                  const idx = els.findIndex(el => el.id === selectedId);
+                                  if (idx !== -1 && idx < els.length - 1) {
+                                    const newEls = [...els];
+                                    const [moved] = newEls.splice(idx, 1);
+                                    newEls.splice(idx + 1, 0, moved);
+                                    return newEls;
+                                  }
+                                  return els;
+                                });
+                                showToast('Слои', 'Перемещено выше', 'info');
+                              } else showToast('Выберите элемент', 'Кликните на элемент', 'info');
+                              setActiveToolPopover(null);
+                            }}
+                            className="w-full px-3 py-2 rounded-lg text-xs font-medium text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-[var(--lavDeep)] flex items-center gap-2 cursor-pointer transition-colors"
+                          >
+                            <ArrowUp className="w-4 h-4" />
+                            <span>Поднять выше</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              if (selectedId) {
+                                updateActiveSceneElements(els => {
+                                  const idx = els.findIndex(el => el.id === selectedId);
+                                  if (idx > 0) {
+                                    const newEls = [...els];
+                                    const [moved] = newEls.splice(idx, 1);
+                                    newEls.splice(idx - 1, 0, moved);
+                                    return newEls;
+                                  }
+                                  return els;
+                                });
+                                showToast('Слои', 'Перемещено ниже', 'info');
+                              } else showToast('Выберите элемент', 'Кликните на элемент', 'info');
+                              setActiveToolPopover(null);
+                            }}
+                            className="w-full px-3 py-2 rounded-lg text-xs font-medium text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-[var(--lavDeep)] flex items-center gap-2 cursor-pointer transition-colors"
+                          >
+                            <ArrowDown className="w-4 h-4" />
+                            <span>Опустить ниже</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              if (selectedId) {
+                                updateActiveSceneElements(els => {
+                                  const idx = els.findIndex(el => el.id === selectedId);
+                                  if (idx > 0) {
+                                    const newEls = [...els];
+                                    const [moved] = newEls.splice(idx, 1);
+                                    newEls.unshift(moved);
+                                    return newEls;
+                                  }
+                                  return els;
+                                });
+                                showToast('Слои', 'Перемещено на самый низ', 'info');
+                              } else showToast('Выберите элемент', 'Кликните на элемент', 'info');
+                              setActiveToolPopover(null);
+                            }}
+                            className="w-full px-3 py-2 rounded-lg text-xs font-medium text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-[var(--lavDeep)] flex items-center gap-2 cursor-pointer transition-colors"
+                          >
+                            <ArrowDownToLine className="w-4 h-4" />
+                            <span>На самый низ</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 5. Отзеркалить */}
+                    <div className="relative">
+                      <button
+                        onClick={() => {
+                          setActiveToolPopover(prev => prev === 'flip' ? null : 'flip');
+                          setActiveFilterTool(null);
+                        }}
+                        className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
+                          activeToolPopover === 'flip'
+                            ? 'bg-[var(--lavDeep)] text-white shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                        }`}
+                        title="Отразить элемент"
+                      >
+                        <FlipHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
+                      </button>
+
+                      {/* Popover Flip */}
+                      {activeToolPopover === 'flip' && (
+                        <div className="absolute right-9 top-0 z-50 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 p-1.5 rounded-xl shadow-xl flex flex-col gap-1 min-w-[155px]">
+                          <button
+                            onClick={() => {
+                              if (selectedId) {
+                                updateActiveSceneElements(els => els.map(el => el.id === selectedId ? { ...el, isFlippedH: !el.isFlippedH } : el));
+                                showToast('Отражение', 'Отражено по горизонтали', 'info');
+                              } else showToast('Выберите элемент', 'Кликните на элемент', 'info');
+                              setActiveToolPopover(null);
+                            }}
+                            className="w-full px-3 py-2 rounded-lg text-xs font-medium text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-[var(--lavDeep)] flex items-center gap-2 cursor-pointer transition-colors"
+                          >
+                            <FlipHorizontal className="w-4 h-4" />
+                            <span>По горизонтали</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              if (selectedId) {
+                                updateActiveSceneElements(els => els.map(el => el.id === selectedId ? { ...el, isFlippedV: !el.isFlippedV } : el));
+                                showToast('Отражение', 'Отражено по вертикали', 'info');
+                              } else showToast('Выберите элемент', 'Кликните на элемент', 'info');
+                              setActiveToolPopover(null);
+                            }}
+                            className="w-full px-3 py-2 rounded-lg text-xs font-medium text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-[var(--lavDeep)] flex items-center gap-2 cursor-pointer transition-colors"
+                          >
+                            <FlipVertical className="w-4 h-4" />
+                            <span>По вертикали</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* BOTTOM GROUP: Color Correction & Trash Button (Always 100% visible at bottom right) */}
+                  <div className="flex flex-col items-center gap-1.5 pointer-events-auto">
+                    {/* Color Correction Tools Pill Block */}
+                    <div className="p-1 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md shadow-lg border border-white/80 dark:border-zinc-700/60 flex flex-col items-center gap-1 relative">
+                      
+                      {/* 1. Яркость (Экспозиция) */}
+                      <button
+                        onClick={() => {
+                          setActiveToolPopover(null);
+                          setActiveFilterTool(prev => prev === 'brightness' ? null : 'brightness');
+                        }}
+                        className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
+                          activeFilterTool === 'brightness'
+                            ? 'bg-[var(--lavDeep)] text-white shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                        }`}
+                        title="Яркость (Экспозиция)"
+                      >
+                        <Sun className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
+                      </button>
+
+                      {/* 2. Оттенок (Тон) */}
+                      <button
+                        onClick={() => {
+                          setActiveToolPopover(null);
+                          setActiveFilterTool(prev => prev === 'hue' ? null : 'hue');
+                        }}
+                        className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
+                          activeFilterTool === 'hue'
+                            ? 'bg-[var(--lavDeep)] text-white shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                        }`}
+                        title="Оттенок (Тон)"
+                      >
+                        <Palette className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
+                      </button>
+
+                      {/* 3. Теплота (Температура) */}
+                      <button
+                        onClick={() => {
+                          setActiveToolPopover(null);
+                          setActiveFilterTool(prev => prev === 'temp' ? null : 'temp');
+                        }}
+                        className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
+                          activeFilterTool === 'temp'
+                            ? 'bg-[var(--lavDeep)] text-white shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                        }`}
+                        title="Теплота (Температура)"
+                      >
+                        <Thermometer className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
+                      </button>
+
+                      {/* 4. Насыщенность */}
+                      <button
+                        onClick={() => {
+                          setActiveToolPopover(null);
+                          setActiveFilterTool(prev => prev === 'saturate' ? null : 'saturate');
+                        }}
+                        className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
+                          activeFilterTool === 'saturate'
+                            ? 'bg-[var(--lavDeep)] text-white shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                        }`}
+                        title="Насыщенность"
+                      >
+                        <Contrast className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
+                      </button>
+
+                      {/* 5. Прозрачность */}
+                      <button
+                        onClick={() => {
+                          setActiveToolPopover(null);
+                          setActiveFilterTool(prev => prev === 'opacity' ? null : 'opacity');
+                        }}
+                        className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
+                          activeFilterTool === 'opacity'
+                            ? 'bg-[var(--lavDeep)] text-white shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                        }`}
+                        title="Прозрачность"
+                      >
+                        <Droplet className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
+                      </button>
+                    </div>
+
+                    {/* ALWAYS VISIBLE TRASH BUTTON AT BOTTOM RIGHT */}
+                    <div className="p-0.5 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md shadow-lg border border-white/80 dark:border-zinc-700/60">
+                      <button
+                        onClick={() => {
+                          if (selectedIds.length > 0) {
+                            const count = selectedIds.length;
+                            updateActiveSceneElements(els => els.filter(el => !selectedIds.includes(el.id)));
+                            setSelectedIds([]);
+                            showToast('Удалено', count > 1 ? `Удалено ${count} элементов с холста` : 'Элемент удален с холста', 'info');
+                          } else {
+                            showToast('Удаление', 'Выберите элементы для удаления', 'info');
+                          }
+                        }}
+                        className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-rose-500 text-white hover:bg-rose-600 flex items-center justify-center shadow-md border border-rose-400/80 cursor-pointer transition-all active:scale-95"
+                        title="Удалить выбранный элемент"
+                      >
+                        <Trash2 className="w-4 h-4 stroke-[2.2]" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Absolute centering wrapper so canvas element unscaled width/height never expands grid/flex layout */}
                 <div className="absolute inset-0 flex items-center justify-center overflow-hidden pointer-events-none p-4">
                   <div
                     ref={canvasContainerRef}
-                    className={`relative bg-zinc-900/90 rounded-2xl shadow-2xl border border-zinc-950/85 overflow-hidden shrink-0 select-none pointer-events-auto ${isPanning ? '' : 'transition-transform duration-200'}`}
+                    className={`relative bg-zinc-900/90 rounded-2xl shadow-2xl border border-zinc-950/85 shrink-0 select-none pointer-events-auto ${isPanning ? '' : 'transition-transform duration-200'}`}
                     style={{
                       width: `${canvasWidthMm / 10}px`,
                       height: `${canvasHeightMm / 10}px`,
                       transform: `translate(${panX}px, ${panY}px) scale(${canvasScale * zoomScale})`,
                     }}
-                    onClick={() => setSelectedId(null)}
+                    onClick={() => setSelectedIds([])}
                   >
-                {/* Backdrop Layer */}
-                {activeScene.backdropType === 'image' && activeScene.backdropImage ? (
-                  <img
-                    src={activeScene.backdropImage}
-                    alt="Backdrop"
-                    className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-                    style={{ opacity: 0.75 }}
-                    referrerPolicy="no-referrer"
-                  />
-                ) : (
-                  <div
-                    className="absolute inset-0 transition-colors duration-500"
-                    style={{ backgroundColor: activeScene.backdropColor }}
-                  />
-                )}
+                {/* Backdrop & Grid Clip Layer */}
+                <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none z-0">
+                  {activeScene.backdropType === 'image' && activeScene.backdropImage ? (
+                    <img
+                      src={activeScene.backdropImage}
+                      alt="Backdrop"
+                      className="absolute inset-0 w-full h-full object-cover"
+                      style={{ opacity: 0.75 }}
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div
+                      className="absolute inset-0 transition-colors duration-500"
+                      style={{ backgroundColor: activeScene.backdropColor }}
+                    />
+                  )}
 
-                {/* Grid Overlay */}
-                {gridVisible && (
-                  <div className="absolute inset-0 pointer-events-none opacity-15" style={{
-                    backgroundImage: 'radial-gradient(circle, #8B5CF6 1.2px, transparent 1.2px)',
-                    backgroundSize: '24px 24px'
-                  }} />
-                )}
+                  {gridVisible && (
+                    <div
+                      className="absolute inset-0 z-10"
+                      style={{
+                        backgroundImage: `
+                          linear-gradient(to right, rgba(107, 114, 128, 0.45) 1px, transparent 1px),
+                          linear-gradient(to bottom, rgba(107, 114, 128, 0.45) 1px, transparent 1px),
+                          linear-gradient(to right, rgba(156, 163, 175, 0.22) 1px, transparent 1px),
+                          linear-gradient(to bottom, rgba(156, 163, 175, 0.22) 1px, transparent 1px)
+                        `,
+                        backgroundSize: `100px 100px, 100px 100px, 10px 10px, 10px 10px`
+                      }}
+                    />
+                  )}
+                </div>
 
-                {/* Optional human metric silhouette scale reference */}
-                {humanVisible && (
-                  <div className="absolute bottom-4 left-6 pointer-events-none opacity-40 z-10 flex flex-col items-center">
-                    {/* SVG Human icon silhouette */}
-                    <svg viewBox="0 0 24 60" className="w-8 h-20 text-zinc-400">
-                      <circle cx="12" cy="8" r="6" fill="currentColor" />
-                      <path d="M4 18 L20 18 L18 40 L16 58 L12 58 L12 42 L8 42 L8 58 L4 58 Z" fill="currentColor" />
-                    </svg>
-                    <span className="text-[9px] font-mono text-zinc-400 bg-black/50 px-1.5 py-0.5 rounded mt-1">Рост ~1.75м</span>
-                  </div>
-                )}
+                {/* Draggable human metric silhouette scale reference (without transform controls) */}
+                {humanVisible && (() => {
+                  const canvasW = canvasWidthMm / 10;
+                  const canvasH = canvasHeightMm / 10;
+                  const humanW = 70;
+                  const humanH = 175; // 175cm = 175px on canvas scale
+                  const activeX = humanPos ? humanPos.x : (canvasW / 2 - humanW / 2);
+                  const activeY = humanPos ? humanPos.y : (canvasH - humanH - 10);
+
+                  return (
+                    <div
+                      className={`absolute z-20 cursor-grab active:cursor-grabbing select-none group transition-opacity ${
+                        isDraggingHuman ? 'cursor-grabbing opacity-90' : 'hover:opacity-100'
+                      }`}
+                      style={{
+                        left: `${activeX}px`,
+                        top: `${activeY}px`,
+                        width: `${humanW}px`,
+                        height: `${humanH}px`,
+                      }}
+                      title="Силуэт человека (рост 175 см) — зажмите мышью для перемещения по полю"
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        setIsDraggingHuman(true);
+                        const startMouseX = e.clientX;
+                        const startMouseY = e.clientY;
+                        const startX = activeX;
+                        const startY = activeY;
+                        const currentScale = canvasScale * zoomScale;
+
+                        const handleMouseMove = (moveEv: MouseEvent) => {
+                          const dx = (moveEv.clientX - startMouseX) / currentScale;
+                          const dy = (moveEv.clientY - startMouseY) / currentScale;
+                          const nextX = Math.max(-30, Math.min(canvasW - 40, startX + dx));
+                          const nextY = Math.max(-30, Math.min(canvasH - 40, startY + dy));
+                          setHumanPos({ x: nextX, y: nextY });
+                        };
+
+                        const handleMouseUp = () => {
+                          setIsDraggingHuman(false);
+                          window.removeEventListener('mousemove', handleMouseMove);
+                          window.removeEventListener('mouseup', handleMouseUp);
+                        };
+
+                        window.addEventListener('mousemove', handleMouseMove);
+                        window.addEventListener('mouseup', handleMouseUp);
+                      }}
+                    >
+                      <div className="relative w-full h-full flex flex-col items-center">
+                        <svg
+                          viewBox="0 0 100 240"
+                          className="w-full h-full drop-shadow-[0_4px_12px_rgba(0,0,0,0.25)]"
+                        >
+                          <path
+                            fill="#C0D4E5"
+                            fillOpacity="0.88"
+                            stroke="#8CA8C2"
+                            strokeWidth="1"
+                            strokeLinejoin="round"
+                            fillRule="evenodd"
+                            d="
+                              M 50 10
+                              C 43 10 36 15 36 25
+                              C 35 32 38 42 34 48
+                              C 29 50 22 55 20 62
+                              C 17 71 18 80 15 88
+                              C 13 94 17 101 22 102
+                              C 28 103 33 97 36 88
+                              C 37 83 36 74 38 68
+                              C 37 82 34 100 22 162
+                              C 20 166 23 168 28 168
+                              L 42 168
+                              L 43 232
+                              C 42 236 47 238 49 238
+                              C 50 238 50 234 49 228
+                              L 48 172
+                              L 52 172
+                              L 51 228
+                              C 50 234 50 238 51 238
+                              C 53 238 58 236 57 232
+                              L 58 168
+                              L 72 168
+                              C 77 168 80 166 78 162
+                              C 66 100 63 82 62 68
+                              C 64 74 63 83 64 88
+                              C 67 97 72 103 78 102
+                              C 83 101 87 94 85 88
+                              C 82 80 83 71 80 62
+                              C 78 55 71 50 66 48
+                              C 62 42 65 32 64 25
+                              C 64 15 57 10 50 10 Z
+
+                              M 36 68
+                              C 32 74 25 84 24 90
+                              C 27 93 32 89 34 82
+                              C 35 78 36 73 36 68 Z
+
+                              M 64 68
+                              C 64 73 65 78 66 82
+                              C 68 89 73 93 76 90
+                              C 75 84 68 74 64 68 Z
+                            "
+                          />
+                        </svg>
+                        {/* Небольшая плашка ростовки при наведении */}
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                          <span className="text-[9px] font-bold text-zinc-700 dark:text-zinc-200 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md px-2 py-0.5 rounded-full border border-zinc-200 dark:border-zinc-700 shadow-xs">
+                            175 см
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Draggable Active Elements */}
                 {activeScene.elements.map((el, idx) => {
@@ -1400,8 +2751,10 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                     <div
                       key={el.id}
                       onMouseDown={(e) => handleCanvasMouseDown(e, el)}
-                      className={`absolute group cursor-grab active:cursor-grabbing transition-shadow ${
-                        isSelected ? 'ring-2 ring-[var(--lavenderAccent)] ring-offset-2 ring-offset-zinc-900 shadow-xl z-20' : 'hover:ring-1 hover:ring-white/40'
+                      className={`absolute group transition-shadow ${
+                        el.isLocked ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'
+                      } ${
+                        isSelected ? 'z-20' : 'hover:ring-1 hover:ring-purple-400/50'
                       }`}
                       style={{
                         left: `${el.x}px`,
@@ -1428,1001 +2781,481 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                         />
                       )}
 
+                      {/* Dashed Outline for Group Member */}
+                      {selectedIds.length > 1 && selectedIds.includes(el.id) && (
+                        <div className="absolute -inset-1 border border-dashed border-purple-400/80 pointer-events-none rounded-xs drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] z-20" />
+                      )}
+
                       {/* Interactive Bounding Box & Handles */}
                       {isSelected && (
                         <>
-                          {/* Outer Border Outline */}
-                          <div className="absolute inset-0 border border-[var(--lavDeep)] pointer-events-none" />
+                          {el.isLocked ? (
+                            /* Pale Gray Dashed Outline for Locked Element */
+                            <div className="absolute -inset-1 border border-dashed border-zinc-400/80 dark:border-zinc-500/80 pointer-events-none rounded-xs drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] z-20" />
+                          ) : (
+                            <>
+                              {/* Thin Purple Dashed Selection Bounding Box */}
+                              <div className="absolute -inset-1 border border-dashed border-purple-500 dark:border-purple-300 pointer-events-none rounded-xs drop-shadow-[0_1px_3px_rgba(0,0,0,0.75)] z-20" />
 
-                          {/* 8 Resizing handles */}
-                          {[
-                            { id: 'tl', cursor: 'nwse-resize', class: 'top-0 left-0 -translate-x-1/2 -translate-y-1/2 rounded-full w-3 h-3 bg-white border-2 border-[var(--lavDeep)]' },
-                            { id: 'tr', cursor: 'nesw-resize', class: 'top-0 right-0 translate-x-1/2 -translate-y-1/2 rounded-full w-3 h-3 bg-white border-2 border-[var(--lavDeep)]' },
-                            { id: 'bl', cursor: 'nesw-resize', class: 'bottom-0 left-0 -translate-x-1/2 translate-y-1/2 rounded-full w-3 h-3 bg-white border-2 border-[var(--lavDeep)]' },
-                            { id: 'br', cursor: 'nwse-resize', class: 'bottom-0 right-0 translate-x-1/2 translate-y-1/2 rounded-full w-3 h-3 bg-white border-2 border-[var(--lavDeep)]' },
-                            { id: 't', cursor: 'ns-resize', class: 'top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white border border-[var(--lavDeep)]' },
-                            { id: 'b', cursor: 'ns-resize', class: 'bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-2.5 h-2.5 bg-white border border-[var(--lavDeep)]' },
-                            { id: 'l', cursor: 'ew-resize', class: 'top-1/2 left-0 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white border border-[var(--lavDeep)]' },
-                            { id: 'r', cursor: 'ew-resize', class: 'top-1/2 right-0 translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white border border-[var(--lavDeep)]' }
-                          ].map((handle) => (
-                            <div
-                              key={handle.id}
-                              className={`absolute ${handle.class} z-30 shadow-xs hover:scale-125 transition-transform`}
-                              style={{ cursor: handle.cursor }}
-                              onMouseDown={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                setActiveAction('resize');
-                                setActiveHandle(handle.id);
-                                dragStartRef.current = {
-                                  x: e.clientX,
-                                  y: e.clientY,
-                                  elX: el.x,
-                                  elY: el.y,
-                                  elW: el.w,
-                                  elH: el.h,
-                                  rotation: el.rotation
-                                };
-                              }}
-                            />
-                          ))}
+                              {/* 8 Resizing handles */}
+                              {[
+                                { id: 'tl', cursor: 'nwse-resize', class: 'top-0 left-0 -translate-x-1/2 -translate-y-1/2 rounded-full w-2.5 h-2.5 bg-white border border-purple-600 dark:border-purple-300 shadow-sm' },
+                                { id: 'tr', cursor: 'nesw-resize', class: 'top-0 right-0 translate-x-1/2 -translate-y-1/2 rounded-full w-2.5 h-2.5 bg-white border border-purple-600 dark:border-purple-300 shadow-sm' },
+                                { id: 'bl', cursor: 'nesw-resize', class: 'bottom-0 left-0 -translate-x-1/2 translate-y-1/2 rounded-full w-2.5 h-2.5 bg-white border border-purple-600 dark:border-purple-300 shadow-sm' },
+                                { id: 'br', cursor: 'nwse-resize', class: 'bottom-0 right-0 translate-x-1/2 translate-y-1/2 rounded-full w-2.5 h-2.5 bg-white border border-purple-600 dark:border-purple-300 shadow-sm' },
+                                { id: 't', cursor: 'ns-resize', class: 'top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white border border-purple-600 dark:border-purple-300 shadow-xs' },
+                                { id: 'b', cursor: 'ns-resize', class: 'bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-2 h-2 bg-white border border-purple-600 dark:border-purple-300 shadow-xs' },
+                                { id: 'l', cursor: 'ew-resize', class: 'top-1/2 left-0 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white border border-purple-600 dark:border-purple-300 shadow-xs' },
+                                { id: 'r', cursor: 'ew-resize', class: 'top-1/2 right-0 translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white border border-purple-600 dark:border-purple-300 shadow-xs' }
+                              ].map((handle) => (
+                                <div
+                                  key={handle.id}
+                                  className={`absolute ${handle.class} z-30 hover:scale-125 transition-transform`}
+                                  style={{ cursor: handle.cursor }}
+                                  onMouseDown={(e) => {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    setActiveAction('resize');
+                                    setActiveHandle(handle.id);
+                                    dragStartRef.current = {
+                                      x: e.clientX,
+                                      y: e.clientY,
+                                      elX: el.x,
+                                      elY: el.y,
+                                      elW: el.w,
+                                      elH: el.h,
+                                      rotation: el.rotation
+                                    };
+                                  }}
+                                />
+                              ))}
 
-                          {/* Rotation handle and line */}
-                          <div className="absolute top-0 left-1/2 w-[1.5px] h-6 bg-[var(--lavDeep)] -translate-x-1/2 -translate-y-6 pointer-events-none" />
-                          <div
-                            className="absolute top-0 left-1/2 w-5 h-5 rounded-full bg-white border-2 border-[var(--lavDeep)] shadow-md -translate-x-1/2 -translate-y-9 flex items-center justify-center hover:bg-[var(--lavenderSoft)] hover:scale-110 active:scale-95 transition-transform cursor-grab active:cursor-grabbing z-40"
-                            title="Повернуть"
-                            onMouseDown={(e) => {
-                              e.stopPropagation();
-                              e.preventDefault();
-                              setActiveAction('rotate');
-                              const rect = canvasContainerRef.current?.getBoundingClientRect();
-                              if (rect) {
-                                const elCenterX = el.x + el.w / 2;
-                                const elCenterY = el.y + el.h / 2;
-                                const centerAbsX = rect.left + elCenterX;
-                                const centerAbsY = rect.top + elCenterY;
-                                const startAngle = Math.atan2(e.clientY - centerAbsY, e.clientX - centerAbsX) * (180 / Math.PI);
-                                rotateStartRef.current = {
-                                  startAngle,
-                                  startRotation: el.rotation,
-                                  centerX: centerAbsX,
-                                  centerY: centerAbsY
-                                };
-                              }
-                            }}
-                          >
-                            <RefreshCw className="w-2.5 h-2.5 text-[var(--lavDeep)] animate-spin-slow" />
-                          </div>
+                              {/* Rotation handle and line */}
+                              <div className="absolute top-0 left-1/2 w-[1px] h-6 bg-purple-500 dark:bg-purple-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] -translate-x-1/2 -translate-y-6 pointer-events-none" />
+                              <div
+                                className="absolute top-0 left-1/2 w-5 h-5 rounded-full bg-white dark:bg-zinc-800 border border-purple-500 dark:border-purple-300 shadow-md -translate-x-1/2 -translate-y-9 flex items-center justify-center hover:bg-purple-50 dark:hover:bg-zinc-700 hover:scale-110 active:scale-95 transition-transform cursor-grab active:cursor-grabbing z-40"
+                                title="Кликните для ввода точного градуса, или удерживайте для вращения мышью"
+                                onMouseDown={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  const targetId = el.id;
+                                  setSelectedId(targetId);
+                                  setActiveAction('rotate');
+                                  
+                                  const startX = e.clientX;
+                                  const startY = e.clientY;
+                                  let isDragging = false;
 
-                          {/* FLOATING QUICK TOOLBAR */}
-                          <div className="absolute -top-16 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-zinc-950/90 text-white px-2 py-1 rounded-xl shadow-xl border border-zinc-700/50 z-50">
-                            {/* Lock Toggle */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, isLocked: !item.isLocked } : item));
-                              }}
-                              className="p-1.5 rounded hover:bg-zinc-800 text-zinc-300 hover:text-white transition-colors cursor-pointer"
-                              title={el.isLocked ? "Разблокировать" : "Заблокировать"}
-                            >
-                              {el.isLocked ? <Lock className="w-3.5 h-3.5 text-rose-400" /> : <Unlock className="w-3.5 h-3.5 text-emerald-400" />}
-                            </button>
+                                  const rect = canvasContainerRef.current?.getBoundingClientRect();
+                                  let startAngle = 0;
+                                  let startRotation = el.rotation;
+                                  let centerAbsX = 0;
+                                  let centerAbsY = 0;
 
-                            {/* Copy/Duplicate */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDuplicateElement(el);
-                              }}
-                              className="p-1.5 rounded hover:bg-zinc-800 text-zinc-300 hover:text-white transition-colors cursor-pointer"
-                              title="Копировать"
-                            >
-                              <Copy className="w-3.5 h-3.5 text-blue-400" />
-                            </button>
+                                  if (rect) {
+                                    const elCenterX = el.x + el.w / 2;
+                                    const elCenterY = el.y + el.h / 2;
+                                    centerAbsX = rect.left + elCenterX;
+                                    centerAbsY = rect.top + elCenterY;
+                                    startAngle = Math.atan2(e.clientY - centerAbsY, e.clientX - centerAbsX) * (180 / Math.PI);
+                                    rotateStartRef.current = {
+                                      startAngle,
+                                      startRotation,
+                                      centerX: centerAbsX,
+                                      centerY: centerAbsY
+                                    };
+                                  }
 
-                            <div className="w-[1px] h-3 bg-zinc-700" />
+                                  const handleMouseMove = (moveEvent: MouseEvent) => {
+                                    const dist = Math.hypot(moveEvent.clientX - startX, moveEvent.clientY - startY);
+                                    if (dist > 3) {
+                                      isDragging = true;
+                                    }
+                                    if (isDragging) {
+                                      const dx = moveEvent.clientX - centerAbsX;
+                                      const dy = moveEvent.clientY - centerAbsY;
+                                      const currentAngle = Math.atan2(dy, dx) * (180 / Math.PI);
+                                      const angleDiff = currentAngle - startAngle;
+                                      let newRotation = Math.round(startRotation + angleDiff);
 
-                            {/* Delete/Trash */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                updateActiveSceneElements(prev => prev.filter(item => item.id !== el.id));
-                                setSelectedId(null);
-                                showToast('Удалено', 'Элемент удален с холста.', 'info');
-                              }}
-                              className="p-1.5 rounded hover:bg-rose-950/60 text-rose-400 hover:text-rose-300 transition-colors cursor-pointer"
-                              title="Удалить со сцены"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
+                                      if (moveEvent.shiftKey) {
+                                        newRotation = Math.round(newRotation / 15) * 15;
+                                      }
+                                      if (newRotation > 180) newRotation -= 360;
+                                      if (newRotation < -180) newRotation += 360;
+
+                                      updateActiveSceneElements(prev => prev.map(item => item.id === targetId ? { ...item, rotation: newRotation } : item));
+                                    }
+                                  };
+
+                                  const handleMouseUp = () => {
+                                    window.removeEventListener('mousemove', handleMouseMove);
+                                    window.removeEventListener('mouseup', handleMouseUp);
+                                    setActiveAction(null);
+                                    setActiveHandle(null);
+
+                                    if (!isDragging) {
+                                      // Single click -> toggle exact angle popover immediately
+                                      setRotationInputId(prev => prev === targetId ? null : targetId);
+                                    } else {
+                                      recordHistory(scenes);
+                                    }
+                                  };
+
+                                  window.addEventListener('mousemove', handleMouseMove);
+                                  window.addEventListener('mouseup', handleMouseUp);
+                                }}
+                              >
+                                <RefreshCw className="w-2.5 h-2.5 text-purple-600 dark:text-purple-300 animate-spin-slow" />
+                              </div>
+
+                              {/* Floating Exact Rotation Angle Popover */}
+                              {rotationInputId === el.id && (() => {
+                                const isNearTop = el.y < 160;
+                                return (
+                                  <div
+                                    className={`absolute left-1/2 -translate-x-1/2 ${
+                                      isNearTop ? 'top-full mt-4' : '-translate-y-[155px] top-0'
+                                    } z-50 bg-zinc-900/95 dark:bg-zinc-900/95 text-white p-3 rounded-2xl shadow-2xl border border-purple-500/50 backdrop-blur-md flex flex-col items-center gap-2 pointer-events-auto min-w-[210px] animate-fadeIn`}
+                                    style={{
+                                      transform: `rotate(${-el.rotation}deg) scaleX(${el.isFlippedH ? -1 : 1}) scaleY(${el.isFlippedV ? -1 : 1}) scale(${1 / ((canvasScale * zoomScale) || 1)})`,
+                                      transformOrigin: isNearTop ? 'top center' : 'bottom center'
+                                    }}
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <div className="flex items-center justify-between w-full pb-1 border-b border-white/10 text-xs font-bold text-purple-300">
+                                      <span className="flex items-center gap-1.5">
+                                        <RotateCw className="w-3.5 h-3.5 text-purple-400" />
+                                        Угол поворота
+                                      </span>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setRotationInputId(null);
+                                        }}
+                                        className="p-1 rounded-full hover:bg-white/15 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                                        title="Закрыть"
+                                      >
+                                        <X className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+
+                                    {/* Number Input & Step Buttons */}
+                                    <div className="flex items-center gap-1.5 my-1">
+                                      <button
+                                        onClick={() => {
+                                          const next = ((el.rotation - 15) % 360 + 360) % 360;
+                                          updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, rotation: next } : item));
+                                        }}
+                                        className="px-2 py-1 bg-zinc-800 hover:bg-purple-900/60 border border-zinc-700/80 rounded-lg text-xs font-bold text-purple-300 cursor-pointer transition-colors"
+                                        title="-15°"
+                                      >
+                                        -15°
+                                      </button>
+
+                                      <div className="relative flex items-center">
+                                        <input
+                                          type="number"
+                                          value={el.rotation}
+                                          onChange={(e) => {
+                                            const val = parseInt(e.target.value);
+                                            updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, rotation: isNaN(val) ? 0 : val } : item));
+                                          }}
+                                          className="w-16 px-2 py-1 text-center font-bold text-sm bg-zinc-950 border border-purple-500/50 rounded-lg text-white focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400"
+                                        />
+                                        <span className="absolute right-2 text-xs font-bold text-purple-400 pointer-events-none">°</span>
+                                      </div>
+
+                                      <button
+                                        onClick={() => {
+                                          const next = ((el.rotation + 15) % 360 + 360) % 360;
+                                          updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, rotation: next } : item));
+                                        }}
+                                        className="px-2 py-1 bg-zinc-800 hover:bg-purple-900/60 border border-zinc-700/80 rounded-lg text-xs font-bold text-purple-300 cursor-pointer transition-colors"
+                                        title="+15°"
+                                      >
+                                        +15°
+                                      </button>
+                                    </div>
+
+                                    {/* Preset Angle Pills */}
+                                    <div className="flex items-center justify-between w-full gap-1 pt-1.5 border-t border-white/10">
+                                      {[0, 45, 90, 180, 270].map((deg) => (
+                                        <button
+                                          key={deg}
+                                          onClick={() => {
+                                            updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, rotation: deg } : item));
+                                          }}
+                                          className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
+                                            el.rotation === deg
+                                              ? 'bg-purple-600 text-white shadow-xs'
+                                              : 'bg-zinc-800/80 text-zinc-300 hover:bg-zinc-700 hover:text-white'
+                                          }`}
+                                        >
+                                          {deg}°
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+                            </>
+                          )}
+
+                          {/* FLOATING QUICK TOOLBAR - Adaptive position at bottom or top with rounded-full bg-black/40 backdrop-blur */}
+                          {(() => {
+                            const isNearBottom = (el.y + el.h) > (canvasHeightMm / 10 - 70);
+                            return (
+                              <div
+                                className={`absolute left-1/2 -translate-x-1/2 ${
+                                  isNearBottom ? 'bottom-[calc(100%+16px)]' : 'top-[calc(100%+16px)]'
+                                } flex items-center gap-1.5 bg-black/40 dark:bg-black/50 text-white px-2.5 py-1 rounded-full shadow-2xl border border-white/20 backdrop-blur-md z-50 pointer-events-auto`}
+                                style={{
+                                  transform: `rotate(${-el.rotation}deg) scaleX(${el.isFlippedH ? -1 : 1}) scaleY(${el.isFlippedV ? -1 : 1}) scale(${1 / ((canvasScale * zoomScale) || 1)})`,
+                                  transformOrigin: isNearBottom ? 'bottom center' : 'top center'
+                                }}
+                              >
+                                {/* Lock Toggle */}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, isLocked: !item.isLocked } : item));
+                                  }}
+                                  className="p-1.5 rounded-full hover:bg-white/20 transition-colors cursor-pointer"
+                                  title={el.isLocked ? "Разблокировать" : "Заблокировать"}
+                                >
+                                  {el.isLocked ? (
+                                    <Lock className="w-3.5 h-3.5 text-rose-400" />
+                                  ) : (
+                                    <Unlock className="w-3.5 h-3.5 text-emerald-400" />
+                                  )}
+                                </button>
+
+                                {/* Copy/Duplicate */}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDuplicateElement(el);
+                                  }}
+                                  className="p-1.5 rounded-full hover:bg-white/20 transition-colors cursor-pointer"
+                                  title="Копировать"
+                                >
+                                  <Copy className="w-3.5 h-3.5 text-cyan-300" />
+                                </button>
+
+                                <div className="w-[1px] h-3.5 bg-white/40" />
+
+                                {/* Delete/Trash */}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    updateActiveSceneElements(prev => prev.filter(item => item.id !== el.id));
+                                    setSelectedId(null);
+                                    showToast('Удалено', 'Элемент удален с холста.', 'info');
+                                  }}
+                                  className="p-1.5 rounded-full hover:bg-rose-500/40 transition-colors cursor-pointer"
+                                  title="Удалить со сцены"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                                </button>
+                              </div>
+                            );
+                          })()}
                         </>
                       )}
                     </div>
                   );
                 })}
-                </div>
-                {/* FLOATING VERTICAL TOOLBAR STACK ON CANVAS */}
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-3">
-                  {/* TOP ACTIONS STACK */}
-                  <div className="flex flex-col gap-1.5 bg-white/95 dark:bg-zinc-900/95 p-1 rounded-full shadow-lg border border-zinc-200/80 dark:border-zinc-800 backdrop-blur-md">
-                    <button
-                      onClick={() => {
-                        if (selectedId) {
-                          updateActiveSceneElements(prev => prev.filter(item => item.id !== selectedId));
-                          setSelectedId(null);
-                          showToast('Удалено', 'Элемент удален со сцены', 'info');
-                        } else {
-                          showToast('Выберите элемент', 'Кликните на элемент для удаления', 'warn');
-                        }
+
+                {/* MULTI-SELECT GROUP BOUNDING BOX */}
+                {selectedIds.length > 1 && (() => {
+                  const selectedElements = activeScene.elements.filter(el => selectedIds.includes(el.id) && el.isVisible);
+                  if (selectedElements.length <= 1) return null;
+
+                  const minX = Math.min(...selectedElements.map(el => el.x));
+                  const minY = Math.min(...selectedElements.map(el => el.y));
+                  const maxX = Math.max(...selectedElements.map(el => el.x + el.w));
+                  const maxY = Math.max(...selectedElements.map(el => el.y + el.h));
+                  const groupW = maxX - minX;
+                  const groupH = maxY - minY;
+
+                  const isNearTop = minY < 50;
+
+                  return (
+                    <div
+                      className="absolute z-30 cursor-grab active:cursor-grabbing group/groupbox pointer-events-auto"
+                      style={{
+                        left: `${minX}px`,
+                        top: `${minY}px`,
+                        width: `${groupW}px`,
+                        height: `${groupH}px`,
                       }}
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all cursor-pointer"
-                      title="Удалить выбранный элемент"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (selectedElem) handleDuplicateElement(selectedElem);
-                        else showToast('Выберите элемент', 'Кликните на элемент для копирования', 'warn');
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        setActiveAction('move-group');
+                        setActiveHandle(null);
+                        dragGroupStartRef.current = {
+                          mouseX: e.clientX,
+                          mouseY: e.clientY,
+                          items: selectedElements.map(item => ({ id: item.id, x: item.x, y: item.y }))
+                        };
                       }}
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] hover:bg-[var(--lavenderSoft)] dark:hover:bg-[var(--lavDeep)]/30 transition-all cursor-pointer"
-                      title="Копировать элемент"
                     >
-                      <Copy className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (selectedId) {
-                          const idx = activeScene.elements.findIndex(e => e.id === selectedId);
-                          if (idx > 0) handleMoveLayer(idx, 'down');
-                        }
-                      }}
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] hover:bg-[var(--lavenderSoft)] dark:hover:bg-[var(--lavDeep)]/30 transition-all cursor-pointer"
-                      title="Опустить слой назад"
-                    >
-                      <ArrowDown className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (selectedId) {
-                          const idx = activeScene.elements.findIndex(e => e.id === selectedId);
-                          if (idx !== -1 && idx < activeScene.elements.length - 1) handleMoveLayer(idx, 'up');
-                        }
-                      }}
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] hover:bg-[var(--lavenderSoft)] dark:hover:bg-[var(--lavDeep)]/30 transition-all cursor-pointer"
-                      title="Поднять слой вперед"
-                    >
-                      <ArrowUp className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (selectedId) {
-                          updateActiveSceneElements(prev => prev.map(item => item.id === selectedId ? { ...item, isFlippedH: !item.isFlippedH } : item));
-                        }
-                      }}
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] hover:bg-[var(--lavenderSoft)] dark:hover:bg-[var(--lavDeep)]/30 transition-all cursor-pointer"
-                      title="Отразить по горизонтали"
-                    >
-                      <FlipHorizontal className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={handleUndo}
-                      disabled={historyIndex <= 0}
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] hover:bg-[var(--lavenderSoft)] dark:hover:bg-[var(--lavDeep)]/30 disabled:opacity-30 transition-all cursor-pointer"
-                      title="Отменить действие"
-                    >
-                      <Undo2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={handleRedo}
-                      disabled={historyIndex >= history.length - 1}
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] hover:bg-[var(--lavenderSoft)] dark:hover:bg-[var(--lavDeep)]/30 disabled:opacity-30 transition-all cursor-pointer"
-                      title="Повторить действие"
-                    >
-                      <Redo2 className="w-4 h-4" />
-                    </button>
-                  </div>
+                      {/* Outer Solid Bounding Frame */}
+                      <div className="absolute -inset-1.5 border-2 border-purple-500/90 dark:border-purple-400/90 bg-purple-500/10 rounded-sm shadow-xl pointer-events-none border-dashed" />
 
-                  {/* BOTTOM ADJUSTMENT STACK */}
-                  <div className="flex flex-col gap-1.5 bg-white/95 dark:bg-zinc-900/95 p-1 rounded-full shadow-lg border border-zinc-200/80 dark:border-zinc-800 backdrop-blur-md">
-                    <button
-                      onClick={() => setActiveFilterTool(activeFilterTool === 'brightness' ? null : 'brightness')}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer ${
-                        activeFilterTool === 'brightness' ? 'bg-[var(--lavDeep)] text-white' : 'text-zinc-600 dark:text-zinc-300 hover:text-[var(--lavDeep)] hover:bg-[var(--lavenderSoft)]'
-                      }`}
-                      title="Яркость"
-                    >
-                      <Sun className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => setActiveFilterTool(activeFilterTool === 'contrast' ? null : 'contrast')}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer ${
-                        activeFilterTool === 'contrast' ? 'bg-[var(--lavDeep)] text-white' : 'text-zinc-600 dark:text-zinc-300 hover:text-[var(--lavDeep)] hover:bg-[var(--lavenderSoft)]'
-                      }`}
-                      title="Контрастность"
-                    >
-                      <Contrast className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => setActiveFilterTool(activeFilterTool === 'saturate' ? null : 'saturate')}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer ${
-                        activeFilterTool === 'saturate' ? 'bg-[var(--lavDeep)] text-white' : 'text-zinc-600 dark:text-zinc-300 hover:text-[var(--lavDeep)] hover:bg-[var(--lavenderSoft)]'
-                      }`}
-                      title="Насыщенность"
-                    >
-                      <Palette className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => setActiveFilterTool(activeFilterTool === 'hue' ? null : 'hue')}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer ${
-                        activeFilterTool === 'hue' ? 'bg-[var(--lavDeep)] text-white' : 'text-zinc-600 dark:text-zinc-300 hover:text-[var(--lavDeep)] hover:bg-[var(--lavenderSoft)]'
-                      }`}
-                      title="Цветовой тон"
-                    >
-                      <Target className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => setActiveFilterTool(activeFilterTool === 'opacity' ? null : 'opacity')}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer ${
-                        activeFilterTool === 'opacity' ? 'bg-[var(--lavDeep)] text-white' : 'text-zinc-600 dark:text-zinc-300 hover:text-[var(--lavDeep)] hover:bg-[var(--lavenderSoft)]'
-                      }`}
-                      title="Прозрачность"
-                    >
-                      <Droplet className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        setZoomScale(1);
-                        setPanX(0);
-                        setPanY(0);
-                      }}
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:text-[var(--lavDeep)] hover:bg-[var(--lavenderSoft)] transition-all cursor-pointer"
-                      title="Масштабирование"
-                    >
-                      <ZoomIn className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
+                      {/* Corner Resize/Decoration Markers */}
+                      <div className="absolute -top-2 -left-2 w-3.5 h-3.5 bg-white border-2 border-purple-600 rounded-xs shadow-xs pointer-events-none" />
+                      <div className="absolute -top-2 -right-2 w-3.5 h-3.5 bg-white border-2 border-purple-600 rounded-xs shadow-xs pointer-events-none" />
+                      <div className="absolute -bottom-2 -left-2 w-3.5 h-3.5 bg-white border-2 border-purple-600 rounded-xs shadow-xs pointer-events-none" />
+                      <div className="absolute -bottom-2 -right-2 w-3.5 h-3.5 bg-white border-2 border-purple-600 rounded-xs shadow-xs pointer-events-none" />
 
-                {/* SLIDER POPUP FOR SELECTED ADJUSTMENT TOOL */}
-                {selectedElem && activeFilterTool && (
-                  <div className="absolute right-16 top-1/2 -translate-y-1/2 z-40 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-3 rounded-2xl shadow-xl flex flex-col gap-2 w-48">
-                    <div className="flex justify-between items-center text-xs font-bold text-zinc-700 dark:text-zinc-200">
-                      <span>
-                        {activeFilterTool === 'brightness' && 'Яркость'}
-                        {activeFilterTool === 'contrast' && 'Контрастность'}
-                        {activeFilterTool === 'saturate' && 'Насыщенность'}
-                        {activeFilterTool === 'hue' && 'Цветовой тон'}
-                        {activeFilterTool === 'opacity' && 'Прозрачность'}
-                      </span>
-                      <button onClick={() => setActiveFilterTool(null)} className="text-zinc-400 hover:text-zinc-600">
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                    {activeFilterTool === 'brightness' && (
-                      <input
-                        type="range"
-                        min="-50"
-                        max="50"
-                        value={selectedElem.exposure}
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value);
-                          updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, exposure: val } : item));
-                        }}
-                        className="w-full accent-[var(--lavDeep)] cursor-pointer"
-                      />
-                    )}
-                    {activeFilterTool === 'opacity' && (
-                      <input
-                        type="range"
-                        min="10"
-                        max="100"
-                        value={selectedElem.opacity}
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value);
-                          updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, opacity: val } : item));
-                        }}
-                        className="w-full accent-[var(--lavDeep)] cursor-pointer"
-                      />
-                    )}
-                    {activeFilterTool === 'saturate' && (
-                      <input
-                        type="range"
-                        min="0"
-                        max="200"
-                        value={selectedElem.saturate}
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value);
-                          updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, saturate: val } : item));
-                        }}
-                        className="w-full accent-[var(--lavDeep)] cursor-pointer"
-                      />
-                    )}
-                    {activeFilterTool === 'hue' && (
-                      <input
-                        type="range"
-                        min="-180"
-                        max="180"
-                        value={selectedElem.hue}
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value);
-                          updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, hue: val } : item));
-                        }}
-                        className="w-full accent-[var(--lavDeep)] cursor-pointer"
-                      />
-                    )}
-                  </div>
-                )}
-
-                  </div>
-                </div>
-            )}
-          </div>
-
-          {/* CANVAS BOTTOM TOOLBAR */}
-          {activeWorkspaceTab !== 'floorplan' && (
-            <div className="flex flex-wrap items-center justify-between gap-4 bg-white/70 dark:bg-zinc-900/60 border border-[var(--glass-edge)] px-5 py-2.5 rounded-full backdrop-blur-md shadow-xs shrink-0">
-              
-              {/* Размер поля */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-[var(--ink)]">Размер поля</span>
-                <div className="flex items-center gap-1.5 ml-1">
-                  <span className="text-xs font-bold text-[var(--soft)]">Ш</span>
-                  <input
-                    type="text"
-                    value={canvasWidthInput}
-                    onChange={(e) => setCanvasWidthInput(e.target.value)}
-                    onBlur={() => {
-                      const parsed = parseFloat(canvasWidthInput);
-                      if (!isNaN(parsed)) {
-                        const mm = fromDisplayValue(parsed);
-                        setCanvasWidthMm(Math.max(1000, Math.min(15000, mm)));
-                      }
-                    }}
-                    className="w-16 px-2.5 py-1 rounded-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs font-bold text-[var(--ink)] text-center focus:outline-none"
-                  />
-                  <span className="text-xs font-bold text-[var(--soft)]">см</span>
-                </div>
-
-                <div className="flex items-center gap-1.5 ml-2">
-                  <span className="text-xs font-bold text-[var(--soft)]">В</span>
-                  <input
-                    type="text"
-                    value={canvasHeightInput}
-                    onChange={(e) => setCanvasHeightInput(e.target.value)}
-                    onBlur={() => {
-                      const parsed = parseFloat(canvasHeightInput);
-                      if (!isNaN(parsed)) {
-                        const mm = fromDisplayValue(parsed);
-                        setCanvasHeightMm(Math.max(1000, Math.min(10000, mm)));
-                      }
-                    }}
-                    className="w-16 px-2.5 py-1 rounded-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs font-bold text-[var(--ink)] text-center focus:outline-none"
-                  />
-                  <span className="text-xs font-bold text-[var(--soft)]">см</span>
-                </div>
-              </div>
-
-              {/* Фон с плюсом и ползунком */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-[var(--ink)]">Фон</span>
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-6 h-6 rounded-full bg-[var(--lavenderSoft)] dark:bg-[var(--lavDeep)]/30 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] flex items-center justify-center hover:bg-[var(--lavBorder)] transition-colors cursor-pointer"
-                  title="Загрузить изображение фона"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                </button>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleUploadCanvasBackdrop}
-                  accept="image/*"
-                  className="hidden"
-                />
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={50}
-                  onChange={() => {}}
-                  className="w-24 accent-[var(--lavDeep)] cursor-pointer"
-                />
-              </div>
-
-              {/* Сетка & Человек тумблеры */}
-              <div className="flex items-center gap-5">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <span className="text-xs font-bold text-[var(--ink)]">Сетка</span>
-                  <button
-                    onClick={() => setGridVisible(!gridVisible)}
-                    className={`w-10 h-5 rounded-full transition-colors relative p-0.5 cursor-pointer ${gridVisible ? 'bg-[var(--lavDeep)]' : 'bg-zinc-300 dark:bg-zinc-700'}`}
-                  >
-                    <div className={`w-4 h-4 rounded-full bg-white transition-transform ${gridVisible ? 'translate-x-5' : 'translate-x-0'}`} />
-                  </button>
-                </label>
-
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <span className="text-xs font-bold text-[var(--ink)]">Человек</span>
-                  <button
-                    onClick={() => setHumanVisible(!humanVisible)}
-                    className={`w-10 h-5 rounded-full transition-colors relative p-0.5 cursor-pointer ${humanVisible ? 'bg-[var(--lavDeep)]' : 'bg-zinc-300 dark:bg-zinc-700'}`}
-                  >
-                    <div className={`w-4 h-4 rounded-full bg-white transition-transform ${humanVisible ? 'translate-x-5' : 'translate-x-0'}`} />
-                  </button>
-                </label>
-              </div>
-
-            </div>
-          )}
-
-        </div>
-
-        {/* RIGHT COLUMN: CONTROL SIDE PANEL (30% WIDTH) */}
-        <div className="lg:col-span-4 flex flex-col bg-white/40 dark:bg-zinc-900/10 border border-[var(--glass-edge)] rounded-3xl overflow-hidden shadow-sm backdrop-blur-md h-full min-h-0 min-w-0">
-          
-          {/* TAB BAR SELECTORS */}
-          <div className="grid grid-cols-3 border-b border-[var(--glass-edge)] bg-white/20 dark:bg-black/10">
-            <button
-              onClick={() => setActiveSidebarTab('library')}
-              className={`py-3.5 text-xs font-bold transition-all cursor-pointer border-b-2 flex items-center justify-center gap-1.5 ${
-                activeSidebarTab === 'library'
-                  ? 'border-[var(--lavDeep)] text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] bg-white/20 dark:bg-white/5'
-                  : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
-              }`}
-            >
-              <span>Библиотека</span>
-            </button>
-            <button
-              onClick={() => setActiveSidebarTab('layers')}
-              className={`py-3.5 text-xs font-bold transition-all cursor-pointer border-b-2 flex items-center justify-center gap-1.5 ${
-                activeSidebarTab === 'layers'
-                  ? 'border-[var(--lavDeep)] text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] bg-white/20 dark:bg-white/5'
-                  : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
-              }`}
-            >
-              <span>Элементы проекта</span>
-              <span className="px-1.5 py-0.5 rounded-full bg-[var(--lavDeep)] text-white text-[9px] font-extrabold leading-none">
-                {activeScene.elements.length}
-              </span>
-            </button>
-            <button
-              onClick={() => setActiveSidebarTab('tools')}
-              className={`py-3.5 text-xs font-bold transition-all cursor-pointer border-b-2 flex items-center justify-center gap-1.5 ${
-                activeSidebarTab === 'tools'
-                  ? 'border-[var(--lavDeep)] text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] bg-white/20 dark:bg-white/5'
-                  : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
-              }`}
-            >
-              <span>Инструменты</span>
-            </button>
-          </div>
-
-          {/* TAB SCROLLABLE CONTENT BODY */}
-          <div className="flex-1 flex flex-col overflow-y-auto p-5">
-            
-            {/* TAB 1: LIBRARY CATALOG LISTING */}
-            {activeSidebarTab === 'library' && (
-              <div className="space-y-4">
-                
-                {/* Category Horizontal Scrolling List */}
-                <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-none snap-x -mx-5 px-5">
-                  {NEW_CATALOG_CATEGORIES.map((cat) => {
-                    const isSelected = selectedCategory === cat.id;
-                    return (
-                      <button
-                        key={cat.id}
-                        onClick={() => {
-                          setSelectedCategory(cat.id);
-                          setLibSearch('');
-                        }}
-                        className="flex flex-col items-center gap-1 shrink-0 snap-start transition-all cursor-pointer group"
-                      >
-                        <div
-                          className={`w-12 h-12 rounded-full flex items-center justify-center border transition-all ${
-                            isSelected
-                              ? 'bg-[var(--lavDeep)] border-[var(--lavDeep)] text-white shadow-md shadow-[var(--lavDeep)]/20 scale-105'
-                              : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-[var(--lavDeep)] hover:border-[var(--lavBorder)] dark:hover:bg-zinc-850'
-                          }`}
-                        >
-                          {cat.id === 'favorites' && <Heart className={`w-5 h-5 ${isSelected ? 'fill-white text-white' : 'text-rose-500 fill-rose-500'}`} />}
-                          {cat.id === 'text' && <Type className="w-5 h-5" />}
-                          {cat.id === 'arches' && <Layers className="w-5 h-5" />}
-                          {cat.id === 'stands' && <Columns className="w-5 h-5" />}
-                          {cat.id === 'tables' && <TableIcon className="w-5 h-5" />}
-                          {cat.id === 'screens' && <GridIcon className="w-5 h-5" />}
-                          {cat.id === 'flowers' && <Flower2 className="w-5 h-5" />}
-                          {cat.id === 'compositions' && <Sparkles className="w-5 h-5" />}
-                          {cat.id === 'vases' && <Tag className="w-5 h-5" />}
-                          {cat.id === 'details' && <Compass className="w-5 h-5" />}
-                          {cat.id === 'textiles' && <Layers className="w-5 h-5" />}
-                          {cat.id === 'light' && <Lightbulb className="w-5 h-5" />}
-                          {cat.id === 'podiums' && <Columns className="w-5 h-5" />}
-                          {cat.id === 'furniture' && <Bookmark className="w-5 h-5" />}
-                          {cat.id === 'balloons' && <CircleDot className="w-5 h-5" />}
-                          {cat.id === 'themes' && <Tag className="w-5 h-5" />}
-                        </div>
-                        <span className={`text-[10px] font-semibold text-center transition-colors ${isSelected ? 'text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] font-bold' : 'text-zinc-500 group-hover:text-zinc-800 dark:group-hover:text-zinc-300'}`}>
-                          {cat.title}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Filter / Search Bar */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--faint)]" />
-                  <input
-                    type="text"
-                    placeholder="Найти элемент..."
-                    value={libSearch}
-                    onChange={(e) => setLibSearch(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 rounded-xl bg-white/50 dark:bg-black/20 border border-[var(--glass-edge)] text-xs text-[var(--ink)] placeholder:text-[var(--faint)] focus:outline-none"
-                  />
-                </div>
-
-                {/* Grid of Catalog items */}
-                <div className="grid grid-cols-2 gap-3">
-                  
-                  {/* Plus item custom upload button */}
-                  <label className="flex flex-col items-center justify-center p-3 h-28 rounded-2xl border border-dashed border-[var(--lavenderAccent)] hover:border-[var(--lavDeep)] bg-[var(--lavSoft)]/30 cursor-pointer transition-all">
-                    <Plus className="w-5 h-5 text-[var(--lavDeep)] mb-1" />
-                    <span className="text-[10px] font-bold text-[var(--lavDeep)] text-center">Загрузить PNG</span>
-                    <input
-                      type="file"
-                      accept="image/png"
-                      onChange={handleCustomPngUpload}
-                      className="hidden"
-                    />
-                  </label>
-
-                  {getCategoryItems().map((item) => {
-                    const isFav = favoritesList.includes(item.id);
-                    return (
+                      {/* Badge Count Tag */}
                       <div
-                        key={item.id}
-                        onClick={() => handleAddElementToScene(item)}
-                        className="group relative flex flex-col justify-between p-2.5 h-28 rounded-2xl border border-[var(--glass-edge)] bg-white/50 dark:bg-zinc-950/20 hover:border-[var(--lavenderAccent)] hover:shadow-sm cursor-pointer transition-all text-left"
+                        className={`absolute left-1/2 -translate-x-1/2 ${
+                          isNearTop ? 'top-2' : '-top-9'
+                        } pointer-events-none whitespace-nowrap z-40`}
                       >
-                        {/* Header Mini Actions */}
-                        <div className="flex justify-between items-start gap-1">
-                          <span className="text-[8.5px] font-bold text-[var(--faint)] truncate max-w-[80px]">{item.code}</span>
-                          <button
-                            onClick={(e) => toggleFavorite(item.id, e)}
-                            className="p-1 text-[var(--faint)] hover:text-rose-500 transition-colors"
-                          >
-                            <Heart className={`w-3.5 h-3.5 ${isFav ? 'text-rose-500 fill-rose-500' : ''}`} />
-                          </button>
-                        </div>
+                        <span className="text-[10px] font-extrabold text-white bg-purple-600/90 backdrop-blur-md px-2.5 py-1 rounded-full border border-purple-400/50 shadow-md flex items-center gap-1.5">
+                          <BoxSelect className="w-3 h-3 text-purple-200" />
+                          Выделено элементов: {selectedElements.length}
+                        </span>
+                      </div>
 
-                        {/* Middle Vector Preview Box */}
-                        <div className="h-12 flex items-center justify-center py-1 opacity-80 group-hover:opacity-100 transition-opacity">
-                          <div className="w-12 h-12 flex items-center justify-center" dangerouslySetInnerHTML={{ __html: item.svgMarkup }} />
-                        </div>
-
-                        {/* Price footer bar */}
-                        <div className="flex justify-between items-end gap-1.5 mt-1">
-                          <span className="text-[9.5px] font-bold text-[var(--ink)] leading-tight truncate flex-1">{item.name}</span>
-                          {item.price === 0 ? (
-                            <span className="text-[8px] font-bold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] bg-[var(--lavenderSoft)] dark:bg-[var(--lavDeep)]/30 border border-[var(--lavBorder)] dark:border-[var(--lavDeep)]/50 px-1.5 py-0.5 rounded-lg leading-none shrink-0">
-                              введите цену
-                            </span>
+                      {/* FLOATING GROUP TOOLBAR */}
+                      <div
+                        className={`absolute left-1/2 -translate-x-1/2 ${
+                          isNearTop ? 'bottom-2' : '-top-14'
+                        } flex items-center gap-1.5 bg-zinc-900/95 text-white px-3 py-1.5 rounded-full shadow-2xl border border-purple-500/50 backdrop-blur-md z-50 pointer-events-auto`}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {/* Lock / Unlock all */}
+                        <button
+                          onClick={() => {
+                            const allLocked = selectedElements.every(el => el.isLocked);
+                            updateActiveSceneElements(prev => prev.map(el => selectedIds.includes(el.id) ? { ...el, isLocked: !allLocked } : el));
+                            showToast('Группа', allLocked ? 'Группа разблокирована' : 'Группа заблокирована', 'info');
+                          }}
+                          className="p-1.5 rounded-full hover:bg-white/20 transition-colors cursor-pointer text-zinc-300 hover:text-white"
+                          title="Заблокировать / Разблокировать группу"
+                        >
+                          {selectedElements.every(el => el.isLocked) ? (
+                            <Lock className="w-3.5 h-3.5 text-rose-400" />
                           ) : (
-                            <span className="text-[9px] font-extrabold text-white bg-[var(--lavDeep)] px-2 py-0.5 rounded-full leading-none shrink-0">
-                              {item.price.toLocaleString('ru')} ₽
-                            </span>
+                            <Unlock className="w-3.5 h-3.5 text-emerald-400" />
                           )}
-                        </div>
+                        </button>
+
+                        {/* Duplicate group */}
+                        <button
+                          onClick={() => {
+                            const newElements: CanvasElement[] = [];
+                            const newIds: string[] = [];
+                            selectedElements.forEach(el => {
+                              const dupId = `${el.type}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+                              newIds.push(dupId);
+                              newElements.push({
+                                ...el,
+                                id: dupId,
+                                x: Math.min(canvasWidthMm / 10 - el.w, el.x + 30),
+                                y: Math.min(canvasHeightMm / 10 - el.h, el.y + 30)
+                              });
+                            });
+                            updateActiveSceneElements(prev => [...prev, ...newElements]);
+                            setSelectedIds(newIds);
+                            showToast('Копия группы', `Скопировано ${selectedElements.length} элементов`, 'success');
+                          }}
+                          className="p-1.5 rounded-full hover:bg-white/20 transition-colors cursor-pointer text-zinc-300 hover:text-white"
+                          title="Скопировать всю группу"
+                        >
+                          <Copy className="w-3.5 h-3.5 text-cyan-300" />
+                        </button>
+
+                        {/* Persistent Group / Ungroup button */}
+                        {selectedElements.some(el => el.groupId) ? (
+                          <button
+                            onClick={handleUngroupSelectedElements}
+                            className="px-2.5 py-1 rounded-full bg-purple-600/90 hover:bg-purple-500 text-xs font-bold text-white flex items-center gap-1 transition-all cursor-pointer shadow-sm"
+                            title="Разгруппировать (сделать элементы независимыми)"
+                          >
+                            <Ungroup className="w-3.5 h-3.5" />
+                            <span>Разгруппировать</span>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={handleGroupSelectedElements}
+                            className="px-2.5 py-1 rounded-full bg-purple-600/90 hover:bg-purple-500 text-xs font-bold text-white flex items-center gap-1 transition-all cursor-pointer shadow-sm"
+                            title="Сгруппировать в постоянную группу"
+                          >
+                            <Group className="w-3.5 h-3.5" />
+                            <span>Сгруппировать</span>
+                          </button>
+                        )}
+
+                        <div className="w-[1px] h-3.5 bg-white/30" />
+
+                        {/* Delete group */}
+                        <button
+                          onClick={() => {
+                            updateActiveSceneElements(prev => prev.filter(el => !selectedIds.includes(el.id)));
+                            setSelectedIds([]);
+                            showToast('Удалено', `Удалено ${selectedElements.length} элементов`, 'info');
+                          }}
+                          className="p-1.5 rounded-full hover:bg-rose-500/40 transition-colors cursor-pointer text-rose-400 hover:text-rose-200"
+                          title="Удалить группу со сцены"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+
+                        {/* Deselect / Close */}
+                        <button
+                          onClick={() => setSelectedIds([])}
+                          className="p-1.5 rounded-full hover:bg-white/20 transition-colors cursor-pointer text-zinc-400 hover:text-white"
+                          title="Снять выделение"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
                       </div>
-                    );
-                  })}
-                </div>
-
-              </div>
-            )}
-
-            {/* TAB 2: ACTIVE LAYERS / PROJECT ELEMENTS */}
-            {activeSidebarTab === 'layers' && (
-              <div className="flex flex-col justify-between h-full min-h-0 space-y-4">
-                
-                {activeScene.elements.length === 0 ? (
-                  <div className="py-12 text-center text-xs text-[var(--faint)] space-y-2">
-                    <Info className="w-5 h-5 mx-auto text-[var(--faint)]" />
-                    <p>На сцене пока нет элементов.</p>
-                    <p className="text-[10px]">Выберите любой декор из вкладки "Библиотека".</p>
+                    </div>
+                  );
+                })()}
                   </div>
-                ) : (
-                  <div className="space-y-2.5 flex-1 min-h-0 overflow-y-auto pr-1 scrollbar-thin">
-                    {activeScene.elements.map((el, idx) => {
-                      const isExpanded = expandedElementId === el.id;
 
-                      return (
-                        <div
-                          key={el.id}
-                          className="rounded-2xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden shadow-2xs transition-all"
-                        >
-                          {/* COLLAPSED ROW BAR */}
-                          <div
-                            onClick={() => {
-                              setSelectedId(el.id);
-                              if (isExpanded) {
-                                setExpandedElementId(null);
-                              } else {
-                                setExpandedElementId(el.id);
-                                setDraftPrice(el.price.toString());
-                                setDraftNote(el.comment || '');
-                              }
-                            }}
-                            className={`flex items-center justify-between p-2.5 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-850 transition-colors ${
-                              el.id === selectedId ? 'bg-[var(--lavenderSoft)] dark:bg-[var(--lavDeep)]/20' : ''
-                            }`}
-                          >
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                              {/* Grip Handle */}
-                              <GripVertical className="w-4 h-4 text-zinc-400 shrink-0 cursor-grab" />
-
-                              {/* Thumbnail preview */}
-                              <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center shrink-0 overflow-hidden border border-zinc-200/50 p-0.5">
-                                {el.customImage ? (
-                                  <img src={el.customImage} className="w-full h-full object-contain" referrerPolicy="no-referrer" />
-                                ) : (
-                                  <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: el.svgMarkup }} />
-                                )}
-                              </div>
-
-                              {/* Title */}
-                              <span className="text-xs font-bold text-zinc-800 dark:text-zinc-100 truncate flex-1">
-                                {el.name}
-                              </span>
-
-                              {/* Chevron Arrow */}
-                              {isExpanded ? (
-                                <ChevronUp className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                              ) : (
-                                <ChevronDown className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                              )}
-                            </div>
-
-                            {/* Price badge and Visibility */}
-                            <div className="flex items-center gap-2 shrink-0 pl-3">
-                              <span className="text-xs font-extrabold text-zinc-900 dark:text-zinc-100">
-                                {el.price > 0 ? `${el.price.toLocaleString('ru')} ₽` : '0 ₽'}
-                              </span>
-
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, isVisible: !item.isVisible } : item));
-                                }}
-                                className="p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 cursor-pointer"
-                                title="Показать / скрыть"
-                              >
-                                {el.isVisible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5 text-rose-500" />}
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* EXPANDED DETAIL CARD */}
-                          {isExpanded && (
-                            <div className="p-3.5 border-t border-zinc-100 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-black/20 space-y-3">
-                              <div className="flex gap-3">
-                                {/* Left Large Preview */}
-                                <div className="w-16 h-16 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center p-1 shrink-0">
-                                  {el.customImage ? (
-                                    <img src={el.customImage} className="w-full h-full object-contain" referrerPolicy="no-referrer" />
-                                  ) : (
-                                    <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: el.svgMarkup }} />
-                                  )}
-                                </div>
-
-                                {/* Right Meta information */}
-                                <div className="flex-1 min-w-0 space-y-1">
-                                  <h4 className="text-xs font-extrabold text-zinc-900 dark:text-zinc-100">{el.name}</h4>
-                                  <p className="text-[10px] text-zinc-500 leading-tight">
-                                    ID детали: <span className="font-semibold text-zinc-700 dark:text-zinc-300">{el.code || 'ЦК0155'}</span>. Готовые сцены.
-                                  </p>
-                                  <p className="text-[10px] text-zinc-500 leading-tight">
-                                    Тип источника: <span className="font-semibold text-zinc-700 dark:text-zinc-300">{el.sourceType || 'аренда'}</span>.
-                                  </p>
-                                </div>
-                              </div>
-
-                              {/* Price input field */}
-                              <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-zinc-500">Сумма (₽)</label>
-                                <input
-                                  type="number"
-                                  value={draftPrice}
-                                  onChange={(e) => setDraftPrice(e.target.value)}
-                                  placeholder="Введите стоимость..."
-                                  className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-bold text-zinc-800 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavDeep)]"
-                                />
-                              </div>
-
-                              {/* Note comment field */}
-                              <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-zinc-500">Заметка</label>
-                                <input
-                                  type="text"
-                                  value={draftNote}
-                                  onChange={(e) => setDraftNote(e.target.value)}
-                                  placeholder="Добавить комментарий к декору..."
-                                  className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs text-zinc-800 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavDeep)]"
-                                />
-                              </div>
-
-                              {/* Action buttons */}
-                              <div className="flex items-center justify-end gap-2 pt-1">
-                                <button
-                                  onClick={() => setExpandedElementId(null)}
-                                  className="px-3 py-1.5 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 transition-colors cursor-pointer"
-                                >
-                                  Отмена
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    const parsedPrice = parseInt(draftPrice) || 0;
-                                    updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, price: parsedPrice, comment: draftNote } : item));
-                                    setExpandedElementId(null);
-                                    showToast('Сохранено', 'Параметры элемента обновлены', 'info');
-                                  }}
-                                  className="px-4 py-1.5 rounded-full bg-[var(--lavDeep)] hover:bg-[var(--lavenderAccent)] text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
-                                >
-                                  Сохранить
-                                </button>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Sticky summary total cost full-width button */}
-                <div className="pt-2 border-t border-[var(--glass-edge)]">
-                  <button
-                    onClick={handleSaveProjectCollage}
-                    className="w-full py-3 px-5 rounded-2xl bg-[var(--lavDeep)] hover:bg-[var(--lavenderAccent)] text-white flex items-center justify-center gap-2 shadow-lg shadow-[var(--lavDeep)]/20 transition-all cursor-pointer font-extrabold text-sm uppercase tracking-wide"
-                  >
-                    <span>итого: {sceneTotalCost.toLocaleString('ru')} ₽</span>
-                  </button>
-                </div>
-
-              </div>
-            )}
-
-            {/* TAB 3: OBJECT PROPERTIES & EDITING TOOLS */}
-            {activeSidebarTab === 'tools' && (
-              <div className="space-y-5">
-                
-                {selectedElem ? (
-                  <div className="space-y-4">
-                    
-                    {/* Item title */}
-                    <div className="flex items-center justify-between border-b border-[var(--glass-edge)] pb-2">
-                      <span className="text-xs font-bold text-[var(--ink)]">{selectedElem.name}</span>
-                      <span className="text-[10px] font-bold text-[var(--faint)]">{selectedElem.type}</span>
-                    </div>
-
-                    {/* Numeric sizing transformations in mm/cm/m */}
-                    <div className="space-y-2">
-                      <span className="text-[11px] font-bold text-[var(--faint)] block">Габариты элемента</span>
-                      <div className="flex items-center gap-2">
-                        {/* Width */}
-                        <div className="flex-1 space-y-1">
-                          <label className="text-[10px] font-bold text-[var(--soft)] flex items-center gap-1">
-                            <span>Ш ({activeUnit}):</span>
-                          </label>
-                          <input
-                            type="number"
-                            value={toDisplayValue(selectedElem.w * 10)}
-                            onChange={(e) => {
-                              const valMm = fromDisplayValue(parseFloat(e.target.value) || 10);
-                              const nextW = Math.max(10, valMm / 10);
-                              updateActiveSceneElements(prev => prev.map(item => {
-                                if (item.id === selectedElem.id) {
-                                  const ratio = item.h / item.w;
-                                  const nextH = isRatioLocked ? nextW * ratio : item.h;
-                                  return { ...item, w: nextW, h: nextH };
-                                }
-                                return item;
-                              }));
-                            }}
-                            className="w-full px-2.5 py-1.5 rounded-xl bg-white/50 dark:bg-black/20 border border-[var(--glass-edge)] text-xs font-semibold text-[var(--ink)] focus:outline-none"
-                          />
-                        </div>
-
-                        {/* Lock Ratio Button */}
-                        <div className="flex items-center justify-center pt-5">
-                          <button
-                            type="button"
-                            onClick={() => setIsRatioLocked(!isRatioLocked)}
-                            className={`p-2 rounded-full border transition-all ${
-                              isRatioLocked
-                                ? 'bg-[var(--lavenderSoft)] dark:bg-[var(--lavDeep)]/40 border-[var(--lavBorder)] text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]'
-                                : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-600'
-                            }`}
-                            title="Сохранять пропорции"
-                          >
-                            <Link className={`w-4 h-4 ${isRatioLocked ? 'rotate-45' : ''}`} />
-                          </button>
-                        </div>
-
-                        {/* Height */}
-                        <div className="flex-1 space-y-1">
-                          <label className="text-[10px] font-bold text-[var(--soft)] flex items-center gap-1">
-                            <span>В ({activeUnit}):</span>
-                          </label>
-                          <input
-                            type="number"
-                            value={toDisplayValue(selectedElem.h * 10)}
-                            onChange={(e) => {
-                              const valMm = fromDisplayValue(parseFloat(e.target.value) || 10);
-                              const nextH = Math.max(10, valMm / 10);
-                              updateActiveSceneElements(prev => prev.map(item => {
-                                if (item.id === selectedElem.id) {
-                                  const ratio = item.w / item.h;
-                                  const nextW = isRatioLocked ? nextH * ratio : item.w;
-                                  return { ...item, w: nextW, h: nextH };
-                                }
-                                return item;
-                              }));
-                            }}
-                            className="w-full px-2.5 py-1.5 rounded-xl bg-white/50 dark:bg-black/20 border border-[var(--glass-edge)] text-xs font-semibold text-[var(--ink)] focus:outline-none"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Key Action Tools Grid (3x2 format) */}
-                    <div className="space-y-2">
-                      <span className="text-[11px] font-bold text-[var(--faint)] block">Операции</span>
-                      <div className="grid grid-cols-3 gap-2">
-                        {/* Undo / Redo */}
-                        <div className="flex rounded-full overflow-hidden border border-[var(--glass-edge)] bg-white dark:bg-zinc-900">
-                          <button
-                            onClick={handleUndo}
-                            disabled={historyIndex === 0}
-                            className="flex-1 py-2 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 text-[var(--soft)] hover:text-[var(--ink)] disabled:opacity-20 cursor-pointer"
-                            title="Отменить"
-                          >
-                            <RotateCcw className="w-3.5 h-3.5" />
-                          </button>
-                          <div className="w-[1px] bg-[var(--glass-edge)]" />
-                          <button
-                            onClick={handleRedo}
-                            disabled={historyIndex >= history.length - 1}
-                            className="flex-1 py-2 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 text-[var(--soft)] hover:text-[var(--ink)] disabled:opacity-20 cursor-pointer"
-                            title="Повторить"
-                          >
-                            <RotateCw className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-
-                        {/* Alignment (Center) */}
-                        <button
-                          onClick={() => handleAlignSelected('center')}
-                          className="py-2 rounded-full border border-[var(--glass-edge)] bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex flex-col items-center justify-center gap-1 text-[var(--soft)] hover:text-[var(--ink)] cursor-pointer"
-                          title="Центрировать"
-                        >
-                          <AlignCenter className="w-4 h-4" />
-                          <span className="text-[8px] font-bold uppercase tracking-wider">центр</span>
-                        </button>
-
-                        {/* Mirror / Flip */}
-                        <button
-                          onClick={() => {
-                            updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, isFlippedH: !item.isFlippedH } : item));
-                          }}
-                          className="py-2 rounded-full border border-[var(--glass-edge)] bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex flex-col items-center justify-center gap-1 text-[var(--soft)] hover:text-[var(--ink)] cursor-pointer"
-                          title="Отразить зеркально"
-                        >
-                          <FlipHorizontal className="w-4 h-4" />
-                          <span className="text-[8px] font-bold uppercase tracking-wider">зеркало</span>
-                        </button>
-
-                        {/* Lock / Unlock */}
-                        <button
-                          onClick={() => {
-                            updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, isLocked: !item.isLocked } : item));
-                            setSelectedId(null);
-                          }}
-                          className="py-2 rounded-full border border-[var(--glass-edge)] bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex flex-col items-center justify-center gap-1 text-[var(--soft)] hover:text-[var(--ink)] cursor-pointer"
-                          title="Заблокировать"
-                        >
-                          {selectedElem.isLocked ? <Lock className="w-4 h-4 text-rose-500" /> : <Unlock className="w-4 h-4" />}
-                          <span className="text-[8px] font-bold uppercase tracking-wider">замок</span>
-                        </button>
-
-                        {/* Copy / Duplicate */}
-                        <button
-                          onClick={() => {
-                            const copyEl: CanvasElement = {
-                              ...selectedElem,
-                              id: `${selectedElem.id}-copy-${Date.now()}`,
-                              x: selectedElem.x + 20,
-                              y: selectedElem.y + 20
-                            };
-                            updateActiveSceneElements(prev => [...prev, copyEl]);
-                            setSelectedId(copyEl.id);
-                            showToast('Дублировано', 'Создан дубликат выбранного декора.', 'success');
-                          }}
-                          className="py-2 rounded-full border border-[var(--glass-edge)] bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex flex-col items-center justify-center gap-1 text-[var(--soft)] hover:text-[var(--ink)] cursor-pointer"
-                          title="Дублировать"
-                        >
-                          <Copy className="w-4 h-4" />
-                          <span className="text-[8px] font-bold uppercase tracking-wider">копия</span>
-                        </button>
-
-                        {/* Delete */}
-                        <button
-                          onClick={() => {
-                            updateActiveSceneElements(prev => prev.filter(item => item.id !== selectedElem.id));
-                            setSelectedId(null);
-                            showToast('Удалено', 'Элемент удален с холста.', 'info');
-                          }}
-                          className="py-2 rounded-full border border-rose-100 bg-rose-50 dark:border-rose-950/40 dark:bg-rose-950/20 hover:bg-rose-100 dark:hover:bg-rose-950/40 flex flex-col items-center justify-center gap-1 text-rose-600 dark:text-rose-400 cursor-pointer"
-                          title="Удалить со сцены"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          <span className="text-[8px] font-bold uppercase tracking-wider">удалить</span>
+                  {/* SLIDER POPUP FOR SELECTED ADJUSTMENT TOOL (Fixed Screen Viewport Overlay) */}
+                  {selectedElem && activeFilterTool && (
+                    <div className="absolute right-6 top-6 z-50 bg-zinc-900/95 dark:bg-zinc-900/95 text-white border border-zinc-700/80 p-3.5 rounded-2xl shadow-2xl flex flex-col gap-2.5 w-60 backdrop-blur-xl pointer-events-auto animate-fadeIn">
+                      <div className="flex justify-between items-center text-xs font-bold text-zinc-100 pb-1.5 border-b border-white/10">
+                        <span className="flex items-center gap-1.5">
+                          <Sliders className="w-3.5 h-3.5 text-purple-400" />
+                          {activeFilterTool === 'brightness' && 'Яркость (Экспозиция)'}
+                          {activeFilterTool === 'hue' && 'Оттенок (Тон)'}
+                          {activeFilterTool === 'temp' && 'Теплота (Температура)'}
+                          {activeFilterTool === 'saturate' && 'Насыщенность'}
+                          {activeFilterTool === 'opacity' && 'Прозрачность'}
+                        </span>
+                        <button onClick={() => setActiveFilterTool(null)} className="text-zinc-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors cursor-pointer">
+                          <X className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                    </div>
 
-                    {/* Rotation slider */}
-                    <div className="space-y-1">
-                      <div className="flex justify-between items-center text-[10px] font-bold text-[var(--soft)]">
-                        <span>Поворот:</span>
-                        <span>{selectedElem.rotation}°</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="-180"
-                        max="180"
-                        value={selectedElem.rotation}
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value);
-                          updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, rotation: val } : item));
-                        }}
-                        className="w-full h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-[var(--lavDeep)]"
-                      />
-                    </div>
-
-                    {/* Color Filter Adjustments sliders */}
-                    <div className="space-y-3.5 bg-zinc-50 dark:bg-zinc-950/20 p-3.5 rounded-2xl border border-[var(--glass-edge)]">
-                      <span className="text-[11px] font-bold text-[var(--faint)] block">Цветовые эффекты</span>
-                      
-                      {/* Exposure */}
-                      <div className="space-y-1">
-                        <div className="flex justify-between items-center text-[10px] font-bold text-[var(--soft)]">
-                          <span>Яркость (Экспозиция):</span>
-                          <span>{selectedElem.exposure}%</span>
-                        </div>
+                      {activeFilterTool === 'brightness' && (
                         <input
                           type="range"
-                          min="-100"
-                          max="100"
+                          min="-50"
+                          max="50"
                           value={selectedElem.exposure}
                           onChange={(e) => {
                             const val = parseInt(e.target.value);
                             updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, exposure: val } : item));
                           }}
-                          className="w-full h-1 bg-zinc-200 dark:bg-zinc-850 rounded appearance-none cursor-pointer accent-[var(--lavDeep)]"
-                          style={{ background: 'linear-gradient(to right, #3f3f46, #a1a1aa, #fef08a)' }}
+                          className="w-full accent-purple-400 cursor-pointer"
                         />
-                      </div>
+                      )}
 
-                      {/* Hue */}
-                      <div className="space-y-1">
-                        <div className="flex justify-between items-center text-[10px] font-bold text-[var(--soft)]">
-                          <span>Оттенок (Тон):</span>
-                          <span>{selectedElem.hue}°</span>
-                        </div>
+                      {activeFilterTool === 'hue' && (
                         <input
                           type="range"
                           min="-180"
@@ -2432,37 +3265,25 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                             const val = parseInt(e.target.value);
                             updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, hue: val } : item));
                           }}
-                          className="w-full h-1 bg-zinc-200 dark:bg-zinc-850 rounded appearance-none cursor-pointer accent-[var(--lavDeep)]"
-                          style={{ background: 'linear-gradient(to right, #ef4444, #eab308, #22c55e, #06b6d4, #3b82f6, #a855f7, #ef4444)' }}
+                          className="w-full accent-purple-400 cursor-pointer"
                         />
-                      </div>
+                      )}
 
-                      {/* Temperature */}
-                      <div className="space-y-1">
-                        <div className="flex justify-between items-center text-[10px] font-bold text-[var(--soft)]">
-                          <span>Теплота (Температура):</span>
-                          <span>{selectedElem.temp}%</span>
-                        </div>
+                      {activeFilterTool === 'temp' && (
                         <input
                           type="range"
-                          min="-100"
-                          max="100"
-                          value={selectedElem.temp}
+                          min="-50"
+                          max="50"
+                          value={selectedElem.temp || 0}
                           onChange={(e) => {
                             const val = parseInt(e.target.value);
                             updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, temp: val } : item));
                           }}
-                          className="w-full h-1 bg-zinc-200 dark:bg-zinc-850 rounded appearance-none cursor-pointer accent-[var(--lavDeep)]"
-                          style={{ background: 'linear-gradient(to right, #3b82f6, #eff6ff, #f59e0b)' }}
+                          className="w-full accent-purple-400 cursor-pointer"
                         />
-                      </div>
+                      )}
 
-                      {/* Saturation */}
-                      <div className="space-y-1">
-                        <div className="flex justify-between items-center text-[10px] font-bold text-[var(--soft)]">
-                          <span>Насыщенность:</span>
-                          <span>{selectedElem.saturate}%</span>
-                        </div>
+                      {activeFilterTool === 'saturate' && (
                         <input
                           type="range"
                           min="0"
@@ -2472,17 +3293,11 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                             const val = parseInt(e.target.value);
                             updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, saturate: val } : item));
                           }}
-                          className="w-full h-1 bg-zinc-200 dark:bg-zinc-850 rounded appearance-none cursor-pointer accent-[var(--lavDeep)]"
-                          style={{ background: 'linear-gradient(to right, #a1a1aa, #c084fc, #8b5cf6)' }}
+                          className="w-full accent-purple-400 cursor-pointer"
                         />
-                      </div>
+                      )}
 
-                      {/* Opacity */}
-                      <div className="space-y-1">
-                        <div className="flex justify-between items-center text-[10px] font-bold text-[var(--soft)]">
-                          <span>Прозрачность:</span>
-                          <span>{selectedElem.opacity}%</span>
-                        </div>
+                      {activeFilterTool === 'opacity' && (
                         <input
                           type="range"
                           min="10"
@@ -2492,30 +3307,248 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                             const val = parseInt(e.target.value);
                             updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, opacity: val } : item));
                           }}
-                          className="w-full h-1 bg-zinc-200 dark:bg-zinc-850 rounded appearance-none cursor-pointer accent-[var(--lavDeep)]"
-                          style={{ background: 'linear-gradient(to right, rgba(139, 92, 246, 0.1), rgba(139, 92, 246, 1))' }}
+                          className="w-full accent-purple-400 cursor-pointer"
                         />
-                      </div>
-
+                      )}
                     </div>
-
-                  </div>
-                ) : (
-                  <div className="py-12 text-center text-xs text-[var(--faint)] space-y-3">
-                    <Info className="w-5 h-5 mx-auto text-[var(--faint)]" />
-                    <p>Ни один элемент не выбран.</p>
-                    <p className="text-[10px]">Нажмите на любую арку или декор на сцене для настройки их размеров и цветокоррекции.</p>
-                  </div>
-                )}
-
+                  )}
+                </div>
               </div>
             )}
-
           </div>
+
+          {/* BOTTOM PANELS IN LEFT COLUMN: TAB BAR + DIMENSIONS/CONTROLS PANEL */}
+          {activeWorkspaceTab !== 'floorplan' && (
+            <div className="shrink-0 relative z-30 space-y-1.5 pt-0.5">
+              {/* SLIDE-UP DRAWER WHEN A TAB IS EXPANDED */}
+              <AnimatePresence>
+                {mobileDrawerTab && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 20, scale: 0.98 }}
+                    transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                    className="absolute bottom-full left-0 right-0 mb-1 z-50 max-h-[50vh] sm:max-h-[380px] flex flex-col bg-white/90 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl backdrop-blur-2xl overflow-hidden"
+                  >
+                    {/* Drawer Header */}
+                    <div className="flex items-center justify-between px-3.5 py-2 border-b border-zinc-200/60 dark:border-zinc-800/60 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-md shrink-0">
+                      <div className="flex items-center gap-2 text-xs font-bold text-[var(--ink)]">
+                        {mobileDrawerTab === 'library' && <BookOpen className="w-4 h-4 text-[#5B3E88] dark:text-purple-400" />}
+                        {mobileDrawerTab === 'layers' && <Layers className="w-4 h-4 text-[#5B3E88] dark:text-purple-400" />}
+                        {mobileDrawerTab === 'tools' && <Sliders className="w-4 h-4 text-[#5B3E88] dark:text-purple-400" />}
+                        <span>
+                          {mobileDrawerTab === 'library' && 'Библиотека декора'}
+                          {mobileDrawerTab === 'layers' && `Элементы на сцене (${activeScene.elements.length})`}
+                          {mobileDrawerTab === 'tools' && 'Инструменты редактирования'}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => setMobileDrawerTab(null)}
+                        className="p-1 rounded-full hover:bg-zinc-200/80 dark:hover:bg-zinc-800/80 text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors cursor-pointer"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Drawer Body Content */}
+                    <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-3 min-w-0">
+                      {renderSidebarTabContent(mobileDrawerTab)}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* PANEL 1: 3-TAB BUTTONS BAR */}
+              <div className="p-1 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md rounded-full border border-zinc-200/80 dark:border-zinc-800/80 grid grid-cols-3 gap-1 shadow-xs text-xs">
+                <button
+                  onClick={() => {
+                    setMobileDrawerTab(prev => prev === 'library' ? null : 'library');
+                    setActiveSidebarTab('library');
+                  }}
+                  className={`py-1.5 px-2 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    mobileDrawerTab === 'library'
+                      ? 'bg-[#EAE4F8] text-[#5B3E88] dark:bg-purple-950 dark:text-purple-200 shadow-xs border border-[#D4C5ED]/50'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                  }`}
+                >
+                  <BookOpen className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Библиотека</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setMobileDrawerTab(prev => prev === 'layers' ? null : 'layers');
+                    setActiveSidebarTab('layers');
+                  }}
+                  className={`py-1.5 px-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    mobileDrawerTab === 'layers'
+                      ? 'bg-[#EAE4F8] text-[#5B3E88] dark:bg-purple-950 dark:text-purple-200 shadow-xs border border-[#D4C5ED]/50'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Элементы</span>
+                  <span className="px-1.5 py-0.5 rounded-full bg-[#5B3E88] text-white text-[9px] font-extrabold leading-none shrink-0">
+                    {activeScene.elements.length}
+                  </span>
+                </button>
+                <button
+                  onClick={() => {
+                    setMobileDrawerTab(prev => prev === 'tools' ? null : 'tools');
+                    setActiveSidebarTab('tools');
+                  }}
+                  className={`py-1.5 px-2 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    mobileDrawerTab === 'tools'
+                      ? 'bg-[#EAE4F8] text-[#5B3E88] dark:bg-purple-950 dark:text-purple-200 shadow-xs border border-[#D4C5ED]/50'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                  }`}
+                >
+                  <Sliders className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Инструменты</span>
+                </button>
+              </div>
+
+              {/* PANEL 2: FIELD DIMENSIONS & TOGGLES (Ш 650 x В 440 | Фон | Сетка | Человек) */}
+              <div className="flex items-center justify-between gap-1.5 text-xs overflow-x-auto no-scrollbar py-0.5">
+                {/* Dimensions Inputs */}
+                <div className="flex items-center gap-1 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md px-2.5 py-1 rounded-full border border-zinc-200/80 dark:border-zinc-800/80 shadow-xs shrink-0">
+                  <div className="flex items-center gap-0.5">
+                    <span className="font-extrabold text-[#5B3E88] dark:text-purple-400 text-xs">Ш</span>
+                    <input
+                      type="number"
+                      value={canvasWidthInput}
+                      onChange={(e) => {
+                        setCanvasWidthInput(e.target.value);
+                        const parsed = parseFloat(e.target.value);
+                        if (!isNaN(parsed) && parsed > 0) {
+                          setCanvasWidthMm(fromDisplayValue(parsed));
+                        }
+                      }}
+                      className="w-10 text-center font-bold text-xs bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md py-0.5 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#5B3E88]"
+                    />
+                  </div>
+                  <span className="text-zinc-400 font-bold text-xs">×</span>
+                  <div className="flex items-center gap-0.5">
+                    <span className="font-extrabold text-[#5B3E88] dark:text-purple-400 text-xs">В</span>
+                    <input
+                      type="number"
+                      value={canvasHeightInput}
+                      onChange={(e) => {
+                        setCanvasHeightInput(e.target.value);
+                        const parsed = parseFloat(e.target.value);
+                        if (!isNaN(parsed) && parsed > 0) {
+                          setCanvasHeightMm(fromDisplayValue(parsed));
+                        }
+                      }}
+                      className="w-10 text-center font-bold text-xs bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md py-0.5 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#5B3E88]"
+                    />
+                  </div>
+                </div>
+
+                {/* Right Action Toggles: Backdrop, Grid, Human */}
+                <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-2.5 py-1.5 rounded-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md hover:bg-purple-50 dark:hover:bg-purple-950/50 text-zinc-700 dark:text-zinc-200 font-bold text-xs flex items-center gap-1 border border-zinc-200/80 dark:border-zinc-800/80 shadow-xs cursor-pointer transition-colors"
+                    title="Загрузить изображение фона"
+                  >
+                    <Upload className="w-3.5 h-3.5 text-[#5B3E88] dark:text-purple-400 shrink-0" />
+                    <span>Фон</span>
+                  </button>
+
+                  <button
+                    onClick={() => setGridVisible(!gridVisible)}
+                    className={`px-2.5 py-1.5 rounded-full font-bold text-xs flex items-center gap-1.5 border shadow-xs transition-all cursor-pointer ${
+                      gridVisible
+                        ? 'bg-[#EAE4F8] text-[#5B3E88] border-[#D4C5ED] dark:bg-purple-950 dark:text-purple-200'
+                        : 'bg-white/90 dark:bg-zinc-900/90 text-zinc-600 border-zinc-200/80 dark:border-zinc-800/80'
+                    }`}
+                    title="Показать / скрыть сетку"
+                  >
+                    <Grid className="w-3.5 h-3.5 shrink-0" />
+                    <div className={`w-7 h-4 rounded-full relative p-0.5 transition-colors duration-200 flex items-center ${
+                      gridVisible ? 'bg-[#5B3E88]' : 'bg-zinc-300 dark:bg-zinc-700'
+                    }`}>
+                      <div className={`w-3 h-3 rounded-full bg-white shadow-xs transition-transform duration-200 ${
+                        gridVisible ? 'translate-x-3' : 'translate-x-0'
+                      }`} />
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => setHumanVisible(!humanVisible)}
+                    className={`px-2.5 py-1.5 rounded-full font-bold text-xs flex items-center gap-1.5 border shadow-xs transition-all cursor-pointer ${
+                      humanVisible
+                        ? 'bg-[#EAE4F8] text-[#5B3E88] border-[#D4C5ED] dark:bg-purple-950 dark:text-purple-200'
+                        : 'bg-white/90 dark:bg-zinc-900/90 text-zinc-600 border-zinc-200/80 dark:border-zinc-800/80'
+                    }`}
+                    title="Показать / скрыть силуэт человека"
+                  >
+                    <User className="w-3.5 h-3.5 shrink-0" />
+                    <div className={`w-7 h-4 rounded-full relative p-0.5 transition-colors duration-200 flex items-center ${
+                      humanVisible ? 'bg-[#5B3E88]' : 'bg-zinc-300 dark:bg-zinc-700'
+                    }`}>
+                      <div className={`w-3 h-3 rounded-full bg-white shadow-xs transition-transform duration-200 ${
+                        humanVisible ? 'translate-x-3' : 'translate-x-0'
+                      }`} />
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
 
         </div>
 
-      </div>
+        {/* RIGHT COLUMN: CONTROL SIDE PANEL (30% WIDTH) - DESKTOP ONLY */}
+        <div className="hidden lg:flex lg:col-span-4 flex-col bg-white/70 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-xs backdrop-blur-md h-full min-h-0 min-w-0">
+          
+          {/* TAB BAR SELECTORS IN A CLEAN ROUNDED CONTAINER */}
+          <div className="p-1.5 bg-zinc-100/90 dark:bg-zinc-900/60 rounded-full m-3 mb-0 grid grid-cols-3 gap-1 border border-zinc-200/60 dark:border-zinc-800/60 shrink-0">
+            <button
+              onClick={() => setActiveSidebarTab('library')}
+              className={`py-2 px-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                activeSidebarTab === 'library'
+                  ? 'bg-[#EAE4F8] text-[#5B3E88] dark:bg-purple-950 dark:text-purple-200 shadow-xs border border-[#D4C5ED]/50'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+              }`}
+            >
+              <BookOpen className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">Библиотека</span>
+            </button>
+            <button
+              onClick={() => setActiveSidebarTab('layers')}
+              className={`py-2 px-1 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                activeSidebarTab === 'layers'
+                  ? 'bg-[#EAE4F8] text-[#5B3E88] dark:bg-purple-950 dark:text-purple-200 shadow-xs border border-[#D4C5ED]/50'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">Элементы</span>
+              <span className="px-1.5 py-0.5 rounded-full bg-[#5B3E88] text-white text-[9px] font-extrabold leading-none shrink-0">
+                {activeScene.elements.length}
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveSidebarTab('tools')}
+              className={`py-2 px-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                activeSidebarTab === 'tools'
+                  ? 'bg-[#EAE4F8] text-[#5B3E88] dark:bg-purple-950 dark:text-purple-200 shadow-xs border border-[#D4C5ED]/50'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+              }`}
+            >
+              <Sliders className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">Инструменты</span>
+            </button>
+          </div>
+
+          {/* TAB SCROLLABLE CONTENT BODY */}
+          <div className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden p-3.5 space-y-3 min-w-0">
+            {renderSidebarTabContent(activeSidebarTab)}
+          </div>
+
+        </div>
 
       {/* DETAILED PRINT SPECIFICATION ONLY */}
       <div className="hidden print:block bg-white text-zinc-900 p-8 space-y-8 min-h-screen">
@@ -2589,6 +3622,8 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
           </table>
         </div>
       </div>
+
+
 
       {/* ✨ ИИ ВИЗУАЛИЗАЦИЯ MODAL */}
       <AnimatePresence>

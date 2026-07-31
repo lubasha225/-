@@ -28,6 +28,7 @@ export default function ProfileTab({ showToast }: ProfileTabProps) {
         const base64String = reader.result as string;
         setLogoUrl(base64String);
         localStorage.setItem('fleur_studio_logo', base64String);
+        window.dispatchEvent(new Event('storage'));
         showToast('Логотип загружен', 'Логотип бренда успешно обновлен.', 'success');
       };
       reader.readAsDataURL(file);
@@ -37,6 +38,7 @@ export default function ProfileTab({ showToast }: ProfileTabProps) {
   const handleRemoveLogo = () => {
     setLogoUrl(null);
     localStorage.removeItem('fleur_studio_logo');
+    window.dispatchEvent(new Event('storage'));
     showToast('Логотип удален', 'Установлен стандартный логотип.', 'info');
   };
 

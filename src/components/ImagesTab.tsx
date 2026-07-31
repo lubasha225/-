@@ -268,17 +268,17 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
               <button
                 key={cat.key}
                 onClick={() => setSelectedCategory(cat.key)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all flex items-center gap-2 cursor-pointer ${
+                className={`rounded-full text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
                   isActive
-                    ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 border-zinc-900 dark:border-zinc-100'
-                    : 'bg-white/30 dark:bg-zinc-800/30 border-zinc-200/50 dark:border-zinc-800/40 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 hover:border-zinc-300 dark:hover:border-zinc-700'
+                    ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 border border-zinc-900 dark:border-zinc-100 px-3.5 py-1.5 font-semibold shadow-sm'
+                    : 'bg-transparent border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white px-2 py-1'
                 }`}
               >
                 <span>{cat.label}</span>
                 <span className={`inline-flex items-center justify-center rounded-full text-[10px] font-bold min-w-[18px] h-[18px] px-1.5 transition-all ${
                   isActive
                     ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white'
-                    : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
+                    : 'bg-[var(--lavenderSoft)] text-[var(--lavDeep)] dark:bg-purple-950/60 dark:text-[var(--lavenderAccent)]'
                 }`}>
                   {count}
                 </span>

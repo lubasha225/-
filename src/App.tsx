@@ -31,7 +31,10 @@ import {
   Copy,
   LayoutGrid,
   List,
-  MapPin
+  MapPin,
+  Settings,
+  Menu,
+  X
 } from 'lucide-react';
 
 import { Project, WarehouseItem, Task, DocumentItem, ImageItem, ProjectStatus, EstimateItem } from './types';
@@ -98,6 +101,21 @@ export default function App() {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(2);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isMobileProfileMenuOpen, setIsMobileProfileMenuOpen] = useState(false);
+
+  // Brand Logo state (sync with Brand Profile)
+  const [brandLogoUrl, setBrandLogoUrl] = useState<string | null>(() => {
+    return localStorage.getItem('fleur_studio_logo') || null;
+  });
+
+  useEffect(() => {
+    const checkLogo = () => {
+      setBrandLogoUrl(localStorage.getItem('fleur_studio_logo') || null);
+    };
+    window.addEventListener('storage', checkLogo);
+    checkLogo();
+    return () => window.removeEventListener('storage', checkLogo);
+  }, [activeTab]);
 
   // Notification lists
   const [notifications, setNotifications] = useState([
@@ -474,7 +492,7 @@ export default function App() {
         <nav className={`flex flex-col gap-0.5 w-full ${!isLeftSidebarExpanded ? 'items-center' : ''}`}>
           {[
             { key: 'projects', label: 'Мои проекты', icon: <FolderKanban className="w-[18px] h-[18px] shrink-0" /> },
-            { key: 'moodboard', label: 'Конструктор арок', icon: <Layout className="w-[18px] h-[18px] shrink-0" /> },
+            { key: 'moodboard', label: 'Редактор', icon: <Layout className="w-[18px] h-[18px] shrink-0" /> },
             { key: 'warehouse', label: 'Мой склад', icon: <Warehouse className="w-[18px] h-[18px] shrink-0" /> },
             { key: 'images', label: 'Мои изображения', icon: <ImageIcon className="w-[18px] h-[18px] shrink-0" /> },
             { key: 'documents', label: 'Мои документы', icon: <FileText className="w-[18px] h-[18px] shrink-0" /> },
@@ -587,71 +605,173 @@ export default function App() {
         {/* CENTRAL WORKSPACE */}
         <main className={`flex-1 relative flex flex-col min-w-0 ${
           activeTab === 'moodboard'
-            ? 'p-4 sm:p-6 space-y-4 h-full overflow-hidden'
+            ? 'p-1 sm:p-1.5 space-y-1 h-full overflow-hidden'
             : 'p-5 sm:p-8 space-y-6 h-full overflow-y-auto overflow-x-hidden'
         }`}>
           
-          {/* Responsive Mobile Header Tab Bar switcher */}
-          <div className="lg:hidden flex justify-between items-center bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 p-4 rounded-2xl shrink-0">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-[var(--lavDeep)] flex items-center justify-center text-white font-bold text-sm shrink-0">Ф</div>
-              <span className="font-bold text-[var(--ink)] text-sm">Флёр Деко</span>
+          {/* Responsive Mobile / Tablet Header Tab Bar switcher */}
+          <div className="lg:hidden flex items-center justify-between bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-zinc-200/60 dark:border-zinc-800/60 px-2.5 py-1 sm:p-2.5 rounded-xl sm:rounded-2xl shrink-0 gap-2 shadow-xs relative z-30">
+            {/* Left Group: Logo + Hamburger Navigation Switcher Menu */}
+            <div className="flex items-center gap-2 sm:gap-2.5">
+              {/* 1. Brand Logo (Image from profile if uploaded, or fallback 'Ф') */}
+              <div
+                onClick={() => setActiveTab('profile')}
+                title="Профиль бренда (Флёр Деко)"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-[var(--lavDeep)] to-[var(--lavenderAccent)] flex items-center justify-center text-white font-bold text-base shrink-0 shadow-xs cursor-pointer hover:scale-105 transition-transform overflow-hidden"
+              >
+                {brandLogoUrl ? (
+                  <img src={brandLogoUrl} alt="Логотип бренда" className="w-full h-full object-cover" />
+                ) : (
+                  'Ф'
+                )}
+              </div>
+
+              {/* 2. Hamburger Navigation Switcher Menu (Round button without text label) */}
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setIsMobileNavOpen(!isMobileNavOpen);
+                    setIsMobileProfileMenuOpen(false);
+                  }}
+                  aria-label="Навигация"
+                  title="Открыть меню навигации"
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-zinc-100/80 dark:bg-zinc-800/80 hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60 border border-zinc-200/50 dark:border-zinc-700/50 text-[var(--ink)] transition-all cursor-pointer shadow-2xs"
+                >
+                  {isMobileNavOpen ? (
+                    <X className="w-5 h-5 text-[var(--lavDeep)] dark:text-purple-300 shrink-0" />
+                  ) : (
+                    <Menu className="w-5 h-5 text-[var(--ink)] shrink-0" />
+                  )}
+                </button>
+
+                <AnimatePresence>
+                  {isMobileNavOpen && (
+                    <>
+                      <div className="fixed inset-0 z-[90]" onClick={() => setIsMobileNavOpen(false)} />
+                      <motion.div
+                        initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute left-0 top-full mt-2 w-56 bg-white/75 dark:bg-zinc-900/80 backdrop-blur-2xl border border-white/60 dark:border-zinc-700/60 rounded-2xl shadow-2xl p-1.5 z-[100] overflow-hidden"
+                      >
+                        {[
+                          { value: 'projects', label: 'Мои проекты', icon: <FolderKanban className="w-4 h-4" /> },
+                          { value: 'moodboard', label: 'Редактор', icon: <Layout className="w-4 h-4" /> },
+                          { value: 'warehouse', label: 'Мой склад', icon: <Warehouse className="w-4 h-4" /> },
+                          { value: 'images', label: 'Мои изображения', icon: <ImageIcon className="w-4 h-4" /> },
+                          { value: 'documents', label: 'Мои документы', icon: <FileText className="w-4 h-4" /> },
+                          { value: 'profile', label: 'Профиль бренда', icon: <User className="w-4 h-4" /> }
+                        ].map((item) => {
+                          const isSelected = activeTab === item.value;
+                          return (
+                            <button
+                              key={item.value}
+                              onClick={() => {
+                                setActiveTab(item.value as any);
+                                setIsMobileNavOpen(false);
+                              }}
+                              className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-between cursor-pointer ${
+                                isSelected
+                                  ? 'bg-[var(--lavDeep)] text-white shadow-xs'
+                                  : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/80'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2.5">
+                                {item.icon}
+                                <span>{item.label}</span>
+                              </div>
+                              {isSelected && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
+                            </button>
+                          );
+                        })}
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
 
-            <div className="relative z-30">
+            {/* Right Corner: Tariff Badge + User Initials */}
+            <div className="flex items-center gap-2 sm:gap-2.5 relative">
+              {/* Tariff Tag */}
+              <span className="text-[10px] sm:text-xs font-bold bg-[var(--lavDeep)] text-white px-2.5 py-1 rounded-full tracking-wider shadow-2xs">
+                PRO
+              </span>
+
+              {/* User Initials Avatar in Circle (Opens profile & settings menu) */}
               <button
-                onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}
-                className="flex items-center gap-2 text-xs bg-zinc-100/80 dark:bg-zinc-800/80 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50 border border-zinc-200/50 dark:border-zinc-800/40 rounded-full py-2 px-3.5 focus:outline-none text-[var(--ink)] font-semibold transition-all cursor-pointer"
+                onClick={() => {
+                  setIsMobileProfileMenuOpen(!isMobileProfileMenuOpen);
+                  setIsMobileNavOpen(false);
+                }}
+                title="Пользователь (Денис С.)"
+                className="w-9 h-9 rounded-full bg-[var(--lavenderSoft)] text-[var(--lavDeep)] flex items-center justify-center font-bold text-xs shrink-0 cursor-pointer hover:scale-105 transition-transform shadow-2xs border border-[var(--lavenderAccent)]/20"
               >
-                <span>
-                  {activeTab === 'projects' && 'Мои проекты'}
-                  {activeTab === 'moodboard' && 'Конструктор арок'}
-                  {activeTab === 'warehouse' && 'Мой склад'}
-                  {activeTab === 'images' && 'Мои изображения'}
-                  {activeTab === 'documents' && 'Мои документы'}
-                  {activeTab === 'profile' && 'Профиль бренда'}
-                </span>
-                <ChevronDown className={`w-3.5 h-3.5 text-zinc-500 transition-transform duration-200 ${isMobileNavOpen ? 'rotate-180' : ''}`} />
+                ДС
               </button>
 
+              {/* Mobile Profile & Settings Dropdown */}
               <AnimatePresence>
-                {isMobileNavOpen && (
+                {isMobileProfileMenuOpen && (
                   <>
-                    <div className="fixed inset-0 z-40" onClick={() => setIsMobileNavOpen(false)} />
+                    <div className="fixed inset-0 z-[90]" onClick={() => setIsMobileProfileMenuOpen(false)} />
                     <motion.div
                       initial={{ opacity: 0, y: 8, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 8, scale: 0.95 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute right-0 mt-1.5 w-52 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-zinc-200/50 dark:border-zinc-800/50 rounded-3xl shadow-xl p-1.5 z-50 overflow-hidden"
+                      className="absolute right-0 top-full mt-2 w-64 bg-white/75 dark:bg-zinc-900/80 backdrop-blur-2xl border border-white/60 dark:border-zinc-700/60 rounded-2xl shadow-2xl p-4 z-[100] text-xs space-y-3"
                     >
-                      {[
-                        { value: 'projects', label: 'Мои проекты' },
-                        { value: 'moodboard', label: 'Конструктор арок' },
-                        { value: 'warehouse', label: 'Мой склад' },
-                        { value: 'images', label: 'Мои изображения' },
-                        { value: 'documents', label: 'Мои документы' },
-                        { value: 'profile', label: 'Профиль бренда' }
-                      ].map((item) => {
-                        const isSelected = activeTab === item.value;
-                        return (
-                          <button
-                            key={item.value}
-                            onClick={() => {
-                              setActiveTab(item.value as any);
-                              setIsMobileNavOpen(false);
-                            }}
-                            className={`w-full text-left px-3.5 py-2.5 rounded-full text-xs font-semibold transition-all flex items-center justify-between cursor-pointer ${
-                              isSelected
-                                ? 'bg-[var(--lavDeep)] text-white'
-                                : 'text-zinc-700 dark:text-zinc-300 hover:bg-[var(--lavenderSoft)] hover:text-[var(--lavDeep)] dark:hover:bg-[var(--lavDeep)]/20 dark:hover:text-zinc-100'
-                            }`}
-                          >
-                            <span>{item.label}</span>
-                            {isSelected && <Check className="w-3.5 h-3.5" />}
-                          </button>
-                        );
-                      })}
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-[var(--lavenderSoft)] text-[var(--lavDeep)] flex items-center justify-center font-bold text-sm shrink-0">
+                          ДС
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-[var(--ink)] text-sm truncate">Денис С.</p>
+                          <p className="text-[11px] text-[var(--faint)] truncate">denis@example.com</p>
+                        </div>
+                      </div>
+
+                      <div className="h-px bg-zinc-200/60 dark:bg-zinc-800/60" />
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-[var(--soft)] font-medium">Текущий тариф</span>
+                        <span className="font-extrabold bg-[var(--lavDeep)] text-white px-2 py-0.5 rounded-full text-[10px]">PRO</span>
+                      </div>
+
+                      <div className="space-y-2 pt-1">
+                        <div>
+                          <div className="flex justify-between text-[11px] text-[var(--soft)] mb-1">
+                            <span>ИИ-визуализация</span>
+                            <span className="font-bold text-[var(--ink)]">2 / 10</span>
+                          </div>
+                          <div className="w-full h-1 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                            <div className="h-full bg-[var(--lavenderAccent)]" style={{ width: '20%' }} />
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-[11px] text-[var(--soft)] mb-1">
+                            <span>Обрезка фона</span>
+                            <span className="font-bold text-[var(--ink)]">12 / 20</span>
+                          </div>
+                          <div className="w-full h-1 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                            <div className="h-full bg-[var(--sage)]" style={{ width: '60%' }} />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="h-px bg-zinc-200/60 dark:bg-zinc-800/60" />
+
+                      <button
+                        onClick={() => {
+                          setIsMobileProfileMenuOpen(false);
+                          showToast('До встречи!', 'Вы вышли из личного кабинета.', 'info');
+                        }}
+                        className="w-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 py-2 rounded-xl font-semibold text-[var(--ink)] transition-colors cursor-pointer text-center"
+                      >
+                        Выйти
+                      </button>
                     </motion.div>
                   </>
                 )}
@@ -659,183 +779,174 @@ export default function App() {
             </div>
           </div>
 
-          {/* MAIN PANEL TOP NAVBAR Header */}
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 shrink-0">
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-semibold tracking-tight text-[var(--ink)]">
-                  {activeTab === 'projects' && 'Мои проекты'}
-                  {activeTab === 'moodboard' && 'Конструктор 2D арок'}
-                  {activeTab === 'warehouse' && 'Складской инвентарь'}
-                  {activeTab === 'images' && 'Галерея'}
-                  {activeTab === 'documents' && 'Мои документы'}
-                  {activeTab === 'profile' && 'Профиль бренда'}
-                </h1>
-                
-                {/* Notification Badge Bell */}
-                <div className="relative">
-                  <button
-                    onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-                    className="w-9 h-9 rounded-full glass-panel flex items-center justify-center text-[var(--soft)] hover:text-[var(--ink)] transition-all shadow-sm cursor-pointer"
-                  >
-                    <Bell className="w-4 h-4" />
-                    {unreadNotificationsCount > 0 && (
-                      <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 rounded-full bg-[var(--warn)] shadow-sm" />
-                    )}
-                  </button>
+          {/* MAIN PANEL TOP NAVBAR Header (Shown on tabs except Moodboard Editor) */}
+          {activeTab !== 'moodboard' && (
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 shrink-0">
+              <div>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-3xl font-semibold tracking-tight text-[var(--ink)]">
+                    {activeTab === 'projects' && 'Мои проекты'}
+                    {activeTab === 'warehouse' && 'Складской инвентарь'}
+                    {activeTab === 'images' && 'Галерея'}
+                    {activeTab === 'documents' && 'Мои документы'}
+                    {activeTab === 'profile' && 'Профиль бренда'}
+                  </h1>
+                  
+                  {/* Notification Badge Bell */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                      className="w-9 h-9 rounded-full glass-panel flex items-center justify-center text-[var(--soft)] hover:text-[var(--ink)] transition-all shadow-sm cursor-pointer"
+                    >
+                      <Bell className="w-4 h-4" />
+                      {unreadNotificationsCount > 0 && (
+                        <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 rounded-full bg-[var(--warn)] shadow-sm" />
+                      )}
+                    </button>
 
-                  {/* Notifications overlay menu */}
-                  <AnimatePresence>
-                    {isNotificationsOpen && (
-                      <>
-                        <div className="fixed inset-0 z-30" onClick={() => setIsNotificationsOpen(false)} />
-                        <motion.div
-                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                          className="absolute right-0 mt-2 w-80 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-[var(--glass-edge)] rounded-2xl shadow-2xl p-4 z-40 space-y-3"
-                        >
-                          <div className="flex justify-between items-center pb-2 border-b border-[var(--glass-edge)]">
-                            <span className="text-xs font-semibold text-[var(--ink)]">События клиентов</span>
-                            {unreadNotificationsCount > 0 && (
-                              <button
-                                onClick={handleMarkAllNotificationsAsRead}
-                                className="text-xs text-[var(--lavenderAccent)] font-medium hover:underline"
-                              >
-                                Прочитать все
-                              </button>
-                            )}
-                          </div>
+                    {/* Notifications overlay menu */}
+                    <AnimatePresence>
+                      {isNotificationsOpen && (
+                        <>
+                          <div className="fixed inset-0 z-30" onClick={() => setIsNotificationsOpen(false)} />
+                          <motion.div
+                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                            className="absolute right-0 mt-2 w-80 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-[var(--glass-edge)] rounded-2xl shadow-2xl p-4 z-40 space-y-3"
+                          >
+                            <div className="flex justify-between items-center pb-2 border-b border-[var(--glass-edge)]">
+                              <span className="text-xs font-semibold text-[var(--ink)]">События клиентов</span>
+                              {unreadNotificationsCount > 0 && (
+                                <button
+                                  onClick={handleMarkAllNotificationsAsRead}
+                                  className="text-xs text-[var(--lavenderAccent)] font-medium hover:underline"
+                                >
+                                  Прочитать все
+                                </button>
+                              )}
+                            </div>
 
-                          <div className="space-y-2.5 max-h-60 overflow-y-auto">
-                            {notifications.map(notif => (
-                              <div
-                                key={notif.id}
-                                onClick={() => handleNotificationClick(notif.projectId, notif.id)}
-                                className={`p-2.5 rounded-xl text-left transition-colors cursor-pointer text-xs ${
-                                  notif.read ? 'bg-zinc-50/55 dark:bg-zinc-950/20' : 'bg-[var(--lavenderSoft)] border-l-2 border-[var(--lavDeep)]'
-                                }`}
-                              >
-                                <div className="flex justify-between font-medium text-[var(--ink)]">
-                                  <span>{notif.title}</span>
-                                  <span className="text-xs text-[var(--faint)] font-normal">{notif.time}</span>
+                            <div className="space-y-2.5 max-h-60 overflow-y-auto">
+                              {notifications.map(notif => (
+                                <div
+                                  key={notif.id}
+                                  onClick={() => handleNotificationClick(notif.projectId, notif.id)}
+                                  className={`p-2.5 rounded-xl text-left transition-colors cursor-pointer text-xs ${
+                                    notif.read ? 'bg-zinc-50/55 dark:bg-zinc-950/20' : 'bg-[var(--lavenderSoft)] border-l-2 border-[var(--lavDeep)]'
+                                  }`}
+                                >
+                                  <div className="flex justify-between font-medium text-[var(--ink)]">
+                                    <span>{notif.title}</span>
+                                    <span className="text-xs text-[var(--faint)] font-normal">{notif.time}</span>
+                                  </div>
+                                  <p className="text-[var(--soft)] text-xs mt-0.5 leading-snug">{notif.msg}</p>
                                 </div>
-                                <p className="text-[var(--soft)] text-xs mt-0.5 leading-snug">{notif.msg}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </motion.div>
-                      </>
-                    )}
-                  </AnimatePresence>
+                              ))}
+                            </div>
+                          </motion.div>
+                        </>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Theme Toggle Button */}
+                  <button
+                    onClick={toggleTheme}
+                    className="w-9 h-9 rounded-full glass-panel flex items-center justify-center text-[var(--soft)] hover:text-[var(--lavenderAccent)] transition-colors shadow-sm cursor-pointer"
+                  >
+                    {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                  </button>
                 </div>
+                
+                <p className="text-[var(--soft)] mt-1 text-[13px] leading-relaxed">
+                  {activeTab === 'projects' && 'Создавайте макеты, открывайте сметный калькулятор и возвращайтесь к ним в любой момент.'}
+                  {activeTab === 'warehouse' && 'Каталог вашего декора, флористики и оборудования. Учет остатков и задействованных в проектах позиций.'}
+                  {activeTab === 'images' && 'Ваша галерея загруженных референсов, сгенерированных ИИ фонов, элементов флористики и декора для оформления.'}
+                  {activeTab === 'documents' && 'Реквизиты, на кого оформляется договор, шаблоны договора и акта. Только автоматическая генерация и печать, оплата не принимается в сервисе.'}
+                  {activeTab === 'profile' && 'Настройки реквизитов и контактов студии для формирования коммерческих предложений.'}
+                </p>
+              </div>
 
-                {/* Theme Toggle Button */}
+              {activeTab === 'projects' && (
                 <button
-                  onClick={toggleTheme}
-                  className="w-9 h-9 rounded-full glass-panel flex items-center justify-center text-[var(--soft)] hover:text-[var(--lavenderAccent)] transition-colors shadow-sm cursor-pointer"
+                  onClick={() => setIsNewProjOpen(true)}
+                  className="shrink-0 bg-[var(--lavDeep)] hover:bg-[var(--lavDeep)]/90 text-white rounded-full px-6 py-3 text-[13px] font-medium shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                  <Plus className="w-4 h-4" /> Новый проект
                 </button>
-              </div>
-              
-              <p className="text-[var(--soft)] mt-1 text-[13px] leading-relaxed">
-                {activeTab === 'projects' && 'Создавайте макеты, открывайте сметный калькулятор и возвращайтесь к ним в любой момент.'}
-                {activeTab === 'moodboard' && 'Интерактивный конструктор свадебных арок и фотозон для быстрой визуализации клиенту.'}
-                {activeTab === 'warehouse' && 'Каталог вашего декора, флористики и оборудования. Учет остатков и задействованных в проектах позиций.'}
-                {activeTab === 'images' && 'Ваша галерея загруженных референсов, сгенерированных ИИ фонов, элементов флористики и декора для оформления.'}
-                {activeTab === 'documents' && 'Реквизиты, на кого оформляется договор, шаблоны договора и акта. Только автоматическая генерация и печать, оплата не принимается в сервисе.'}
-                {activeTab === 'profile' && 'Настройки реквизитов и контактов студии для формирования коммерческих предложений.'}
-              </p>
+              )}
+
+              {activeTab === 'warehouse' && (
+                <button
+                  onClick={() => setIsWarehouseAdding(true)}
+                  className="shrink-0 bg-[var(--lavDeep)] hover:bg-[var(--lavDeep)]/90 text-white rounded-full px-6 py-3 text-[13px] font-medium shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" /> Новый товар
+                </button>
+              )}
+
+              {activeTab === 'images' && imagesHeaderActions && (
+                <div className="shrink-0 flex items-center gap-2">
+                  {imagesHeaderActions}
+                </div>
+              )}
             </div>
-
-            {activeTab === 'projects' && (
-              <button
-                onClick={() => setIsNewProjOpen(true)}
-                className="shrink-0 bg-[var(--lavDeep)] hover:bg-[var(--lavDeep)]/90 text-white rounded-full px-6 py-3 text-[13px] font-medium shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <Plus className="w-4 h-4" /> Новый проект
-              </button>
-            )}
-
-            {activeTab === 'warehouse' && (
-              <button
-                onClick={() => setIsWarehouseAdding(true)}
-                className="shrink-0 bg-[var(--lavDeep)] hover:bg-[var(--lavDeep)]/90 text-white rounded-full px-6 py-3 text-[13px] font-medium shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <Plus className="w-4 h-4" /> Новый товар
-              </button>
-            )}
-
-            {activeTab === 'moodboard' && moodboardHeaderActions && (
-              <div className="shrink-0 flex items-center gap-2">
-                {moodboardHeaderActions}
-              </div>
-            )}
-
-            {activeTab === 'images' && imagesHeaderActions && (
-              <div className="shrink-0 flex items-center gap-2">
-                {imagesHeaderActions}
-              </div>
-            )}
-          </div>
+          )}
 
           {/* QUICK METRICS DASHBOARD ROW */}
           {activeTab === 'projects' && (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-4 gap-2 sm:gap-3 md:gap-4">
               
               {/* Metric 1: В РАБОТЕ */}
-              <div className="glass-panel p-4 pb-5 rounded-2xl flex flex-col justify-between min-h-[140px] hover:shadow-md transition-all duration-300">
-                <div className="flex items-center gap-2 text-[var(--faint)] mb-2">
-                  <Zap className="w-3.5 h-3.5 text-amber-500" />
-                  <span className="text-xs font-semibold tracking-wider uppercase">В работе</span>
+              <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md p-2.5 sm:p-3.5 md:p-4 rounded-2xl flex flex-col justify-between border border-[var(--glass-edge)]/60 shadow-2xs hover:bg-white/60 dark:hover:bg-zinc-900/40 transition-all duration-300">
+                <div className="flex items-center gap-1.5 text-[var(--faint)] mb-1">
+                  <Zap className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-500 shrink-0" />
+                  <span className="text-[10px] sm:text-xs font-semibold tracking-wider uppercase truncate">В работе</span>
                 </div>
                 <div className="my-auto">
-                  <span className="text-4xl font-semibold text-[var(--ink)] tracking-tight leading-none">{metrics.inProgress}</span>
+                  <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold text-[var(--ink)] tracking-tight leading-none">{metrics.inProgress}</span>
                 </div>
-                <span className="text-xs text-[var(--soft)] mt-2">+1 новый на этой неделе</span>
+                <span className="text-[10px] sm:text-xs text-[var(--soft)] mt-1 truncate">+1 на неделе</span>
               </div>
               
               {/* Metric 2: СУММА В РАБОТЕ */}
-              <div className="glass-panel p-4 pb-5 rounded-2xl flex flex-col justify-between min-h-[140px] hover:shadow-md transition-all duration-300">
-                <div className="flex items-center gap-2 text-[var(--faint)] mb-2">
-                  <FolderKanban className="w-3.5 h-3.5 text-indigo-400" />
-                  <span className="text-xs font-semibold tracking-wider uppercase">Сумма в работе</span>
+              <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md p-2.5 sm:p-3.5 md:p-4 rounded-2xl flex flex-col justify-between border border-[var(--glass-edge)]/60 shadow-2xs hover:bg-white/60 dark:hover:bg-zinc-900/40 transition-all duration-300">
+                <div className="flex items-center gap-1.5 text-[var(--faint)] mb-1">
+                  <FolderKanban className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-indigo-400 shrink-0" />
+                  <span className="text-[10px] sm:text-xs font-semibold tracking-wider uppercase truncate">Сумма</span>
                 </div>
-                <div className="my-auto flex items-baseline gap-1">
-                  <span className="text-4xl font-semibold text-[var(--ink)] tracking-tight leading-none">{(inProgressSum / 1000).toFixed(0)}</span>
-                  <span className="text-sm font-medium text-[var(--soft)]">тыс. ₽</span>
+                <div className="my-auto flex items-baseline gap-1 flex-wrap">
+                  <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold text-[var(--ink)] tracking-tight leading-none">{(inProgressSum / 1000).toFixed(0)}</span>
+                  <span className="text-[10px] sm:text-xs font-medium text-[var(--soft)]">тыс. ₽</span>
                 </div>
-                <span className="text-xs text-[var(--soft)] mt-2">по {metrics.inProgress} активным сметам</span>
+                <span className="text-[10px] sm:text-xs text-[var(--soft)] mt-1 truncate">активные сметы</span>
               </div>
               
               {/* Metric 3: ВЫПОЛНЕНО */}
-              <div className="glass-panel p-4 pb-5 rounded-2xl flex flex-col justify-between min-h-[140px] hover:shadow-md transition-all duration-300">
-                <div className="flex items-center gap-2 text-[var(--faint)] mb-2">
-                  <Check className="w-3.5 h-3.5 text-emerald-500" />
-                  <span className="text-xs font-semibold tracking-wider uppercase">Выполнено</span>
+              <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md p-2.5 sm:p-3.5 md:p-4 rounded-2xl flex flex-col justify-between border border-[var(--glass-edge)]/60 shadow-2xs hover:bg-white/60 dark:hover:bg-zinc-900/40 transition-all duration-300">
+                <div className="flex items-center gap-1.5 text-[var(--faint)] mb-1">
+                  <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-500 shrink-0" />
+                  <span className="text-[10px] sm:text-xs font-semibold tracking-wider uppercase truncate">Выполнено</span>
                 </div>
-                <div className="my-auto flex items-baseline gap-1">
-                  <span className="text-4xl font-semibold text-[var(--ink)] tracking-tight leading-none">{(approvedSum / 1000).toFixed(0)}</span>
-                  <span className="text-sm font-medium text-[var(--soft)]">тыс. ₽</span>
+                <div className="my-auto flex items-baseline gap-1 flex-wrap">
+                  <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold text-[var(--ink)] tracking-tight leading-none">{(approvedSum / 1000).toFixed(0)}</span>
+                  <span className="text-[10px] sm:text-xs font-medium text-[var(--soft)]">тыс. ₽</span>
                 </div>
-                <span className="text-xs text-[var(--soft)] mt-2">закрытых проектов: {projects.filter(p => p.status === 'approved').length}</span>
+                <span className="text-[10px] sm:text-xs text-[var(--soft)] mt-1 truncate">закрыто: {projects.filter(p => p.status === 'approved').length}</span>
               </div>
               
               {/* Metric 4: ПРИБЫЛЬ */}
-              <div
-                className="p-4 pb-5 rounded-2xl flex flex-col justify-between min-h-[140px] transition-shadow border border-[var(--glass-edge)] shadow-sm"
-                style={{ backgroundColor: 'var(--metricGreenBg)' }}
-              >
-                <div className="flex items-center gap-2 mb-2" style={{ color: 'var(--metricGreenText)' }}>
-                  <TrendingUp className="w-3.5 h-3.5" />
-                  <span className="text-xs font-semibold tracking-wider uppercase opacity-90">Прибыль</span>
+              <div className="bg-emerald-500/10 dark:bg-emerald-950/20 backdrop-blur-md p-2.5 sm:p-3.5 md:p-4 rounded-2xl flex flex-col justify-between border border-emerald-500/20 shadow-2xs hover:bg-emerald-500/15 transition-all duration-300">
+                <div className="flex items-center gap-1.5 mb-1 text-emerald-700 dark:text-emerald-300">
+                  <TrendingUp className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
+                  <span className="text-[10px] sm:text-xs font-semibold tracking-wider uppercase truncate">Прибыль</span>
                 </div>
-                <div className="my-auto flex items-baseline gap-1">
-                  <span className="text-4xl font-semibold tracking-tight leading-none" style={{ color: 'var(--metricGreenText)' }}>{(profitSum / 1000).toFixed(0)}</span>
-                  <span className="text-sm font-medium" style={{ color: 'var(--metricGreenText)', opacity: 0.9 }}>тыс. ₽</span>
+                <div className="my-auto flex items-baseline gap-1 flex-wrap text-emerald-800 dark:text-emerald-200">
+                  <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold tracking-tight leading-none">{(profitSum / 1000).toFixed(0)}</span>
+                  <span className="text-[10px] sm:text-xs font-medium opacity-90">тыс. ₽</span>
                 </div>
-                <span className="text-xs mt-2 opacity-85 font-medium" style={{ color: 'var(--metricGreenText)' }}>чистая, по закрытым</span>
+                <span className="text-[10px] sm:text-xs text-emerald-700/80 dark:text-emerald-300/80 mt-1 truncate">чистая прибыль</span>
               </div>
 
             </div>
@@ -861,12 +972,12 @@ export default function App() {
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       <div className="flex flex-wrap gap-2">
                         {[
-                          { key: 'all', label: 'Все проекты', count: counts.all, dotColor: 'bg-amber-400' },
-                          { key: 'progress', label: 'В работе', count: counts.progress, dotColor: 'bg-emerald-500' },
-                          { key: 'waiting', label: 'Ждут ответа', count: counts.waiting, dotColor: 'bg-sky-500' },
-                          { key: 'approved', label: 'Согласованы', count: counts.approved, dotColor: 'bg-violet-500' },
-                          { key: 'archive', label: 'Архив', count: counts.archive, dotColor: 'bg-zinc-400' },
-                          { key: 'trash', label: 'Корзина', count: counts.trash, dotColor: 'bg-rose-500' }
+                          { key: 'all', label: 'Все проекты', count: counts.all, dotColor: 'bg-amber-400', badgeStyle: 'bg-amber-500/15 text-amber-700 dark:text-amber-300' },
+                          { key: 'progress', label: 'В работе', count: counts.progress, dotColor: 'bg-emerald-500', badgeStyle: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' },
+                          { key: 'waiting', label: 'Ждут ответа', count: counts.waiting, dotColor: 'bg-sky-500', badgeStyle: 'bg-sky-500/15 text-sky-700 dark:text-sky-300' },
+                          { key: 'approved', label: 'Согласованы', count: counts.approved, dotColor: 'bg-violet-500', badgeStyle: 'bg-violet-500/15 text-violet-700 dark:text-violet-300' },
+                          { key: 'archive', label: 'Архив', count: counts.archive, dotColor: 'bg-zinc-400', badgeStyle: 'bg-zinc-500/15 text-zinc-600 dark:text-zinc-300' },
+                          { key: 'trash', label: 'Корзина', count: counts.trash, dotColor: 'bg-rose-500', badgeStyle: 'bg-rose-500/15 text-rose-700 dark:text-rose-300' }
                         ].map((pill) => {
                           const isActive = projectFilter === pill.key;
 
@@ -874,21 +985,19 @@ export default function App() {
                             <button
                               key={pill.key}
                               onClick={() => setProjectFilter(pill.key as any)}
-                              className={`px-3.5 py-1.5 rounded-full text-xs font-medium tracking-wide border transition-all duration-300 cursor-pointer flex items-center gap-2 ${
+                              className={`rounded-full text-xs font-medium tracking-wide transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
                                 isActive
-                                  ? 'bg-[var(--lavDeep)] text-white border-[var(--lavDeep)] shadow-md shadow-[var(--lavDeep)]/20 scale-[1.02]'
-                                  : 'bg-white/40 dark:bg-zinc-900/40 border-zinc-200/60 dark:border-zinc-800/60 text-[var(--ink)] hover:border-[var(--lavenderAccent)] hover:bg-white/70'
+                                  ? 'bg-[var(--lavDeep)] text-white border border-[var(--lavDeep)] shadow-md shadow-[var(--lavDeep)]/20 px-3.5 py-1.5 scale-[1.02]'
+                                  : 'bg-transparent text-[var(--soft)] hover:text-[var(--ink)] border border-transparent px-2 py-1'
                               }`}
                             >
                               <span className={`w-2 h-2 rounded-full ${pill.dotColor} shrink-0 ring-2 ring-white/20`} />
                               <span>{pill.label}</span>
-                              <span
-                                className={`inline-flex items-center justify-center rounded-full text-[11px] font-bold min-w-[20px] h-5 px-1.5 transition-all duration-300 ${
-                                  isActive
-                                    ? 'bg-white/20 text-white backdrop-blur-sm'
-                                    : 'bg-zinc-200/60 dark:bg-zinc-800/60 text-[var(--soft)]'
-                                }`}
-                              >
+                              <span className={`inline-flex items-center justify-center rounded-full text-[11px] font-bold min-w-[20px] h-5 px-1.5 transition-all duration-200 ${
+                                isActive
+                                  ? 'bg-white/20 text-white backdrop-blur-sm'
+                                  : pill.badgeStyle
+                              }`}>
                                 {pill.count}
                               </span>
                             </button>
@@ -960,7 +1069,7 @@ export default function App() {
                       <p className="text-xs text-[var(--faint)] max-w-xs">Попробуйте изменить запрос поиска или выбрать другой фильтр.</p>
                     </div>
                   ) : projectViewMode === 'grid' ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 w-full animate-fadeIn">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 sm:gap-4 md:gap-5 w-full animate-fadeIn">
                       {processedProjects.map((p) => {
                         const totalSum = p.estimate.reduce((sum, item) => sum + (item.quantity * item.price), 0);
                         const displayPrice = totalSum > 0 ? totalSum : p.budget;
@@ -968,10 +1077,10 @@ export default function App() {
                         return (
                           <div
                             key={p.id}
-                            className="glass-panel glass-interactive rounded-3xl overflow-hidden flex flex-col justify-between h-full"
+                            className="glass-panel glass-interactive rounded-2xl sm:rounded-3xl overflow-hidden flex flex-col justify-between h-full transition-all duration-300 hover:shadow-lg"
                           >
-                            {/* Top Image Visual Cover box - Horizontal 4:3 Ratio */}
-                            <div className="aspect-[4/3] w-full relative shrink-0 overflow-hidden bg-zinc-100 dark:bg-zinc-800/40">
+                            {/* Top Image Visual Cover box - Aspect ratio adapted for mobile/tablet */}
+                            <div className="aspect-[16/10] sm:aspect-[4/3] w-full relative shrink-0 overflow-hidden bg-zinc-100 dark:bg-zinc-800/40">
                               <img
                                 src={getProjectImage(p.id)}
                                 alt={p.name}
@@ -979,14 +1088,14 @@ export default function App() {
                                 referrerPolicy="no-referrer"
                               />
                               {/* Overlay Status Badge */}
-                              <span className={`absolute top-3 left-3 text-xs font-bold px-3 py-1 rounded-full backdrop-blur-md border flex items-center gap-1.5 shadow-md ${
-                                p.status === 'progress' ? 'bg-black/60 text-emerald-300 border-emerald-500/40' :
-                                p.status === 'waiting' ? 'bg-black/60 text-sky-300 border-sky-500/40' :
-                                p.status === 'approved' ? 'bg-black/60 text-violet-300 border-violet-500/40' :
-                                p.status === 'trash' ? 'bg-black/60 text-rose-300 border-rose-500/40' :
-                                'bg-black/60 text-zinc-200 border-zinc-500/40'
+                              <span className={`absolute top-2.5 left-2.5 text-[10px] sm:text-xs font-bold px-2.5 py-0.5 sm:py-1 rounded-full backdrop-blur-md border flex items-center gap-1 shadow-xs ${
+                                p.status === 'progress' ? 'bg-emerald-950/40 text-emerald-300 border-emerald-500/30' :
+                                p.status === 'waiting' ? 'bg-sky-950/40 text-sky-300 border-sky-500/30' :
+                                p.status === 'approved' ? 'bg-violet-950/40 text-violet-300 border-violet-500/30' :
+                                p.status === 'trash' ? 'bg-rose-950/40 text-rose-300 border-rose-500/30' :
+                                'bg-zinc-900/40 text-zinc-300 border-zinc-500/30'
                               }`}>
-                                <span className={`w-2 h-2 rounded-full shrink-0 ${
+                                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
                                   p.status === 'progress' ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)]' :
                                   p.status === 'waiting' ? 'bg-sky-400 shadow-[0_0_6px_rgba(56,189,248,0.9)]' :
                                   p.status === 'approved' ? 'bg-violet-400 shadow-[0_0_6px_rgba(167,139,250,0.9)]' :
@@ -1002,86 +1111,92 @@ export default function App() {
                               
                               <button
                                 onClick={() => handleTrashClick(p)}
-                                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/70 dark:bg-black/30 backdrop-blur flex items-center justify-center text-[var(--ink)] hover:text-red-500 transition-colors z-10"
+                                className="absolute top-2.5 right-2.5 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/70 dark:bg-black/30 backdrop-blur flex items-center justify-center text-[var(--ink)] hover:text-red-500 transition-colors z-10"
                                 title={p.status === 'trash' ? "Удалить навсегда" : "Переместить в корзину"}
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
 
                               {/* Date Tag */}
-                              <span className="absolute bottom-3 right-3 text-xs bg-zinc-900/60 backdrop-blur-md text-white font-medium px-3 py-1 rounded-full border border-white/10 flex items-center gap-1.5">
+                              <span className="absolute bottom-2.5 right-2.5 text-[10px] sm:text-xs bg-zinc-900/60 backdrop-blur-md text-white font-medium px-2.5 py-0.5 sm:py-1 rounded-full border border-white/10 flex items-center gap-1">
                                 <Calendar className="w-3 h-3 text-white/80 shrink-0" />
                                 <span>{new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'short' })}</span>
                               </span>
                             </div>
 
                             {/* Info area */}
-                            <div className="p-5 space-y-4 flex-1 flex flex-col justify-between">
-                              <div className="space-y-1.5">
+                            <div className="p-3.5 sm:p-4 md:p-5 space-y-2.5 sm:space-y-3.5 flex-1 flex flex-col justify-between">
+                              <div className="space-y-1">
                                 {p.client && (
-                                  <div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] uppercase tracking-wider truncate">
-                                    <User className="w-3.5 h-3.5 shrink-0 opacity-75" />
+                                  <div className="flex items-center gap-1 text-[10px] sm:text-xs font-bold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] uppercase tracking-wider truncate">
+                                    <User className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0 opacity-75" />
                                     <span className="truncate">{p.client}</span>
                                   </div>
                                 )}
-                                <h3 className="font-bold text-[var(--ink)] text-base leading-snug truncate">{p.name}</h3>
-                                <div className="flex items-center gap-1.5 text-xs text-[var(--faint)] truncate">
-                                  <MapPin className="w-3.5 h-3.5 shrink-0 text-zinc-400" />
+                                <h3 className="font-bold text-[var(--ink)] text-sm sm:text-base leading-snug truncate">{p.name}</h3>
+                                <div className="flex items-center gap-1 text-[11px] sm:text-xs text-[var(--faint)] truncate">
+                                  <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0 text-zinc-400" />
                                   <span className="truncate">{p.venue}</span>
                                 </div>
                               </div>
 
                               {/* Custom Stepper with connecting line and dots */}
-                              <div className="stepper relative flex items-start justify-between py-2">
-                                {/* Horizontal track line */}
-                                <div className="absolute top-[13px] left-2 right-2 h-[2px] bg-zinc-200 dark:bg-zinc-800/60 z-0 rounded-full" />
-                                {/* Filled track line progress */}
-                                <div
-                                  className="absolute top-[13px] left-2 h-[2px] bg-[var(--sage)] z-0 rounded-full transition-all duration-500"
-                                  style={{ width: `${(p.currentStep / 4) * 96}%` }}
-                                />
-                                
-                                {stepsList.map((stepName, idx) => {
-                                  const isDone = idx < p.currentStep;
-                                  const isCurrent = idx === p.currentStep;
-                                  return (
-                                    <div key={idx} className="step flex flex-col items-center gap-1.5 relative z-10 flex-1">
-                                      <div
-                                        className={`w-[11px] h-[11px] rounded-full border-2 transition-all duration-300 ${
-                                          isDone
-                                            ? 'bg-[var(--sage)] border-[var(--sage)]'
-                                            : isCurrent
-                                            ? 'bg-[var(--lavenderAccent)] border-[var(--lavenderAccent)] shadow-[0_0_0_4px_rgba(192,142,244,0.2)]'
-                                            : 'bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700'
-                                        }`}
-                                      />
-                                      <span
-                                        className={`text-xs font-medium tracking-tight transition-colors duration-300 ${
-                                          isDone || isCurrent
-                                            ? 'text-[var(--ink)] font-medium'
-                                            : 'text-[var(--faint)]'
-                                        }`}
-                                      >
-                                        {stepName}
-                                      </span>
-                                    </div>
-                                  );
-                                })}
+                              <div className="stepper py-1 sm:py-1.5">
+                                <div className="relative flex items-center justify-between">
+                                  {/* Horizontal track line */}
+                                  <div className="absolute top-1/2 -translate-y-1/2 left-2 right-2 h-[2px] bg-zinc-200 dark:bg-zinc-800/60 z-0 rounded-full" />
+                                  {/* Filled track line progress */}
+                                  <div
+                                    className="absolute top-1/2 -translate-y-1/2 left-2 h-[2px] bg-[var(--sage)] z-0 rounded-full transition-all duration-500"
+                                    style={{ width: `${(p.currentStep / 4) * 96}%` }}
+                                  />
+                                  
+                                  {stepsList.map((stepName, idx) => {
+                                    const isDone = idx < p.currentStep;
+                                    const isCurrent = idx === p.currentStep;
+                                    return (
+                                      <div key={idx} className="step flex flex-col items-center relative z-10 flex-1">
+                                        <div
+                                          className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full border-2 transition-all duration-300 ${
+                                            isDone
+                                              ? 'bg-[var(--sage)] border-[var(--sage)]'
+                                              : isCurrent
+                                              ? 'bg-[var(--lavenderAccent)] border-[var(--lavenderAccent)] shadow-[0_0_0_3px_rgba(192,142,244,0.25)]'
+                                              : 'bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700'
+                                          }`}
+                                        />
+                                        <span
+                                          className={`hidden sm:block text-[10px] sm:text-xs font-medium tracking-tight mt-1 transition-colors duration-300 truncate ${
+                                            isDone || isCurrent
+                                              ? 'text-[var(--ink)] font-medium'
+                                              : 'text-[var(--faint)]'
+                                          }`}
+                                        >
+                                          {stepName}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                                {/* Compact Mobile Stage Label */}
+                                <div className="sm:hidden text-center text-[10px] font-semibold text-[var(--soft)] mt-1.5">
+                                  Этап {p.currentStep + 1}/4: <span className="text-[var(--ink)]">{stepsList[p.currentStep] || 'Завершено'}</span>
+                                </div>
                               </div>
 
                               {/* Footer stats metadata */}
-                              <div className="flex flex-wrap gap-1.5 pt-1">
-                                <span className="inline-flex items-center gap-1.5 text-xs text-[var(--soft)] bg-white/40 dark:bg-black/20 border border-[var(--glass-edge)] px-3 py-1 rounded-full">
-                                  <Calendar className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                                  <span>{new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                              <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-zinc-100 dark:border-zinc-800/40">
+                                <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs text-[var(--soft)]">
+                                  <Calendar className="w-3 h-3 text-zinc-400 shrink-0" />
+                                  <span>{new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                                 </span>
-                                <span className="inline-flex items-center gap-1.5 text-xs text-[var(--soft)] bg-white/40 dark:bg-black/20 border border-[var(--glass-edge)] px-3 py-1 rounded-full font-semibold">
-                                  Бюджет: {displayPrice.toLocaleString('ru')} ₽
+                                <span className="inline-flex items-center text-[10px] sm:text-xs text-[var(--lavDeep)] dark:text-purple-300 bg-[var(--lavenderSoft)]/80 dark:bg-purple-950/40 px-2 py-0.5 rounded-full font-bold">
+                                  {displayPrice.toLocaleString('ru')} ₽
                                 </span>
                               </div>
 
                               {/* Buttons */}
-                              <div className="flex gap-2 pt-1.5">
+                              <div className="flex gap-2 pt-1">
                                 {p.status === 'trash' ? (
                                   <>
                                     <button
@@ -1089,7 +1204,7 @@ export default function App() {
                                         setProjects(prev => prev.map(item => item.id === p.id ? { ...item, status: 'progress' as const } : item));
                                         showToast('Проект восстановлен', `Проект «${p.name}» возвращен в работу.`, 'success');
                                       }}
-                                      className="flex-1 bg-[var(--sage)] hover:opacity-90 text-white rounded-full py-2.5 text-[12.5px] font-medium transition-all cursor-pointer text-center"
+                                      className="flex-1 bg-[var(--sage)] hover:opacity-90 text-white rounded-xl sm:rounded-full py-2 sm:py-2.5 text-xs font-semibold transition-all cursor-pointer text-center"
                                     >
                                       Восстановить
                                     </button>
@@ -1098,7 +1213,7 @@ export default function App() {
                                         setProjects(prev => prev.filter(item => item.id !== p.id));
                                         showToast('Удалено навсегда', `Проект «${p.name}» удален окончательно.`, 'warn');
                                       }}
-                                      className="w-10 shrink-0 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 transition-all flex items-center justify-center cursor-pointer"
+                                      className="w-8 sm:w-10 shrink-0 rounded-xl sm:rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 transition-all flex items-center justify-center cursor-pointer"
                                       title="Удалить навсегда"
                                     >
                                       <Trash2 className="w-3.5 h-3.5" />
@@ -1111,7 +1226,7 @@ export default function App() {
                                         setSelectedProject(p);
                                         setActiveTab('projects');
                                       }}
-                                      className="flex-1 bg-[var(--lavDeep)] hover:opacity-90 text-white rounded-full py-2.5 text-[12.5px] font-medium transition-all cursor-pointer"
+                                      className="flex-1 bg-[var(--lavDeep)] hover:opacity-90 text-white rounded-xl sm:rounded-full py-2 sm:py-2.5 text-xs font-semibold transition-all cursor-pointer"
                                     >
                                       Открыть проект
                                     </button>
@@ -1120,7 +1235,7 @@ export default function App() {
                                         navigator.clipboard.writeText(`https://fleur-decor.ru/brief/${p.id}`);
                                         showToast('Бриф скопирован', 'Отправьте ссылку клиенту для прохождения опроса.', 'success');
                                       }}
-                                      className="w-10 shrink-0 rounded-full bg-white/30 hover:bg-white/50 dark:bg-white/5 border border-[var(--glass-edge)] text-[var(--ink)] transition-all flex items-center justify-center cursor-pointer"
+                                      className="w-8 sm:w-10 shrink-0 rounded-xl sm:rounded-full bg-white/30 hover:bg-white/50 dark:bg-white/5 border border-[var(--glass-edge)] text-[var(--ink)] transition-all flex items-center justify-center cursor-pointer"
                                       title="Копировать бриф"
                                     >
                                       <Copy className="w-3.5 h-3.5" />
@@ -1155,12 +1270,12 @@ export default function App() {
                                   referrerPolicy="no-referrer"
                                 />
                                 {/* Status Badge */}
-                                <span className={`absolute top-2.5 left-2.5 text-[10px] font-bold px-2.5 py-0.5 rounded-full backdrop-blur-md border flex items-center gap-1.5 shadow-md ${
-                                  p.status === 'progress' ? 'bg-black/60 text-emerald-300 border-emerald-500/40' :
-                                  p.status === 'waiting' ? 'bg-black/60 text-sky-300 border-sky-500/40' :
-                                  p.status === 'approved' ? 'bg-black/60 text-violet-300 border-violet-500/40' :
-                                  p.status === 'trash' ? 'bg-black/60 text-rose-300 border-rose-500/40' :
-                                  'bg-black/60 text-zinc-200 border-zinc-500/40'
+                                <span className={`absolute top-2.5 left-2.5 text-[10px] font-bold px-2.5 py-0.5 rounded-full backdrop-blur-lg border flex items-center gap-1.5 shadow-md ${
+                                  p.status === 'progress' ? 'bg-emerald-950/40 text-emerald-300 border-emerald-500/30' :
+                                  p.status === 'waiting' ? 'bg-sky-950/40 text-sky-300 border-sky-500/30' :
+                                  p.status === 'approved' ? 'bg-violet-950/40 text-violet-300 border-violet-500/30' :
+                                  p.status === 'trash' ? 'bg-rose-950/40 text-rose-300 border-rose-500/30' :
+                                  'bg-zinc-900/40 text-zinc-300 border-zinc-500/30'
                                 }`}>
                                   <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
                                     p.status === 'progress' ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)]' :
@@ -1309,12 +1424,12 @@ export default function App() {
                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                    referrerPolicy="no-referrer"
                                  />
-                                 <span className={`absolute top-1.5 left-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full backdrop-blur-md border flex items-center gap-1 shadow-md ${
-                                   p.status === 'progress' ? 'bg-black/60 text-emerald-300 border-emerald-500/40' :
-                                   p.status === 'waiting' ? 'bg-black/60 text-sky-300 border-sky-500/40' :
-                                   p.status === 'approved' ? 'bg-black/60 text-violet-300 border-violet-500/40' :
-                                   p.status === 'trash' ? 'bg-black/60 text-rose-300 border-rose-500/40' :
-                                   'bg-black/60 text-zinc-200 border-zinc-500/40'
+                                 <span className={`absolute top-1.5 left-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full backdrop-blur-lg border flex items-center gap-1 shadow-md ${
+                                   p.status === 'progress' ? 'bg-emerald-950/40 text-emerald-300 border-emerald-500/30' :
+                                   p.status === 'waiting' ? 'bg-sky-950/40 text-sky-300 border-sky-500/30' :
+                                   p.status === 'approved' ? 'bg-violet-950/40 text-violet-300 border-violet-500/30' :
+                                   p.status === 'trash' ? 'bg-rose-950/40 text-rose-300 border-rose-500/30' :
+                                   'bg-zinc-900/40 text-zinc-300 border-zinc-500/30'
                                  }`}>
                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
                                      p.status === 'progress' ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)]' :
@@ -1450,12 +1565,12 @@ export default function App() {
                                    referrerPolicy="no-referrer"
                                  />
                                  {/* Status Badge */}
-                                 <span className={`absolute top-3.5 left-3.5 text-[11px] font-bold px-2.5 py-1 rounded-full backdrop-blur-md border flex items-center gap-1.5 shadow-md ${
-                                   p.status === 'progress' ? 'bg-black/60 text-emerald-300 border-emerald-500/40' :
-                                   p.status === 'waiting' ? 'bg-black/60 text-sky-300 border-sky-500/40' :
-                                   p.status === 'approved' ? 'bg-black/60 text-violet-300 border-violet-500/40' :
-                                   p.status === 'trash' ? 'bg-black/60 text-rose-300 border-rose-500/40' :
-                                   'bg-black/60 text-zinc-200 border-zinc-500/40'
+                                 <span className={`absolute top-3.5 left-3.5 text-[11px] font-bold px-2.5 py-1 rounded-full backdrop-blur-lg border flex items-center gap-1.5 shadow-md ${
+                                   p.status === 'progress' ? 'bg-emerald-950/40 text-emerald-300 border-emerald-500/30' :
+                                   p.status === 'waiting' ? 'bg-sky-950/40 text-sky-300 border-sky-500/30' :
+                                   p.status === 'approved' ? 'bg-violet-950/40 text-violet-300 border-violet-500/30' :
+                                   p.status === 'trash' ? 'bg-rose-950/40 text-rose-300 border-rose-500/30' :
+                                   'bg-zinc-900/40 text-zinc-300 border-zinc-500/30'
                                  }`}>
                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
                                      p.status === 'progress' ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)]' :
