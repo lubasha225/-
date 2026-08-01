@@ -1,5 +1,5 @@
 {
-  "name": "Студия Декора Флёр",
+  "name": "Deko",
   "description": "Панель управления проектами, интерактивным складом, сметами и AI-визуализациями для декораторов и организаторов мероприятий.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

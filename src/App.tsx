@@ -418,6 +418,72 @@ export default function App() {
     return Math.round(approvedSum * 0.35);
   }, [approvedSum]);
 
+  const renderMobileNavButton = () => (
+    <div className="relative">
+      <button
+        onClick={() => {
+          setIsMobileNavOpen(!isMobileNavOpen);
+          setIsMobileProfileMenuOpen(false);
+        }}
+        aria-label="Навигация"
+        title="Открыть меню навигации"
+        className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md hover:bg-white dark:hover:bg-zinc-700 border border-white/80 dark:border-zinc-700/80 text-[var(--ink)] transition-all cursor-pointer shadow-md"
+      >
+        {isMobileNavOpen ? (
+          <X className="w-4 h-4 text-[var(--lavDeep)] dark:text-purple-300 shrink-0" />
+        ) : (
+          <Menu className="w-4 h-4 text-[var(--ink)] shrink-0" />
+        )}
+      </button>
+
+      <AnimatePresence>
+        {isMobileNavOpen && (
+          <>
+            <div className="fixed inset-0 z-[90]" onClick={() => setIsMobileNavOpen(false)} />
+            <motion.div
+              initial={{ opacity: 0, y: 8, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.95 }}
+              transition={{ duration: 0.15 }}
+              className="absolute right-0 top-full mt-2 w-56 bg-white/90 dark:bg-zinc-900/95 backdrop-blur-2xl border border-white/80 dark:border-zinc-700/60 rounded-2xl shadow-2xl p-1.5 z-[100] overflow-hidden"
+            >
+              {[
+                { value: 'projects', label: 'Мои проекты', icon: <FolderKanban className="w-4 h-4" /> },
+                { value: 'moodboard', label: 'Редактор', icon: <Layout className="w-4 h-4" /> },
+                { value: 'warehouse', label: 'Мой склад', icon: <Warehouse className="w-4 h-4" /> },
+                { value: 'images', label: 'Мои изображения', icon: <ImageIcon className="w-4 h-4" /> },
+                { value: 'documents', label: 'Мои документы', icon: <FileText className="w-4 h-4" /> },
+                { value: 'profile', label: 'Профиль бренда', icon: <User className="w-4 h-4" /> }
+              ].map((item) => {
+                const isSelected = activeTab === item.value;
+                return (
+                  <button
+                    key={item.value}
+                    onClick={() => {
+                      setActiveTab(item.value as any);
+                      setIsMobileNavOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-between cursor-pointer ${
+                      isSelected
+                        ? 'bg-[var(--lavDeep)] text-white shadow-xs'
+                        : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/80'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      {item.icon}
+                      <span>{item.label}</span>
+                    </div>
+                    {isSelected && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
+                  </button>
+                );
+              })}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+
   return (
     <div className="flex relative w-screen h-screen overflow-hidden bg-transparent font-sans transition-colors duration-300">
       
@@ -444,8 +510,8 @@ export default function App() {
 
       {/* 1. BRAND SIDEBAR (LEFT) */}
       <aside
-        className={`shrink-0 p-5 hidden lg:flex flex-col gap-5 sticky top-0 h-screen border-r backdrop-blur-xl z-20 transition-all duration-300 ${
-          isLeftSidebarExpanded ? 'w-64' : 'w-20 items-center px-3'
+        className={`shrink-0 hidden lg:flex flex-col gap-4 sticky top-0 h-screen border-r backdrop-blur-xl z-20 transition-all duration-300 ${
+          isLeftSidebarExpanded ? 'w-56 p-4' : 'w-14 items-center py-4 px-1.5'
         }`}
         style={{ backgroundColor: 'var(--sidebar-bg)', borderColor: 'var(--sidebar-border)' }}
       >
@@ -453,37 +519,37 @@ export default function App() {
         {isLeftSidebarExpanded ? (
           <div className="flex items-center justify-between w-full min-h-[36px]">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--lavDeep)] to-[var(--lavenderAccent)] flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-sm">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[var(--lavDeep)] to-[var(--lavenderAccent)] flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-sm">
                 Ф
               </div>
               <div className="min-w-0">
-                <span className="font-semibold text-[#1B0E20] dark:text-zinc-100 text-[15px] tracking-tight leading-tight block">Флёр Деко</span>
-                <span className="text-xs text-[var(--faint)] leading-none mt-0.5 block">премиум</span>
+                <span className="font-semibold text-[#1B0E20] dark:text-zinc-100 text-[14px] tracking-tight leading-tight block">Флёр Деко</span>
+                <span className="text-[10px] text-[var(--faint)] leading-none mt-0.5 block">премиум</span>
               </div>
             </div>
             <button
               onClick={() => setIsLeftSidebarExpanded(false)}
               title="Свернуть боковое меню"
-              className="w-8 h-8 rounded-full hover:bg-white/20 dark:hover:bg-black/20 flex items-center justify-center text-[var(--soft)] hover:text-[var(--ink)] cursor-pointer"
+              className="w-7 h-7 rounded-full hover:bg-white/20 dark:hover:bg-black/20 flex items-center justify-center text-[var(--soft)] hover:text-[var(--ink)] cursor-pointer"
             >
-              <ChevronsLeft className="w-4 h-4 text-[var(--soft)]" />
+              <ChevronsLeft className="w-3.5 h-3.5 text-[var(--soft)]" />
             </button>
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-3.5 w-full">
+          <div className="flex flex-col items-center gap-3 w-full">
             <div
               onClick={() => setIsLeftSidebarExpanded(true)}
               title="Флёр Деко · премиальный декор"
-              className="w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--lavDeep)] to-[var(--lavenderAccent)] flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-sm cursor-pointer hover:scale-105 transition-transform"
+              className="w-8 h-8 rounded-xl bg-gradient-to-br from-[var(--lavDeep)] to-[var(--lavenderAccent)] flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-sm cursor-pointer hover:scale-105 transition-transform"
             >
               Ф
             </div>
             <button
               onClick={() => setIsLeftSidebarExpanded(true)}
               title="Развернуть боковое меню"
-              className="w-8 h-8 rounded-full hover:bg-white/20 dark:hover:bg-black/20 flex items-center justify-center text-[var(--soft)] hover:text-[var(--lavDeep)] transition-all cursor-pointer"
+              className="w-7 h-7 rounded-full hover:bg-white/20 dark:hover:bg-black/20 flex items-center justify-center text-[var(--soft)] hover:text-[var(--lavDeep)] transition-all cursor-pointer"
             >
-              <ChevronsRight className="w-4 h-4" />
+              <ChevronsRight className="w-3.5 h-3.5" />
             </button>
           </div>
         )}
@@ -491,19 +557,19 @@ export default function App() {
         {/* Sidebar Navigation */}
         <nav className={`flex flex-col gap-0.5 w-full ${!isLeftSidebarExpanded ? 'items-center' : ''}`}>
           {[
-            { key: 'projects', label: 'Мои проекты', icon: <FolderKanban className="w-[18px] h-[18px] shrink-0" /> },
-            { key: 'moodboard', label: 'Редактор', icon: <Layout className="w-[18px] h-[18px] shrink-0" /> },
-            { key: 'warehouse', label: 'Мой склад', icon: <Warehouse className="w-[18px] h-[18px] shrink-0" /> },
-            { key: 'images', label: 'Мои изображения', icon: <ImageIcon className="w-[18px] h-[18px] shrink-0" /> },
-            { key: 'documents', label: 'Мои документы', icon: <FileText className="w-[18px] h-[18px] shrink-0" /> },
-            { key: 'profile', label: 'Профиль бренда', icon: <User className="w-[18px] h-[18px] shrink-0" /> }
+            { key: 'projects', label: 'Мои проекты', icon: <FolderKanban className="w-[17px] h-[17px] shrink-0" /> },
+            { key: 'moodboard', label: 'Редактор', icon: <Layout className="w-[17px] h-[17px] shrink-0" /> },
+            { key: 'warehouse', label: 'Мой склад', icon: <Warehouse className="w-[17px] h-[17px] shrink-0" /> },
+            { key: 'images', label: 'Мои изображения', icon: <ImageIcon className="w-[17px] h-[17px] shrink-0" /> },
+            { key: 'documents', label: 'Мои документы', icon: <FileText className="w-[17px] h-[17px] shrink-0" /> },
+            { key: 'profile', label: 'Профиль бренда', icon: <User className="w-[17px] h-[17px] shrink-0" /> }
           ].map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as any)}
               title={!isLeftSidebarExpanded ? tab.label : undefined}
-              className={`flex items-center gap-3 rounded-xl text-[15px] transition-all cursor-pointer ${
-                isLeftSidebarExpanded ? 'px-3.5 py-2 w-full justify-start' : 'p-2 w-9 h-9 justify-center'
+              className={`flex items-center gap-2.5 rounded-xl text-[14px] transition-all cursor-pointer ${
+                isLeftSidebarExpanded ? 'px-3 py-1.5 w-full justify-start' : 'p-1.5 w-8 h-8 justify-center'
               } ${
                 activeTab === tab.key
                   ? 'bg-[var(--glass-strong)] border border-[var(--glass-edge)] text-[#1B0D22] dark:text-zinc-100 font-normal shadow-sm'
@@ -527,40 +593,40 @@ export default function App() {
               className="flex items-center justify-between cursor-pointer"
             >
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-full bg-[var(--lavenderSoft)] text-[var(--lavDeep)] flex items-center justify-center font-medium text-xs shrink-0">ДС</div>
+                <div className="w-8 h-8 rounded-full bg-[var(--lavenderSoft)] text-[var(--lavDeep)] flex items-center justify-center font-medium text-xs shrink-0">ДС</div>
                 <div className="min-w-0">
-                  <p className="font-medium text-[var(--ink)] text-sm truncate">Денис С.</p>
-                  <p className="text-xs text-[var(--faint)] truncate">denis@example.com</p>
+                  <p className="font-medium text-[var(--ink)] text-xs truncate">Денис С.</p>
+                  <p className="text-[10px] text-[var(--faint)] truncate">denis@example.com</p>
                 </div>
               </div>
               <ChevronDown className={`w-3.5 h-3.5 text-[var(--faint)] transition-transform duration-300 ${isProfileExpanded ? 'rotate-180' : ''}`} />
             </div>
 
             {/* Always Visible Tariff Block */}
-            <div className="flex items-center justify-between text-xs border-t border-[var(--glass-edge)] pt-2.5 mt-2.5" style={{ borderTopColor: 'var(--line)' }}>
+            <div className="flex items-center justify-between text-xs border-t border-[var(--glass-edge)] pt-2 mt-2" style={{ borderTopColor: 'var(--line)' }}>
               <div className="flex items-center gap-1.5">
-                <span className="text-[var(--soft)]">Тариф</span>
-                <span className="text-xs font-semibold bg-[var(--lavDeep)] text-white px-2 py-0.5 rounded-full tracking-wide">PRO</span>
+                <span className="text-[var(--soft)] text-[11px]">Тариф</span>
+                <span className="text-[10px] font-semibold bg-[var(--lavDeep)] text-white px-1.5 py-0.5 rounded-full tracking-wide">PRO</span>
               </div>
               <button
                 onClick={() => showToast('Смена плана', 'Раздел управления тарифом появится совсем скоро.', 'info')}
-                className="text-xs text-[var(--lavenderAccent)] hover:underline font-medium"
+                className="text-[11px] text-[var(--lavenderAccent)] hover:underline font-medium"
               >
                 сменить
               </button>
             </div>
 
             {/* Collapsible Body Details */}
-            <div className={`overflow-hidden transition-all duration-300 ease-in-out flex flex-col gap-3.5 mt-0 ${isProfileExpanded ? 'max-h-[350px] opacity-100 mt-2.5' : 'max-h-0 opacity-0'}`}>
-              <div className="h-px bg-[var(--glass-edge)] mt-2.5" style={{ background: 'var(--line)' }} />
+            <div className={`overflow-hidden transition-all duration-300 ease-in-out flex flex-col gap-3 mt-0 ${isProfileExpanded ? 'max-h-[350px] opacity-100 mt-2' : 'max-h-0 opacity-0'}`}>
+              <div className="h-px bg-[var(--glass-edge)] mt-2" style={{ background: 'var(--line)' }} />
 
               <div className="flex items-center justify-between">
-                <span className="text-xs text-[var(--soft)]">Лимиты на месяц</span>
+                <span className="text-[11px] text-[var(--soft)]">Лимиты на месяц</span>
               </div>
 
-              <div className="space-y-2.5">
+              <div className="space-y-2">
                 <div>
-                  <div className="flex justify-between text-xs text-[var(--soft)] mb-1">
+                  <div className="flex justify-between text-[11px] text-[var(--soft)] mb-1">
                     <span>ИИ-визуализация</span>
                     <span className="font-medium text-[var(--ink)]">2 / 10</span>
                   </div>
@@ -569,7 +635,7 @@ export default function App() {
                   </div>
                 </div>
                 <div>
-                  <div className="flex justify-between text-xs text-[var(--soft)] mb-1">
+                  <div className="flex justify-between text-[11px] text-[var(--soft)] mb-1">
                     <span>Обрезка фона</span>
                     <span className="font-medium text-[var(--ink)]">12 / 20</span>
                   </div>
@@ -578,11 +644,11 @@ export default function App() {
                   </div>
                 </div>
               </div>
-              <div className="text-xs text-[var(--faint)] -mt-1.5">обновится 3 авг</div>
+              <div className="text-[10px] text-[var(--faint)] -mt-1">обновится 3 авг</div>
 
               <button
                 onClick={() => showToast('До встречи!', 'Вы вышли из личного кабинета.', 'info')}
-                className="w-full glass-interactive bg-white/30 hover:bg-white/50 rounded-xl py-2 text-xs font-medium text-[var(--ink)] flex items-center justify-center gap-2"
+                className="w-full glass-interactive bg-white/30 hover:bg-white/50 rounded-xl py-1.5 text-xs font-medium text-[var(--ink)] flex items-center justify-center gap-2"
               >
                 Выйти
               </button>
@@ -592,7 +658,7 @@ export default function App() {
           <button
             onClick={() => setIsLeftSidebarExpanded(true)}
             title="Денис С. (Тариф PRO)"
-            className="w-10 h-10 rounded-full bg-[var(--lavenderSoft)] text-[var(--lavDeep)] flex items-center justify-center font-semibold text-xs shrink-0 hover:scale-105 transition-transform cursor-pointer"
+            className="w-8 h-8 rounded-full bg-[var(--lavenderSoft)] text-[var(--lavDeep)] flex items-center justify-center font-semibold text-xs shrink-0 hover:scale-105 transition-transform cursor-pointer"
           >
             ДС
           </button>
@@ -605,179 +671,16 @@ export default function App() {
         {/* CENTRAL WORKSPACE */}
         <main className={`flex-1 relative flex flex-col min-w-0 ${
           activeTab === 'moodboard'
-            ? 'p-1 sm:p-1.5 space-y-1 h-full overflow-hidden'
+            ? 'p-2 sm:p-3 space-y-1.5 h-full overflow-hidden'
             : 'p-5 sm:p-8 space-y-6 h-full overflow-y-auto overflow-x-hidden'
         }`}>
           
-          {/* Responsive Mobile / Tablet Header Tab Bar switcher */}
-          <div className="lg:hidden flex items-center justify-between bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-zinc-200/60 dark:border-zinc-800/60 px-2.5 py-1 sm:p-2.5 rounded-xl sm:rounded-2xl shrink-0 gap-2 shadow-xs relative z-30">
-            {/* Left Group: Logo + Hamburger Navigation Switcher Menu */}
-            <div className="flex items-center gap-2 sm:gap-2.5">
-              {/* 1. Brand Logo (Image from profile if uploaded, or fallback 'Ф') */}
-              <div
-                onClick={() => setActiveTab('profile')}
-                title="Профиль бренда (Флёр Деко)"
-                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-[var(--lavDeep)] to-[var(--lavenderAccent)] flex items-center justify-center text-white font-bold text-base shrink-0 shadow-xs cursor-pointer hover:scale-105 transition-transform overflow-hidden"
-              >
-                {brandLogoUrl ? (
-                  <img src={brandLogoUrl} alt="Логотип бренда" className="w-full h-full object-cover" />
-                ) : (
-                  'Ф'
-                )}
-              </div>
-
-              {/* 2. Hamburger Navigation Switcher Menu (Round button without text label) */}
-              <div className="relative">
-                <button
-                  onClick={() => {
-                    setIsMobileNavOpen(!isMobileNavOpen);
-                    setIsMobileProfileMenuOpen(false);
-                  }}
-                  aria-label="Навигация"
-                  title="Открыть меню навигации"
-                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-zinc-100/80 dark:bg-zinc-800/80 hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60 border border-zinc-200/50 dark:border-zinc-700/50 text-[var(--ink)] transition-all cursor-pointer shadow-2xs"
-                >
-                  {isMobileNavOpen ? (
-                    <X className="w-5 h-5 text-[var(--lavDeep)] dark:text-purple-300 shrink-0" />
-                  ) : (
-                    <Menu className="w-5 h-5 text-[var(--ink)] shrink-0" />
-                  )}
-                </button>
-
-                <AnimatePresence>
-                  {isMobileNavOpen && (
-                    <>
-                      <div className="fixed inset-0 z-[90]" onClick={() => setIsMobileNavOpen(false)} />
-                      <motion.div
-                        initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute left-0 top-full mt-2 w-56 bg-white/75 dark:bg-zinc-900/80 backdrop-blur-2xl border border-white/60 dark:border-zinc-700/60 rounded-2xl shadow-2xl p-1.5 z-[100] overflow-hidden"
-                      >
-                        {[
-                          { value: 'projects', label: 'Мои проекты', icon: <FolderKanban className="w-4 h-4" /> },
-                          { value: 'moodboard', label: 'Редактор', icon: <Layout className="w-4 h-4" /> },
-                          { value: 'warehouse', label: 'Мой склад', icon: <Warehouse className="w-4 h-4" /> },
-                          { value: 'images', label: 'Мои изображения', icon: <ImageIcon className="w-4 h-4" /> },
-                          { value: 'documents', label: 'Мои документы', icon: <FileText className="w-4 h-4" /> },
-                          { value: 'profile', label: 'Профиль бренда', icon: <User className="w-4 h-4" /> }
-                        ].map((item) => {
-                          const isSelected = activeTab === item.value;
-                          return (
-                            <button
-                              key={item.value}
-                              onClick={() => {
-                                setActiveTab(item.value as any);
-                                setIsMobileNavOpen(false);
-                              }}
-                              className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-between cursor-pointer ${
-                                isSelected
-                                  ? 'bg-[var(--lavDeep)] text-white shadow-xs'
-                                  : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/80'
-                              }`}
-                            >
-                              <div className="flex items-center gap-2.5">
-                                {item.icon}
-                                <span>{item.label}</span>
-                              </div>
-                              {isSelected && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
-                            </button>
-                          );
-                        })}
-                      </motion.div>
-                    </>
-                  )}
-                </AnimatePresence>
-              </div>
+          {/* Responsive Mobile / Tablet Header Navigation (Hamburger only, positioned on the right) */}
+          {activeTab !== 'moodboard' && (
+            <div className="lg:hidden flex items-center justify-end shrink-0 relative z-30 pointer-events-auto pb-1">
+              {renderMobileNavButton()}
             </div>
-
-            {/* Right Corner: Tariff Badge + User Initials */}
-            <div className="flex items-center gap-2 sm:gap-2.5 relative">
-              {/* Tariff Tag */}
-              <span className="text-[10px] sm:text-xs font-bold bg-[var(--lavDeep)] text-white px-2.5 py-1 rounded-full tracking-wider shadow-2xs">
-                PRO
-              </span>
-
-              {/* User Initials Avatar in Circle (Opens profile & settings menu) */}
-              <button
-                onClick={() => {
-                  setIsMobileProfileMenuOpen(!isMobileProfileMenuOpen);
-                  setIsMobileNavOpen(false);
-                }}
-                title="Пользователь (Денис С.)"
-                className="w-9 h-9 rounded-full bg-[var(--lavenderSoft)] text-[var(--lavDeep)] flex items-center justify-center font-bold text-xs shrink-0 cursor-pointer hover:scale-105 transition-transform shadow-2xs border border-[var(--lavenderAccent)]/20"
-              >
-                ДС
-              </button>
-
-              {/* Mobile Profile & Settings Dropdown */}
-              <AnimatePresence>
-                {isMobileProfileMenuOpen && (
-                  <>
-                    <div className="fixed inset-0 z-[90]" onClick={() => setIsMobileProfileMenuOpen(false)} />
-                    <motion.div
-                      initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute right-0 top-full mt-2 w-64 bg-white/75 dark:bg-zinc-900/80 backdrop-blur-2xl border border-white/60 dark:border-zinc-700/60 rounded-2xl shadow-2xl p-4 z-[100] text-xs space-y-3"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-[var(--lavenderSoft)] text-[var(--lavDeep)] flex items-center justify-center font-bold text-sm shrink-0">
-                          ДС
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-bold text-[var(--ink)] text-sm truncate">Денис С.</p>
-                          <p className="text-[11px] text-[var(--faint)] truncate">denis@example.com</p>
-                        </div>
-                      </div>
-
-                      <div className="h-px bg-zinc-200/60 dark:bg-zinc-800/60" />
-
-                      <div className="flex items-center justify-between">
-                        <span className="text-[var(--soft)] font-medium">Текущий тариф</span>
-                        <span className="font-extrabold bg-[var(--lavDeep)] text-white px-2 py-0.5 rounded-full text-[10px]">PRO</span>
-                      </div>
-
-                      <div className="space-y-2 pt-1">
-                        <div>
-                          <div className="flex justify-between text-[11px] text-[var(--soft)] mb-1">
-                            <span>ИИ-визуализация</span>
-                            <span className="font-bold text-[var(--ink)]">2 / 10</span>
-                          </div>
-                          <div className="w-full h-1 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
-                            <div className="h-full bg-[var(--lavenderAccent)]" style={{ width: '20%' }} />
-                          </div>
-                        </div>
-                        <div>
-                          <div className="flex justify-between text-[11px] text-[var(--soft)] mb-1">
-                            <span>Обрезка фона</span>
-                            <span className="font-bold text-[var(--ink)]">12 / 20</span>
-                          </div>
-                          <div className="w-full h-1 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
-                            <div className="h-full bg-[var(--sage)]" style={{ width: '60%' }} />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="h-px bg-zinc-200/60 dark:bg-zinc-800/60" />
-
-                      <button
-                        onClick={() => {
-                          setIsMobileProfileMenuOpen(false);
-                          showToast('До встречи!', 'Вы вышли из личного кабинета.', 'info');
-                        }}
-                        className="w-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 py-2 rounded-xl font-semibold text-[var(--ink)] transition-colors cursor-pointer text-center"
-                      >
-                        Выйти
-                      </button>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
+          )}
 
           {/* MAIN PANEL TOP NAVBAR Header (Shown on tabs except Moodboard Editor) */}
           {activeTab !== 'moodboard' && (
@@ -1739,6 +1642,7 @@ export default function App() {
                     onSaveToProject={handleAttachVisualizerToProject}
                     showToast={showToast}
                     setHeaderActions={setMoodboardHeaderActions}
+                    mobileNavButton={renderMobileNavButton()}
                     onAddAiImage={(url: string, prompt: string, projectName: string) => {
                       const newImage: ImageItem = {
                         id: 'ai_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
@@ -1827,10 +1731,10 @@ export default function App() {
 
         </main>
 
-        {/* RIGHT SIDEBAR (Collapsible, dynamic panel - Narrowed to w-72 to fit perfectly) */}
+        {/* RIGHT SIDEBAR (Collapsible, dynamic panel) */}
         <aside
           className={`shrink-0 hidden lg:flex flex-col sticky top-0 h-screen border-l backdrop-blur-xl z-20 transition-all duration-300 overflow-hidden ${
-            isRightSidebarExpanded ? 'w-72 p-5' : 'w-20 items-center py-5 px-3'
+            isRightSidebarExpanded ? 'w-64 p-4' : 'w-14 items-center py-4 px-1.5'
           }`}
           style={{ backgroundColor: 'var(--sidebar-bg)', borderColor: 'var(--sidebar-border)' }}
         >
@@ -2012,28 +1916,28 @@ export default function App() {
 
             </div>
           ) : (
-            /* COLLAPSED CONTENT (Shown only when sidebar is w-20) */
-            <div className="flex flex-col items-center gap-4.5 w-full">
+            /* COLLAPSED CONTENT (Shown only when sidebar is w-14) */
+            <div className="flex flex-col items-center gap-3.5 w-full">
               {/* Collapsed Toggle Button aligned analogously to left sidebar */}
               <button
                 onClick={() => setIsRightSidebarExpanded(true)}
                 title="Развернуть боковую панель"
-                className="w-8 h-8 rounded-full hover:bg-white/20 dark:hover:bg-black/20 flex items-center justify-center text-[var(--soft)] hover:text-[var(--ink)] cursor-pointer transition-all mb-1"
+                className="w-7 h-7 rounded-full hover:bg-white/20 dark:hover:bg-black/20 flex items-center justify-center text-[var(--soft)] hover:text-[var(--ink)] cursor-pointer transition-all mb-0.5"
               >
-                <ChevronsLeft className="w-4 h-4 text-[var(--soft)]" />
+                <ChevronsLeft className="w-3.5 h-3.5 text-[var(--soft)]" />
               </button>
 
-              <div className="w-8 h-px bg-[var(--glass-edge)]" style={{ background: 'var(--line)' }} />
+              <div className="w-6 h-px bg-[var(--glass-edge)]" style={{ background: 'var(--line)' }} />
 
               {/* Collapsed Task Indicator with Badge */}
               <button
                 onClick={() => setIsRightSidebarExpanded(true)}
                 title={`Задачи на сегодня (${tasks.filter(t => !t.completed).length} активных)`}
-                className="relative w-10 h-10 rounded-full bg-white/20 dark:bg-black/20 hover:bg-[var(--lavenderSoft)] dark:hover:bg-zinc-800 flex items-center justify-center text-[var(--soft)] hover:text-[var(--lavDeep)] transition-all cursor-pointer"
+                className="relative w-8 h-8 rounded-full bg-white/20 dark:bg-black/20 hover:bg-[var(--lavenderSoft)] dark:hover:bg-zinc-800 flex items-center justify-center text-[var(--soft)] hover:text-[var(--lavDeep)] transition-all cursor-pointer"
               >
-                <CheckSquare className="w-4 h-4" />
+                <CheckSquare className="w-3.5 h-3.5" />
                 {tasks.filter(t => !t.completed).length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[var(--warn)] text-[9px] font-bold text-white flex items-center justify-center shadow-sm">
+                  <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-[var(--warn)] text-[8px] font-bold text-white flex items-center justify-center shadow-sm">
                     {tasks.filter(t => !t.completed).length}
                   </span>
                 )}
@@ -2043,18 +1947,18 @@ export default function App() {
               <button
                 onClick={() => setIsRightSidebarExpanded(true)}
                 title="Календарь на Июль"
-                className="w-10 h-10 rounded-full bg-white/20 dark:bg-black/20 hover:bg-[var(--lavenderSoft)] dark:hover:bg-zinc-800 flex items-center justify-center text-[var(--soft)] hover:text-[var(--lavDeep)] transition-all cursor-pointer"
+                className="w-8 h-8 rounded-full bg-white/20 dark:bg-black/20 hover:bg-[var(--lavenderSoft)] dark:hover:bg-zinc-800 flex items-center justify-center text-[var(--soft)] hover:text-[var(--lavDeep)] transition-all cursor-pointer"
               >
-                <Calendar className="w-4 h-4" />
+                <Calendar className="w-3.5 h-3.5" />
               </button>
               
               {/* Quick Statistics Trigger */}
               <button
                 onClick={() => showToast('Статистика', 'Раздел отчетов сейчас формируется.', 'info')}
                 title="Статистика за месяц"
-                className="w-10 h-10 rounded-full bg-white/20 dark:bg-black/20 hover:bg-[var(--lavenderSoft)] dark:hover:bg-zinc-800 flex items-center justify-center text-[var(--soft)] hover:text-[var(--lavDeep)] transition-all cursor-pointer"
+                className="w-8 h-8 rounded-full bg-white/20 dark:bg-black/20 hover:bg-[var(--lavenderSoft)] dark:hover:bg-zinc-800 flex items-center justify-center text-[var(--soft)] hover:text-[var(--lavDeep)] transition-all cursor-pointer"
               >
-                <TrendingUp className="w-4 h-4" />
+                <TrendingUp className="w-3.5 h-3.5" />
               </button>
             </div>
           )}

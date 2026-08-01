@@ -88,6 +88,7 @@ interface MoodboardEditorProps {
   showToast: (title: string, message: string, type?: 'success' | 'info' | 'warn') => void;
   setHeaderActions?: (actions: React.ReactNode) => void;
   onAddAiImage?: (url: string, prompt: string, projectName: string) => void;
+  mobileNavButton?: React.ReactNode;
 }
 
 export interface CanvasElement {
@@ -125,6 +126,9 @@ interface EditorScene {
   backdropImage: string;
   backdropColor: string;
   backdropType: 'image' | 'color';
+  backdropScale?: number;
+  backdropX?: number;
+  backdropY?: number;
 }
 
 const NEW_CATALOG_CATEGORIES = [
@@ -398,12 +402,13 @@ const CUSTOM_LIBRARY_ITEMS: LibraryItem[] = [
   }
 ];
 
-export default function MoodboardEditor({ projects, onSaveToProject, showToast, setHeaderActions, onAddAiImage }: MoodboardEditorProps) {
+export default function MoodboardEditor({ projects, onSaveToProject, showToast, setHeaderActions, onAddAiImage, mobileNavButton }: MoodboardEditorProps) {
   // Top Active Mode / Scene Tabs: "scene-1" | "scene-2" | "floorplan"
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<string>('scene-1');
+  const [isVisualizationsDropdownOpen, setIsVisualizationsDropdownOpen] = useState<boolean>(false);
 
-  // Sidebar Controls Tabs: 1 = Library, 2 = Layers, 3 = Tools
-  const [activeSidebarTab, setActiveSidebarTab] = useState<'library' | 'layers' | 'tools'>('library');
+  // Sidebar Controls Tabs: 1 = Library, 2 = Layers
+  const [activeSidebarTab, setActiveSidebarTab] = useState<'library' | 'layers'>('library');
 
   // Selected Project and Data binding
   const [activeProjectId, setActiveProjectId] = useState<string>(projects[0]?.id || '');
@@ -477,6 +482,23 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
   const activeSceneIndex = scenes.findIndex(s => s.id === activeWorkspaceTab);
   const activeScene = activeSceneIndex !== -1 ? scenes[activeSceneIndex] : scenes[0];
 
+  const handleAddNewScene = () => {
+    const newSceneNum = scenes.length + 1;
+    const newSceneId = `scene-${Date.now()}`;
+    const newScene: EditorScene = {
+      id: newSceneId,
+      name: `Визуализация ${newSceneNum}`,
+      elements: [],
+      backdropImage: '',
+      backdropColor: '#F3F4F6',
+      backdropType: 'color'
+    };
+    setScenes(prev => [...prev, newScene]);
+    setActiveWorkspaceTab(newSceneId);
+    setIsVisualizationsDropdownOpen(false);
+    showToast('Новая визуализация', `Создана Виз. ${newSceneNum}`, 'info');
+  };
+
   // Seating Arrangement Floor Plan
   const [floorPlanElements, setFloorPlanElements] = useState<PlanElement[]>([]);
 
@@ -499,8 +521,13 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
 
   // Active popovers & adjustment floating tools
   const [activeToolPopover, setActiveToolPopover] = useState<'group' | 'layers' | 'flip' | null>(null);
-  const [activeFilterTool, setActiveFilterTool] = useState<'brightness' | 'contrast' | 'saturate' | 'hue' | 'opacity' | 'temp' | null>(null);
-  const [mobileDrawerTab, setMobileDrawerTab] = useState<'library' | 'layers' | 'tools' | null>(null);
+  const [activeFilterTool, setActiveFilterTool] = useState<'brightness' | 'contrast' | 'saturate' | 'hue' | 'opacity' | 'temp' | 'zoom' | null>(null);
+  const [mobileDrawerTab, setMobileDrawerTab] = useState<'library' | 'layers' | null>(null);
+  const [isBackdropPopoverOpen, setIsBackdropPopoverOpen] = useState<boolean>(false);
+
+  // Collapsible toolbars states
+  const [isLeftToolbarCollapsed, setIsLeftToolbarCollapsed] = useState<boolean>(false);
+  const [isRightToolbarCollapsed, setIsRightToolbarCollapsed] = useState<boolean>(false);
 
   // Undo/Redo Stacking
   const [history, setHistory] = useState<EditorScene[][]>([JSON.parse(JSON.stringify(scenes))]);
@@ -627,7 +654,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
     return displayVal;
   };
 
-  // Set selected element properties and automatically switches to Tools Tab
+  // Set selected element properties
   const handleSelectElement = (id: string) => {
     const targetEl = activeScene.elements.find(el => el.id === id);
     if (targetEl && targetEl.groupId) {
@@ -638,7 +665,6 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
     } else {
       setSelectedId(id);
     }
-    setActiveSidebarTab('tools');
   };
 
   // Grouping & Ungrouping persistent logic
@@ -807,7 +833,6 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
 
     updateActiveSceneElements(prev => [...prev, newEl]);
     setSelectedId(newEl.id);
-    setActiveSidebarTab('tools');
     showToast('Добавлено', `Элемент "${item.name}" добавлен на сцену.`, 'success');
   };
 
@@ -844,7 +869,6 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
       };
       updateActiveSceneElements(prev => [...prev, newCustomEl]);
       setSelectedId(newCustomEl.id);
-      setActiveSidebarTab('tools');
       showToast('Загружено', 'Собственная картинка успешно размещена на холсте.', 'success');
     };
     reader.readAsDataURL(file);
@@ -890,7 +914,25 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
           ...s,
           backdropType: type,
           backdropColor: type === 'color' ? value : s.backdropColor,
-          backdropImage: type === 'image' ? value : s.backdropImage
+          backdropImage: type === 'image' ? value : s.backdropImage,
+          backdropScale: s.backdropScale || 1,
+          backdropX: s.backdropX || 0,
+          backdropY: s.backdropY || 0
+        };
+      }
+      return s;
+    });
+    setScenes(updated);
+    recordHistory(updated);
+  };
+
+  const updateActiveSceneBackdropScale = (newScale: number) => {
+    const clampedScale = Math.max(0.5, Math.min(3.5, newScale));
+    const updated = scenes.map(s => {
+      if (s.id === activeScene.id) {
+        return {
+          ...s,
+          backdropScale: parseFloat(clampedScale.toFixed(2))
         };
       }
       return s;
@@ -909,6 +951,8 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
       showToast('Фон обновлен', 'Собственное изображение применено как фон.', 'success');
     };
     reader.readAsDataURL(file);
+    // Reset input value so re-selecting same file triggers onChange again
+    e.target.value = '';
   };
 
   // AI Background simulation
@@ -1421,7 +1465,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
 
   const selectedElem = activeScene.elements.find(el => el.id === selectedId);
 
-  const renderSidebarTabContent = (targetTab: 'library' | 'layers' | 'tools') => {
+  const renderSidebarTabContent = (targetTab: 'library' | 'layers') => {
     return (
       <>
         {/* TAB 1: LIBRARY CATALOG LISTING */}
@@ -1752,324 +1796,29 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
             </div>
           </div>
         )}
-
-        {/* TAB 3: SELECTED ELEMENT TOOLS & ADJUSTMENTS */}
-        {targetTab === 'tools' && (
-          <div className="flex flex-col gap-3 flex-1 min-h-0 min-w-0 overflow-x-hidden">
-            {selectedElem ? (
-              <div className="space-y-4">
-                
-                {/* 1. Header with Selected Thumbnail */}
-                <div className="flex items-center gap-3 p-3 rounded-2xl bg-zinc-100/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800">
-                  <div className="w-12 h-12 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 p-1 flex items-center justify-center shrink-0">
-                    {selectedElem.customImage ? (
-                      <img src={selectedElem.customImage} className="w-full h-full object-contain" referrerPolicy="no-referrer" />
-                    ) : (
-                      <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: selectedElem.svgMarkup }} />
-                    )}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-xs font-extrabold text-[var(--ink)] truncate">{selectedElem.name}</h3>
-                    <p className="text-[10px] text-[var(--soft)]">Текущие размеры и положение</p>
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      updateActiveSceneElements(prev => prev.filter(item => item.id !== selectedElem.id));
-                      setSelectedId(null);
-                    }}
-                    className="p-1.5 rounded-full text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50 cursor-pointer shrink-0"
-                    title="Удалить со сцены"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {/* 2. Position & Size Inputs (Ш x В) */}
-                <div className="p-3 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 space-y-2.5">
-                  <div className="flex items-center justify-between text-xs font-bold text-[var(--ink)]">
-                    <span>Размеры объекта ({activeUnit})</span>
-                    <button
-                      onClick={() => setIsRatioLocked(!isRatioLocked)}
-                      className={`p-1 rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors ${
-                        isRatioLocked ? 'bg-[var(--lavenderSoft)] text-[var(--lavDeep)] dark:bg-[var(--lavDeep)]/30 dark:text-[var(--lavenderAccent)]' : 'text-zinc-400 hover:text-zinc-600'
-                      }`}
-                      title={isRatioLocked ? 'Пропорции заблокированы' : 'Пропорции свободны'}
-                    >
-                      {isRatioLocked ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
-                      <span className="text-[10px]">Пропорции</span>
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    {/* Width */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-[var(--soft)]">Ширина ({activeUnit})</label>
-                      <input
-                        type="number"
-                        value={toDisplayValue(selectedElem.w * 10)}
-                        onChange={(e) => {
-                          const parsed = parseFloat(e.target.value);
-                          if (isNaN(parsed)) return;
-                          const newWMm = fromDisplayValue(parsed);
-                          const newW = Math.max(10, Math.round(newWMm / 10));
-
-                          if (isRatioLocked && selectedElem.w > 0) {
-                            const ratio = selectedElem.h / selectedElem.w;
-                            const newH = Math.max(10, Math.round(newW * ratio));
-                            updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, w: newW, h: newH } : item));
-                          } else {
-                            updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, w: newW } : item));
-                          }
-                        }}
-                        className="w-full px-2.5 py-1.5 rounded-xl bg-zinc-50 dark:bg-zinc-850 border border-zinc-200 dark:border-zinc-750 text-xs font-bold text-[var(--ink)] focus:outline-none focus:border-[var(--lavDeep)]"
-                      />
-                    </div>
-
-                    {/* Height */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-[var(--soft)]">Высота ({activeUnit})</label>
-                      <input
-                        type="number"
-                        value={toDisplayValue(selectedElem.h * 10)}
-                        onChange={(e) => {
-                          const parsed = parseFloat(e.target.value);
-                          if (isNaN(parsed)) return;
-                          const newHMm = fromDisplayValue(parsed);
-                          const newH = Math.max(10, Math.round(newHMm / 10));
-
-                          if (isRatioLocked && selectedElem.h > 0) {
-                            const ratio = selectedElem.w / selectedElem.h;
-                            const newW = Math.max(10, Math.round(newH * ratio));
-                            updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, w: newW, h: newH } : item));
-                          } else {
-                            updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, h: newH } : item));
-                          }
-                        }}
-                        className="w-full px-2.5 py-1.5 rounded-xl bg-zinc-50 dark:bg-zinc-850 border border-zinc-200 dark:border-zinc-750 text-xs font-bold text-[var(--ink)] focus:outline-none focus:border-[var(--lavDeep)]"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* 3. Quick Flip & Alignment Actions */}
-                <div className="p-3 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 space-y-2">
-                  <span className="text-xs font-bold text-[var(--ink)] block">Трансформация</span>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() => {
-                        updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, isFlippedH: !item.isFlippedH } : item));
-                      }}
-                      className={`py-2 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                        selectedElem.isFlippedH
-                          ? 'bg-[var(--lavenderSoft)] text-[var(--lavDeep)] border-[var(--lavBorder)] dark:bg-[var(--lavDeep)]/30 dark:text-[var(--lavenderAccent)]'
-                          : 'bg-zinc-50 dark:bg-zinc-850 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100'
-                      }`}
-                    >
-                      <FlipHorizontal className="w-3.5 h-3.5" />
-                      <span>Отразить по Г.</span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, isFlippedV: !item.isFlippedV } : item));
-                      }}
-                      className={`py-2 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                        selectedElem.isFlippedV
-                          ? 'bg-[var(--lavenderSoft)] text-[var(--lavDeep)] border-[var(--lavBorder)] dark:bg-[var(--lavDeep)]/30 dark:text-[var(--lavenderAccent)]'
-                          : 'bg-zinc-50 dark:bg-zinc-850 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100'
-                      }`}
-                    >
-                      <FlipVertical className="w-3.5 h-3.5" />
-                      <span>Отразить по В.</span>
-                    </button>
-                  </div>
-
-                  {/* Alignment buttons */}
-                  <div className="flex items-center justify-between pt-1">
-                    <span className="text-[10px] font-bold text-[var(--soft)]">Выравнивание:</span>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleAlignSelected('left')}
-                        className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 cursor-pointer"
-                        title="По левому краю"
-                      >
-                        <AlignLeft className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleAlignSelected('center')}
-                        className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 cursor-pointer"
-                        title="По центру"
-                      >
-                        <AlignCenter className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleAlignSelected('right')}
-                        className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 cursor-pointer"
-                        title="По правому краю"
-                      >
-                        <AlignRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 4. Color Corrections Sliders */}
-                <div className="p-3 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 space-y-3">
-                  <span className="text-xs font-bold text-[var(--ink)] block">Цветокоррекция элемента</span>
-
-                  {/* Exposure / Brightness */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center text-[10px] font-bold text-[var(--soft)]">
-                      <span>Экспозиция (Яркость):</span>
-                      <span>{selectedElem.exposure > 0 ? `+${selectedElem.exposure}` : selectedElem.exposure}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="-50"
-                      max="50"
-                      value={selectedElem.exposure}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value);
-                        updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, exposure: val } : item));
-                      }}
-                      className="w-full h-1 bg-zinc-200 dark:bg-zinc-850 rounded appearance-none cursor-pointer accent-[var(--lavDeep)]"
-                      style={{ background: 'linear-gradient(to right, #27272a, #a1a1aa, #ffffff)' }}
-                    />
-                  </div>
-
-                  {/* Hue Tone */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center text-[10px] font-bold text-[var(--soft)]">
-                      <span>Оттенок (Тон):</span>
-                      <span>{selectedElem.hue}°</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="-180"
-                      max="180"
-                      value={selectedElem.hue}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value);
-                        updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, hue: val } : item));
-                      }}
-                      className="w-full h-1 rounded appearance-none cursor-pointer"
-                      style={{ background: 'linear-gradient(to right, red, yellow, green, cyan, blue, magenta, red)' }}
-                    />
-                  </div>
-
-                  {/* Temperature */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center text-[10px] font-bold text-[var(--soft)]">
-                      <span>Теплота (Температура):</span>
-                      <span>{selectedElem.temp > 0 ? `+${selectedElem.temp}` : selectedElem.temp || 0}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="-50"
-                      max="50"
-                      value={selectedElem.temp || 0}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value);
-                        updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, temp: val } : item));
-                      }}
-                      className="w-full h-1 bg-zinc-200 dark:bg-zinc-850 rounded appearance-none cursor-pointer accent-[var(--lavDeep)]"
-                      style={{ background: 'linear-gradient(to right, #3b82f6, #eff6ff, #f59e0b)' }}
-                    />
-                  </div>
-
-                  {/* Saturation */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center text-[10px] font-bold text-[var(--soft)]">
-                      <span>Насыщенность:</span>
-                      <span>{selectedElem.saturate}%</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="200"
-                      value={selectedElem.saturate}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value);
-                        updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, saturate: val } : item));
-                      }}
-                      className="w-full h-1 bg-zinc-200 dark:bg-zinc-850 rounded appearance-none cursor-pointer accent-[var(--lavDeep)]"
-                      style={{ background: 'linear-gradient(to right, #a1a1aa, #c084fc, #8b5cf6)' }}
-                    />
-                  </div>
-
-                  {/* Opacity */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center text-[10px] font-bold text-[var(--soft)]">
-                      <span>Прозрачность:</span>
-                      <span>{selectedElem.opacity}%</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="10"
-                      max="100"
-                      value={selectedElem.opacity}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value);
-                        updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, opacity: val } : item));
-                      }}
-                      className="w-full h-1 bg-zinc-200 dark:bg-zinc-850 rounded appearance-none cursor-pointer accent-[var(--lavDeep)]"
-                      style={{ background: 'linear-gradient(to right, rgba(139, 92, 246, 0.1), rgba(139, 92, 246, 1))' }}
-                    />
-                  </div>
-
-                </div>
-
-              </div>
-            ) : (
-              <div className="py-12 text-center text-xs text-[var(--faint)] space-y-3">
-                <Info className="w-5 h-5 mx-auto text-[var(--faint)]" />
-                <p>Ни один элемент не выбран.</p>
-                <p className="text-[10px]">Нажмите на любую арку или декор на сцене для настройки их размеров и цветокоррекции.</p>
-              </div>
-            )}
-
-          </div>
-        )}
       </>
     );
   };
 
   return (
     <div className="flex-1 min-h-0 min-w-0 h-full pb-0.5 print:pb-0 grid grid-cols-1 lg:grid-cols-12 gap-1.5 sm:gap-3 print:hidden" onMouseMove={handleCanvasMouseMove} onMouseUp={handleCanvasMouseUp}>
+      {/* Hidden File Input for Backdrop Image Upload */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleUploadCanvasBackdrop}
+        className="hidden"
+        accept="image/*"
+      />
       
       {/* LEFT COLUMN: ACTIVE WORKSPACE & HEADER (70% WIDTH) */}
       <div className="lg:col-span-8 flex flex-col gap-1 sm:gap-2.5 h-full min-h-0 min-w-0">
 
-        {/* TOP EDITOR HEADER BAR - ULTRA COMPACT FOR MOBILE */}
-        <div className="flex flex-col gap-0.5 py-0 px-0.5 shrink-0 print:hidden">
-          {/* Top Row: Title on Left, Buttons aligned to Right Edge */}
+        {/* TOP EDITOR HEADER BAR - WITH ELEGANT PADDING */}
+        <div className="flex flex-col gap-1 pt-1.5 pb-1 px-1 sm:px-2 shrink-0 print:hidden">
+          {/* Top Row: Back button & Title on Left, Action Buttons on Right */}
           <div className="flex items-center justify-between gap-2 w-full">
-            <h1 className="text-lg sm:text-xl font-extrabold tracking-tight text-[var(--ink)] truncate">
-              {currentProject?.name || 'Проект 1'}
-            </h1>
-
-            {/* Right Action Buttons on the same top line */}
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
-              <div
-                title="Сохранено"
-                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/40 flex items-center justify-center shadow-xs shrink-0 cursor-default"
-              >
-                <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(52,211,153,0.8)]" />
-              </div>
-
-              <button
-                onClick={() => setIsAiModalOpen(true)}
-                title="ИИ Макет"
-                aria-label="ИИ Макет"
-                className="flex items-center justify-center gap-1.5 px-3 h-7 sm:h-8 rounded-full bg-[#5B3E88] hover:bg-[#4A3073] text-white text-xs font-bold transition-all shadow-md shadow-[#5B3E88]/20 cursor-pointer shrink-0 hover:scale-105"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-300 fill-amber-300 shrink-0" />
-                <span>ИИ Макет</span>
-              </button>
-
+            <div className="flex items-center gap-2 min-w-0">
               <button
                 onClick={() => {
                   if (window.history.length > 1) {
@@ -2080,30 +1829,49 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                 }}
                 title="Назад в проект"
                 aria-label="Назад в проект"
-                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 flex items-center justify-center transition-all shadow-xs cursor-pointer shrink-0 hover:scale-105"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md hover:bg-white dark:hover:bg-zinc-700 border border-white/80 dark:border-zinc-700/80 text-[var(--ink)] flex items-center justify-center transition-all shadow-md cursor-pointer shrink-0 hover:scale-105 active:scale-95"
               >
-                <ArrowLeft className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-300" />
+                <ArrowLeft className="w-4 h-4 text-[var(--ink)]" />
               </button>
+
+              <h1 className="text-lg sm:text-xl font-extrabold tracking-tight text-[var(--ink)] truncate">
+                {currentProject?.name || 'Проект 1'}
+              </h1>
+            </div>
+
+            {/* Right Action Buttons on the same top line */}
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
+              <div
+                title="Автосохранение включено"
+                className="h-9 sm:h-10 px-3 sm:px-3.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/40 flex items-center gap-2 shadow-sm shrink-0 cursor-default"
+              >
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(52,211,153,0.9)] shrink-0" />
+                <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 hidden sm:inline">
+                  Сохранено
+                </span>
+              </div>
+
+              <button
+                onClick={() => setIsAiModalOpen(true)}
+                title="ИИ Генератор макета"
+                aria-label="ИИ макет"
+                className="h-9 sm:h-10 px-3 sm:px-4 rounded-full bg-gradient-to-tr from-[#5B3E88] via-[#8B5CF6] to-[#D8B4FE] text-white flex items-center gap-1.5 shadow-md shadow-purple-900/20 cursor-pointer shrink-0 hover:scale-105 active:scale-95 transition-all border border-purple-300/30 font-bold text-xs"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-white fill-white shrink-0 animate-pulse drop-shadow-[0_0_6px_rgba(255,255,255,1)]" />
+                <span className="hidden sm:inline">ИИ макет</span>
+                <span className="sm:hidden text-[11px]">ИИ</span>
+              </button>
+
+              {mobileNavButton && (
+                <div className="lg:hidden shrink-0">
+                  {mobileNavButton}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Bottom Row: Client info */}
-          <div className="flex flex-wrap items-center gap-2.5 text-[11px] text-[var(--soft)] font-medium">
-            <span className="flex items-center gap-1">
-              <User className="w-3.5 h-3.5 text-zinc-400" />
-              Клиент: <strong className="text-[var(--ink)] font-semibold">{currentProject?.clientName || 'Анна Соколова'}</strong>
-            </span>
-            <span className="hidden sm:inline text-zinc-300">·</span>
-            <span className="hidden sm:flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5 text-zinc-400" />
-              Дата: <strong className="text-[var(--ink)] font-semibold">{currentProject?.date ? new Date(currentProject.date).toLocaleDateString('ru-RU') : '15.08.2026'}</strong>
-            </span>
-            <span className="hidden sm:inline text-zinc-300">·</span>
-            <span className="hidden sm:flex items-center gap-1">
-              <MapPin className="w-3.5 h-3.5 text-zinc-400" />
-              Локация: <strong className="text-[var(--ink)] font-semibold">{currentProject?.venue || 'Ресторан «Сафиса», Москва'}</strong>
-            </span>
-          </div>
+          {/* Bottom Row: Client info (Hidden per user request) */}
+          {/* <div className="flex flex-wrap items-center gap-2.5 text-[11px] text-[var(--soft)] font-medium"> ... </div> */}
         </div>
 
           {/* MAIN CANVAS AREA / SEATING ARRANGEMENT VIEW */}
@@ -2126,23 +1894,86 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                 {/* Floating Top-Left Scene Tabs Overlay (Matches Reference Screenshot 2 - Touch Friendly) */}
                 <div className="absolute top-1.5 left-1.5 z-20 flex items-center gap-1 bg-white/80 dark:bg-black/50 backdrop-blur-md p-1 rounded-full border border-white/90 dark:border-zinc-800 shadow-md">
                   <button
-                    onClick={() => showToast('Новая сцена', 'Создана новая визуализация', 'info')}
+                    onClick={handleAddNewScene}
                     className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white dark:bg-zinc-800 hover:bg-zinc-100 flex items-center justify-center text-zinc-700 dark:text-zinc-200 transition-all cursor-pointer shadow-xs active:scale-95"
                     title="Добавить визуализацию"
                   >
                     <Plus className="w-3.5 h-3.5" />
                   </button>
-                  <button
-                    onClick={() => setActiveWorkspaceTab('scene-1')}
-                    className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-                      activeWorkspaceTab === 'scene-1'
-                        ? 'bg-white text-zinc-900 shadow-xs border border-zinc-200/80'
-                        : 'text-zinc-600 dark:text-zinc-300 hover:text-zinc-900'
-                    }`}
-                  >
-                    <span>Виз. 1</span>
-                    <Paperclip className="w-3 h-3 text-zinc-400" />
-                  </button>
+
+                  <div className="relative">
+                    <button
+                      onClick={() => setIsVisualizationsDropdownOpen(!isVisualizationsDropdownOpen)}
+                      className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                        activeWorkspaceTab !== 'floorplan'
+                          ? 'bg-white text-zinc-900 shadow-xs border border-zinc-200/80'
+                          : 'text-zinc-600 dark:text-zinc-300 hover:text-zinc-900'
+                      }`}
+                    >
+                      <span>
+                        {activeWorkspaceTab === 'floorplan'
+                          ? 'Визуализация'
+                          : (activeScene?.name.startsWith('Визуализация')
+                              ? activeScene.name.replace('Визуализация', 'Виз.')
+                              : (activeScene?.name || 'Виз. 1'))}
+                      </span>
+                      <ChevronDown className={`w-3.5 h-3.5 text-zinc-500 transition-transform duration-200 ${isVisualizationsDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    <AnimatePresence>
+                      {isVisualizationsDropdownOpen && (
+                        <>
+                          <div className="fixed inset-0 z-[80]" onClick={() => setIsVisualizationsDropdownOpen(false)} />
+                          <motion.div
+                            initial={{ opacity: 0, y: 4, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 4, scale: 0.95 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute left-0 top-full mt-1.5 w-52 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl border border-zinc-200/80 dark:border-zinc-700/80 rounded-2xl shadow-xl p-1.5 z-[90] overflow-hidden"
+                          >
+                            <div className="text-[10px] uppercase font-extrabold tracking-wider text-zinc-400 px-2.5 py-1">
+                              Созданные визуализации
+                            </div>
+                            {scenes.map((scene) => {
+                              const isSelected = activeWorkspaceTab === scene.id;
+                              const displayName = scene.name.startsWith('Визуализация') ? scene.name.replace('Визуализация', 'Виз.') : scene.name;
+                              return (
+                                <button
+                                  key={scene.id}
+                                  onClick={() => {
+                                    setActiveWorkspaceTab(scene.id);
+                                    setIsVisualizationsDropdownOpen(false);
+                                  }}
+                                  className={`w-full text-left px-2.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center justify-between cursor-pointer ${
+                                    isSelected
+                                      ? 'bg-[var(--lavDeep)] text-white shadow-xs'
+                                      : 'text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Layout className="w-3.5 h-3.5 opacity-70" />
+                                    <span>{displayName}</span>
+                                  </div>
+                                  {isSelected && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
+                                </button>
+                              );
+                            })}
+
+                            <div className="h-px bg-zinc-200/80 dark:bg-zinc-800 my-1" />
+
+                            <button
+                              onClick={handleAddNewScene}
+                              className="w-full text-left px-2.5 py-2 rounded-xl text-xs font-semibold text-[var(--lavDeep)] dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 transition-all flex items-center gap-2 cursor-pointer"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>Новая визуализация</span>
+                            </button>
+                          </motion.div>
+                        </>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
                   <button
                     onClick={() => {
                       setActiveWorkspaceTab('floorplan');
@@ -2158,8 +1989,8 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                   </button>
                 </div>
 
-                {/* FLOATING TOP UNDO/REDO PILL (Shifted left to leave room for the vertical toolbar) */}
-                <div className="absolute top-1.5 right-12 sm:right-13 z-30 pointer-events-auto">
+                {/* FLOATING TOP UNDO/REDO PILL */}
+                <div className="absolute top-1.5 right-1.5 sm:right-2 z-30 pointer-events-auto">
                   <div className="p-0.5 sm:p-1 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md shadow-md border border-white/80 dark:border-zinc-700/60 flex items-center gap-1">
                     <button
                       onClick={handleUndo}
@@ -2181,48 +2012,61 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                   </div>
                 </div>
 
-                {/* FLOATING RIGHT TOOLBAR - PRESSED TO CANVAS EDGES */}
-                <div className="absolute top-1.5 right-1.5 bottom-1.5 z-30 flex flex-col items-end justify-between pointer-events-none pr-0.5 pb-0.5">
+                {/* FLOATING ACTION TOOLBAR (LEFT POSITION BELOW TOP SCENE TABS) */}
+                <div className="absolute top-13 sm:top-14 left-1.5 z-30 flex flex-col items-start pointer-events-none">
                   
-                  {/* TOP ITEM: Standalone Zoom/Magnifier Button (Same size as Trash button) */}
-                  <div className="p-0.5 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md shadow-lg border border-white/80 dark:border-zinc-700/60 pointer-events-auto">
-                    <button
-                      onClick={() => { setZoomScale(1); setPanX(0); setPanY(0); showToast('Масштаб', 'Сброшен к 100%', 'info'); }}
-                      className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md flex items-center justify-center transition-all cursor-pointer active:scale-95"
-                      title="Вписать по размеру / Масштаб"
-                    >
-                      <ZoomIn className="w-4 h-4 stroke-[2.2]" />
-                    </button>
-                  </div>
+                  {isLeftToolbarCollapsed ? (
+                    /* COLLAPSED SINGLE BUTTON */
+                    <div className="p-1 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md shadow-lg border border-white/80 dark:border-zinc-700/60 flex flex-col items-center pointer-events-auto animate-fadeIn">
+                      <button
+                        onClick={() => setIsLeftToolbarCollapsed(false)}
+                        className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-[var(--lavDeep)] text-white hover:bg-[#4a3271] flex items-center justify-center shadow-md cursor-pointer transition-all active:scale-95"
+                        title="Развернуть инструменты редактирования"
+                      >
+                        <Sliders className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
+                      </button>
+                    </div>
+                  ) : (
+                    /* EXPANDED FULL TOOLBAR */
+                    <div className="p-1 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md shadow-lg border border-white/80 dark:border-zinc-700/60 flex flex-col items-center gap-1 pointer-events-auto animate-fadeIn">
+                      
+                      {/* 0. Свернуть панель */}
+                      <button
+                        onClick={() => {
+                          setIsLeftToolbarCollapsed(true);
+                          setActiveToolPopover(null);
+                        }}
+                        className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95 border-b border-zinc-200/60 dark:border-zinc-700/60 pb-0.5"
+                        title="Свернуть панель инструментов"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
+                      </button>
 
-                  {/* MIDDLE MAIN GROUP: Transformation & Layer Tools */}
-                  <div className="p-1 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md shadow-lg border border-white/80 dark:border-zinc-700/60 flex flex-col items-center gap-1 pointer-events-auto my-auto">
-                    
-                    {/* 1. Выбрать все на холсте */}
-                    <button
-                      onClick={() => {
-                        const selectable = activeScene.elements.filter(el => el.isVisible && !el.isLocked);
-                        if (selectable.length > 0) {
-                          const allIds = selectable.map(el => el.id);
-                          setSelectedIds(allIds);
-                          showToast('Выделено всё', `Все элементы (${allIds.length} шт.) помещены в общую рамку`, 'success');
-                        } else if (activeScene.elements.length > 0) {
-                          const allIds = activeScene.elements.filter(el => el.isVisible).map(el => el.id);
-                          setSelectedIds(allIds);
-                          showToast('Выделено всё', `Выделены элементы холста (${allIds.length} шт.)`, 'info');
-                        } else {
-                          showToast('Холст пуст', 'Нет элементов для выбора', 'info');
-                        }
-                      }}
-                      className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
-                        selectedIds.length > 1
-                          ? 'bg-[var(--lavDeep)] text-white shadow-md'
-                          : 'bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md'
-                      }`}
-                      title="Выбрать все на холсте (общая рамка)"
-                    >
-                      <BoxSelect className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
-                    </button>
+                      {/* 1. Выбрать все на холсте */}
+                      <button
+                        onClick={() => {
+                          const selectable = activeScene.elements.filter(el => el.isVisible && !el.isLocked);
+                          if (selectable.length > 0) {
+                            const allIds = selectable.map(el => el.id);
+                            setSelectedIds(allIds);
+                            showToast('Выделено всё', `Все элементы (${allIds.length} шт.) помещены в общую рамку`, 'success');
+                          } else if (activeScene.elements.length > 0) {
+                            const allIds = activeScene.elements.filter(el => el.isVisible).map(el => el.id);
+                            setSelectedIds(allIds);
+                            showToast('Выделено всё', `Выделены элементы холста (${allIds.length} шт.)`, 'info');
+                          } else {
+                            showToast('Холст пуст', 'Нет элементов для выбора', 'info');
+                          }
+                        }}
+                        className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
+                          selectedIds.length > 1
+                            ? 'bg-[var(--lavDeep)] text-white shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                        }`}
+                        title="Выбрать все на холсте (общая рамка)"
+                      >
+                        <BoxSelect className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
+                      </button>
 
                     {/* 2. Сгруппировать */}
                     <div className="relative">
@@ -2243,15 +2087,15 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
 
                       {/* Popover Group / Ungroup */}
                       {activeToolPopover === 'group' && (
-                        <div className="absolute right-9 top-0 z-50 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 p-1.5 rounded-xl shadow-xl flex flex-col gap-1 min-w-[170px]">
+                        <div className="absolute left-10 sm:left-11 top-0 z-50 bg-white/80 dark:bg-zinc-900/85 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 p-1.5 rounded-2xl shadow-2xl backdrop-blur-2xl flex flex-col gap-1 min-w-[170px] animate-fadeIn">
                           <button
                             onClick={() => {
                               handleGroupSelectedElements();
                               setActiveToolPopover(null);
                             }}
-                            className="w-full px-3 py-2 rounded-lg text-xs font-medium text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-[var(--lavDeep)] flex items-center gap-2 cursor-pointer transition-colors"
+                            className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/40 hover:text-[var(--lavDeep)] dark:hover:text-purple-300 flex items-center gap-2 cursor-pointer transition-colors"
                           >
-                            <Group className="w-4 h-4" />
+                            <Group className="w-4 h-4 text-[var(--lavDeep)] dark:text-purple-400" />
                             <span>Сгруппировать</span>
                           </button>
                           <button
@@ -2259,9 +2103,9 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                               handleUngroupSelectedElements();
                               setActiveToolPopover(null);
                             }}
-                            className="w-full px-3 py-2 rounded-lg text-xs font-medium text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-[var(--lavDeep)] flex items-center gap-2 cursor-pointer transition-colors"
+                            className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/40 hover:text-[var(--lavDeep)] dark:hover:text-purple-300 flex items-center gap-2 cursor-pointer transition-colors"
                           >
-                            <Ungroup className="w-4 h-4" />
+                            <Ungroup className="w-4 h-4 text-[var(--lavDeep)] dark:text-purple-400" />
                             <span>Разгруппировать</span>
                           </button>
                         </div>
@@ -2325,7 +2169,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
 
                       {/* Popover Layers */}
                       {activeToolPopover === 'layers' && (
-                        <div className="absolute right-9 top-0 z-50 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 p-1.5 rounded-xl shadow-xl flex flex-col gap-1 min-w-[160px]">
+                        <div className="absolute left-10 sm:left-11 top-0 z-50 bg-white/80 dark:bg-zinc-900/85 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 p-1.5 rounded-2xl shadow-2xl backdrop-blur-2xl flex flex-col gap-1 min-w-[170px] animate-fadeIn">
                           <button
                             onClick={() => {
                               if (selectedId) {
@@ -2343,9 +2187,9 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                               } else showToast('Выберите элемент', 'Кликните на элемент', 'info');
                               setActiveToolPopover(null);
                             }}
-                            className="w-full px-3 py-2 rounded-lg text-xs font-medium text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-[var(--lavDeep)] flex items-center gap-2 cursor-pointer transition-colors"
+                            className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/40 hover:text-[var(--lavDeep)] dark:hover:text-purple-300 flex items-center gap-2 cursor-pointer transition-colors"
                           >
-                            <ArrowUpToLine className="w-4 h-4" />
+                            <ArrowUpToLine className="w-4 h-4 text-[var(--lavDeep)] dark:text-purple-400" />
                             <span>На самый верх</span>
                           </button>
 
@@ -2366,9 +2210,9 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                               } else showToast('Выберите элемент', 'Кликните на элемент', 'info');
                               setActiveToolPopover(null);
                             }}
-                            className="w-full px-3 py-2 rounded-lg text-xs font-medium text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-[var(--lavDeep)] flex items-center gap-2 cursor-pointer transition-colors"
+                            className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/40 hover:text-[var(--lavDeep)] dark:hover:text-purple-300 flex items-center gap-2 cursor-pointer transition-colors"
                           >
-                            <ArrowUp className="w-4 h-4" />
+                            <ArrowUp className="w-4 h-4 text-[var(--lavDeep)] dark:text-purple-400" />
                             <span>Поднять выше</span>
                           </button>
 
@@ -2389,9 +2233,9 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                               } else showToast('Выберите элемент', 'Кликните на элемент', 'info');
                               setActiveToolPopover(null);
                             }}
-                            className="w-full px-3 py-2 rounded-lg text-xs font-medium text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-[var(--lavDeep)] flex items-center gap-2 cursor-pointer transition-colors"
+                            className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/40 hover:text-[var(--lavDeep)] dark:hover:text-purple-300 flex items-center gap-2 cursor-pointer transition-colors"
                           >
-                            <ArrowDown className="w-4 h-4" />
+                            <ArrowDown className="w-4 h-4 text-[var(--lavDeep)] dark:text-purple-400" />
                             <span>Опустить ниже</span>
                           </button>
 
@@ -2412,9 +2256,9 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                               } else showToast('Выберите элемент', 'Кликните на элемент', 'info');
                               setActiveToolPopover(null);
                             }}
-                            className="w-full px-3 py-2 rounded-lg text-xs font-medium text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-[var(--lavDeep)] flex items-center gap-2 cursor-pointer transition-colors"
+                            className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/40 hover:text-[var(--lavDeep)] dark:hover:text-purple-300 flex items-center gap-2 cursor-pointer transition-colors"
                           >
-                            <ArrowDownToLine className="w-4 h-4" />
+                            <ArrowDownToLine className="w-4 h-4 text-[var(--lavDeep)] dark:text-purple-400" />
                             <span>На самый низ</span>
                           </button>
                         </div>
@@ -2440,7 +2284,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
 
                       {/* Popover Flip */}
                       {activeToolPopover === 'flip' && (
-                        <div className="absolute right-9 top-0 z-50 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 p-1.5 rounded-xl shadow-xl flex flex-col gap-1 min-w-[155px]">
+                        <div className="absolute left-10 sm:left-11 top-0 z-50 bg-white/80 dark:bg-zinc-900/85 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 p-1.5 rounded-2xl shadow-2xl backdrop-blur-2xl flex flex-col gap-1 min-w-[165px] animate-fadeIn">
                           <button
                             onClick={() => {
                               if (selectedId) {
@@ -2449,9 +2293,9 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                               } else showToast('Выберите элемент', 'Кликните на элемент', 'info');
                               setActiveToolPopover(null);
                             }}
-                            className="w-full px-3 py-2 rounded-lg text-xs font-medium text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-[var(--lavDeep)] flex items-center gap-2 cursor-pointer transition-colors"
+                            className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/40 hover:text-[var(--lavDeep)] dark:hover:text-purple-300 flex items-center gap-2 cursor-pointer transition-colors"
                           >
-                            <FlipHorizontal className="w-4 h-4" />
+                            <FlipHorizontal className="w-4 h-4 text-[var(--lavDeep)] dark:text-purple-400" />
                             <span>По горизонтали</span>
                           </button>
 
@@ -2463,25 +2307,228 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                               } else showToast('Выберите элемент', 'Кликните на элемент', 'info');
                               setActiveToolPopover(null);
                             }}
-                            className="w-full px-3 py-2 rounded-lg text-xs font-medium text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-[var(--lavDeep)] flex items-center gap-2 cursor-pointer transition-colors"
+                            className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/40 hover:text-[var(--lavDeep)] dark:hover:text-purple-300 flex items-center gap-2 cursor-pointer transition-colors"
                           >
-                            <FlipVertical className="w-4 h-4" />
+                            <FlipVertical className="w-4 h-4 text-[var(--lavDeep)] dark:text-purple-400" />
                             <span>По вертикали</span>
                           </button>
                         </div>
                       )}
                     </div>
-                  </div>
 
-                  {/* BOTTOM GROUP: Color Correction & Trash Button (Always 100% visible at bottom right) */}
+                    {/* 6. Корзина (Удалить) */}
+                    <button
+                      onClick={() => {
+                        if (selectedIds.length > 0) {
+                          const count = selectedIds.length;
+                          updateActiveSceneElements(els => els.filter(el => !selectedIds.includes(el.id)));
+                          setSelectedIds([]);
+                          showToast('Удалено', count > 1 ? `Удалено ${count} элементов с холста` : 'Элемент удален с холста', 'info');
+                        } else if (selectedId) {
+                          updateActiveSceneElements(els => els.filter(el => el.id !== selectedId));
+                          setSelectedId(null);
+                          showToast('Удалено', 'Элемент удален с холста', 'info');
+                        } else {
+                          showToast('Удаление', 'Выберите элементы для удаления', 'info');
+                        }
+                      }}
+                      className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-rose-500 text-white hover:bg-rose-600 flex items-center justify-center shadow-md cursor-pointer transition-all active:scale-95"
+                      title="Удалить выбранный элемент"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
+                    </button>
+                  </div>
+                  )}
+                </div>
+
+                {/* BOTTOM RIGHT GROUP: Color Correction Tools & Zoom Button */}
+                <div className="absolute bottom-1.5 right-1.5 z-30 flex flex-col items-end pointer-events-none pr-0.5 pb-0.5">
                   <div className="flex flex-col items-center gap-1.5 pointer-events-auto">
-                    {/* Color Correction Tools Pill Block */}
-                    <div className="p-1 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md shadow-lg border border-white/80 dark:border-zinc-700/60 flex flex-col items-center gap-1 relative">
-                      
+                    {isRightToolbarCollapsed ? (
+                      /* COLLAPSED SINGLE BUTTON */
+                      <div className="p-1 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md shadow-lg border border-white/80 dark:border-zinc-700/60 flex flex-col items-center pointer-events-auto animate-fadeIn">
+                        <button
+                          onClick={() => setIsRightToolbarCollapsed(false)}
+                          className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-[var(--lavDeep)] text-white hover:bg-[#4a3271] flex items-center justify-center shadow-md cursor-pointer transition-all active:scale-95"
+                          title="Развернуть настройки цвета и масштаба"
+                        >
+                          <Palette className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
+                        </button>
+                      </div>
+                    ) : (
+                      /* Color Correction & Zoom Pill Block */
+                      <div className="p-1 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md shadow-lg border border-white/80 dark:border-zinc-700/60 flex flex-col items-center gap-1 relative animate-fadeIn">
+                        
+                        {/* 0. Свернуть панель */}
+                        <button
+                          onClick={() => {
+                            setIsRightToolbarCollapsed(true);
+                            setActiveFilterTool(null);
+                          }}
+                          className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95 border-b border-zinc-200/60 dark:border-zinc-700/60 pb-0.5"
+                          title="Свернуть панель цвета и масштаба"
+                        >
+                          <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
+                        </button>
+                        
+                        {/* POPUP ADJUSTMENT TOOL SLIDER OR ZOOM (Positioned directly ABOVE the color toolbar, vertical layout, minimal text) */}
+                      {activeFilterTool && (activeFilterTool === 'zoom' || selectedElem) && (
+                        <div className="absolute bottom-full mb-2 right-0 z-50 bg-white/90 dark:bg-zinc-900/90 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 p-2 rounded-2xl shadow-2xl backdrop-blur-2xl flex flex-col items-center gap-2.5 w-10 sm:w-11 animate-fadeIn pointer-events-auto">
+                          
+                          {/* Top Close Button */}
+                          <button
+                            onClick={() => setActiveFilterTool(null)}
+                            className="text-zinc-400 hover:text-zinc-700 dark:hover:text-white p-0.5 rounded-full hover:bg-zinc-200 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                            title="Закрыть"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+
+                          {/* Vertical Slider for Background Zoom */}
+                          {activeFilterTool === 'zoom' && (
+                            <div className="flex flex-col items-center gap-2">
+                              <input
+                                type="range"
+                                orient="vertical"
+                                min="50"
+                                max="300"
+                                step="5"
+                                value={Math.round((activeScene.backdropScale || 1) * 100)}
+                                onChange={(e) => {
+                                  if (!activeScene.backdropImage) {
+                                    showToast('Загрузите фон', 'Сначала загрузите изображение фона для настройки его масштаба.', 'info');
+                                    return;
+                                  }
+                                  updateActiveSceneBackdropScale(parseFloat(e.target.value) / 100);
+                                }}
+                                className="h-28 w-2 accent-[var(--lavDeep)] dark:accent-purple-400 cursor-pointer rounded-lg appearance-none bg-zinc-200 dark:bg-zinc-700 [writing-mode:vertical-lr] [direction:rtl]"
+                              />
+                              <span className="text-[10px] font-bold font-mono text-[var(--lavDeep)] dark:text-purple-300">
+                                {Math.round((activeScene.backdropScale || 1) * 100)}%
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Vertical Slider for Brightness */}
+                          {activeFilterTool === 'brightness' && selectedElem && (
+                            <div className="flex flex-col items-center gap-2">
+                              <input
+                                type="range"
+                                orient="vertical"
+                                min="-50"
+                                max="50"
+                                value={selectedElem.exposure}
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value);
+                                  updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, exposure: val } : item));
+                                }}
+                                className="h-28 w-2 accent-[var(--lavDeep)] dark:accent-purple-400 cursor-pointer rounded-lg appearance-none [writing-mode:vertical-lr] [direction:rtl]"
+                                style={{ background: 'linear-gradient(to top, #27272a, #a1a1aa, #ffffff)' }}
+                              />
+                              <span className="text-[10px] font-bold font-mono text-[var(--lavDeep)] dark:text-purple-300">
+                                {selectedElem.exposure > 0 ? `+${selectedElem.exposure}` : selectedElem.exposure}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Vertical Slider for Hue */}
+                          {activeFilterTool === 'hue' && selectedElem && (
+                            <div className="flex flex-col items-center gap-2">
+                              <input
+                                type="range"
+                                orient="vertical"
+                                min="-180"
+                                max="180"
+                                value={selectedElem.hue}
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value);
+                                  updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, hue: val } : item));
+                                }}
+                                className="h-28 w-2 accent-[var(--lavDeep)] dark:accent-purple-400 cursor-pointer rounded-lg appearance-none [writing-mode:vertical-lr] [direction:rtl]"
+                                style={{ background: 'linear-gradient(to top, red, yellow, green, cyan, blue, magenta, red)' }}
+                              />
+                              <span className="text-[10px] font-bold font-mono text-[var(--lavDeep)] dark:text-purple-300">
+                                {selectedElem.hue > 0 ? `+${selectedElem.hue}°` : `${selectedElem.hue}°`}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Vertical Slider for Temp */}
+                          {activeFilterTool === 'temp' && selectedElem && (
+                            <div className="flex flex-col items-center gap-2">
+                              <input
+                                type="range"
+                                orient="vertical"
+                                min="-50"
+                                max="50"
+                                value={selectedElem.temp || 0}
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value);
+                                  updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, temp: val } : item));
+                                }}
+                                className="h-28 w-2 accent-[var(--lavDeep)] dark:accent-purple-400 cursor-pointer rounded-lg appearance-none [writing-mode:vertical-lr] [direction:rtl]"
+                                style={{ background: 'linear-gradient(to top, #3b82f6, #eff6ff, #f59e0b)' }}
+                              />
+                              <span className="text-[10px] font-bold font-mono text-[var(--lavDeep)] dark:text-purple-300">
+                                {(selectedElem.temp || 0) > 0 ? `+${selectedElem.temp}` : (selectedElem.temp || 0)}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Vertical Slider for Saturate */}
+                          {activeFilterTool === 'saturate' && selectedElem && (
+                            <div className="flex flex-col items-center gap-2">
+                              <input
+                                type="range"
+                                orient="vertical"
+                                min="0"
+                                max="200"
+                                value={selectedElem.saturate}
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value);
+                                  updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, saturate: val } : item));
+                                }}
+                                className="h-28 w-2 accent-[var(--lavDeep)] dark:accent-purple-400 cursor-pointer rounded-lg appearance-none [writing-mode:vertical-lr] [direction:rtl]"
+                                style={{ background: 'linear-gradient(to top, #a1a1aa, #c084fc, #8b5cf6)' }}
+                              />
+                              <span className="text-[10px] font-bold font-mono text-[var(--lavDeep)] dark:text-purple-300">
+                                {selectedElem.saturate}%
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Vertical Slider for Opacity */}
+                          {activeFilterTool === 'opacity' && selectedElem && (
+                            <div className="flex flex-col items-center gap-2">
+                              <input
+                                type="range"
+                                orient="vertical"
+                                min="10"
+                                max="100"
+                                value={selectedElem.opacity}
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value);
+                                  updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, opacity: val } : item));
+                                }}
+                                className="h-28 w-2 accent-[var(--lavDeep)] dark:accent-purple-400 cursor-pointer rounded-lg appearance-none [writing-mode:vertical-lr] [direction:rtl]"
+                                style={{ background: 'linear-gradient(to top, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 1))' }}
+                              />
+                              <span className="text-[10px] font-bold font-mono text-[var(--lavDeep)] dark:text-purple-300">
+                                {selectedElem.opacity}%
+                              </span>
+                            </div>
+                          )}
+
+                        </div>
+                      )}
+
                       {/* 1. Яркость (Экспозиция) */}
                       <button
                         onClick={() => {
                           setActiveToolPopover(null);
+                          if (!selectedId && activeFilterTool !== 'brightness') {
+                            showToast('Выберите элемент', 'Кликните на элемент для настройки яркости', 'info');
+                          }
                           setActiveFilterTool(prev => prev === 'brightness' ? null : 'brightness');
                         }}
                         className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
@@ -2498,6 +2545,9 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                       <button
                         onClick={() => {
                           setActiveToolPopover(null);
+                          if (!selectedId && activeFilterTool !== 'hue') {
+                            showToast('Выберите элемент', 'Кликните на элемент для настройки тона', 'info');
+                          }
                           setActiveFilterTool(prev => prev === 'hue' ? null : 'hue');
                         }}
                         className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
@@ -2514,6 +2564,9 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                       <button
                         onClick={() => {
                           setActiveToolPopover(null);
+                          if (!selectedId && activeFilterTool !== 'temp') {
+                            showToast('Выберите элемент', 'Кликните на элемент для настройки температуры', 'info');
+                          }
                           setActiveFilterTool(prev => prev === 'temp' ? null : 'temp');
                         }}
                         className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
@@ -2530,6 +2583,9 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                       <button
                         onClick={() => {
                           setActiveToolPopover(null);
+                          if (!selectedId && activeFilterTool !== 'saturate') {
+                            showToast('Выберите элемент', 'Кликните на элемент для настройки насыщенности', 'info');
+                          }
                           setActiveFilterTool(prev => prev === 'saturate' ? null : 'saturate');
                         }}
                         className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
@@ -2546,6 +2602,9 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                       <button
                         onClick={() => {
                           setActiveToolPopover(null);
+                          if (!selectedId && activeFilterTool !== 'opacity') {
+                            showToast('Выберите элемент', 'Кликните на элемент для настройки прозрачности', 'info');
+                          }
                           setActiveFilterTool(prev => prev === 'opacity' ? null : 'opacity');
                         }}
                         className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
@@ -2557,27 +2616,24 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                       >
                         <Droplet className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
                       </button>
-                    </div>
 
-                    {/* ALWAYS VISIBLE TRASH BUTTON AT BOTTOM RIGHT */}
-                    <div className="p-0.5 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md shadow-lg border border-white/80 dark:border-zinc-700/60">
+                      {/* 6. Лупа (Масштаб / Приближение с ползунком) */}
                       <button
                         onClick={() => {
-                          if (selectedIds.length > 0) {
-                            const count = selectedIds.length;
-                            updateActiveSceneElements(els => els.filter(el => !selectedIds.includes(el.id)));
-                            setSelectedIds([]);
-                            showToast('Удалено', count > 1 ? `Удалено ${count} элементов с холста` : 'Элемент удален с холста', 'info');
-                          } else {
-                            showToast('Удаление', 'Выберите элементы для удаления', 'info');
-                          }
+                          setActiveToolPopover(null);
+                          setActiveFilterTool(prev => prev === 'zoom' ? null : 'zoom');
                         }}
-                        className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-rose-500 text-white hover:bg-rose-600 flex items-center justify-center shadow-md border border-rose-400/80 cursor-pointer transition-all active:scale-95"
-                        title="Удалить выбранный элемент"
+                        className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 border-t border-zinc-200/60 dark:border-zinc-700/60 pt-0.5 mt-0.5 ${
+                          activeFilterTool === 'zoom'
+                            ? 'bg-[var(--lavDeep)] text-white shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                        }`}
+                        title="Масштаб холста (Приближение/Отдаление)"
                       >
-                        <Trash2 className="w-4 h-4 stroke-[2.2]" />
+                        <ZoomIn className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
                       </button>
                     </div>
+                    )}
                   </div>
                 </div>
 
@@ -2589,7 +2645,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                     style={{
                       width: `${canvasWidthMm / 10}px`,
                       height: `${canvasHeightMm / 10}px`,
-                      transform: `translate(${panX}px, ${panY}px) scale(${canvasScale * zoomScale})`,
+                      transform: `translate(${panX}px, ${panY}px) scale(${canvasScale})`,
                     }}
                     onClick={() => setSelectedIds([])}
                   >
@@ -2599,8 +2655,11 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                     <img
                       src={activeScene.backdropImage}
                       alt="Backdrop"
-                      className="absolute inset-0 w-full h-full object-cover"
-                      style={{ opacity: 0.75 }}
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-75 origin-center"
+                      style={{
+                        opacity: 0.82,
+                        transform: `scale(${activeScene.backdropScale || 1}) translate(${activeScene.backdropX || 0}px, ${activeScene.backdropY || 0}px)`
+                      }}
                       referrerPolicy="no-referrer"
                     />
                   ) : (
@@ -3223,288 +3282,459 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                   );
                 })()}
                   </div>
-
-                  {/* SLIDER POPUP FOR SELECTED ADJUSTMENT TOOL (Fixed Screen Viewport Overlay) */}
-                  {selectedElem && activeFilterTool && (
-                    <div className="absolute right-6 top-6 z-50 bg-zinc-900/95 dark:bg-zinc-900/95 text-white border border-zinc-700/80 p-3.5 rounded-2xl shadow-2xl flex flex-col gap-2.5 w-60 backdrop-blur-xl pointer-events-auto animate-fadeIn">
-                      <div className="flex justify-between items-center text-xs font-bold text-zinc-100 pb-1.5 border-b border-white/10">
-                        <span className="flex items-center gap-1.5">
-                          <Sliders className="w-3.5 h-3.5 text-purple-400" />
-                          {activeFilterTool === 'brightness' && 'Яркость (Экспозиция)'}
-                          {activeFilterTool === 'hue' && 'Оттенок (Тон)'}
-                          {activeFilterTool === 'temp' && 'Теплота (Температура)'}
-                          {activeFilterTool === 'saturate' && 'Насыщенность'}
-                          {activeFilterTool === 'opacity' && 'Прозрачность'}
-                        </span>
-                        <button onClick={() => setActiveFilterTool(null)} className="text-zinc-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors cursor-pointer">
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-
-                      {activeFilterTool === 'brightness' && (
-                        <input
-                          type="range"
-                          min="-50"
-                          max="50"
-                          value={selectedElem.exposure}
-                          onChange={(e) => {
-                            const val = parseInt(e.target.value);
-                            updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, exposure: val } : item));
-                          }}
-                          className="w-full accent-purple-400 cursor-pointer"
-                        />
-                      )}
-
-                      {activeFilterTool === 'hue' && (
-                        <input
-                          type="range"
-                          min="-180"
-                          max="180"
-                          value={selectedElem.hue}
-                          onChange={(e) => {
-                            const val = parseInt(e.target.value);
-                            updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, hue: val } : item));
-                          }}
-                          className="w-full accent-purple-400 cursor-pointer"
-                        />
-                      )}
-
-                      {activeFilterTool === 'temp' && (
-                        <input
-                          type="range"
-                          min="-50"
-                          max="50"
-                          value={selectedElem.temp || 0}
-                          onChange={(e) => {
-                            const val = parseInt(e.target.value);
-                            updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, temp: val } : item));
-                          }}
-                          className="w-full accent-purple-400 cursor-pointer"
-                        />
-                      )}
-
-                      {activeFilterTool === 'saturate' && (
-                        <input
-                          type="range"
-                          min="0"
-                          max="200"
-                          value={selectedElem.saturate}
-                          onChange={(e) => {
-                            const val = parseInt(e.target.value);
-                            updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, saturate: val } : item));
-                          }}
-                          className="w-full accent-purple-400 cursor-pointer"
-                        />
-                      )}
-
-                      {activeFilterTool === 'opacity' && (
-                        <input
-                          type="range"
-                          min="10"
-                          max="100"
-                          value={selectedElem.opacity}
-                          onChange={(e) => {
-                            const val = parseInt(e.target.value);
-                            updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, opacity: val } : item));
-                          }}
-                          className="w-full accent-purple-400 cursor-pointer"
-                        />
-                      )}
-                    </div>
-                  )}
                 </div>
+
+                {/* FLOATING BOTTOM 2-TAB BUTTONS BAR & ANCHORED DRAWER */}
+                {activeWorkspaceTab !== 'floorplan' && (
+                  <>
+                    {/* SLIDE-UP DRAWER ANCHORED DIRECTLY TO BOTTOM CANVAS EDGE */}
+                    <AnimatePresence>
+                      {mobileDrawerTab && (
+                        <motion.div
+                          initial={{ opacity: 0, y: '100%' }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: '100%' }}
+                          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                          className="absolute bottom-0 inset-x-0 z-40 w-full max-h-[65%] sm:max-h-[420px] flex flex-col bg-white/45 dark:bg-zinc-900/50 border-t border-x border-white/70 dark:border-white/15 rounded-t-[28px] shadow-[0_-12px_35px_rgba(0,0,0,0.15)] backdrop-blur-[24px] overflow-hidden pointer-events-auto"
+                        >
+                          {/* Drawer Header with Tabs at the Top */}
+                          <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-white/40 dark:border-white/10 bg-white/25 dark:bg-zinc-900/30 backdrop-blur-md shrink-0">
+                            {/* Tabs Bar inside Top Header */}
+                            <div className="p-0.5 bg-white/40 dark:bg-zinc-800/40 backdrop-blur-md rounded-full border border-white/50 dark:border-white/10 flex items-center gap-1 text-xs">
+                              <button
+                                onClick={() => {
+                                  setMobileDrawerTab('library');
+                                  setActiveSidebarTab('library');
+                                }}
+                                className={`py-1 px-3 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                                  mobileDrawerTab === 'library'
+                                    ? 'bg-[#EAE4F8]/80 text-[#5B3E88] dark:bg-purple-950/80 dark:text-purple-200 shadow-xs border border-[#D4C5ED]/50 backdrop-blur-sm'
+                                    : 'text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white/40 dark:hover:bg-white/10'
+                                }`}
+                              >
+                                <BookOpen className="w-3.5 h-3.5 shrink-0 text-[#5B3E88] dark:text-purple-400" />
+                                <span>Библиотека</span>
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setMobileDrawerTab('layers');
+                                  setActiveSidebarTab('layers');
+                                }}
+                                className={`py-1 px-3 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                                  mobileDrawerTab === 'layers'
+                                    ? 'bg-[#EAE4F8]/80 text-[#5B3E88] dark:bg-purple-950/80 dark:text-purple-200 shadow-xs border border-[#D4C5ED]/50 backdrop-blur-sm'
+                                    : 'text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white/40 dark:hover:bg-white/10'
+                                }`}
+                              >
+                                <Layers className="w-3.5 h-3.5 shrink-0 text-[#5B3E88] dark:text-purple-400" />
+                                <span>Элементы</span>
+                                <span className="px-1.5 py-0.5 rounded-full bg-[#5B3E88] text-white text-[9px] font-extrabold leading-none shrink-0">
+                                  {activeScene.elements.length}
+                                </span>
+                              </button>
+                            </div>
+
+                            <button
+                              onClick={() => setMobileDrawerTab(null)}
+                              className="p-1.5 rounded-full bg-white/50 dark:bg-zinc-800/50 hover:bg-white/80 dark:hover:bg-zinc-700 text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white border border-white/60 dark:border-white/10 transition-colors cursor-pointer"
+                              title="Закрыть шторку"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+
+                          {/* Drawer Body Content */}
+                          <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-3 min-w-0">
+                            {renderSidebarTabContent(mobileDrawerTab)}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* FLOATING PILL BAR WITH 2 TABS WHEN CLOSED (MOBILE/TABLET ONLY) */}
+                    {!mobileDrawerTab && (
+                      <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-30 pointer-events-auto flex lg:hidden items-center justify-center">
+                        <div className="p-1 bg-white/85 dark:bg-zinc-900/85 backdrop-blur-md rounded-full border border-white/80 dark:border-zinc-700/60 shadow-lg flex items-center gap-1.5 text-xs">
+                          <button
+                            onClick={() => {
+                              setMobileDrawerTab('library');
+                              setActiveSidebarTab('library');
+                            }}
+                            className="py-1.5 px-3.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 text-zinc-700 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-white/10 active:scale-95"
+                          >
+                            <BookOpen className="w-3.5 h-3.5 shrink-0 text-[#5B3E88] dark:text-purple-400" />
+                            <span className="truncate">Библиотека</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setMobileDrawerTab('layers');
+                              setActiveSidebarTab('layers');
+                            }}
+                            className="py-1.5 px-3.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 text-zinc-700 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-white/10 active:scale-95"
+                          >
+                            <Layers className="w-3.5 h-3.5 shrink-0 text-[#5B3E88] dark:text-purple-400" />
+                            <span className="truncate">Элементы</span>
+                            <span className="px-1.5 py-0.5 rounded-full bg-[#5B3E88] text-white text-[9px] font-extrabold leading-none shrink-0">
+                              {activeScene.elements.length}
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             )}
           </div>
 
-          {/* BOTTOM PANELS IN LEFT COLUMN: TAB BAR + DIMENSIONS/CONTROLS PANEL */}
-          {activeWorkspaceTab !== 'floorplan' && (
-            <div className="shrink-0 relative z-30 space-y-1.5 pt-0.5">
-              {/* SLIDE-UP DRAWER WHEN A TAB IS EXPANDED */}
-              <AnimatePresence>
-                {mobileDrawerTab && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 20, scale: 0.98 }}
-                    transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                    className="absolute bottom-full left-0 right-0 mb-1 z-50 max-h-[50vh] sm:max-h-[380px] flex flex-col bg-white/90 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl backdrop-blur-2xl overflow-hidden"
-                  >
-                    {/* Drawer Header */}
-                    <div className="flex items-center justify-between px-3.5 py-2 border-b border-zinc-200/60 dark:border-zinc-800/60 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-md shrink-0">
-                      <div className="flex items-center gap-2 text-xs font-bold text-[var(--ink)]">
-                        {mobileDrawerTab === 'library' && <BookOpen className="w-4 h-4 text-[#5B3E88] dark:text-purple-400" />}
-                        {mobileDrawerTab === 'layers' && <Layers className="w-4 h-4 text-[#5B3E88] dark:text-purple-400" />}
-                        {mobileDrawerTab === 'tools' && <Sliders className="w-4 h-4 text-[#5B3E88] dark:text-purple-400" />}
-                        <span>
-                          {mobileDrawerTab === 'library' && 'Библиотека декора'}
-                          {mobileDrawerTab === 'layers' && `Элементы на сцене (${activeScene.elements.length})`}
-                          {mobileDrawerTab === 'tools' && 'Инструменты редактирования'}
-                        </span>
+          {/* BOTTOM PANELS IN LEFT COLUMN: DIMENSIONS/CONTROLS PANEL */}
+          {activeWorkspaceTab !== 'floorplan' && (() => {
+            const selectedElem = activeScene.elements.find(el => el.id === selectedId);
+            return (
+              <div className="shrink-0 relative z-30 pt-0.5">
+                {/* PANEL: FIELD DIMENSIONS & TOGGLES (Single row compact layout) */}
+                <div className="flex items-center justify-between gap-1 text-xs py-0.5 w-full flex-nowrap">
+                  
+                  {/* Dynamic Dimensions Block ("Размер поля" / "Размер элемента" on desktop, compact on mobile) */}
+                  <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 bg-white/80 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700/80 rounded-full px-2 sm:px-3 py-1 shadow-xs">
+                    <span className="hidden sm:inline-block text-[11px] font-extrabold text-zinc-600 dark:text-zinc-300 whitespace-nowrap">
+                      {selectedElem ? 'Размер элемента' : 'Размер поля'}
+                    </span>
+
+                    {selectedElem ? (
+                      <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-0.5">
+                          <span className="font-extrabold text-[#5B3E88] dark:text-purple-400 text-xs pl-0.5">Ш</span>
+                          <input
+                            type="number"
+                            value={Math.round(selectedElem.w)}
+                            onChange={(e) => {
+                              const val = parseFloat(e.target.value);
+                              if (!isNaN(val) && val > 0) {
+                                updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, w: val } : item));
+                              }
+                            }}
+                            className="w-11 sm:w-14 text-center font-bold text-xs bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full px-1 py-0.5 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#5B3E88] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          />
+                        </div>
+                        <span className="text-zinc-400 font-bold text-xs">×</span>
+                        <div className="flex items-center gap-0.5">
+                          <span className="font-extrabold text-[#5B3E88] dark:text-purple-400 text-xs pl-0.5">В</span>
+                          <input
+                            type="number"
+                            value={Math.round(selectedElem.h)}
+                            onChange={(e) => {
+                              const val = parseFloat(e.target.value);
+                              if (!isNaN(val) && val > 0) {
+                                updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, h: val } : item));
+                              }
+                            }}
+                            className="w-11 sm:w-14 text-center font-bold text-xs bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full px-1 py-0.5 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#5B3E88] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          />
+                        </div>
                       </div>
+                    ) : (
+                      <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-0.5">
+                          <span className="font-extrabold text-[#5B3E88] dark:text-purple-400 text-xs pl-0.5">Ш</span>
+                          <input
+                            type="number"
+                            value={canvasWidthInput}
+                            onChange={(e) => {
+                              setCanvasWidthInput(e.target.value);
+                              const parsed = parseFloat(e.target.value);
+                              if (!isNaN(parsed) && parsed > 0) {
+                                setCanvasWidthMm(fromDisplayValue(parsed));
+                              }
+                            }}
+                            className="w-11 sm:w-14 text-center font-bold text-xs bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full px-1 py-0.5 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#5B3E88] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          />
+                        </div>
+                        <span className="text-zinc-400 font-bold text-xs">×</span>
+                        <div className="flex items-center gap-0.5">
+                          <span className="font-extrabold text-[#5B3E88] dark:text-purple-400 text-xs pl-0.5">В</span>
+                          <input
+                            type="number"
+                            value={canvasHeightInput}
+                            onChange={(e) => {
+                              setCanvasHeightInput(e.target.value);
+                              const parsed = parseFloat(e.target.value);
+                              if (!isNaN(parsed) && parsed > 0) {
+                                setCanvasHeightMm(fromDisplayValue(parsed));
+                              }
+                            }}
+                            className="w-11 sm:w-14 text-center font-bold text-xs bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full px-1 py-0.5 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#5B3E88] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right Action Toggles: Desktop Zoom Controller, Backdrop Popover, Grid, Human */}
+                  <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 ml-auto">
+                    {/* Background Scale Zoom Controller (Desktop only: hidden on mobile, visible on sm+) */}
+                    <div className="hidden sm:flex items-center gap-1 bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700/80 rounded-full px-2 py-1 shadow-xs shrink-0">
                       <button
-                        onClick={() => setMobileDrawerTab(null)}
-                        className="p-1 rounded-full hover:bg-zinc-200/80 dark:hover:bg-zinc-800/80 text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors cursor-pointer"
+                        onClick={() => {
+                          if (!activeScene.backdropImage) {
+                            showToast('Загрузите фон', 'Сначала загрузите изображение фона, чтобы изменять его масштаб.', 'info');
+                            return;
+                          }
+                          updateActiveSceneBackdropScale((activeScene.backdropScale || 1) - 0.1);
+                        }}
+                        className="w-5 h-5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300 font-bold text-xs cursor-pointer transition-colors"
+                        title="Уменьшить масштаб картинки фона"
                       >
-                        <X className="w-4 h-4" />
+                        -
                       </button>
+                      <span className="text-[11px] font-bold text-[#5B3E88] dark:text-purple-300 min-w-[34px] text-center select-none" title="Масштаб картинки фона">
+                        {Math.round((activeScene.backdropScale || 1) * 100)}%
+                      </span>
+                      <button
+                        onClick={() => {
+                          if (!activeScene.backdropImage) {
+                            showToast('Загрузите фон', 'Сначала загрузите изображение фона, чтобы изменять его масштаб.', 'info');
+                            return;
+                          }
+                          updateActiveSceneBackdropScale((activeScene.backdropScale || 1) + 0.1);
+                        }}
+                        className="w-5 h-5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300 font-bold text-xs cursor-pointer transition-colors"
+                        title="Увеличить масштаб картинки фона"
+                      >
+                        +
+                      </button>
+                      {(activeScene.backdropScale && activeScene.backdropScale !== 1) && (
+                        <button
+                          onClick={() => updateActiveSceneBackdropScale(1)}
+                          className="text-[10px] font-semibold text-zinc-400 hover:text-[#5B3E88] dark:hover:text-purple-300 ml-0.5 cursor-pointer underline"
+                          title="Сбросить масштаб фона на 100%"
+                        >
+                          100%
+                        </button>
+                      )}
+                    </div>
+                    {/* Backdrop Button & Popover Menu */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setIsBackdropPopoverOpen(!isBackdropPopoverOpen)}
+                        className={`px-2.5 sm:px-3 py-1.5 rounded-full font-bold text-xs flex items-center gap-1.5 border shadow-xs cursor-pointer transition-all ${
+                          activeScene.backdropImage || (activeScene.backdropColor && activeScene.backdropColor !== '#F3F4F6')
+                            ? 'bg-[#5B3E88] text-white border-[#5B3E88]'
+                            : 'bg-white dark:bg-zinc-800 hover:bg-purple-50 dark:hover:bg-purple-950/50 text-zinc-700 dark:text-zinc-200 border-zinc-200/80 dark:border-zinc-700/80'
+                        }`}
+                        title="Настройки фона (Цвет, картинка, масштаб, сброс)"
+                      >
+                        <Upload className="w-3.5 h-3.5 shrink-0" />
+                        <span>Фон</span>
+                        {activeScene.backdropImage && activeScene.backdropScale && activeScene.backdropScale !== 1 && (
+                          <span className="text-[10px] bg-white/20 px-1 rounded font-mono">
+                            {Math.round(activeScene.backdropScale * 100)}%
+                          </span>
+                        )}
+                      </button>
+
+                      <AnimatePresence>
+                        {isBackdropPopoverOpen && (
+                          <>
+                            <div
+                              className="fixed inset-0 z-[60]"
+                              onClick={() => setIsBackdropPopoverOpen(false)}
+                            />
+                            <motion.div
+                              initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                              transition={{ duration: 0.15 }}
+                              className="absolute right-0 bottom-full mb-2 w-64 sm:w-72 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl border border-zinc-200/80 dark:border-zinc-700/80 rounded-2xl shadow-xl p-3 z-[70] flex flex-col gap-3"
+                            >
+                              <div className="flex items-center justify-between pb-1 border-b border-zinc-200/60 dark:border-zinc-800">
+                                <span className="text-xs font-bold text-zinc-800 dark:text-zinc-100 flex items-center gap-1.5">
+                                  <Palette className="w-3.5 h-3.5 text-[#5B3E88] dark:text-purple-400" />
+                                  Настройка фона
+                                </span>
+                                <button
+                                  onClick={() => setIsBackdropPopoverOpen(false)}
+                                  className="p-1 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 cursor-pointer"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+
+                              {/* Upload Image Option */}
+                              <button
+                                onClick={() => {
+                                  fileInputRef.current?.click();
+                                  setIsBackdropPopoverOpen(false);
+                                }}
+                                className="w-full py-2 px-3 rounded-xl bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/80 text-[#5B3E88] dark:text-purple-200 text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer border border-purple-200/50 dark:border-purple-800/40"
+                              >
+                                <Upload className="w-3.5 h-3.5" />
+                                <span>Загрузить изображение</span>
+                              </button>
+
+                              {/* Preset Color Palette Option */}
+                              <div className="space-y-1.5">
+                                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">
+                                  Цвет фона
+                                </span>
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  {[
+                                    { color: '#F3F4F6', label: 'Светло-серый' },
+                                    { color: '#FFFFFF', label: 'Чистый белый' },
+                                    { color: '#F8FAFC', label: 'Холодный' },
+                                    { color: '#FEF3C7', label: 'Кремовый' },
+                                    { color: '#FCE7F3', label: 'Розовый' },
+                                    { color: '#E0E7FF', label: 'Лавандовый' },
+                                    { color: '#DCFCE7', label: 'Мятный' },
+                                    { color: '#18181B', label: 'Темный графит' },
+                                  ].map(c => (
+                                    <button
+                                      key={c.color}
+                                      onClick={() => {
+                                        handleCanvasBackdropChange('color', c.color);
+                                        const updated = scenes.map(s => s.id === activeScene.id ? { ...s, backdropImage: '', backdropType: 'color' as const, backdropColor: c.color } : s);
+                                        setScenes(updated);
+                                        recordHistory(updated);
+                                      }}
+                                      className={`w-6 h-6 rounded-full border border-zinc-300 dark:border-zinc-700 transition-transform cursor-pointer hover:scale-110 flex items-center justify-center ${
+                                        activeScene.backdropColor === c.color && !activeScene.backdropImage ? 'ring-2 ring-[#5B3E88] ring-offset-1' : ''
+                                      }`}
+                                      style={{ backgroundColor: c.color }}
+                                      title={c.label}
+                                    >
+                                      {activeScene.backdropColor === c.color && !activeScene.backdropImage && (
+                                        <Check className={`w-3 h-3 ${c.color === '#18181B' ? 'text-white' : 'text-[#5B3E88]'}`} />
+                                      )}
+                                    </button>
+                                  ))}
+
+                                  {/* Custom Color Input */}
+                                  <label className="relative w-6 h-6 rounded-full border border-dashed border-zinc-400 dark:border-zinc-600 flex items-center justify-center cursor-pointer hover:scale-110 transition-transform">
+                                    <span className="text-[9px] font-bold text-zinc-500">+</span>
+                                    <input
+                                      type="color"
+                                      value={activeScene.backdropColor || '#F3F4F6'}
+                                      onChange={(e) => {
+                                        handleCanvasBackdropChange('color', e.target.value);
+                                        const updated = scenes.map(s => s.id === activeScene.id ? { ...s, backdropImage: '', backdropType: 'color' as const, backdropColor: e.target.value } : s);
+                                        setScenes(updated);
+                                        recordHistory(updated);
+                                      }}
+                                      className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                                      title="Выбрать свой цвет"
+                                    />
+                                  </label>
+                                </div>
+                              </div>
+
+                              {/* Background Image Scale Slider inside Popover */}
+                              {activeScene.backdropImage && (
+                                <div className="space-y-2 pt-2 border-t border-zinc-200/60 dark:border-zinc-800">
+                                  <div className="flex items-center justify-between text-[11px] font-bold text-zinc-600 dark:text-zinc-300">
+                                    <span className="flex items-center gap-1">
+                                      <ZoomIn className="w-3.5 h-3.5 text-[#5B3E88] dark:text-purple-400" />
+                                      Масштаб картинки
+                                    </span>
+                                    <span className="text-[#5B3E88] dark:text-purple-300 font-mono font-extrabold">
+                                      {Math.round((activeScene.backdropScale || 1) * 100)}%
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    <button
+                                      onClick={() => updateActiveSceneBackdropScale((activeScene.backdropScale || 1) - 0.1)}
+                                      className="w-7 h-7 rounded-full bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-700 dark:text-zinc-200 font-bold text-xs transition-colors cursor-pointer shrink-0"
+                                      title="Уменьшить масштаб"
+                                    >
+                                      -
+                                    </button>
+                                    <input
+                                      type="range"
+                                      min="50"
+                                      max="300"
+                                      step="5"
+                                      value={Math.round((activeScene.backdropScale || 1) * 100)}
+                                      onChange={(e) => updateActiveSceneBackdropScale(parseFloat(e.target.value) / 100)}
+                                      className="w-full accent-[#5B3E88] dark:accent-purple-400 h-2 rounded-lg bg-zinc-200 dark:bg-zinc-700 cursor-pointer"
+                                    />
+                                    <button
+                                      onClick={() => updateActiveSceneBackdropScale((activeScene.backdropScale || 1) + 0.1)}
+                                      className="w-7 h-7 rounded-full bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-700 dark:text-zinc-200 font-bold text-xs transition-colors cursor-pointer shrink-0"
+                                      title="Увеличить масштаб"
+                                    >
+                                      +
+                                    </button>
+                                    {(activeScene.backdropScale && activeScene.backdropScale !== 1) && (
+                                      <button
+                                        onClick={() => updateActiveSceneBackdropScale(1)}
+                                        className="text-[10px] font-bold text-zinc-400 hover:text-[#5B3E88] dark:hover:text-purple-300 cursor-pointer underline shrink-0 ml-0.5"
+                                        title="Сбросить на 100%"
+                                      >
+                                        100%
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Remove Background Option */}
+                              {(activeScene.backdropImage || (activeScene.backdropColor && activeScene.backdropColor !== '#F3F4F6')) && (
+                                <button
+                                  onClick={() => {
+                                    const updated = scenes.map(s => s.id === activeScene.id ? { ...s, backdropImage: '', backdropColor: '#F3F4F6', backdropType: 'color' as const } : s);
+                                    setScenes(updated);
+                                    recordHistory(updated);
+                                    setIsBackdropPopoverOpen(false);
+                                    showToast('Фон сброшен', 'Фон возвращен к стандартному прозрачно-светлому.', 'info');
+                                  }}
+                                  className="w-full py-1.5 px-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-rose-200/50 dark:border-rose-800/40"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <span>Удалить / сбросить фон</span>
+                                </button>
+                              )}
+                            </motion.div>
+                          </>
+                        )}
+                      </AnimatePresence>
                     </div>
 
-                    {/* Drawer Body Content */}
-                    <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-3 min-w-0">
-                      {renderSidebarTabContent(mobileDrawerTab)}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                    <button
+                      onClick={() => setGridVisible(!gridVisible)}
+                      className={`px-3 py-1.5 rounded-full font-bold text-xs flex items-center gap-1.5 border shadow-xs transition-all cursor-pointer ${
+                        gridVisible
+                          ? 'bg-[#5B3E88] text-white border-[#5B3E88]'
+                          : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border-zinc-200/80 dark:border-zinc-700/80'
+                      }`}
+                      title="Показать / скрыть сетку"
+                    >
+                      <Grid className="w-3.5 h-3.5 shrink-0" />
+                      <span className="hidden sm:inline">Сетка</span>
+                    </button>
 
-              {/* PANEL 1: 3-TAB BUTTONS BAR */}
-              <div className="p-1 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md rounded-full border border-zinc-200/80 dark:border-zinc-800/80 grid grid-cols-3 gap-1 shadow-xs text-xs">
-                <button
-                  onClick={() => {
-                    setMobileDrawerTab(prev => prev === 'library' ? null : 'library');
-                    setActiveSidebarTab('library');
-                  }}
-                  className={`py-1.5 px-2 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                    mobileDrawerTab === 'library'
-                      ? 'bg-[#EAE4F8] text-[#5B3E88] dark:bg-purple-950 dark:text-purple-200 shadow-xs border border-[#D4C5ED]/50'
-                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
-                  }`}
-                >
-                  <BookOpen className="w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate">Библиотека</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setMobileDrawerTab(prev => prev === 'layers' ? null : 'layers');
-                    setActiveSidebarTab('layers');
-                  }}
-                  className={`py-1.5 px-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                    mobileDrawerTab === 'layers'
-                      ? 'bg-[#EAE4F8] text-[#5B3E88] dark:bg-purple-950 dark:text-purple-200 shadow-xs border border-[#D4C5ED]/50'
-                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
-                  }`}
-                >
-                  <Layers className="w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate">Элементы</span>
-                  <span className="px-1.5 py-0.5 rounded-full bg-[#5B3E88] text-white text-[9px] font-extrabold leading-none shrink-0">
-                    {activeScene.elements.length}
-                  </span>
-                </button>
-                <button
-                  onClick={() => {
-                    setMobileDrawerTab(prev => prev === 'tools' ? null : 'tools');
-                    setActiveSidebarTab('tools');
-                  }}
-                  className={`py-1.5 px-2 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                    mobileDrawerTab === 'tools'
-                      ? 'bg-[#EAE4F8] text-[#5B3E88] dark:bg-purple-950 dark:text-purple-200 shadow-xs border border-[#D4C5ED]/50'
-                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
-                  }`}
-                >
-                  <Sliders className="w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate">Инструменты</span>
-                </button>
-              </div>
-
-              {/* PANEL 2: FIELD DIMENSIONS & TOGGLES (Ш 650 x В 440 | Фон | Сетка | Человек) */}
-              <div className="flex items-center justify-between gap-1.5 text-xs overflow-x-auto no-scrollbar py-0.5">
-                {/* Dimensions Inputs */}
-                <div className="flex items-center gap-1 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md px-2.5 py-1 rounded-full border border-zinc-200/80 dark:border-zinc-800/80 shadow-xs shrink-0">
-                  <div className="flex items-center gap-0.5">
-                    <span className="font-extrabold text-[#5B3E88] dark:text-purple-400 text-xs">Ш</span>
-                    <input
-                      type="number"
-                      value={canvasWidthInput}
-                      onChange={(e) => {
-                        setCanvasWidthInput(e.target.value);
-                        const parsed = parseFloat(e.target.value);
-                        if (!isNaN(parsed) && parsed > 0) {
-                          setCanvasWidthMm(fromDisplayValue(parsed));
-                        }
-                      }}
-                      className="w-10 text-center font-bold text-xs bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md py-0.5 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#5B3E88]"
-                    />
-                  </div>
-                  <span className="text-zinc-400 font-bold text-xs">×</span>
-                  <div className="flex items-center gap-0.5">
-                    <span className="font-extrabold text-[#5B3E88] dark:text-purple-400 text-xs">В</span>
-                    <input
-                      type="number"
-                      value={canvasHeightInput}
-                      onChange={(e) => {
-                        setCanvasHeightInput(e.target.value);
-                        const parsed = parseFloat(e.target.value);
-                        if (!isNaN(parsed) && parsed > 0) {
-                          setCanvasHeightMm(fromDisplayValue(parsed));
-                        }
-                      }}
-                      className="w-10 text-center font-bold text-xs bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md py-0.5 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#5B3E88]"
-                    />
+                    <button
+                      onClick={() => setHumanVisible(!humanVisible)}
+                      className={`px-3 py-1.5 rounded-full font-bold text-xs flex items-center gap-1.5 border shadow-xs transition-all cursor-pointer ${
+                        humanVisible
+                          ? 'bg-[#5B3E88] text-white border-[#5B3E88]'
+                          : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border-zinc-200/80 dark:border-zinc-700/80'
+                      }`}
+                      title="Показать / скрыть силуэт человека"
+                    >
+                      <User className="w-3.5 h-3.5 shrink-0" />
+                      <span className="hidden sm:inline">Человек</span>
+                    </button>
                   </div>
                 </div>
-
-                {/* Right Action Toggles: Backdrop, Grid, Human */}
-                <div className="flex items-center gap-1.5 shrink-0 ml-auto">
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="px-2.5 py-1.5 rounded-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md hover:bg-purple-50 dark:hover:bg-purple-950/50 text-zinc-700 dark:text-zinc-200 font-bold text-xs flex items-center gap-1 border border-zinc-200/80 dark:border-zinc-800/80 shadow-xs cursor-pointer transition-colors"
-                    title="Загрузить изображение фона"
-                  >
-                    <Upload className="w-3.5 h-3.5 text-[#5B3E88] dark:text-purple-400 shrink-0" />
-                    <span>Фон</span>
-                  </button>
-
-                  <button
-                    onClick={() => setGridVisible(!gridVisible)}
-                    className={`px-2.5 py-1.5 rounded-full font-bold text-xs flex items-center gap-1.5 border shadow-xs transition-all cursor-pointer ${
-                      gridVisible
-                        ? 'bg-[#EAE4F8] text-[#5B3E88] border-[#D4C5ED] dark:bg-purple-950 dark:text-purple-200'
-                        : 'bg-white/90 dark:bg-zinc-900/90 text-zinc-600 border-zinc-200/80 dark:border-zinc-800/80'
-                    }`}
-                    title="Показать / скрыть сетку"
-                  >
-                    <Grid className="w-3.5 h-3.5 shrink-0" />
-                    <div className={`w-7 h-4 rounded-full relative p-0.5 transition-colors duration-200 flex items-center ${
-                      gridVisible ? 'bg-[#5B3E88]' : 'bg-zinc-300 dark:bg-zinc-700'
-                    }`}>
-                      <div className={`w-3 h-3 rounded-full bg-white shadow-xs transition-transform duration-200 ${
-                        gridVisible ? 'translate-x-3' : 'translate-x-0'
-                      }`} />
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => setHumanVisible(!humanVisible)}
-                    className={`px-2.5 py-1.5 rounded-full font-bold text-xs flex items-center gap-1.5 border shadow-xs transition-all cursor-pointer ${
-                      humanVisible
-                        ? 'bg-[#EAE4F8] text-[#5B3E88] border-[#D4C5ED] dark:bg-purple-950 dark:text-purple-200'
-                        : 'bg-white/90 dark:bg-zinc-900/90 text-zinc-600 border-zinc-200/80 dark:border-zinc-800/80'
-                    }`}
-                    title="Показать / скрыть силуэт человека"
-                  >
-                    <User className="w-3.5 h-3.5 shrink-0" />
-                    <div className={`w-7 h-4 rounded-full relative p-0.5 transition-colors duration-200 flex items-center ${
-                      humanVisible ? 'bg-[#5B3E88]' : 'bg-zinc-300 dark:bg-zinc-700'
-                    }`}>
-                      <div className={`w-3 h-3 rounded-full bg-white shadow-xs transition-transform duration-200 ${
-                        humanVisible ? 'translate-x-3' : 'translate-x-0'
-                      }`} />
-                    </div>
-                  </button>
-                </div>
               </div>
-            </div>
-          )}
-
-
+            );
+          })()}
         </div>
 
         {/* RIGHT COLUMN: CONTROL SIDE PANEL (30% WIDTH) - DESKTOP ONLY */}
         <div className="hidden lg:flex lg:col-span-4 flex-col bg-white/70 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-xs backdrop-blur-md h-full min-h-0 min-w-0">
           
           {/* TAB BAR SELECTORS IN A CLEAN ROUNDED CONTAINER */}
-          <div className="p-1.5 bg-zinc-100/90 dark:bg-zinc-900/60 rounded-full m-3 mb-0 grid grid-cols-3 gap-1 border border-zinc-200/60 dark:border-zinc-800/60 shrink-0">
+          <div className="p-1.5 bg-zinc-100/90 dark:bg-zinc-900/60 rounded-full m-3 mb-0 grid grid-cols-2 gap-1 border border-zinc-200/60 dark:border-zinc-800/60 shrink-0">
             <button
               onClick={() => setActiveSidebarTab('library')}
               className={`py-2 px-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
@@ -3529,17 +3759,6 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
               <span className="px-1.5 py-0.5 rounded-full bg-[#5B3E88] text-white text-[9px] font-extrabold leading-none shrink-0">
                 {activeScene.elements.length}
               </span>
-            </button>
-            <button
-              onClick={() => setActiveSidebarTab('tools')}
-              className={`py-2 px-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                activeSidebarTab === 'tools'
-                  ? 'bg-[#EAE4F8] text-[#5B3E88] dark:bg-purple-950 dark:text-purple-200 shadow-xs border border-[#D4C5ED]/50'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
-              }`}
-            >
-              <Sliders className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">Инструменты</span>
             </button>
           </div>
 
