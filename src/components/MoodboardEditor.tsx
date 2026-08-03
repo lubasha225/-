@@ -57,6 +57,7 @@ import {
   Target,
   Droplet,
   ZoomIn,
+  Pipette,
   Bell,
   Moon,
   ArrowLeft,
@@ -117,6 +118,9 @@ export interface CanvasElement {
   svgMarkup: string;
   customImage?: string;
   groupId?: string;
+  tintColor?: string;
+  tintAmount?: number;
+  tintMode?: 'color' | 'normal' | 'multiply' | 'overlay';
 }
 
 interface EditorScene {
@@ -521,7 +525,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
 
   // Active popovers & adjustment floating tools
   const [activeToolPopover, setActiveToolPopover] = useState<'group' | 'layers' | 'flip' | null>(null);
-  const [activeFilterTool, setActiveFilterTool] = useState<'brightness' | 'contrast' | 'saturate' | 'hue' | 'opacity' | 'temp' | 'zoom' | null>(null);
+  const [activeFilterTool, setActiveFilterTool] = useState<'brightness' | 'contrast' | 'saturate' | 'hue' | 'opacity' | 'temp' | 'zoom' | 'recolor' | null>(null);
   const [mobileDrawerTab, setMobileDrawerTab] = useState<'library' | 'layers' | null>(null);
   const [isBackdropPopoverOpen, setIsBackdropPopoverOpen] = useState<boolean>(false);
 
@@ -615,6 +619,27 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
       if (observer) observer.disconnect();
     };
   }, [canvasWidthMm, canvasHeightMm]);
+
+  // Mouse Wheel Zooming on Canvas Viewport
+  useEffect(() => {
+    const viewportEl = viewportRef.current;
+    if (!viewportEl) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const delta = -e.deltaY;
+      const zoomFactor = delta > 0 ? 1.08 : 0.92;
+      setZoomScale(prev => {
+        const next = prev * zoomFactor;
+        return Math.min(Math.max(next, 0.2), 4.0);
+      });
+    };
+
+    viewportEl.addEventListener('wheel', handleWheel, { passive: false });
+    return () => {
+      viewportEl.removeEventListener('wheel', handleWheel);
+    };
+  }, [activeWorkspaceTab]);
 
   // Undo / Redo registration
   const recordHistory = (updatedScenes: EditorScene[]) => {
@@ -1200,58 +1225,62 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
 
       const originalW = dragStartRef.current.elW;
       const originalH = dragStartRef.current.elH;
+      const aspect = originalW / (originalH || 1);
 
-      switch (activeHandle) {
-        case 'br':
-          dw = localDx;
-          dh = localDy;
-          break;
-        case 'r':
-          dw = localDx;
-          break;
-        case 'b':
-          dh = localDy;
-          break;
-        case 'tl':
-          dw = -localDx;
-          dh = -localDy;
-          localShiftX = localDx;
-          localShiftY = localDy;
-          break;
-        case 't':
-          dh = -localDy;
-          localShiftY = localDy;
-          break;
-        case 'l':
-          dw = -localDx;
-          localShiftX = localDx;
-          break;
-        case 'tr':
-          dw = localDx;
-          dh = -localDy;
-          localShiftY = localDy;
-          break;
-        case 'bl':
-          dw = -localDx;
-          dh = localDy;
-          localShiftX = localDx;
-          break;
-      }
-
-      const finalW = Math.max(20, originalW + dw);
-      const finalH = Math.max(20, originalH + dh);
-
-      const actualDw = finalW - originalW;
-      const actualDh = finalH - originalH;
-
+      let finalW = originalW;
+      let finalH = originalH;
       let actualLocalShiftX = 0;
       let actualLocalShiftY = 0;
 
-      if (activeHandle === 'tl' || activeHandle === 'l' || activeHandle === 'bl') {
-        actualLocalShiftX = -actualDw;
-      }
-      if (activeHandle === 'tl' || activeHandle === 't' || activeHandle === 'tr') {
-        actualLocalShiftY = -actualDh;
+      switch (activeHandle) {
+        // Corner handles -> Proportional scaling
+        case 'br': {
+          const delta = (localDx + localDy * aspect) / 2;
+          finalW = Math.max(20, originalW + delta);
+          finalH = Math.max(20, finalW / aspect);
+          break;
+        }
+        case 'tr': {
+          const delta = (localDx - localDy * aspect) / 2;
+          finalW = Math.max(20, originalW + delta);
+          finalH = Math.max(20, finalW / aspect);
+          actualLocalShiftY = -(finalH - originalH);
+          break;
+        }
+        case 'bl': {
+          const delta = (-localDx + localDy * aspect) / 2;
+          finalW = Math.max(20, originalW + delta);
+          finalH = Math.max(20, finalW / aspect);
+          actualLocalShiftX = -(finalW - originalW);
+          break;
+        }
+        case 'tl': {
+          const delta = (-localDx - localDy * aspect) / 2;
+          finalW = Math.max(20, originalW + delta);
+          finalH = Math.max(20, finalW / aspect);
+          actualLocalShiftX = -(finalW - originalW);
+          actualLocalShiftY = -(finalH - originalH);
+          break;
+        }
+        // Side handles -> Non-proportional directional stretching
+        case 'r':
+          finalW = Math.max(20, originalW + localDx);
+          finalH = originalH;
+          break;
+        case 'b':
+          finalW = originalW;
+          finalH = Math.max(20, originalH + localDy);
+          break;
+        case 't':
+          finalW = originalW;
+          finalH = Math.max(20, originalH - localDy);
+          actualLocalShiftY = -(finalH - originalH);
+          break;
+        case 'l':
+          finalW = Math.max(20, originalW - localDx);
+          finalH = originalH;
+          actualLocalShiftX = -(finalW - originalW);
+          break;
       }
 
       const globalShiftX = actualLocalShiftX * Math.cos(rotationRad) - actualLocalShiftY * Math.sin(rotationRad);
@@ -1651,12 +1680,19 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                           <GripVertical className="w-4 h-4 text-zinc-400 shrink-0 cursor-grab" />
 
                           {/* Thumbnail preview */}
-                          <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center shrink-0 overflow-hidden border border-zinc-200/50 p-0.5">
-                            {el.customImage ? (
-                              <img src={el.customImage} className="w-full h-full object-contain" referrerPolicy="no-referrer" />
-                            ) : (
-                              <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: el.svgMarkup }} />
-                            )}
+                          <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center shrink-0 overflow-hidden border border-zinc-200/50 p-0.5 relative">
+                            <div
+                              className="w-full h-full flex items-center justify-center"
+                              style={{
+                                filter: el.tintColor ? `url(#element-tint-${el.id})` : undefined
+                              }}
+                            >
+                              {el.customImage ? (
+                                <img src={el.customImage} className="w-full h-full object-contain pointer-events-none" referrerPolicy="no-referrer" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center pointer-events-none" dangerouslySetInnerHTML={{ __html: el.svgMarkup }} />
+                              )}
+                            </div>
                           </div>
 
                           {/* Title */}
@@ -2371,41 +2407,185 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                           <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
                         </button>
                         
-                        {/* POPUP ADJUSTMENT TOOL SLIDER OR ZOOM (Positioned directly ABOVE the color toolbar, vertical layout, minimal text) */}
+                        {/* POPUP ADJUSTMENT TOOL SLIDER OR ZOOM (Positioned directly next to bottom-right toolbar, semi-transparent & compact) */}
                       {activeFilterTool && (activeFilterTool === 'zoom' || selectedElem) && (
-                        <div className="absolute bottom-full mb-2 right-0 z-50 bg-white/90 dark:bg-zinc-900/90 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 p-2 rounded-2xl shadow-2xl backdrop-blur-2xl flex flex-col items-center gap-2.5 w-10 sm:w-11 animate-fadeIn pointer-events-auto">
+                        <div className={`absolute ${activeFilterTool === 'recolor' ? 'right-full mr-2 bottom-0 w-56 p-2.5 bg-white/75 dark:bg-zinc-900/75 hover:bg-white/90 dark:hover:bg-zinc-900/90' : 'bottom-full mb-2 right-0 w-10 sm:w-11 p-2 bg-white/95 dark:bg-zinc-900/95'} z-50 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 rounded-2xl shadow-xl backdrop-blur-md flex flex-col items-center gap-2 animate-fadeIn pointer-events-auto transition-all`}>
                           
                           {/* Top Close Button */}
                           <button
                             onClick={() => setActiveFilterTool(null)}
-                            className="text-zinc-400 hover:text-zinc-700 dark:hover:text-white p-0.5 rounded-full hover:bg-zinc-200 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                            className="text-zinc-400 hover:text-zinc-700 dark:hover:text-white p-0.5 rounded-full hover:bg-zinc-200 dark:hover:bg-white/10 transition-colors cursor-pointer self-end"
                             title="Закрыть"
                           >
                             <X className="w-3.5 h-3.5" />
                           </button>
 
-                          {/* Vertical Slider for Background Zoom */}
+                          {/* Recolor Tool Panel */}
+                          {activeFilterTool === 'recolor' && selectedElem && (
+                            <div className="flex flex-col gap-2 w-full text-xs">
+                              <div className="flex items-center gap-1.5 font-bold text-zinc-800 dark:text-zinc-100 pb-1 border-b border-zinc-200/60 dark:border-zinc-800/60 text-[11px]">
+                                <Pipette className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-purple-400" />
+                                <span>Замена цвета</span>
+                              </div>
+
+                              {/* Custom HEX / Color Picker */}
+                              <div className="flex items-center justify-between gap-1.5 pt-0.5">
+                                <span className="text-[10px] font-bold text-zinc-600 dark:text-zinc-400">Цвет (HEX):</span>
+                                <div className="flex items-center gap-1">
+                                  <input
+                                    type="color"
+                                    value={selectedElem.tintColor || '#5B3E88'}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? {
+                                        ...item,
+                                        tintColor: val,
+                                        tintAmount: item.tintAmount || 75,
+                                        tintMode: item.tintMode || 'color'
+                                      } : item));
+                                    }}
+                                    className="w-6 h-6 rounded-md border border-zinc-200 dark:border-zinc-700 cursor-pointer overflow-hidden p-0 bg-transparent"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={selectedElem.tintColor || ''}
+                                    placeholder="#HEX..."
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, tintColor: val } : item));
+                                    }}
+                                    className="w-16 px-1.5 py-0.5 rounded-md bg-zinc-100/80 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-[10px] font-mono font-bold text-zinc-800 dark:text-zinc-200 uppercase focus:outline-none focus:border-[var(--lavDeep)]"
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Options when color is chosen */}
+                              {selectedElem.tintColor && (
+                                <>
+                                  {/* Intensity Slider */}
+                                  <div className="space-y-1 pt-1 border-t border-zinc-100 dark:border-zinc-800">
+                                    <div className="flex items-center justify-between text-[11px] font-bold text-zinc-600 dark:text-zinc-300">
+                                      <span>Интенсивность</span>
+                                      <span className="text-[var(--lavDeep)] dark:text-purple-300 font-mono">
+                                        {selectedElem.tintAmount ?? 75}%
+                                      </span>
+                                    </div>
+                                    <input
+                                      type="range"
+                                      min="10"
+                                      max="100"
+                                      value={selectedElem.tintAmount ?? 75}
+                                      onChange={(e) => {
+                                        const val = parseInt(e.target.value);
+                                        updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, tintAmount: val } : item));
+                                      }}
+                                      className="w-full accent-[var(--lavDeep)] dark:accent-purple-400 h-1.5 rounded-lg bg-zinc-200 dark:bg-zinc-700 cursor-pointer"
+                                    />
+                                  </div>
+
+                                  {/* Blend Mode Selector */}
+                                  <div className="grid grid-cols-4 gap-1 text-[10px] font-bold">
+                                    <button
+                                      onClick={() => updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, tintMode: 'color' } : item))}
+                                      className={`py-1 rounded-lg border text-center transition-colors cursor-pointer ${
+                                        (selectedElem.tintMode || 'color') === 'color'
+                                          ? 'bg-[var(--lavDeep)] text-white border-[var(--lavDeep)]'
+                                          : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700'
+                                      }`}
+                                      title="Тон с сохранением светотени"
+                                    >
+                                      Тон
+                                    </button>
+                                    <button
+                                      onClick={() => updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, tintMode: 'normal' } : item))}
+                                      className={`py-1 rounded-lg border text-center transition-colors cursor-pointer ${
+                                        selectedElem.tintMode === 'normal'
+                                          ? 'bg-[var(--lavDeep)] text-white border-[var(--lavDeep)]'
+                                          : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700'
+                                      }`}
+                                      title="Плотная цветная заливка"
+                                    >
+                                      Заливка
+                                    </button>
+                                    <button
+                                      onClick={() => updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, tintMode: 'multiply' } : item))}
+                                      className={`py-1 rounded-lg border text-center transition-colors cursor-pointer ${
+                                        selectedElem.tintMode === 'multiply'
+                                          ? 'bg-[var(--lavDeep)] text-white border-[var(--lavDeep)]'
+                                          : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700'
+                                      }`}
+                                      title="Затемнение (глубокий цвет)"
+                                    >
+                                      Тень
+                                    </button>
+                                    <button
+                                      onClick={() => updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, tintMode: 'overlay' } : item))}
+                                      className={`py-1 rounded-lg border text-center transition-colors cursor-pointer ${
+                                        selectedElem.tintMode === 'overlay'
+                                          ? 'bg-[var(--lavDeep)] text-white border-[var(--lavDeep)]'
+                                          : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700'
+                                      }`}
+                                      title="Контрастное перекрытие"
+                                    >
+                                      Блик
+                                    </button>
+                                  </div>
+
+                                  {/* Reset Tint Button */}
+                                  <button
+                                    onClick={() => {
+                                      updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, tintColor: undefined } : item));
+                                    }}
+                                    className="w-full py-1 text-center text-[11px] font-bold text-rose-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-colors cursor-pointer mt-0.5"
+                                  >
+                                    Сбросить цвет
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Vertical Slider & Controls for Canvas Zoom */}
                           {activeFilterTool === 'zoom' && (
-                            <div className="flex flex-col items-center gap-2">
+                            <div className="flex flex-col items-center gap-1.5 p-1 min-w-[52px]">
+                              <button
+                                onClick={() => setZoomScale(prev => Math.min(4.0, Number((prev + 0.15).toFixed(2))))}
+                                className="w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-purple-100 dark:hover:bg-purple-900/50 text-zinc-700 dark:text-zinc-200 flex items-center justify-center font-bold text-sm cursor-pointer transition-colors shadow-2xs"
+                                title="Увеличить масштаб холста"
+                              >
+                                +
+                              </button>
                               <input
                                 type="range"
                                 orient="vertical"
-                                min="50"
+                                min="20"
                                 max="300"
                                 step="5"
-                                value={Math.round((activeScene.backdropScale || 1) * 100)}
+                                value={Math.round(zoomScale * 100)}
                                 onChange={(e) => {
-                                  if (!activeScene.backdropImage) {
-                                    showToast('Загрузите фон', 'Сначала загрузите изображение фона для настройки его масштаба.', 'info');
-                                    return;
-                                  }
-                                  updateActiveSceneBackdropScale(parseFloat(e.target.value) / 100);
+                                  setZoomScale(parseFloat(e.target.value) / 100);
                                 }}
                                 className="h-28 w-2 accent-[var(--lavDeep)] dark:accent-purple-400 cursor-pointer rounded-lg appearance-none bg-zinc-200 dark:bg-zinc-700 [writing-mode:vertical-lr] [direction:rtl]"
                               />
+                              <button
+                                onClick={() => setZoomScale(prev => Math.max(0.2, Number((prev - 0.15).toFixed(2))))}
+                                className="w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-purple-100 dark:hover:bg-purple-900/50 text-zinc-700 dark:text-zinc-200 flex items-center justify-center font-bold text-sm cursor-pointer transition-colors shadow-2xs"
+                                title="Уменьшить масштаб холста"
+                              >
+                                -
+                              </button>
                               <span className="text-[10px] font-bold font-mono text-[var(--lavDeep)] dark:text-purple-300">
-                                {Math.round((activeScene.backdropScale || 1) * 100)}%
+                                {Math.round(zoomScale * 100)}%
                               </span>
+                              {zoomScale !== 1 && (
+                                <button
+                                  onClick={() => { setZoomScale(1); setPanX(0); setPanY(0); }}
+                                  className="text-[9px] font-bold text-zinc-400 hover:text-[#5B3E88] dark:hover:text-purple-300 underline cursor-pointer"
+                                  title="Сбросить масштаб (100%)"
+                                >
+                                  Сброс
+                                </button>
+                              )}
                             </div>
                           )}
 
@@ -2522,7 +2702,26 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                         </div>
                       )}
 
-                      {/* 1. Яркость (Экспозиция) */}
+                      {/* 1. Замена цвета (Пипетка / Окрашивание) */}
+                      <button
+                        onClick={() => {
+                          setActiveToolPopover(null);
+                          if (!selectedId && activeFilterTool !== 'recolor') {
+                            showToast('Выберите элемент', 'Кликните на элемент для окрашивания в нужный цвет', 'info');
+                          }
+                          setActiveFilterTool(prev => prev === 'recolor' ? null : 'recolor');
+                        }}
+                        className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
+                          activeFilterTool === 'recolor'
+                            ? 'bg-[var(--lavDeep)] text-white shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                        }`}
+                        title="Замена цвета (Выбор точного тона HEX или палитры)"
+                      >
+                        <Pipette className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
+                      </button>
+
+                      {/* 2. Яркость (Экспозиция) */}
                       <button
                         onClick={() => {
                           setActiveToolPopover(null);
@@ -2645,9 +2844,13 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                     style={{
                       width: `${canvasWidthMm / 10}px`,
                       height: `${canvasHeightMm / 10}px`,
-                      transform: `translate(${panX}px, ${panY}px) scale(${canvasScale})`,
+                      transform: `translate(${panX}px, ${panY}px) scale(${canvasScale * zoomScale})`,
                     }}
-                    onClick={() => setSelectedIds([])}
+                    onClick={(e) => {
+                      if (e.target === e.currentTarget) {
+                        setSelectedIds([]);
+                      }
+                    }}
                   >
                 {/* Backdrop & Grid Clip Layer */}
                 <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none z-0">
@@ -2706,6 +2909,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                         height: `${humanH}px`,
                       }}
                       title="Силуэт человека (рост 175 см) — зажмите мышью для перемещения по полю"
+                      onClick={(e) => e.stopPropagation()}
                       onMouseDown={(e) => {
                         e.stopPropagation();
                         e.preventDefault();
@@ -2810,6 +3014,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                     <div
                       key={el.id}
                       onMouseDown={(e) => handleCanvasMouseDown(e, el)}
+                      onClick={(e) => e.stopPropagation()}
                       className={`absolute group transition-shadow ${
                         el.isLocked ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'
                       } ${
@@ -2821,24 +3026,57 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                         width: `${el.w}px`,
                         height: `${el.h}px`,
                         transform: `rotate(${el.rotation}deg) scaleX(${el.isFlippedH ? -1 : 1}) scaleY(${el.isFlippedV ? -1 : 1})`,
-                        opacity: el.opacity / 100,
-                        filter: `brightness(${100 + el.exposure}%) saturate(${el.saturate}%) hue-rotate(${el.hue}deg) sepia(${el.temp > 0 ? el.temp * 0.4 : 0}%)`
+                        opacity: el.opacity / 100
                       }}
                     >
-                      {/* Image / SVG Graphics */}
-                      {el.customImage ? (
-                        <img
-                          src={el.customImage}
-                          alt={el.name}
-                          className="w-full h-full object-contain pointer-events-none"
-                          referrerPolicy="no-referrer"
-                        />
-                      ) : (
-                        <div
-                          className="w-full h-full flex items-center justify-center"
-                          dangerouslySetInnerHTML={{ __html: el.svgMarkup }}
-                        />
+                      {/* SVG Filter for alpha-channel pixel recoloring */}
+                      {el.tintColor && (
+                        <svg className="absolute w-0 h-0 pointer-events-none overflow-hidden" aria-hidden="true">
+                          <defs>
+                            <filter id={`element-tint-${el.id}`} x="-10%" y="-10%" width="120%" height="120%">
+                              <feFlood floodColor={el.tintColor} floodOpacity={(el.tintAmount ?? 75) / 100} result="flood" />
+                              <feComposite in="flood" in2="SourceAlpha" operator="in" result="tintMask" />
+                              {el.tintMode === 'multiply' ? (
+                                <feBlend in="tintMask" in2="SourceGraphic" mode="multiply" result="blended" />
+                              ) : el.tintMode === 'overlay' ? (
+                                <feBlend in="tintMask" in2="SourceGraphic" mode="overlay" result="blended" />
+                              ) : el.tintMode === 'normal' ? (
+                                <feComposite in="tintMask" in2="SourceGraphic" operator="atop" result="blended" />
+                              ) : (
+                                <feBlend in="tintMask" in2="SourceGraphic" mode="color" result="blended" />
+                              )}
+                              <feComposite in="blended" in2="SourceAlpha" operator="in" />
+                            </filter>
+                          </defs>
+                        </svg>
                       )}
+
+                      {/* Image / SVG Graphics (Filters applied strictly to element graphic, preserving transparent background & UI controls) */}
+                      <div
+                        className="w-full h-full relative pointer-events-none select-none"
+                        style={{
+                          filter: `brightness(${100 + el.exposure}%) saturate(${el.saturate}%) hue-rotate(${el.hue}deg) sepia(${el.temp > 0 ? el.temp * 0.4 : 0}%)${el.tintColor ? ` url(#element-tint-${el.id})` : ''}`
+                        }}
+                      >
+                        {el.customImage ? (
+                          <img
+                            src={el.customImage}
+                            alt={el.name}
+                            className="w-full h-full object-fill pointer-events-none select-none"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <div
+                            className="w-full h-full flex items-center justify-center pointer-events-none select-none [&_svg]:w-full [&_svg]:h-full [&_svg]:block"
+                            dangerouslySetInnerHTML={{
+                              __html: el.svgMarkup ? el.svgMarkup.replace(/<svg\b([^>]*)>/i, (match, p1) => {
+                                const cleanP1 = p1.replace(/\b(width|height)=["'][^"']*["']/gi, '').replace(/\bpreserveAspectRatio=["'][^"']*["']/gi, '');
+                                return `<svg ${cleanP1} preserveAspectRatio="none" style="width:100%;height:100%;">`;
+                              }) : ''
+                            }}
+                          />
+                        )}
+                      </div>
 
                       {/* Dashed Outline for Group Member */}
                       {selectedIds.length > 1 && selectedIds.includes(el.id) && (
@@ -3470,49 +3708,8 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                     )}
                   </div>
 
-                  {/* Right Action Toggles: Desktop Zoom Controller, Backdrop Popover, Grid, Human */}
+                  {/* Right Action Toggles: Backdrop Popover, Grid, Human */}
                   <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 ml-auto">
-                    {/* Background Scale Zoom Controller (Desktop only: hidden on mobile, visible on sm+) */}
-                    <div className="hidden sm:flex items-center gap-1 bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700/80 rounded-full px-2 py-1 shadow-xs shrink-0">
-                      <button
-                        onClick={() => {
-                          if (!activeScene.backdropImage) {
-                            showToast('Загрузите фон', 'Сначала загрузите изображение фона, чтобы изменять его масштаб.', 'info');
-                            return;
-                          }
-                          updateActiveSceneBackdropScale((activeScene.backdropScale || 1) - 0.1);
-                        }}
-                        className="w-5 h-5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300 font-bold text-xs cursor-pointer transition-colors"
-                        title="Уменьшить масштаб картинки фона"
-                      >
-                        -
-                      </button>
-                      <span className="text-[11px] font-bold text-[#5B3E88] dark:text-purple-300 min-w-[34px] text-center select-none" title="Масштаб картинки фона">
-                        {Math.round((activeScene.backdropScale || 1) * 100)}%
-                      </span>
-                      <button
-                        onClick={() => {
-                          if (!activeScene.backdropImage) {
-                            showToast('Загрузите фон', 'Сначала загрузите изображение фона, чтобы изменять его масштаб.', 'info');
-                            return;
-                          }
-                          updateActiveSceneBackdropScale((activeScene.backdropScale || 1) + 0.1);
-                        }}
-                        className="w-5 h-5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300 font-bold text-xs cursor-pointer transition-colors"
-                        title="Увеличить масштаб картинки фона"
-                      >
-                        +
-                      </button>
-                      {(activeScene.backdropScale && activeScene.backdropScale !== 1) && (
-                        <button
-                          onClick={() => updateActiveSceneBackdropScale(1)}
-                          className="text-[10px] font-semibold text-zinc-400 hover:text-[#5B3E88] dark:hover:text-purple-300 ml-0.5 cursor-pointer underline"
-                          title="Сбросить масштаб фона на 100%"
-                        >
-                          100%
-                        </button>
-                      )}
-                    </div>
                     {/* Backdrop Button & Popover Menu */}
                     <div className="relative">
                       <button
@@ -3545,7 +3742,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                               animate={{ opacity: 1, y: 0, scale: 1 }}
                               exit={{ opacity: 0, y: 8, scale: 0.95 }}
                               transition={{ duration: 0.15 }}
-                              className="absolute right-0 bottom-full mb-2 w-64 sm:w-72 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl border border-zinc-200/80 dark:border-zinc-700/80 rounded-2xl shadow-xl p-3 z-[70] flex flex-col gap-3"
+                              className="absolute right-0 bottom-full mb-2 w-56 bg-white/75 dark:bg-zinc-900/75 hover:bg-white/90 dark:hover:bg-zinc-900/90 backdrop-blur-md border border-zinc-200/80 dark:border-zinc-700/80 rounded-2xl shadow-xl p-2.5 z-[70] flex flex-col gap-2.5 transition-all"
                             >
                               <div className="flex items-center justify-between pb-1 border-b border-zinc-200/60 dark:border-zinc-800">
                                 <span className="text-xs font-bold text-zinc-800 dark:text-zinc-100 flex items-center gap-1.5">
@@ -3566,64 +3763,42 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                                   fileInputRef.current?.click();
                                   setIsBackdropPopoverOpen(false);
                                 }}
-                                className="w-full py-2 px-3 rounded-xl bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/80 text-[#5B3E88] dark:text-purple-200 text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer border border-purple-200/50 dark:border-purple-800/40"
+                                className="w-full py-1.5 px-2.5 rounded-xl bg-purple-50/80 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/80 text-[#5B3E88] dark:text-purple-200 text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer border border-purple-200/50 dark:border-purple-800/40"
                               >
                                 <Upload className="w-3.5 h-3.5" />
                                 <span>Загрузить изображение</span>
                               </button>
 
-                              {/* Preset Color Palette Option */}
-                              <div className="space-y-1.5">
-                                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">
-                                  Цвет фона
+                              {/* Color Picker Option */}
+                              <div className="flex items-center justify-between gap-2 pt-0.5">
+                                <span className="text-[11px] font-bold text-zinc-700 dark:text-zinc-300">
+                                  Цвет фона:
                                 </span>
-                                <div className="flex flex-wrap items-center gap-1.5">
-                                  {[
-                                    { color: '#F3F4F6', label: 'Светло-серый' },
-                                    { color: '#FFFFFF', label: 'Чистый белый' },
-                                    { color: '#F8FAFC', label: 'Холодный' },
-                                    { color: '#FEF3C7', label: 'Кремовый' },
-                                    { color: '#FCE7F3', label: 'Розовый' },
-                                    { color: '#E0E7FF', label: 'Лавандовый' },
-                                    { color: '#DCFCE7', label: 'Мятный' },
-                                    { color: '#18181B', label: 'Темный графит' },
-                                  ].map(c => (
-                                    <button
-                                      key={c.color}
-                                      onClick={() => {
-                                        handleCanvasBackdropChange('color', c.color);
-                                        const updated = scenes.map(s => s.id === activeScene.id ? { ...s, backdropImage: '', backdropType: 'color' as const, backdropColor: c.color } : s);
-                                        setScenes(updated);
-                                        recordHistory(updated);
-                                      }}
-                                      className={`w-6 h-6 rounded-full border border-zinc-300 dark:border-zinc-700 transition-transform cursor-pointer hover:scale-110 flex items-center justify-center ${
-                                        activeScene.backdropColor === c.color && !activeScene.backdropImage ? 'ring-2 ring-[#5B3E88] ring-offset-1' : ''
-                                      }`}
-                                      style={{ backgroundColor: c.color }}
-                                      title={c.label}
-                                    >
-                                      {activeScene.backdropColor === c.color && !activeScene.backdropImage && (
-                                        <Check className={`w-3 h-3 ${c.color === '#18181B' ? 'text-white' : 'text-[#5B3E88]'}`} />
-                                      )}
-                                    </button>
-                                  ))}
-
-                                  {/* Custom Color Input */}
-                                  <label className="relative w-6 h-6 rounded-full border border-dashed border-zinc-400 dark:border-zinc-600 flex items-center justify-center cursor-pointer hover:scale-110 transition-transform">
-                                    <span className="text-[9px] font-bold text-zinc-500">+</span>
-                                    <input
-                                      type="color"
-                                      value={activeScene.backdropColor || '#F3F4F6'}
-                                      onChange={(e) => {
-                                        handleCanvasBackdropChange('color', e.target.value);
-                                        const updated = scenes.map(s => s.id === activeScene.id ? { ...s, backdropImage: '', backdropType: 'color' as const, backdropColor: e.target.value } : s);
-                                        setScenes(updated);
-                                        recordHistory(updated);
-                                      }}
-                                      className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-                                      title="Выбрать свой цвет"
-                                    />
-                                  </label>
+                                <div className="flex items-center gap-1.5">
+                                  <input
+                                    type="color"
+                                    value={activeScene.backdropColor || '#F3F4F6'}
+                                    onChange={(e) => {
+                                      handleCanvasBackdropChange('color', e.target.value);
+                                      const updated = scenes.map(s => s.id === activeScene.id ? { ...s, backdropImage: '', backdropType: 'color' as const, backdropColor: e.target.value } : s);
+                                      setScenes(updated);
+                                      recordHistory(updated);
+                                    }}
+                                    className="w-7 h-7 rounded-lg border border-zinc-200 dark:border-zinc-700 cursor-pointer overflow-hidden p-0 bg-transparent"
+                                    title="Выбрать цвет фона"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={(activeScene.backdropColor || '#F3F4F6').toUpperCase()}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      handleCanvasBackdropChange('color', val);
+                                      const updated = scenes.map(s => s.id === activeScene.id ? { ...s, backdropImage: '', backdropType: 'color' as const, backdropColor: val } : s);
+                                      setScenes(updated);
+                                      recordHistory(updated);
+                                    }}
+                                    className="w-16 px-1.5 py-0.5 rounded-md bg-zinc-100/80 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-[10px] font-mono font-bold text-zinc-800 dark:text-zinc-200 uppercase focus:outline-none focus:border-[#5B3E88]"
+                                  />
                                 </div>
                               </div>
 
