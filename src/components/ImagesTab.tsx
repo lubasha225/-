@@ -96,7 +96,7 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
   useEffect(() => {
     if (setHeaderActions) {
       setHeaderActions(
-        <label className="shrink-0 bg-[var(--lavDeep)] hover:bg-[var(--lavDeep)]/90 text-white rounded-xl px-5 py-3 text-[13px] font-medium shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer">
+        <label className="shrink-0 bg-gradient-to-r from-[#8C52D0] to-[#582F89] hover:opacity-95 text-white rounded-full px-5 py-3 text-[13px] font-medium shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer">
           <UploadCloud className="w-4 h-4 shrink-0" />
           <span>Загрузить фото</span>
           <input
@@ -270,7 +270,7 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
                 onClick={() => setSelectedCategory(cat.key)}
                 className={`rounded-full text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
                   isActive
-                    ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 border border-zinc-900 dark:border-zinc-100 px-3.5 py-1.5 font-semibold shadow-sm'
+                    ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white border border-[#582F89] px-3.5 py-1.5 font-semibold shadow-sm'
                     : 'bg-transparent border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white px-2 py-1'
                 }`}
               >
@@ -492,7 +492,11 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: "spring", duration: 0.4 }}
-              className="relative max-w-4xl w-full max-h-[85vh] bg-zinc-950 rounded-2xl border border-zinc-800 overflow-hidden flex flex-col shadow-2xl z-10"
+              className="relative max-w-4xl w-full max-h-[85vh] bg-zinc-950/80 backdrop-blur-2xl rounded-3xl border border-white/20 dark:border-zinc-700/80 overflow-hidden flex flex-col shadow-2xl z-10"
+              style={{
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+              }}
             >
               {/* Close Button */}
               <button

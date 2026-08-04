@@ -65,7 +65,11 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
         animate={{ scale: 1, y: 0, opacity: 1 }}
         exit={{ scale: 0.95, y: 15, opacity: 0 }}
         transition={{ type: 'spring', duration: 0.5 }}
-        className="relative w-full max-w-lg bg-white/90 dark:bg-zinc-900/90 backdrop-blur-2xl border border-white/20 dark:border-zinc-800/50 rounded-3xl shadow-2xl overflow-hidden z-10"
+        className="relative w-full max-w-lg bg-white/65 dark:bg-zinc-900/65 backdrop-blur-2xl border border-white/80 dark:border-zinc-700/80 rounded-3xl shadow-2xl shadow-purple-950/10 overflow-hidden z-10"
+        style={{
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+        }}
       >
         {/* Header */}
         <div className="px-6 py-4 flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800/50">
@@ -196,7 +200,7 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
                   onClick={() => setCurrentStep(index)}
                   className={`py-2 px-1 rounded-full border text-center text-xs font-medium transition-all ${
                     currentStep === index
-                      ? 'bg-[var(--lavDeep)] text-white border-[var(--lavDeep)] shadow-md shadow-[var(--lavDeep)]/20'
+                      ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white border-[#582F89] shadow-md shadow-purple-950/20'
                       : 'bg-zinc-100 dark:bg-zinc-800/40 border-zinc-200 dark:border-zinc-800/40 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200'
                   }`}
                 >
@@ -217,7 +221,7 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
             </button>
             <button
               type="submit"
-              className="flex-1 py-3 rounded-full bg-[var(--lavDeep)] hover:opacity-90 text-white font-medium transition-all shadow-md shadow-[var(--lavDeep)]/10 text-sm"
+              className="flex-1 py-3 rounded-full bg-gradient-to-r from-[#8C52D0] to-[#582F89] hover:opacity-95 text-white font-medium transition-all shadow-md shadow-purple-900/20 text-sm cursor-pointer"
             >
               Создать проект
             </button>

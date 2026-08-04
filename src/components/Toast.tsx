@@ -26,7 +26,11 @@ export default function Toast({ toast, onClose }: ToastProps) {
         initial={{ opacity: 0, y: -20, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: -20, scale: 0.95 }}
-        className="fixed top-5 right-5 z-50 max-w-sm w-full bg-white/80 dark:bg-zinc-900/90 backdrop-blur-xl border border-white/20 dark:border-zinc-800/50 rounded-2xl shadow-2xl p-4 flex items-start gap-3 pointer-events-auto"
+        className="fixed top-5 right-5 z-50 max-w-sm w-full bg-white/60 dark:bg-zinc-900/65 backdrop-blur-2xl border border-white/80 dark:border-zinc-700/80 rounded-2xl shadow-2xl shadow-purple-950/10 p-4 flex items-start gap-3 pointer-events-auto select-none"
+        style={{
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+        }}
       >
         {iconMap[toast.type || 'success']}
         <div className="flex-1 min-w-0">

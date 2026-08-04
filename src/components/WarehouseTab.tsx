@@ -353,7 +353,7 @@ export default function WarehouseTab({
                   style={customStyle}
                   className={`rounded-full text-xs font-light tracking-wide border transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
                     isActive
-                      ? 'bg-[var(--lavDeep)] text-white border-[var(--lavDeep)] shadow-sm px-3.5 py-1.5 font-medium'
+                      ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white border-[#582F89] shadow-sm px-3.5 py-1.5 font-medium'
                       : 'bg-transparent text-[var(--soft)] hover:text-[var(--ink)] border-transparent px-2 py-1'
                   }`}
                 >
@@ -416,7 +416,7 @@ export default function WarehouseTab({
 
       {/* Add item collapsible form */}
       {isAdding && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-md overflow-y-auto">
           <style>{`
             @keyframes scanLine {
               0% { top: 0%; opacity: 0; }
@@ -429,7 +429,13 @@ export default function WarehouseTab({
             }
           `}</style>
           
-          <div className="bg-white dark:bg-zinc-900 rounded-[32px] max-w-4xl w-full p-6 md:p-8 shadow-2xl border border-zinc-200/50 dark:border-zinc-800/50 relative animate-fadeIn max-h-[90vh] overflow-y-auto">
+          <div
+            className="bg-white/70 dark:bg-zinc-900/75 backdrop-blur-2xl rounded-[32px] max-w-4xl w-full p-6 md:p-8 shadow-2xl border border-white/80 dark:border-zinc-700/80 relative animate-fadeIn max-h-[90vh] overflow-y-auto"
+            style={{
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+            }}
+          >
             {/* Header */}
             <div className="flex items-center justify-between pb-4 mb-6 border-b border-zinc-100 dark:border-zinc-800/60">
               <h3 className="text-lg font-semibold text-[var(--ink)] tracking-tight">Добавить новый товар</h3>
@@ -662,7 +668,7 @@ export default function WarehouseTab({
                   </button>
                   <button
                     type="submit"
-                    className="bg-[var(--lavDeep)] hover:opacity-90 text-white rounded-full py-2.5 px-6 text-xs font-medium flex items-center gap-2 shadow-sm cursor-pointer transition-colors"
+                    className="bg-gradient-to-r from-[#8C52D0] to-[#582F89] hover:opacity-95 text-white rounded-full py-2.5 px-6 text-xs font-medium flex items-center gap-2 shadow-sm cursor-pointer transition-colors"
                   >
                     <Check className="w-4 h-4" />
                     Добавить позицию
@@ -969,8 +975,14 @@ export default function WarehouseTab({
 
       {/* Custom Delete Confirmation Dialog */}
       {deletingItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-zinc-200/50 dark:border-zinc-800/50 transform scale-100 transition-all text-left">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fadeIn">
+          <div
+            className="bg-white/70 dark:bg-zinc-900/75 backdrop-blur-2xl rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-white/80 dark:border-zinc-700/80 transform scale-100 transition-all text-left"
+            style={{
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+            }}
+          >
             <div className="flex items-start justify-between gap-4 mb-4">
               <div className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400">
                 <Trash2 className="w-6 h-6" />

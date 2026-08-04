@@ -201,7 +201,7 @@ export default function ProfileTab({ showToast }: ProfileTabProps) {
           <div className="flex justify-center pt-2">
             <button
               type="submit"
-              className="px-8 py-2.5 rounded-full bg-[var(--lavDeep)] hover:opacity-90 text-white font-medium transition-all shadow-md shadow-[var(--lavDeep)]/10 text-xs tracking-wide cursor-pointer"
+              className="px-8 py-2.5 rounded-full bg-gradient-to-r from-[#8C52D0] to-[#582F89] hover:opacity-95 text-white font-medium transition-all shadow-md shadow-purple-900/20 text-xs tracking-wide cursor-pointer"
             >
               Сохранить настройки
             </button>
@@ -214,7 +214,7 @@ export default function ProfileTab({ showToast }: ProfileTabProps) {
         <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[32px] p-5 space-y-4 border border-zinc-200/50 dark:border-zinc-800/40 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Уровень подписки</span>
-            <span className="text-[9.5px] font-semibold bg-[var(--lavDeep)] text-white px-2.5 py-0.5 rounded-full tracking-wide">PRO</span>
+            <span className="text-[9.5px] font-semibold bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white px-2.5 py-0.5 rounded-full tracking-wide">PRO</span>
           </div>
 
           <div className="space-y-1">

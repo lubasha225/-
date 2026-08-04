@@ -225,5 +225,16 @@ body {
   scrollbar-color: rgba(255, 255, 255, 0.15) rgba(255, 255, 255, 0.02);
 }
 
+/* Custom plum gradient button styling from #8C52D0 to #582F89 */
+.btn-plum {
+  background: linear-gradient(135deg, #8C52D0 0%, #582F89 100%) !important;
+  color: #FFFFFF !important;
+}
+
+.btn-plum:hover {
+  background: linear-gradient(135deg, #985DE0 0%, #63369A 100%) !important;
+  box-shadow: 0 4px 15px -3px rgba(140, 82, 208, 0.4);
+}
+
 
 

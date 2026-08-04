@@ -518,6 +518,10 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
     }
   };
 
+  // Drag and Drop ordering state for sidebar layers
+  const [draggedLayerIdx, setDraggedLayerIdx] = useState<number | null>(null);
+  const [dragOverLayerIdx, setDragOverLayerIdx] = useState<number | null>(null);
+
   // Expanded project element in right sidebar
   const [expandedElementId, setExpandedElementId] = useState<string | null>(null);
   const [draftPrice, setDraftPrice] = useState<string>('');
@@ -912,6 +916,16 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
       updated[idx - 1] = temp;
     }
     updateActiveSceneElements(() => updated);
+  };
+
+  const handleReorderLayer = (fromIdx: number, toIdx: number) => {
+    if (fromIdx === toIdx || fromIdx < 0 || toIdx < 0) return;
+    updateActiveSceneElements(prev => {
+      const updated = [...prev];
+      const [moved] = updated.splice(fromIdx, 1);
+      updated.splice(toIdx, 0, moved);
+      return updated;
+    });
   };
 
   // Alignment transformations
@@ -1633,7 +1647,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
         {/* TAB 2: SCENE ELEMENTS / LAYERS LIST */}
         {targetTab === 'layers' && (
           <div className="flex flex-col gap-2 flex-1 min-h-0 min-w-0 overflow-x-hidden">
-            <div className="flex items-center justify-between px-1">
+            <div className="flex items-center justify-between px-1 shrink-0">
               <span className="text-xs font-bold text-zinc-500">Слои декора ({activeScene.elements.length})</span>
               <span className="text-[10px] text-zinc-400">Перетащите для порядка</span>
             </div>
@@ -1649,12 +1663,47 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                 [...activeScene.elements].reverse().map((el, revIdx) => {
                   const actualIdx = activeScene.elements.length - 1 - revIdx;
                   const isExpanded = expandedElementId === el.id;
+                  const isDraggingThis = draggedLayerIdx === actualIdx;
+                  const isDragOverThis = dragOverLayerIdx === actualIdx;
 
                   return (
                     <div
                       key={el.id}
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('text/plain', String(actualIdx));
+                        e.dataTransfer.effectAllowed = 'move';
+                        setDraggedLayerIdx(actualIdx);
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                        if (dragOverLayerIdx !== actualIdx) {
+                          setDragOverLayerIdx(actualIdx);
+                        }
+                      }}
+                      onDragLeave={(e) => {
+                        e.preventDefault();
+                        if (dragOverLayerIdx === actualIdx) {
+                          setDragOverLayerIdx(null);
+                        }
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        const fromIdxStr = e.dataTransfer.getData('text/plain');
+                        const fromIdx = parseInt(fromIdxStr, 10);
+                        if (!isNaN(fromIdx) && fromIdx !== actualIdx) {
+                          handleReorderLayer(fromIdx, actualIdx);
+                        }
+                        setDragOverLayerIdx(null);
+                        setDraggedLayerIdx(null);
+                      }}
                       className={`rounded-2xl border transition-all overflow-hidden ${
-                        el.id === selectedId
+                        isDragOverThis
+                          ? 'border-[#5B3E88] dark:border-purple-400 border-2 bg-purple-50/80 dark:bg-purple-950/50 scale-[1.01]'
+                          : isDraggingThis
+                          ? 'opacity-40 border-dashed border-zinc-400'
+                          : el.id === selectedId
                           ? 'border-[var(--lavDeep)] dark:border-[var(--lavenderAccent)] bg-white dark:bg-zinc-900 shadow-xs'
                           : 'border-zinc-200/80 dark:border-zinc-800/80 bg-white/60 dark:bg-zinc-900/60'
                       }`}
@@ -1677,7 +1726,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                       >
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                           {/* Grip Handle */}
-                          <GripVertical className="w-4 h-4 text-zinc-400 shrink-0 cursor-grab" />
+                          <GripVertical className="w-4 h-4 text-zinc-400 shrink-0 cursor-grab active:cursor-grabbing hover:text-zinc-600 dark:hover:text-zinc-200" />
 
                           {/* Thumbnail preview */}
                           <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center shrink-0 overflow-hidden border border-zinc-200/50 p-0.5 relative">
@@ -1708,18 +1757,36 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                           )}
                         </div>
 
-                        {/* Price badge and Visibility */}
-                        <div className="flex items-center gap-2 shrink-0 pl-3">
-                          <span className="text-xs font-extrabold text-zinc-900 dark:text-zinc-100">
+                        {/* Price badge, Lock toggle, and Visibility */}
+                        <div className="flex items-center gap-1.5 shrink-0 pl-2">
+                          <span className="text-xs font-extrabold text-zinc-900 dark:text-zinc-100 mr-0.5">
                             {el.price > 0 ? `${el.price.toLocaleString('ru')} ₽` : '0 ₽'}
                           </span>
 
+                          {/* Lock / Unlock Toggle Button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, isLocked: !item.isLocked } : item));
+                              showToast('Блокировка', el.isLocked ? `Элемент "${el.name}" разблокирован` : `Элемент "${el.name}" заблокирован`, 'info');
+                            }}
+                            className="p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 cursor-pointer rounded-md hover:bg-zinc-200/60 dark:hover:bg-zinc-800 transition-colors"
+                            title={el.isLocked ? "Заблокировано (кликните для разблокировки)" : "Заблокировать элемент"}
+                          >
+                            {el.isLocked ? (
+                              <Lock className="w-3.5 h-3.5 text-rose-500 fill-rose-500/20" />
+                            ) : (
+                              <Unlock className="w-3.5 h-3.5 text-zinc-400 hover:text-emerald-500" />
+                            )}
+                          </button>
+
+                          {/* Visibility Toggle Button */}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, isVisible: !item.isVisible } : item));
                             }}
-                            className="p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 cursor-pointer"
+                            className="p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 cursor-pointer rounded-md hover:bg-zinc-200/60 dark:hover:bg-zinc-800 transition-colors"
                             title="Показать / скрыть"
                           >
                             {el.isVisible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5 text-rose-500" />}
@@ -1829,6 +1896,23 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                   );
                 })
               )}
+            </div>
+
+            {/* Total Cost Summary Card in bottom of Layers tab */}
+            <div className="pt-2 border-t border-zinc-200/80 dark:border-zinc-800 shrink-0 mt-auto">
+              <div className="p-3 rounded-2xl bg-[#EAE4F8]/80 dark:bg-purple-950/60 border border-[#D4C5ED]/80 dark:border-purple-800/60 flex items-center justify-between shadow-2xs">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                    Итого элементов ({activeScene.elements.length})
+                  </span>
+                  <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                    Общая стоимость
+                  </span>
+                </div>
+                <span className="text-sm font-black text-[#5B3E88] dark:text-purple-300 font-mono">
+                  {activeScene.elements.reduce((sum, item) => sum + (item.price || 0), 0).toLocaleString('ru')} ₽
+                </span>
+              </div>
             </div>
           </div>
         )}
@@ -2064,7 +2148,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                     </div>
                   ) : (
                     /* EXPANDED FULL TOOLBAR */
-                    <div className="p-1 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md shadow-lg border border-white/80 dark:border-zinc-700/60 flex flex-col items-center gap-1 pointer-events-auto animate-fadeIn">
+                    <div className="p-1 rounded-full bg-white/80 dark:bg-zinc-900/80 shadow-lg border border-white/80 dark:border-zinc-700/60 flex flex-col items-center gap-1 pointer-events-auto animate-fadeIn">
                       
                       {/* 0. Свернуть панель */}
                       <button
@@ -2123,13 +2207,30 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
 
                       {/* Popover Group / Ungroup */}
                       {activeToolPopover === 'group' && (
-                        <div className="absolute left-10 sm:left-11 top-0 z-50 bg-white/80 dark:bg-zinc-900/85 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 p-1.5 rounded-2xl shadow-2xl backdrop-blur-2xl flex flex-col gap-1 min-w-[170px] animate-fadeIn">
+                        <div
+                          className="absolute left-10 sm:left-11 top-0 z-50 bg-white/45 dark:bg-zinc-900/60 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 p-2 rounded-2xl shadow-xl shadow-purple-950/10 flex flex-col gap-1 min-w-[175px] animate-fadeIn select-none"
+                          style={{
+                            backdropFilter: 'blur(16px)',
+                            WebkitBackdropFilter: 'blur(16px)',
+                            backgroundColor: 'rgba(255, 255, 255, 0.45)'
+                          }}
+                        >
+                          <div className="flex items-center justify-between px-1 pb-1 border-b border-purple-200/50 dark:border-zinc-800 text-[11px] font-bold text-[#5B3E88] dark:text-purple-300">
+                            <span>Группировка</span>
+                            <button
+                              onClick={() => setActiveToolPopover(null)}
+                              className="p-1 rounded-full hover:bg-purple-500/20 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
+                              title="Закрыть"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                           <button
                             onClick={() => {
                               handleGroupSelectedElements();
                               setActiveToolPopover(null);
                             }}
-                            className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/40 hover:text-[var(--lavDeep)] dark:hover:text-purple-300 flex items-center gap-2 cursor-pointer transition-colors"
+                            className="w-full px-2.5 py-1.5 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-purple-100/80 dark:hover:bg-purple-900/40 hover:text-[var(--lavDeep)] dark:hover:text-purple-300 flex items-center gap-2 cursor-pointer transition-colors"
                           >
                             <Group className="w-4 h-4 text-[var(--lavDeep)] dark:text-purple-400" />
                             <span>Сгруппировать</span>
@@ -2139,7 +2240,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                               handleUngroupSelectedElements();
                               setActiveToolPopover(null);
                             }}
-                            className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/40 hover:text-[var(--lavDeep)] dark:hover:text-purple-300 flex items-center gap-2 cursor-pointer transition-colors"
+                            className="w-full px-2.5 py-1.5 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-purple-100/80 dark:hover:bg-purple-900/40 hover:text-[var(--lavDeep)] dark:hover:text-purple-300 flex items-center gap-2 cursor-pointer transition-colors"
                           >
                             <Ungroup className="w-4 h-4 text-[var(--lavDeep)] dark:text-purple-400" />
                             <span>Разгруппировать</span>
@@ -2205,7 +2306,24 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
 
                       {/* Popover Layers */}
                       {activeToolPopover === 'layers' && (
-                        <div className="absolute left-10 sm:left-11 top-0 z-50 bg-white/80 dark:bg-zinc-900/85 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 p-1.5 rounded-2xl shadow-2xl backdrop-blur-2xl flex flex-col gap-1 min-w-[170px] animate-fadeIn">
+                        <div
+                          className="absolute left-10 sm:left-11 top-0 z-50 bg-white/45 dark:bg-zinc-900/60 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 p-2 rounded-2xl shadow-xl shadow-purple-950/10 flex flex-col gap-1 min-w-[175px] animate-fadeIn select-none"
+                          style={{
+                            backdropFilter: 'blur(16px)',
+                            WebkitBackdropFilter: 'blur(16px)',
+                            backgroundColor: 'rgba(255, 255, 255, 0.45)'
+                          }}
+                        >
+                          <div className="flex items-center justify-between px-1 pb-1 border-b border-purple-200/50 dark:border-zinc-800 text-[11px] font-bold text-[#5B3E88] dark:text-purple-300">
+                            <span>Порядок слоев</span>
+                            <button
+                              onClick={() => setActiveToolPopover(null)}
+                              className="p-1 rounded-full hover:bg-purple-500/20 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
+                              title="Закрыть"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                           <button
                             onClick={() => {
                               if (selectedId) {
@@ -2320,7 +2438,24 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
 
                       {/* Popover Flip */}
                       {activeToolPopover === 'flip' && (
-                        <div className="absolute left-10 sm:left-11 top-0 z-50 bg-white/80 dark:bg-zinc-900/85 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 p-1.5 rounded-2xl shadow-2xl backdrop-blur-2xl flex flex-col gap-1 min-w-[165px] animate-fadeIn">
+                        <div
+                          className="absolute left-10 sm:left-11 top-0 z-50 bg-white/45 dark:bg-zinc-900/60 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 p-2 rounded-2xl shadow-xl shadow-purple-950/10 flex flex-col gap-1 min-w-[175px] animate-fadeIn select-none"
+                          style={{
+                            backdropFilter: 'blur(16px)',
+                            WebkitBackdropFilter: 'blur(16px)',
+                            backgroundColor: 'rgba(255, 255, 255, 0.45)'
+                          }}
+                        >
+                          <div className="flex items-center justify-between px-1 pb-1 border-b border-purple-200/50 dark:border-zinc-800 text-[11px] font-bold text-[#5B3E88] dark:text-purple-300">
+                            <span>Отражение</span>
+                            <button
+                              onClick={() => setActiveToolPopover(null)}
+                              className="p-1 rounded-full hover:bg-purple-500/20 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
+                              title="Закрыть"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                           <button
                             onClick={() => {
                               if (selectedId) {
@@ -2329,7 +2464,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                               } else showToast('Выберите элемент', 'Кликните на элемент', 'info');
                               setActiveToolPopover(null);
                             }}
-                            className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/40 hover:text-[var(--lavDeep)] dark:hover:text-purple-300 flex items-center gap-2 cursor-pointer transition-colors"
+                            className="w-full px-2.5 py-1.5 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-purple-100/80 dark:hover:bg-purple-900/40 hover:text-[var(--lavDeep)] dark:hover:text-purple-300 flex items-center gap-2 cursor-pointer transition-colors"
                           >
                             <FlipHorizontal className="w-4 h-4 text-[var(--lavDeep)] dark:text-purple-400" />
                             <span>По горизонтали</span>
@@ -2343,7 +2478,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                               } else showToast('Выберите элемент', 'Кликните на элемент', 'info');
                               setActiveToolPopover(null);
                             }}
-                            className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/40 hover:text-[var(--lavDeep)] dark:hover:text-purple-300 flex items-center gap-2 cursor-pointer transition-colors"
+                            className="w-full px-2.5 py-1.5 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-purple-100/80 dark:hover:bg-purple-900/40 hover:text-[var(--lavDeep)] dark:hover:text-purple-300 flex items-center gap-2 cursor-pointer transition-colors"
                           >
                             <FlipVertical className="w-4 h-4 text-[var(--lavDeep)] dark:text-purple-400" />
                             <span>По вертикали</span>
@@ -2393,7 +2528,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                       </div>
                     ) : (
                       /* Color Correction & Zoom Pill Block */
-                      <div className="p-1 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md shadow-lg border border-white/80 dark:border-zinc-700/60 flex flex-col items-center gap-1 relative animate-fadeIn">
+                      <div className="p-1 rounded-full bg-white/80 dark:bg-zinc-900/80 shadow-lg border border-white/80 dark:border-zinc-700/60 flex flex-col items-center gap-1 relative animate-fadeIn">
                         
                         {/* 0. Свернуть панель */}
                         <button
@@ -2409,7 +2544,14 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                         
                         {/* POPUP ADJUSTMENT TOOL SLIDER OR ZOOM (Positioned directly next to bottom-right toolbar, semi-transparent & compact) */}
                       {activeFilterTool && (activeFilterTool === 'zoom' || selectedElem) && (
-                        <div className={`absolute ${activeFilterTool === 'recolor' ? 'right-full mr-2 bottom-0 w-56 p-2.5 bg-white/75 dark:bg-zinc-900/75 hover:bg-white/90 dark:hover:bg-zinc-900/90' : 'bottom-full mb-2 right-0 w-10 sm:w-11 p-2 bg-white/95 dark:bg-zinc-900/95'} z-50 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 rounded-2xl shadow-xl backdrop-blur-md flex flex-col items-center gap-2 animate-fadeIn pointer-events-auto transition-all`}>
+                        <div
+                          className={`absolute ${activeFilterTool === 'recolor' ? 'right-full mr-2 bottom-0 w-56 p-2.5 bg-white/45 dark:bg-zinc-900/60' : 'bottom-full mb-2 right-0 w-12 sm:w-14 p-2 bg-white/45 dark:bg-zinc-900/60'} z-50 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 rounded-2xl shadow-xl shadow-purple-950/10 flex flex-col items-center gap-2 animate-fadeIn pointer-events-auto transition-all select-none`}
+                          style={{
+                            backdropFilter: 'blur(16px)',
+                            WebkitBackdropFilter: 'blur(16px)',
+                            backgroundColor: 'rgba(255, 255, 255, 0.45)'
+                          }}
+                        >
                           
                           {/* Top Close Button */}
                           <button
@@ -3212,18 +3354,22 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                                 return (
                                   <div
                                     className={`absolute left-1/2 -translate-x-1/2 ${
-                                      isNearTop ? 'top-full mt-4' : '-translate-y-[155px] top-0'
-                                    } z-50 bg-zinc-900/95 dark:bg-zinc-900/95 text-white p-3 rounded-2xl shadow-2xl border border-purple-500/50 backdrop-blur-md flex flex-col items-center gap-2 pointer-events-auto min-w-[210px] animate-fadeIn`}
+                                      isNearTop ? 'top-full mt-4' : '-translate-y-[165px] top-0'
+                                    } z-50 bg-white/45 dark:bg-zinc-900/60 text-zinc-900 dark:text-zinc-100 p-3 rounded-2xl shadow-xl shadow-purple-950/10 border border-white/80 dark:border-zinc-700/80 flex flex-col items-center gap-2 pointer-events-auto min-w-[210px] animate-fadeIn select-none`}
                                     style={{
                                       transform: `rotate(${-el.rotation}deg) scaleX(${el.isFlippedH ? -1 : 1}) scaleY(${el.isFlippedV ? -1 : 1}) scale(${1 / ((canvasScale * zoomScale) || 1)})`,
-                                      transformOrigin: isNearTop ? 'top center' : 'bottom center'
+                                      transformOrigin: isNearTop ? 'top center' : 'bottom center',
+                                      WebkitFontSmoothing: 'antialiased',
+                                      backdropFilter: 'blur(16px)',
+                                      WebkitBackdropFilter: 'blur(16px)',
+                                      backgroundColor: 'rgba(255, 255, 255, 0.45)'
                                     }}
                                     onMouseDown={(e) => e.stopPropagation()}
                                     onClick={(e) => e.stopPropagation()}
                                   >
-                                    <div className="flex items-center justify-between w-full pb-1 border-b border-white/10 text-xs font-bold text-purple-300">
+                                    <div className="flex items-center justify-between w-full pb-1 border-b border-purple-200/50 dark:border-zinc-800 text-xs font-bold text-[#5B3E88] dark:text-purple-300">
                                       <span className="flex items-center gap-1.5">
-                                        <RotateCw className="w-3.5 h-3.5 text-purple-400" />
+                                        <RotateCw className="w-3.5 h-3.5 text-[#5B3E88] dark:text-purple-400 stroke-[2.2]" />
                                         Угол поворота
                                       </span>
                                       <button
@@ -3231,7 +3377,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                                           e.stopPropagation();
                                           setRotationInputId(null);
                                         }}
-                                        className="p-1 rounded-full hover:bg-white/15 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                                        className="p-1 rounded-full hover:bg-purple-500/20 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
                                         title="Закрыть"
                                       >
                                         <X className="w-3.5 h-3.5" />
@@ -3245,7 +3391,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                                           const next = ((el.rotation - 15) % 360 + 360) % 360;
                                           updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, rotation: next } : item));
                                         }}
-                                        className="px-2 py-1 bg-zinc-800 hover:bg-purple-900/60 border border-zinc-700/80 rounded-lg text-xs font-bold text-purple-300 cursor-pointer transition-colors"
+                                        className="px-2.5 py-1 bg-white/50 hover:bg-purple-100/80 dark:bg-zinc-800/60 dark:hover:bg-zinc-700/80 border border-purple-200/60 dark:border-zinc-700 rounded-xl text-xs font-bold text-[#5B3E88] dark:text-purple-300 cursor-pointer transition-colors shadow-xs"
                                         title="-15°"
                                       >
                                         -15°
@@ -3259,9 +3405,9 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                                             const val = parseInt(e.target.value);
                                             updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, rotation: isNaN(val) ? 0 : val } : item));
                                           }}
-                                          className="w-16 px-2 py-1 text-center font-bold text-sm bg-zinc-950 border border-purple-500/50 rounded-lg text-white focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400"
+                                          className="w-16 px-2 py-1 text-center font-extrabold text-sm bg-white/70 dark:bg-zinc-950/70 border border-purple-300/80 dark:border-purple-600 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:border-[#5B3E88] focus:ring-1 focus:ring-[#5B3E88] shadow-xs"
                                         />
-                                        <span className="absolute right-2 text-xs font-bold text-purple-400 pointer-events-none">°</span>
+                                        <span className="absolute right-2 text-xs font-bold text-[#5B3E88] dark:text-purple-400 pointer-events-none">°</span>
                                       </div>
 
                                       <button
@@ -3269,7 +3415,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                                           const next = ((el.rotation + 15) % 360 + 360) % 360;
                                           updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, rotation: next } : item));
                                         }}
-                                        className="px-2 py-1 bg-zinc-800 hover:bg-purple-900/60 border border-zinc-700/80 rounded-lg text-xs font-bold text-purple-300 cursor-pointer transition-colors"
+                                        className="px-2.5 py-1 bg-white/50 hover:bg-purple-100/80 dark:bg-zinc-800/60 dark:hover:bg-zinc-700/80 border border-purple-200/60 dark:border-zinc-700 rounded-xl text-xs font-bold text-[#5B3E88] dark:text-purple-300 cursor-pointer transition-colors shadow-xs"
                                         title="+15°"
                                       >
                                         +15°
@@ -3277,17 +3423,17 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                                     </div>
 
                                     {/* Preset Angle Pills */}
-                                    <div className="flex items-center justify-between w-full gap-1 pt-1.5 border-t border-white/10">
+                                    <div className="flex items-center justify-between w-full gap-1 pt-1.5 border-t border-purple-200/50 dark:border-zinc-800">
                                       {[0, 45, 90, 180, 270].map((deg) => (
                                         <button
                                           key={deg}
                                           onClick={() => {
                                             updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, rotation: deg } : item));
                                           }}
-                                          className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
+                                          className={`px-1.5 py-0.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
                                             el.rotation === deg
-                                              ? 'bg-purple-600 text-white shadow-xs'
-                                              : 'bg-zinc-800/80 text-zinc-300 hover:bg-zinc-700 hover:text-white'
+                                              ? 'bg-[#5B3E88] text-white shadow-xs'
+                                              : 'bg-white/50 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300 hover:bg-purple-100/80 hover:text-[#5B3E88]'
                                           }`}
                                         >
                                           {deg}°
@@ -3300,17 +3446,28 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                             </>
                           )}
 
-                          {/* FLOATING QUICK TOOLBAR - Adaptive position at bottom or top with rounded-full bg-black/40 backdrop-blur */}
+                          {/* FLOATING QUICK TOOLBAR - Translucent glass with 16px blur & sharp clear controls */}
                           {(() => {
+                            const isRotationOpen = rotationInputId === el.id;
+                            const isNearTop = el.y < 160;
                             const isNearBottom = (el.y + el.h) > (canvasHeightMm / 10 - 70);
+
+                            // Anti-collision logic: if rotation popover is open, position toolbar on opposite side
+                            let positionClass = isNearBottom ? 'bottom-[calc(100%+16px)]' : 'top-[calc(100%+16px)]';
+                            if (isRotationOpen) {
+                              positionClass = isNearTop ? 'bottom-[calc(100%+16px)]' : 'top-[calc(100%+16px)]';
+                            }
+
                             return (
                               <div
-                                className={`absolute left-1/2 -translate-x-1/2 ${
-                                  isNearBottom ? 'bottom-[calc(100%+16px)]' : 'top-[calc(100%+16px)]'
-                                } flex items-center gap-1.5 bg-black/40 dark:bg-black/50 text-white px-2.5 py-1 rounded-full shadow-2xl border border-white/20 backdrop-blur-md z-50 pointer-events-auto`}
+                                className={`absolute left-1/2 -translate-x-1/2 ${positionClass} flex items-center gap-1.5 bg-white/45 dark:bg-zinc-900/60 text-zinc-800 dark:text-zinc-100 px-3.5 py-1.5 rounded-full shadow-lg shadow-purple-950/10 border border-white/80 dark:border-zinc-700/80 z-50 pointer-events-auto select-none`}
                                 style={{
                                   transform: `rotate(${-el.rotation}deg) scaleX(${el.isFlippedH ? -1 : 1}) scaleY(${el.isFlippedV ? -1 : 1}) scale(${1 / ((canvasScale * zoomScale) || 1)})`,
-                                  transformOrigin: isNearBottom ? 'bottom center' : 'top center'
+                                  transformOrigin: isNearBottom ? 'bottom center' : 'top center',
+                                  WebkitFontSmoothing: 'antialiased',
+                                  backdropFilter: 'blur(16px)',
+                                  WebkitBackdropFilter: 'blur(16px)',
+                                  backgroundColor: 'rgba(255, 255, 255, 0.45)'
                                 }}
                               >
                                 {/* Lock Toggle */}
@@ -3319,13 +3476,13 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                                     e.stopPropagation();
                                     updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, isLocked: !item.isLocked } : item));
                                   }}
-                                  className="p-1.5 rounded-full hover:bg-white/20 transition-colors cursor-pointer"
+                                  className="p-1.5 rounded-full hover:bg-amber-500/20 active:scale-90 transition-all cursor-pointer flex items-center justify-center group"
                                   title={el.isLocked ? "Разблокировать" : "Заблокировать"}
                                 >
                                   {el.isLocked ? (
-                                    <Lock className="w-3.5 h-3.5 text-rose-400" />
+                                    <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400 stroke-[2.3] group-hover:scale-110 transition-transform" />
                                   ) : (
-                                    <Unlock className="w-3.5 h-3.5 text-emerald-400" />
+                                    <Unlock className="w-4 h-4 text-emerald-600 dark:text-emerald-400 stroke-[2.3] group-hover:scale-110 transition-transform" />
                                   )}
                                 </button>
 
@@ -3335,13 +3492,13 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                                     e.stopPropagation();
                                     handleDuplicateElement(el);
                                   }}
-                                  className="p-1.5 rounded-full hover:bg-white/20 transition-colors cursor-pointer"
+                                  className="p-1.5 rounded-full hover:bg-purple-500/20 active:scale-90 transition-all cursor-pointer flex items-center justify-center group"
                                   title="Копировать"
                                 >
-                                  <Copy className="w-3.5 h-3.5 text-cyan-300" />
+                                  <Copy className="w-4 h-4 text-[#5B3E88] dark:text-purple-300 stroke-[2.3] group-hover:scale-110 transition-transform" />
                                 </button>
 
-                                <div className="w-[1px] h-3.5 bg-white/40" />
+                                <div className="w-[1px] h-4 bg-purple-300/50 dark:bg-zinc-700 mx-0.5 shrink-0" />
 
                                 {/* Delete/Trash */}
                                 <button
@@ -3349,12 +3506,24 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                                     e.stopPropagation();
                                     updateActiveSceneElements(prev => prev.filter(item => item.id !== el.id));
                                     setSelectedId(null);
-                                    showToast('Удалено', 'Элемент удален с холста.', 'info');
+                                    showToast('Удалено', 'Элемент удален со сцены.', 'info');
                                   }}
-                                  className="p-1.5 rounded-full hover:bg-rose-500/40 transition-colors cursor-pointer"
+                                  className="p-1.5 rounded-full hover:bg-rose-500/20 active:scale-90 transition-all cursor-pointer flex items-center justify-center group"
                                   title="Удалить со сцены"
                                 >
-                                  <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                                  <Trash2 className="w-4 h-4 text-rose-500 dark:text-rose-400 stroke-[2.3] group-hover:scale-110 transition-transform" />
+                                </button>
+
+                                {/* Close / Deselect */}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedId(null);
+                                  }}
+                                  className="p-1.5 rounded-full hover:bg-purple-500/20 active:scale-90 transition-all cursor-pointer flex items-center justify-center group"
+                                  title="Закрыть панель"
+                                >
+                                  <X className="w-4 h-4 text-zinc-500 hover:text-zinc-900 dark:hover:text-white stroke-[2.3] group-hover:scale-110 transition-transform" />
                                 </button>
                               </div>
                             );
@@ -3414,9 +3583,20 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                         className={`absolute left-1/2 -translate-x-1/2 ${
                           isNearTop ? 'top-2' : '-top-9'
                         } pointer-events-none whitespace-nowrap z-40`}
+                        style={{
+                          transform: `scale(${1 / ((canvasScale * zoomScale) || 1)})`,
+                          transformOrigin: isNearTop ? 'top center' : 'bottom center'
+                        }}
                       >
-                        <span className="text-[10px] font-extrabold text-white bg-purple-600/90 backdrop-blur-md px-2.5 py-1 rounded-full border border-purple-400/50 shadow-md flex items-center gap-1.5">
-                          <BoxSelect className="w-3 h-3 text-purple-200" />
+                        <span
+                          className="text-[10px] font-extrabold text-[#5B3E88] dark:text-purple-300 bg-white/60 dark:bg-zinc-900/60 px-2.5 py-1 rounded-full border border-white/80 dark:border-zinc-700/80 shadow-md flex items-center gap-1.5"
+                          style={{
+                            backdropFilter: 'blur(16px)',
+                            WebkitBackdropFilter: 'blur(16px)',
+                            backgroundColor: 'rgba(255, 255, 255, 0.55)'
+                          }}
+                        >
+                          <BoxSelect className="w-3 h-3 text-[#5B3E88] dark:text-purple-300" />
                           Выделено элементов: {selectedElements.length}
                         </span>
                       </div>
@@ -3425,7 +3605,15 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                       <div
                         className={`absolute left-1/2 -translate-x-1/2 ${
                           isNearTop ? 'bottom-2' : '-top-14'
-                        } flex items-center gap-1.5 bg-zinc-900/95 text-white px-3 py-1.5 rounded-full shadow-2xl border border-purple-500/50 backdrop-blur-md z-50 pointer-events-auto`}
+                        } flex items-center gap-1.5 bg-white/45 dark:bg-zinc-900/60 text-zinc-800 dark:text-zinc-100 px-3.5 py-1.5 rounded-full shadow-lg shadow-purple-950/10 border border-white/80 dark:border-zinc-700/80 z-50 pointer-events-auto select-none`}
+                        style={{
+                          transform: `scale(${1 / ((canvasScale * zoomScale) || 1)})`,
+                          transformOrigin: isNearTop ? 'bottom center' : 'top center',
+                          WebkitFontSmoothing: 'antialiased',
+                          backdropFilter: 'blur(16px)',
+                          WebkitBackdropFilter: 'blur(16px)',
+                          backgroundColor: 'rgba(255, 255, 255, 0.45)'
+                        }}
                         onMouseDown={(e) => e.stopPropagation()}
                         onClick={(e) => e.stopPropagation()}
                       >
@@ -3436,13 +3624,13 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                             updateActiveSceneElements(prev => prev.map(el => selectedIds.includes(el.id) ? { ...el, isLocked: !allLocked } : el));
                             showToast('Группа', allLocked ? 'Группа разблокирована' : 'Группа заблокирована', 'info');
                           }}
-                          className="p-1.5 rounded-full hover:bg-white/20 transition-colors cursor-pointer text-zinc-300 hover:text-white"
+                          className="p-1.5 rounded-full hover:bg-amber-500/20 active:scale-90 transition-all cursor-pointer flex items-center justify-center group"
                           title="Заблокировать / Разблокировать группу"
                         >
                           {selectedElements.every(el => el.isLocked) ? (
-                            <Lock className="w-3.5 h-3.5 text-rose-400" />
+                            <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400 stroke-[2.3] group-hover:scale-110 transition-transform" />
                           ) : (
-                            <Unlock className="w-3.5 h-3.5 text-emerald-400" />
+                            <Unlock className="w-4 h-4 text-emerald-600 dark:text-emerald-400 stroke-[2.3] group-hover:scale-110 transition-transform" />
                           )}
                         </button>
 
@@ -3465,17 +3653,17 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                             setSelectedIds(newIds);
                             showToast('Копия группы', `Скопировано ${selectedElements.length} элементов`, 'success');
                           }}
-                          className="p-1.5 rounded-full hover:bg-white/20 transition-colors cursor-pointer text-zinc-300 hover:text-white"
+                          className="p-1.5 rounded-full hover:bg-purple-500/20 active:scale-90 transition-all cursor-pointer flex items-center justify-center group"
                           title="Скопировать всю группу"
                         >
-                          <Copy className="w-3.5 h-3.5 text-cyan-300" />
+                          <Copy className="w-4 h-4 text-[#5B3E88] dark:text-purple-300 stroke-[2.3] group-hover:scale-110 transition-transform" />
                         </button>
 
                         {/* Persistent Group / Ungroup button */}
                         {selectedElements.some(el => el.groupId) ? (
                           <button
                             onClick={handleUngroupSelectedElements}
-                            className="px-2.5 py-1 rounded-full bg-purple-600/90 hover:bg-purple-500 text-xs font-bold text-white flex items-center gap-1 transition-all cursor-pointer shadow-sm"
+                            className="px-3 py-1 rounded-full bg-[#5B3E88] hover:bg-[#4A3172] text-xs font-bold text-white flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95"
                             title="Разгруппировать (сделать элементы независимыми)"
                           >
                             <Ungroup className="w-3.5 h-3.5" />
@@ -3484,7 +3672,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                         ) : (
                           <button
                             onClick={handleGroupSelectedElements}
-                            className="px-2.5 py-1 rounded-full bg-purple-600/90 hover:bg-purple-500 text-xs font-bold text-white flex items-center gap-1 transition-all cursor-pointer shadow-sm"
+                            className="px-3 py-1 rounded-full bg-[#5B3E88] hover:bg-[#4A3172] text-xs font-bold text-white flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95"
                             title="Сгруппировать в постоянную группу"
                           >
                             <Group className="w-3.5 h-3.5" />
@@ -3492,7 +3680,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                           </button>
                         )}
 
-                        <div className="w-[1px] h-3.5 bg-white/30" />
+                        <div className="w-[1px] h-4 bg-purple-300/50 dark:bg-zinc-700 mx-0.5 shrink-0" />
 
                         {/* Delete group */}
                         <button
@@ -3501,19 +3689,19 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                             setSelectedIds([]);
                             showToast('Удалено', `Удалено ${selectedElements.length} элементов`, 'info');
                           }}
-                          className="p-1.5 rounded-full hover:bg-rose-500/40 transition-colors cursor-pointer text-rose-400 hover:text-rose-200"
+                          className="p-1.5 rounded-full hover:bg-rose-500/20 active:scale-90 transition-all cursor-pointer flex items-center justify-center group"
                           title="Удалить группу со сцены"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-4 h-4 text-rose-500 dark:text-rose-400 stroke-[2.3] group-hover:scale-110 transition-transform" />
                         </button>
 
                         {/* Deselect / Close */}
                         <button
                           onClick={() => setSelectedIds([])}
-                          className="p-1.5 rounded-full hover:bg-white/20 transition-colors cursor-pointer text-zinc-400 hover:text-white"
-                          title="Снять выделение"
+                          className="p-1.5 rounded-full hover:bg-purple-500/20 active:scale-90 transition-all cursor-pointer flex items-center justify-center group"
+                          title="Закрыть панель (снять выделение)"
                         >
-                          <X className="w-3.5 h-3.5" />
+                          <X className="w-4 h-4 text-zinc-500 hover:text-zinc-900 dark:hover:text-white stroke-[2.3] group-hover:scale-110 transition-transform" />
                         </button>
                       </div>
                     </div>
@@ -4030,7 +4218,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsAiModalOpen(false)}
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/40 backdrop-blur-md"
             />
 
             {/* Modal Body Card */}
@@ -4038,7 +4226,11 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
               initial={{ scale: 0.95, y: 15, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, y: 15, opacity: 0 }}
-              className="relative w-full max-w-lg bg-white dark:bg-zinc-900 rounded-3xl border border-[var(--glass-edge)] shadow-2xl p-6 overflow-hidden z-10"
+              className="relative w-full max-w-lg bg-white/70 dark:bg-zinc-900/75 backdrop-blur-2xl rounded-3xl border border-white/80 dark:border-zinc-700/80 shadow-2xl p-6 overflow-hidden z-10"
+              style={{
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+              }}
             >
               
               <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">

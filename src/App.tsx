@@ -59,7 +59,7 @@ export default function App() {
   });
 
   // Main active tab state
-  const [activeTab, setActiveTab] = useState<'projects' | 'warehouse' | 'images' | 'documents' | 'profile' | 'moodboard'>('projects');
+  const [activeTab, setActiveTab] = useState<'projects' | 'warehouse' | 'images' | 'documents' | 'profile' | 'moodboard' | 'calendar'>('projects');
 
   // Core database states with local persistence
   const [projects, setProjects] = useState<Project[]>(() => {
@@ -460,6 +460,7 @@ export default function App() {
                   <button
                     key={item.value}
                     onClick={() => {
+                      setSelectedProject(null);
                       setActiveTab(item.value as any);
                       setIsMobileNavOpen(false);
                     }}
@@ -566,7 +567,10 @@ export default function App() {
           ].map((tab) => (
             <button
               key={tab.key}
-              onClick={() => setActiveTab(tab.key as any)}
+              onClick={() => {
+                setSelectedProject(null);
+                setActiveTab(tab.key as any);
+              }}
               title={!isLeftSidebarExpanded ? tab.label : undefined}
               className={`flex items-center gap-2.5 rounded-xl text-[14px] transition-all cursor-pointer ${
                 isLeftSidebarExpanded ? 'px-3 py-1.5 w-full justify-start' : 'p-1.5 w-8 h-8 justify-center'
@@ -683,7 +687,7 @@ export default function App() {
           )}
 
           {/* MAIN PANEL TOP NAVBAR Header (Shown on tabs except Moodboard Editor) */}
-          {activeTab !== 'moodboard' && (
+          {activeTab !== 'moodboard' && !selectedProject && (
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 shrink-0">
               <div>
                 <div className="flex items-center gap-3">
@@ -716,7 +720,11 @@ export default function App() {
                             initial={{ opacity: 0, y: 10, scale: 0.95 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                            className="absolute right-0 mt-2 w-80 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-[var(--glass-edge)] rounded-2xl shadow-2xl p-4 z-40 space-y-3"
+                            className="absolute right-0 mt-2 w-80 bg-white/70 dark:bg-zinc-900/75 backdrop-blur-2xl border border-white/80 dark:border-zinc-700/80 rounded-2xl shadow-2xl p-4 z-40 space-y-3"
+                            style={{
+                              backdropFilter: 'blur(20px)',
+                              WebkitBackdropFilter: 'blur(20px)',
+                            }}
                           >
                             <div className="flex justify-between items-center pb-2 border-b border-[var(--glass-edge)]">
                               <span className="text-xs font-semibold text-[var(--ink)]">События клиентов</span>
@@ -774,7 +782,7 @@ export default function App() {
               {activeTab === 'projects' && (
                 <button
                   onClick={() => setIsNewProjOpen(true)}
-                  className="shrink-0 bg-[var(--lavDeep)] hover:bg-[var(--lavDeep)]/90 text-white rounded-full px-6 py-3 text-[13px] font-medium shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="shrink-0 bg-gradient-to-r from-[#8C52D0] to-[#582F89] hover:opacity-95 text-white rounded-full px-6 py-3 text-[13px] font-medium shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Plus className="w-4 h-4" /> Новый проект
                 </button>
@@ -783,7 +791,7 @@ export default function App() {
               {activeTab === 'warehouse' && (
                 <button
                   onClick={() => setIsWarehouseAdding(true)}
-                  className="shrink-0 bg-[var(--lavDeep)] hover:bg-[var(--lavDeep)]/90 text-white rounded-full px-6 py-3 text-[13px] font-medium shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="shrink-0 bg-gradient-to-r from-[#8C52D0] to-[#582F89] hover:opacity-95 text-white rounded-full px-6 py-3 text-[13px] font-medium shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Plus className="w-4 h-4" /> Новый товар
                 </button>
@@ -798,7 +806,7 @@ export default function App() {
           )}
 
           {/* QUICK METRICS DASHBOARD ROW */}
-          {activeTab === 'projects' && (
+          {activeTab === 'projects' && !selectedProject && (
             <div className="grid grid-cols-4 gap-2 sm:gap-3 md:gap-4">
               
               {/* Metric 1: В РАБОТЕ */}
@@ -869,7 +877,16 @@ export default function App() {
                   transition={{ duration: 0.3 }}
                   className="space-y-6"
                 >
-                  {/* Header controls */}
+                  {selectedProject ? (
+                    <ProjectDetailModal
+                      project={selectedProject}
+                      onClose={() => setSelectedProject(null)}
+                      onUpdateProject={handleUpdateProject}
+                      showToast={showToast}
+                    />
+                  ) : (
+                    <>
+                      {/* Header controls */}
                   <div className="space-y-4">
                     {/* Row 1: Categories / Status Filter pills */}
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -890,7 +907,7 @@ export default function App() {
                               onClick={() => setProjectFilter(pill.key as any)}
                               className={`rounded-full text-xs font-medium tracking-wide transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
                                 isActive
-                                  ? 'bg-[var(--lavDeep)] text-white border border-[var(--lavDeep)] shadow-md shadow-[var(--lavDeep)]/20 px-3.5 py-1.5 scale-[1.02]'
+                                  ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white border border-[#582F89] shadow-md shadow-purple-900/20 px-3.5 py-1.5 scale-[1.02]'
                                   : 'bg-transparent text-[var(--soft)] hover:text-[var(--ink)] border border-transparent px-2 py-1'
                               }`}
                             >
@@ -1435,7 +1452,7 @@ export default function App() {
                                            setSelectedProject(p);
                                            setActiveTab('projects');
                                          }}
-                                         className="flex-1 sm:flex-initial bg-[var(--lavDeep)] hover:opacity-90 text-white rounded-xl px-4 py-2 text-xs font-medium transition-all cursor-pointer whitespace-nowrap"
+                                         className="flex-1 sm:flex-initial bg-gradient-to-r from-[#8C52D0] to-[#582F89] hover:opacity-90 text-white rounded-full px-5 py-2 text-xs font-semibold transition-all duration-300 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] cursor-pointer whitespace-nowrap"
                                        >
                                          Открыть проект
                                        </button>
@@ -1611,7 +1628,7 @@ export default function App() {
                                          setSelectedProject(p);
                                          setActiveTab('projects');
                                        }}
-                                       className="bg-[#5D3E8D] hover:bg-[#4E3175] text-white rounded-full font-semibold text-[12px] py-2 px-5.5 shadow-sm transition-colors cursor-pointer shrink-0"
+                                       className="bg-gradient-to-r from-[#8C52D0] to-[#582F89] hover:opacity-90 text-white rounded-full font-semibold text-[12px] py-2 px-5.5 shadow-sm transition-all duration-300 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0"
                                      >
                                        Открыть проект
                                      </button>
@@ -1623,6 +1640,8 @@ export default function App() {
                         );
                       })}
                     </div>
+                  )}
+                    </>
                   )}
                 </motion.div>
               )}
@@ -1708,6 +1727,112 @@ export default function App() {
                   <DocumentsTab
                     showToast={showToast}
                   />
+                </motion.div>
+              )}
+
+              {/* CALENDAR & EVENT SCHEDULE TAB */}
+              {activeTab === 'calendar' && (
+                <motion.div
+                  key="calendar-tab"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-6"
+                >
+                  <div className="glass-panel p-6 rounded-3xl space-y-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--line)]">
+                      <div>
+                        <h2 className="text-xl font-bold text-[var(--ink)] flex items-center gap-2">
+                          <Calendar className="w-5 h-5 text-[var(--lavDeep)]" /> Календарь мероприятий & событий
+                        </h2>
+                        <p className="text-xs text-[var(--soft)]">График монтажей, сдачи проектов и выездов команды</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="px-3 py-1 bg-[var(--lavenderSoft)] text-[var(--lavDeep)] rounded-full text-xs font-semibold">
+                          Июль 2026
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Main Interactive Grid Calendar */}
+                    <div className="grid grid-cols-7 gap-2 text-center text-xs font-bold text-[var(--faint)] mb-2">
+                      {['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map((d, i) => (
+                        <div key={i} className="py-1">{d}</div>
+                      ))}
+                    </div>
+
+                    <div className="grid grid-cols-7 gap-2">
+                      {calendarDays.map((day, idx) => {
+                        const isSelected = selectedCalendarDay === day.num && day.currentMonth;
+                        const hasEvent = day.currentMonth && calendarEvents[day.num];
+
+                        let bgStyle = 'bg-white/40 dark:bg-zinc-800/40 hover:bg-white/80 dark:hover:bg-zinc-700/80';
+                        let textStyle = day.currentMonth ? 'text-[var(--ink)]' : 'text-[var(--faint)] opacity-30';
+                        let dotStyle = '';
+
+                        if (day.currentMonth && day.eventType) {
+                          if (day.eventType === 'warn') {
+                            bgStyle = 'bg-rose-100/80 text-rose-800 dark:bg-rose-950/70 dark:text-rose-200 border border-rose-400/40 font-medium';
+                            dotStyle = 'bg-rose-600';
+                          } else if (day.eventType === 'indigo') {
+                            bgStyle = 'bg-indigo-100/80 text-indigo-800 dark:bg-indigo-950/70 dark:text-indigo-200 border border-indigo-400/40 font-medium';
+                            dotStyle = 'bg-indigo-600';
+                          } else if (day.eventType === 'lavender') {
+                            bgStyle = 'bg-purple-100/80 text-purple-800 dark:bg-purple-950/70 dark:text-purple-200 border border-purple-400/40 font-medium';
+                            dotStyle = 'bg-purple-600';
+                          } else if (day.eventType === 'sage') {
+                            bgStyle = 'bg-emerald-100/80 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-200 border border-emerald-400/40 font-medium';
+                            dotStyle = 'bg-emerald-600';
+                          }
+                        }
+
+                        return (
+                          <div
+                            key={idx}
+                            onClick={() => day.currentMonth && setSelectedCalendarDay(day.num)}
+                            className={`min-h-[64px] p-2 rounded-2xl border border-[var(--glass-edge)] cursor-pointer transition-all flex flex-col items-center justify-between ${bgStyle} ${textStyle} ${
+                              isSelected ? 'ring-2 ring-[var(--lavDeep)] scale-[1.02] shadow-md' : ''
+                            }`}
+                          >
+                            <span className="font-bold text-sm">{day.num}</span>
+                            {hasEvent && (
+                              <div className="w-full space-y-1">
+                                <span className={`w-2 h-2 rounded-full mx-auto block ${dotStyle || 'bg-[var(--lavDeep)]'}`} />
+                                <span className="text-[9px] font-semibold truncate block max-w-full px-1 text-center opacity-90">
+                                  {calendarEvents[day.num][0]?.title}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Detailed Event Log for selected day */}
+                    <div className="pt-4 border-t border-[var(--line)]">
+                      <h3 className="text-sm font-bold text-[var(--ink)] mb-3">
+                        Детализация расписания на {selectedCalendarDay} июля 2026:
+                      </h3>
+                      {calendarEvents[selectedCalendarDay] ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {calendarEvents[selectedCalendarDay].map((ev, i) => (
+                            <div key={i} className="p-4 rounded-2xl bg-white/60 dark:bg-zinc-800/60 border border-[var(--glass-edge)] shadow-xs">
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="font-bold text-sm text-[var(--ink)]">{ev.title}</span>
+                                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--lavenderSoft)] text-[var(--lavDeep)]">
+                                  {ev.time}
+                                </span>
+                              </div>
+                              <p className="text-xs text-[var(--soft)]">{ev.desc}</p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-[var(--soft)] italic">На эту дату нет запланированных выездов и монтажей.</p>
+                      )}
+                    </div>
+                  </div>
                 </motion.div>
               )}
 
@@ -1967,26 +2092,21 @@ export default function App() {
       </div>
 
       {/* 4. MODALS OVERLAYS */}
-      {/* Detail drawer popup modal */}
-      <AnimatePresence>
-        {selectedProject && (
-          <ProjectDetailModal
-            project={selectedProject}
-            isOpen={selectedProject !== null}
-            onClose={() => setSelectedProject(null)}
-            onUpdateProject={handleUpdateProject}
-            showToast={showToast}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Add new project modal */}
+      {/* Add new project modal & Project Detail Card Modal */}
       <AnimatePresence>
         {isNewProjOpen && (
           <NewProjectModal
             isOpen={isNewProjOpen}
             onClose={() => setIsNewProjOpen(false)}
             onSubmit={handleCreateProject}
+          />
+        )}
+        {selectedProject && (
+          <ProjectDetailModal
+            project={selectedProject}
+            onClose={() => setSelectedProject(null)}
+            onUpdateProject={handleUpdateProject}
+            showToast={showToast}
           />
         )}
       </AnimatePresence>
