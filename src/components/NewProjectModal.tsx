@@ -93,7 +93,7 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
               placeholder="например, Свадьба в лесу или День Рождения"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-full bg-zinc-100/50 dark:bg-zinc-950/35 border border-zinc-200/50 dark:border-zinc-800/50 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-[var(--lavenderAccent)] text-sm"
+              className="w-full px-4 py-2.5 rounded-full bg-white/70 dark:bg-zinc-800/80 border border-stone-300/80 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-[#8C52D0] text-sm"
             />
           </div>
 
@@ -108,7 +108,7 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
                   placeholder="Анна К."
                   value={clientName}
                   onChange={(e) => setClientName(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 rounded-full bg-zinc-100/50 dark:bg-zinc-950/35 border border-zinc-200/50 dark:border-zinc-800/50 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-[var(--lavenderAccent)] text-sm"
+                  className="w-full pl-9 pr-4 py-2.5 rounded-full bg-white/70 dark:bg-zinc-800/80 border border-stone-300/80 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-[#8C52D0] text-sm"
                 />
               </div>
             </div>
@@ -122,7 +122,7 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
                   placeholder="anna@example.com"
                   value={clientEmail}
                   onChange={(e) => setClientEmail(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 rounded-full bg-zinc-100/50 dark:bg-zinc-950/35 border border-zinc-200/50 dark:border-zinc-800/50 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-[var(--lavenderAccent)] text-sm"
+                  className="w-full pl-9 pr-4 py-2.5 rounded-full bg-white/70 dark:bg-zinc-800/80 border border-stone-300/80 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-[#8C52D0] text-sm"
                 />
               </div>
             </div>
@@ -139,7 +139,7 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
                   placeholder="Лофт «Верх», Краснодар"
                   value={venue}
                   onChange={(e) => setVenue(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 rounded-full bg-zinc-100/50 dark:bg-zinc-950/35 border border-zinc-200/50 dark:border-zinc-800/50 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-[var(--lavenderAccent)] text-sm"
+                  className="w-full pl-9 pr-4 py-2.5 rounded-full bg-white/70 dark:bg-zinc-800/80 border border-stone-300/80 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-[#8C52D0] text-sm"
                 />
               </div>
             </div>
@@ -152,7 +152,7 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 rounded-full bg-zinc-100/50 dark:bg-zinc-950/35 border border-zinc-200/50 dark:border-zinc-800/50 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavenderAccent)] text-sm"
+                  className="w-full pl-9 pr-4 py-2.5 rounded-full bg-white/70 dark:bg-zinc-800/80 border border-stone-300/80 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#8C52D0] text-sm"
                 />
               </div>
             </div>
@@ -169,7 +169,7 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
                   min="0"
                   value={budget}
                   onChange={(e) => setBudget(Number(e.target.value))}
-                  className="w-full pl-9 pr-4 py-2.5 rounded-full bg-zinc-100/50 dark:bg-zinc-950/35 border border-zinc-200/50 dark:border-zinc-800/50 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavenderAccent)] text-sm"
+                  className="w-full pl-9 pr-4 py-2.5 rounded-full bg-white/70 dark:bg-zinc-800/80 border border-stone-300/80 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#8C52D0] text-sm"
                 />
               </div>
             </div>
@@ -179,7 +179,7 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as ProjectStatus)}
-                className="w-full px-4 py-2.5 rounded-full bg-zinc-100/50 dark:bg-zinc-950/35 border border-zinc-200/50 dark:border-zinc-800/50 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavenderAccent)] text-sm"
+                className="w-full px-4 py-2.5 rounded-full bg-white/70 dark:bg-zinc-800/80 border border-stone-300/80 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#8C52D0] text-sm cursor-pointer"
               >
                 <option value="progress">В работе</option>
                 <option value="waiting">Ждёт клиента</option>
@@ -189,39 +189,19 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
             </div>
           </div>
 
-          {/* Initial Stage Stepper Selector */}
-          <div className="space-y-2">
-            <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Текущий этап проекта</label>
-            <div className="grid grid-cols-5 gap-1.5">
-              {['Бриф', 'Визуал', 'Смета', 'Согл.', 'Финал'].map((label, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => setCurrentStep(index)}
-                  className={`py-2 px-1 rounded-full border text-center text-xs font-medium transition-all ${
-                    currentStep === index
-                      ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white border-[#582F89] shadow-md shadow-purple-950/20'
-                      : 'bg-zinc-100 dark:bg-zinc-800/40 border-zinc-200 dark:border-zinc-800/40 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Buttons */}
           <div className="flex gap-3 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 rounded-full border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800/55 transition-colors text-sm"
+              className="flex-1 py-3 rounded-full border border-stone-200/80 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium hover:bg-zinc-100/60 dark:hover:bg-zinc-800/55 transition-colors text-sm cursor-pointer"
             >
               Отмена
             </button>
             <button
               type="submit"
-              className="flex-1 py-3 rounded-full bg-gradient-to-r from-[#8C52D0] to-[#582F89] hover:opacity-95 text-white font-medium transition-all shadow-md shadow-purple-900/20 text-sm cursor-pointer"
+              className="flex-1 py-3 rounded-full text-white font-medium transition-all duration-300 hover:opacity-95 hover:shadow-lg active:scale-[0.99] text-sm cursor-pointer"
+              style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
             >
               Создать проект
             </button>

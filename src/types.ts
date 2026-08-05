@@ -24,11 +24,16 @@ export interface Project {
   venue: string;
   date: string;
   status: ProjectStatus;
-  currentStep: number; // 0: Бриф, 1: Визуал, 2: Смета, 3: Согл, 4: Финал
+  currentStep: number; // 0: Бриф, 1: Визуал, 2: Смета, 3: Согласование
   budget: number;
   estimate: EstimateItem[];
   brief: BriefData;
   imageUrl?: string;
+  updatedAt?: string;
+  scenesData?: any[];
+  floorPlanData?: any[];
+  disabledSceneIds?: string[];
+  customScenePrices?: Record<string, number>;
 }
 
 export interface WarehouseItem {

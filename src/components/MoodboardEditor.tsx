@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { toJpeg } from 'html-to-image';
 import {
   X,
   Plus,
   Check,
+  Loader2,
   Search,
   RotateCcw,
   RotateCw,
@@ -56,6 +58,7 @@ import {
   Palette,
   Target,
   Droplet,
+  Folder,
   ZoomIn,
   Pipette,
   Bell,
@@ -85,11 +88,20 @@ import FloorPlanSchema, { PlanElement } from './editor/FloorPlanSchema';
 
 interface MoodboardEditorProps {
   projects: Project[];
-  onSaveToProject: (projectId: string, imageUrl: string, estimateItems?: EstimateItem[], budget?: number) => void;
+  initialProjectId?: string;
+  onSaveToProject: (
+    projectId: string,
+    imageUrl: string,
+    estimateItems?: EstimateItem[],
+    budget?: number,
+    scenesData?: EditorScene[],
+    floorPlanData?: PlanElement[]
+  ) => void;
   showToast: (title: string, message: string, type?: 'success' | 'info' | 'warn') => void;
   setHeaderActions?: (actions: React.ReactNode) => void;
   onAddAiImage?: (url: string, prompt: string, projectName: string) => void;
   mobileNavButton?: React.ReactNode;
+  onBackToProjectCard?: (projectId?: string) => void;
 }
 
 export interface CanvasElement {
@@ -153,6 +165,63 @@ const NEW_CATALOG_CATEGORIES = [
   { id: 'balloons', title: 'Шары', icon: 'CircleDot' },
   { id: 'themes', title: 'Тематика', icon: 'Tag' }
 ];
+
+const CategoryIcon: React.FC<{
+  cat: { id: string; title: string };
+  isSelected?: boolean;
+}> = ({ cat, isSelected }) => {
+  const [imgError, setImgError] = useState(false);
+  const [customUserIcon, setCustomUserIcon] = useState<string | null>(() => {
+    return localStorage.getItem(`cat_icon_${cat.id}`) || null;
+  });
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setCustomUserIcon(localStorage.getItem(`cat_icon_${cat.id}`) || null);
+      setImgError(false);
+    };
+    window.addEventListener('storage', handleUpdate);
+    window.addEventListener('cat_icons_updated', handleUpdate);
+    return () => {
+      window.removeEventListener('storage', handleUpdate);
+      window.removeEventListener('cat_icons_updated', handleUpdate);
+    };
+  }, [cat.id]);
+
+  const iconSrc = customUserIcon || `/category-icons/${cat.id}.svg`;
+
+  if (!imgError && iconSrc) {
+    return (
+      <img
+        src={iconSrc}
+        alt={cat.title}
+        onError={() => setImgError(true)}
+        className="w-4 h-4 object-contain transition-transform group-hover:scale-110"
+      />
+    );
+  }
+
+  // Fallback to default Lucide icons
+  switch (cat.id) {
+    case 'favorites': return <Heart className={`w-4 h-4 ${isSelected ? 'fill-[#5B3E88] text-[#5B3E88]' : 'text-rose-500 fill-rose-500'}`} />;
+    case 'warehouse': return <Box className="w-4 h-4 text-amber-500" />;
+    case 'arches': return <Layers className="w-4 h-4 text-indigo-500" />;
+    case 'stands': return <Columns className="w-4 h-4 text-cyan-500" />;
+    case 'tables': return <TableIcon className="w-4 h-4 text-emerald-500" />;
+    case 'screens': return <GridIcon className="w-4 h-4 text-blue-500" />;
+    case 'flowers': return <Flower2 className="w-4 h-4 text-pink-500" />;
+    case 'compositions': return <Sparkles className="w-4 h-4 text-amber-400" />;
+    case 'vases': return <Tag className="w-4 h-4 text-purple-500" />;
+    case 'details': return <Compass className="w-4 h-4 text-teal-500" />;
+    case 'textiles': return <AlignLeft className="w-4 h-4 text-sky-500" />;
+    case 'light': return <Lightbulb className="w-4 h-4 text-yellow-500" />;
+    case 'podiums': return <Columns className="w-4 h-4 text-orange-500" />;
+    case 'furniture': return <Bookmark className="w-4 h-4 text-violet-500" />;
+    case 'balloons': return <CircleDot className="w-4 h-4 text-rose-400" />;
+    case 'themes': return <Sparkles className="w-4 h-4 text-emerald-600" />;
+    default: return <Tag className="w-4 h-4 text-purple-500" />;
+  }
+};
 
 // Simple customized items for categories not extensively in EditorLibraryData
 const CUSTOM_LIBRARY_ITEMS: LibraryItem[] = [
@@ -406,7 +475,7 @@ const CUSTOM_LIBRARY_ITEMS: LibraryItem[] = [
   }
 ];
 
-export default function MoodboardEditor({ projects, onSaveToProject, showToast, setHeaderActions, onAddAiImage, mobileNavButton }: MoodboardEditorProps) {
+export default function MoodboardEditor({ projects, initialProjectId, onSaveToProject, showToast, setHeaderActions, onAddAiImage, mobileNavButton, onBackToProjectCard }: MoodboardEditorProps) {
   // Top Active Mode / Scene Tabs: "scene-1" | "scene-2" | "floorplan"
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<string>('scene-1');
   const [isVisualizationsDropdownOpen, setIsVisualizationsDropdownOpen] = useState<boolean>(false);
@@ -415,76 +484,88 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
   const [activeSidebarTab, setActiveSidebarTab] = useState<'library' | 'layers'>('library');
 
   // Selected Project and Data binding
-  const [activeProjectId, setActiveProjectId] = useState<string>(projects[0]?.id || '');
+  const [activeProjectId, setActiveProjectId] = useState<string>(initialProjectId || projects[0]?.id || '');
+
+  useEffect(() => {
+    if (initialProjectId) {
+      setActiveProjectId(initialProjectId);
+    }
+  }, [initialProjectId]);
   const currentProject = projects.find(p => p.id === activeProjectId);
 
   // Core Scenes for the 2D collage workspace
-  const [scenes, setScenes] = useState<EditorScene[]>([
-    {
-      id: 'scene-1',
-      name: 'Визуализация 1',
-      elements: [
-        {
-          id: "A-101-main",
-          name: "Круглая арка «Оливия»",
-          type: "arches",
-          x: 180,
-          y: 40,
-          w: 220,
-          h: 220,
-          rotation: 0,
-          exposure: 0,
-          hue: 0,
-          temp: 0,
-          saturate: 100,
-          opacity: 100,
-          price: 25000,
-          comment: "Центральная арка для молодоженов",
-          isLocked: false,
-          isVisible: true,
-          isFlippedH: false,
-          isFlippedV: false,
-          svgMarkup: CATALOG_ASSETS.arches[0].svgMarkup
-        },
-        {
-          id: "F-201-top",
-          name: "Гирлянда «Королевская роза»",
-          type: "flowers",
-          x: 150,
-          y: 20,
-          w: 280,
-          h: 60,
-          rotation: 0,
-          exposure: 0,
-          hue: 0,
-          temp: 0,
-          saturate: 100,
-          opacity: 100,
-          price: 45000,
-          comment: "Разместить поверх арки «Оливия»",
-          isLocked: false,
-          isVisible: true,
-          isFlippedH: false,
-          isFlippedV: false,
-          svgMarkup: CATALOG_ASSETS.flowers[0].svgMarkup
-        }
-      ],
-      backdropImage: '',
-      backdropColor: '#F3F4F6',
-      backdropType: 'color'
-    },
-    {
-      id: 'scene-2',
-      name: 'Визуализация 2',
-      elements: [],
-      backdropImage: '',
-      backdropColor: '#F3F4F6',
-      backdropType: 'color'
+  const [scenes, setScenes] = useState<EditorScene[]>(() => {
+    const proj = projects.find(p => p.id === (initialProjectId || projects[0]?.id || ''));
+    if (proj?.scenesData && proj.scenesData.length > 0) {
+      return proj.scenesData;
     }
-  ]);
+    return [
+      {
+        id: 'scene-1',
+        name: 'Визуализация 1',
+        elements: [
+          {
+            id: "A-101-main",
+            name: "Круглая арка «Оливия»",
+            type: "arches",
+            x: 180,
+            y: 40,
+            w: 220,
+            h: 220,
+            rotation: 0,
+            exposure: 0,
+            hue: 0,
+            temp: 0,
+            saturate: 100,
+            opacity: 100,
+            price: 25000,
+            comment: "Центральная арка для молодоженов",
+            isLocked: false,
+            isVisible: true,
+            isFlippedH: false,
+            isFlippedV: false,
+            svgMarkup: CATALOG_ASSETS.arches[0]?.svgMarkup || ''
+          },
+          {
+            id: "F-201-top",
+            name: "Гирлянда «Королевская роза»",
+            type: "flowers",
+            x: 150,
+            y: 20,
+            w: 280,
+            h: 60,
+            rotation: 0,
+            exposure: 0,
+            hue: 0,
+            temp: 0,
+            saturate: 100,
+            opacity: 100,
+            price: 45000,
+            comment: "Разместить поверх арки «Оливия»",
+            isLocked: false,
+            isVisible: true,
+            isFlippedH: false,
+            isFlippedV: false,
+            svgMarkup: CATALOG_ASSETS.flowers[0]?.svgMarkup || ''
+          }
+        ],
+        backdropImage: '',
+        backdropColor: '#F3F4F6',
+        backdropType: 'color'
+      },
+      {
+        id: 'scene-2',
+        name: 'Визуализация 2',
+        elements: [],
+        backdropImage: '',
+        backdropColor: '#F3F4F6',
+        backdropType: 'color'
+      }
+    ];
+  });
 
   const activeSceneIndex = scenes.findIndex(s => s.id === activeWorkspaceTab);
-  const activeScene = activeSceneIndex !== -1 ? scenes[activeSceneIndex] : scenes[0];
+  const activeScene = activeSceneIndex !== -1 ? scenes[activeSceneIndex] : (scenes[0] || { id: 'scene-1', name: 'Визуализация 1', elements: [], backdropImage: '', backdropColor: '#F3F4F6', backdropType: 'color' });
 
   const handleAddNewScene = () => {
     const newSceneNum = scenes.length + 1;
@@ -504,7 +585,100 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
   };
 
   // Seating Arrangement Floor Plan
-  const [floorPlanElements, setFloorPlanElements] = useState<PlanElement[]>([]);
+  const [floorPlanElements, setFloorPlanElements] = useState<PlanElement[]>(() => {
+    const proj = projects.find(p => p.id === (initialProjectId || projects[0]?.id || ''));
+    return proj?.floorPlanData || [];
+  });
+
+  // Track loaded project ID to re-sync canvas scenes when changing active project
+  const loadedProjectIdRef = useRef<string | null>(initialProjectId || projects[0]?.id || null);
+
+  useEffect(() => {
+    if (!activeProjectId) return;
+    if (loadedProjectIdRef.current !== activeProjectId) {
+      loadedProjectIdRef.current = activeProjectId;
+      const proj = projects.find(p => p.id === activeProjectId);
+      if (proj) {
+        if (proj.scenesData && proj.scenesData.length > 0) {
+          setScenes(proj.scenesData);
+          if (!proj.scenesData.some(s => s.id === activeWorkspaceTab)) {
+            setActiveWorkspaceTab(proj.scenesData[0].id);
+          }
+        } else {
+          setScenes([
+            {
+              id: 'scene-1',
+              name: 'Визуализация 1',
+              elements: [
+                {
+                  id: "A-101-main",
+                  name: "Круглая арка «Оливия»",
+                  type: "arches",
+                  x: 180,
+                  y: 40,
+                  w: 220,
+                  h: 220,
+                  rotation: 0,
+                  exposure: 0,
+                  hue: 0,
+                  temp: 0,
+                  saturate: 100,
+                  opacity: 100,
+                  price: 25000,
+                  comment: "Центральная арка для молодоженов",
+                  isLocked: false,
+                  isVisible: true,
+                  isFlippedH: false,
+                  isFlippedV: false,
+                  svgMarkup: CATALOG_ASSETS.arches[0]?.svgMarkup || ''
+                },
+                {
+                  id: "F-201-top",
+                  name: "Гирлянда «Королевская роза»",
+                  type: "flowers",
+                  x: 150,
+                  y: 20,
+                  w: 280,
+                  h: 60,
+                  rotation: 0,
+                  exposure: 0,
+                  hue: 0,
+                  temp: 0,
+                  saturate: 100,
+                  opacity: 100,
+                  price: 45000,
+                  comment: "Разместить поверх арки «Оливия»",
+                  isLocked: false,
+                  isVisible: true,
+                  isFlippedH: false,
+                  isFlippedV: false,
+                  svgMarkup: CATALOG_ASSETS.flowers[0]?.svgMarkup || ''
+                }
+              ],
+              backdropImage: '',
+              backdropColor: '#F3F4F6',
+              backdropType: 'color'
+            },
+            {
+              id: 'scene-2',
+              name: 'Визуализация 2',
+              elements: [],
+              backdropImage: '',
+              backdropColor: '#F3F4F6',
+              backdropType: 'color'
+            }
+          ]);
+          setActiveWorkspaceTab('scene-1');
+        }
+
+        if (proj.floorPlanData) {
+          setFloorPlanElements(proj.floorPlanData);
+        } else {
+          setFloorPlanElements([]);
+        }
+      }
+    }
+  }, [activeProjectId, projects, activeWorkspaceTab]);
 
   // Selection IDs on the Canvas (Supports multi-selection group)
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -545,6 +719,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
   const [selectedCategory, setSelectedCategory] = useState<string>('arches');
   const [libSearch, setLibSearch] = useState<string>('');
   const [favoritesList, setFavoritesList] = useState<string[]>(['text-1', 'arch-1']);
+  const [showCategoryIconManager, setShowCategoryIconManager] = useState<boolean>(false);
   const categoryScrollRef = useRef<HTMLDivElement>(null);
 
   // Canvas Dimension Configurations
@@ -1042,22 +1217,96 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
     }, 2400);
   };
 
-  // Core Actions
-  const handleSaveProjectCollage = () => {
-    // Generate simple mock estimate item entries
-    const estimateItems: EstimateItem[] = activeScene.elements.map((el, i) => ({
-      id: el.id,
-      name: el.name,
-      category: el.type,
-      quantity: 1,
-      price: el.price,
-      comment: el.comment || 'Сгенерировано в 2D арках',
-      photoUrl: el.customImage || ''
-    }));
+  // Saving & Autosave States
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
 
-    onSaveToProject(activeProjectId, activeScene.backdropImage || '', estimateItems, sceneTotalCost);
-    showToast('Сохранено в проект', `Спецификация и концепт "${activeScene.name}" привязаны к активному проекту.`, 'success');
+  // Helper to capture high-quality canvas snapshot image without zoom/pan distortion or black letterboxing
+  const captureCanvasPreview = async (): Promise<string> => {
+    if (canvasContainerRef.current) {
+      try {
+        const dataUrl = await toJpeg(canvasContainerRef.current, {
+          quality: 0.95,
+          pixelRatio: 2,
+          backgroundColor: activeScene?.backdropColor || '#FFFFFF',
+          style: {
+            transform: 'none',
+            margin: '0',
+            position: 'relative',
+            top: '0',
+            left: '0',
+            boxShadow: 'none',
+            borderRadius: '0',
+          },
+          cacheBust: true,
+        });
+        if (dataUrl && dataUrl.length > 200) {
+          return dataUrl;
+        }
+      } catch (err) {
+        console.warn('Canvas snapshot capture warning:', err);
+      }
+    }
+    return activeScene?.backdropImage || 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=800&q=80';
   };
+
+  // Core Actions
+  const handleSaveProjectCollage = useCallback(async (isAutoSave = false) => {
+    if (isSaving || !activeProjectId) return;
+    setIsSaving(true);
+
+    // Save previous selections & clear them so tools/handles don't render in snapshot
+    const prevSelectedId = selectedId;
+    const prevSelectedIds = selectedIds;
+    setSelectedId(null);
+    setSelectedIds([]);
+
+    // Give React 50ms to unrender selection boxes and toolbars
+    await new Promise((r) => setTimeout(r, 50));
+
+    try {
+      const previewUrl = await captureCanvasPreview();
+
+      const estimateItems: EstimateItem[] = (activeScene?.elements || []).map((el) => ({
+        id: el.id,
+        name: el.name,
+        category: el.type,
+        quantity: 1,
+        price: el.price,
+        comment: el.comment || 'Сгенерировано в 2D арках',
+        photoUrl: el.customImage || ''
+      }));
+
+      onSaveToProject(activeProjectId, previewUrl, estimateItems, sceneTotalCost, scenes, floorPlanElements);
+
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      setLastSavedTime(timeStr);
+
+      if (isAutoSave) {
+        showToast('Автосохранение', `Проект и превью визуализации сохранены (${timeStr})`, 'info');
+      } else {
+        showToast('Сохранено в проект', `Визуализация, объекты канваса и смета сохранены.`, 'success');
+      }
+    } catch (err) {
+      console.error('Error saving project:', err);
+    } finally {
+      // Restore selections
+      setSelectedId(prevSelectedId);
+      setSelectedIds(prevSelectedIds);
+      setIsSaving(false);
+    }
+  }, [activeProjectId, activeScene, sceneTotalCost, onSaveToProject, showToast, isSaving, selectedId, selectedIds, scenes, floorPlanElements]);
+
+  // 5-minute Auto-save timer (300,000 ms = 5 minutes)
+  useEffect(() => {
+    const AUTOSAVE_INTERVAL_MS = 5 * 60 * 1000;
+    const intervalId = setInterval(() => {
+      handleSaveProjectCollage(true);
+    }, AUTOSAVE_INTERVAL_MS);
+
+    return () => clearInterval(intervalId);
+  }, [handleSaveProjectCollage]);
 
   const handleDownloadLayout = () => {
     showToast('Загрузка', 'Файл спецификации и PDF-версия эскиза подготовлены.', 'success');
@@ -1461,18 +1710,31 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto shrink-0">
           <button
             onClick={() => setIsAiModalOpen(true)}
-            className="flex items-center justify-center gap-1.5 px-3.5 h-9 rounded-full bg-[var(--lavDeep)] hover:bg-[var(--lavenderAccent)] text-white text-xs font-bold transition-all shadow-md shadow-[var(--lavDeep)]/20 cursor-pointer whitespace-nowrap shrink-0"
+            style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+            className="flex items-center justify-center gap-1.5 px-3.5 h-9 rounded-full text-white text-xs font-bold hover:opacity-90 transition-all shadow-md shadow-[#582F89]/20 cursor-pointer whitespace-nowrap shrink-0 border border-purple-300/20 active:scale-95"
           >
-            <Sparkles className="w-3.5 h-3.5 shrink-0" />
-            <span className="whitespace-nowrap">ИИ Макет</span>
+            <Sparkles className="w-3.5 h-3.5 shrink-0 text-white fill-white animate-pulse" />
+            <span className="whitespace-nowrap">ИИ макет</span>
           </button>
           
           <button
-            onClick={handleSaveProjectCollage}
-            className="flex items-center justify-center gap-1.5 px-3.5 h-9 rounded-full bg-white dark:bg-zinc-900 hover:bg-zinc-50 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-200 text-xs font-semibold transition-all shadow-xs cursor-pointer whitespace-nowrap shrink-0"
+            onClick={() => handleSaveProjectCollage(false)}
+            disabled={isSaving}
+            title="Автосохранение каждые 5 мин. Нажмите для ручного сохранения."
+            className={`flex items-center justify-center gap-1.5 px-3.5 h-9 rounded-full text-xs font-semibold transition-all shadow-xs cursor-pointer whitespace-nowrap shrink-0 border ${
+              isSaving
+                ? 'bg-purple-50 dark:bg-purple-950/40 border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300'
+                : 'bg-white dark:bg-zinc-900 hover:bg-zinc-50 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-200'
+            }`}
           >
-            <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-            <span className="whitespace-nowrap">Сохранено</span>
+            {isSaving ? (
+              <Loader2 className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 animate-spin shrink-0" />
+            ) : (
+              <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+            )}
+            <span className="whitespace-nowrap">
+              {isSaving ? 'Сохранение...' : lastSavedTime ? `Сохранено ${lastSavedTime}` : 'Сохранено'}
+            </span>
           </button>
 
           <button
@@ -1484,11 +1746,14 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
           </button>
 
           <button
-            onClick={() => {
-              if (window.history.length > 1) {
+            onClick={async () => {
+              await handleSaveProjectCollage(true);
+              if (onBackToProjectCard) {
+                onBackToProjectCard(activeProjectId);
+              } else if (window.history.length > 1) {
                 window.history.back();
               } else {
-                showToast('Проект', 'Возврат к списку проектов', 'info');
+                showToast('Проект', 'Возврат к карточке проекта', 'info');
               }
             }}
             className="flex items-center justify-center gap-1.5 px-3.5 h-9 rounded-full bg-white dark:bg-zinc-900 hover:bg-zinc-50 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-200 text-xs font-semibold transition-all shadow-xs cursor-pointer whitespace-nowrap shrink-0"
@@ -1504,7 +1769,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
         setHeaderActions(null);
       }
     };
-  }, [setHeaderActions, activeProjectId, projects, showToast]);
+  }, [setHeaderActions, activeProjectId, projects, showToast, onBackToProjectCard]);
 
   const selectedElem = activeScene.elements.find(el => el.id === selectedId);
 
@@ -1548,22 +1813,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                         }`}
                         title={cat.title}
                       >
-                        {cat.id === 'favorites' && <Heart className={`w-4 h-4 ${isSelected ? 'fill-[#5B3E88] text-[#5B3E88]' : 'text-rose-500 fill-rose-500'}`} />}
-                        {cat.id === 'warehouse' && <Box className="w-4 h-4 text-amber-500" />}
-                        {cat.id === 'arches' && <Layers className="w-4 h-4 text-indigo-500" />}
-                        {cat.id === 'stands' && <Columns className="w-4 h-4 text-cyan-500" />}
-                        {cat.id === 'tables' && <TableIcon className="w-4 h-4 text-emerald-500" />}
-                        {cat.id === 'screens' && <GridIcon className="w-4 h-4 text-blue-500" />}
-                        {cat.id === 'flowers' && <Flower2 className="w-4 h-4 text-pink-500" />}
-                        {cat.id === 'compositions' && <Sparkles className="w-4 h-4 text-amber-400" />}
-                        {cat.id === 'vases' && <Tag className="w-4 h-4 text-purple-500" />}
-                        {cat.id === 'details' && <Compass className="w-4 h-4 text-teal-500" />}
-                        {cat.id === 'textiles' && <AlignLeft className="w-4 h-4 text-sky-500" />}
-                        {cat.id === 'light' && <Lightbulb className="w-4 h-4 text-yellow-500" />}
-                        {cat.id === 'podiums' && <Columns className="w-4 h-4 text-orange-500" />}
-                        {cat.id === 'furniture' && <Bookmark className="w-4 h-4 text-violet-500" />}
-                        {cat.id === 'balloons' && <CircleDot className="w-4 h-4 text-rose-400" />}
-                        {cat.id === 'themes' && <Sparkles className="w-4 h-4 text-emerald-600" />}
+                        <CategoryIcon cat={cat} isSelected={isSelected} />
                       </button>
 
                       {/* Hover Tooltip showing category name */}
@@ -1573,11 +1823,25 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                     </div>
                   );
                 })}
+
+                {/* Button to manage category icons */}
+                <div className="relative group pt-1 border-t border-zinc-200/60 dark:border-zinc-800 mt-1">
+                  <button
+                    onClick={() => setShowCategoryIconManager(true)}
+                    className="w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer bg-white/60 dark:bg-zinc-800/60 text-zinc-400 hover:text-[#5B3E88] dark:hover:text-purple-300 hover:bg-white dark:hover:bg-zinc-800 border border-transparent hover:border-purple-200/50"
+                    title="Управление иконками категорий (папка /public/category-icons/)"
+                  >
+                    <Sliders className="w-4 h-4" />
+                  </button>
+                  <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity bg-zinc-900 dark:bg-zinc-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg shadow-lg whitespace-nowrap border border-zinc-700/50">
+                    Управление иконками
+                  </div>
+                </div>
               </div>
 
               {/* CARDS GRID AREA */}
               <div className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden max-h-full scrollbar-none pr-1">
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(70px,1fr))] gap-2">
+                <div className="grid grid-cols-2 md:portrait:grid-cols-2 md:landscape:grid-cols-3 lg:grid-cols-4 lg:landscape:grid-cols-4 xl:grid-cols-4 gap-1.5 sm:gap-2">
                   {/* Plus item custom upload button */}
                   <label className="group relative aspect-square w-full rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700 hover:border-[#5B3E88] bg-white/60 dark:bg-zinc-900/60 cursor-pointer transition-all shadow-2xs flex flex-col items-center justify-center p-2 text-center">
                     <div className="w-8 h-8 rounded-full bg-[#EAE4F8] dark:bg-purple-950/80 text-[#5B3E88] dark:text-purple-300 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
@@ -1921,7 +2185,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
   };
 
   return (
-    <div className="flex-1 min-h-0 min-w-0 h-full pb-0.5 print:pb-0 grid grid-cols-1 lg:grid-cols-12 gap-1.5 sm:gap-3 print:hidden" onMouseMove={handleCanvasMouseMove} onMouseUp={handleCanvasMouseUp}>
+    <div className="flex-1 min-h-0 min-w-0 h-full pb-0.5 print:pb-0 grid grid-cols-1 md:grid-cols-12 gap-1.5 sm:gap-3 print:hidden" onMouseMove={handleCanvasMouseMove} onMouseUp={handleCanvasMouseUp}>
       {/* Hidden File Input for Backdrop Image Upload */}
       <input
         type="file"
@@ -1932,7 +2196,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
       />
       
       {/* LEFT COLUMN: ACTIVE WORKSPACE & HEADER (70% WIDTH) */}
-      <div className="lg:col-span-8 flex flex-col gap-1 sm:gap-2.5 h-full min-h-0 min-w-0">
+      <div className="md:col-span-7 lg:col-span-8 flex flex-col gap-1 sm:gap-2.5 h-full min-h-0 min-w-0">
 
         {/* TOP EDITOR HEADER BAR - WITH ELEGANT PADDING */}
         <div className="flex flex-col gap-1 pt-1.5 pb-1 px-1 sm:px-2 shrink-0 print:hidden">
@@ -1940,15 +2204,18 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
           <div className="flex items-center justify-between gap-2 w-full">
             <div className="flex items-center gap-2 min-w-0">
               <button
-                onClick={() => {
-                  if (window.history.length > 1) {
+                onClick={async () => {
+                  await handleSaveProjectCollage(true);
+                  if (onBackToProjectCard) {
+                    onBackToProjectCard(activeProjectId);
+                  } else if (window.history.length > 1) {
                     window.history.back();
                   } else {
-                    showToast('Проект', 'Возврат к списку проектов', 'info');
+                    showToast('Проект', 'Возврат к карточке проекта', 'info');
                   }
                 }}
-                title="Назад в проект"
-                aria-label="Назад в проект"
+                title="Назад в карточку проекта"
+                aria-label="Назад в карточку проекта"
                 className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md hover:bg-white dark:hover:bg-zinc-700 border border-white/80 dark:border-zinc-700/80 text-[var(--ink)] flex items-center justify-center transition-all shadow-md cursor-pointer shrink-0 hover:scale-105 active:scale-95"
               >
                 <ArrowLeft className="w-4 h-4 text-[var(--ink)]" />
@@ -1961,29 +2228,50 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
 
             {/* Right Action Buttons on the same top line */}
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
-              <div
-                title="Автосохранение включено"
-                className="h-9 sm:h-10 px-3 sm:px-3.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/40 flex items-center gap-2 shadow-sm shrink-0 cursor-default"
+              <button
+                onClick={() => handleSaveProjectCollage(false)}
+                disabled={isSaving}
+                title="Автосохранение каждые 5 мин. Нажмите для ручного сохранения."
+                aria-label="Сохранить проект"
+                className={`h-9 sm:h-10 px-3 sm:px-3.5 rounded-full flex items-center gap-2 shadow-xs shrink-0 cursor-pointer transition-all border font-semibold text-xs active:scale-95 ${
+                  isSaving
+                    ? 'bg-purple-50 dark:bg-purple-950/40 border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300'
+                    : 'bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border-emerald-200/80 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-300'
+                }`}
               >
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(52,211,153,0.9)] shrink-0" />
-                <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 hidden sm:inline">
-                  Сохранено
-                </span>
-              </div>
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 animate-spin shrink-0" />
+                    <span className="hidden sm:inline">Сохранение...</span>
+                    <span className="sm:hidden text-[11px]">Сохранение</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(52,211,153,0.9)] shrink-0 animate-pulse" />
+                    <span className="hidden sm:inline">
+                      {lastSavedTime ? `Сохранено ${lastSavedTime}` : 'Сохранено'}
+                    </span>
+                    <span className="sm:hidden text-[11px]">
+                      {lastSavedTime ? lastSavedTime : 'Сохранено'}
+                    </span>
+                  </>
+                )}
+              </button>
 
               <button
                 onClick={() => setIsAiModalOpen(true)}
                 title="ИИ Генератор макета"
                 aria-label="ИИ макет"
-                className="h-9 sm:h-10 px-3 sm:px-4 rounded-full bg-gradient-to-tr from-[#5B3E88] via-[#8B5CF6] to-[#D8B4FE] text-white flex items-center gap-1.5 shadow-md shadow-purple-900/20 cursor-pointer shrink-0 hover:scale-105 active:scale-95 transition-all border border-purple-300/30 font-bold text-xs"
+                style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                className="h-9 sm:h-10 px-3.5 sm:px-4 rounded-full text-white flex items-center gap-1.5 shadow-md shadow-[#582F89]/20 cursor-pointer shrink-0 hover:opacity-90 active:scale-95 transition-all border border-purple-300/20 font-bold text-xs"
               >
-                <Sparkles className="w-3.5 h-3.5 text-white fill-white shrink-0 animate-pulse drop-shadow-[0_0_6px_rgba(255,255,255,1)]" />
+                <Sparkles className="w-3.5 h-3.5 text-white fill-white shrink-0 animate-pulse drop-shadow-[0_0_6px_rgba(255,255,255,0.8)]" />
                 <span className="hidden sm:inline">ИИ макет</span>
                 <span className="sm:hidden text-[11px]">ИИ</span>
               </button>
 
               {mobileNavButton && (
-                <div className="lg:hidden shrink-0">
+                <div className="md:hidden shrink-0">
                   {mobileNavButton}
                 </div>
               )}
@@ -2982,7 +3270,7 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                 <div className="absolute inset-0 flex items-center justify-center overflow-hidden pointer-events-none p-4">
                   <div
                     ref={canvasContainerRef}
-                    className={`relative bg-zinc-900/90 rounded-2xl shadow-2xl border border-zinc-950/85 shrink-0 select-none pointer-events-auto ${isPanning ? '' : 'transition-transform duration-200'}`}
+                    className={`relative bg-white shadow-2xl rounded-2xl overflow-hidden shrink-0 select-none pointer-events-auto ${isPanning ? '' : 'transition-transform duration-200'}`}
                     style={{
                       width: `${canvasWidthMm / 10}px`,
                       height: `${canvasHeightMm / 10}px`,
@@ -3777,9 +4065,9 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                       )}
                     </AnimatePresence>
 
-                    {/* FLOATING PILL BAR WITH 2 TABS WHEN CLOSED (MOBILE/TABLET ONLY) */}
+                    {/* FLOATING PILL BAR WITH 2 TABS WHEN CLOSED (MOBILE ONLY) */}
                     {!mobileDrawerTab && (
-                      <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-30 pointer-events-auto flex lg:hidden items-center justify-center">
+                      <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-30 pointer-events-auto flex md:hidden items-center justify-center">
                         <div className="p-1 bg-white/85 dark:bg-zinc-900/85 backdrop-blur-md rounded-full border border-white/80 dark:border-zinc-700/60 shadow-lg flex items-center gap-1.5 text-xs">
                           <button
                             onClick={() => {
@@ -4093,8 +4381,8 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
           })()}
         </div>
 
-        {/* RIGHT COLUMN: CONTROL SIDE PANEL (30% WIDTH) - DESKTOP ONLY */}
-        <div className="hidden lg:flex lg:col-span-4 flex-col bg-white/70 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-xs backdrop-blur-md h-full min-h-0 min-w-0">
+        {/* RIGHT COLUMN: CONTROL SIDE PANEL (30% WIDTH) - DESKTOP & TABLET */}
+        <div className="hidden md:flex md:col-span-5 lg:col-span-4 flex-col bg-white/70 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-xs backdrop-blur-md h-full min-h-0 min-w-0">
           
           {/* TAB BAR SELECTORS IN A CLEAN ROUNDED CONTAINER */}
           <div className="p-1.5 bg-zinc-100/90 dark:bg-zinc-900/60 rounded-full m-3 mb-0 grid grid-cols-2 gap-1 border border-zinc-200/60 dark:border-zinc-800/60 shrink-0">
@@ -4305,9 +4593,10 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
 
                     <button
                       onClick={handleStartAiGeneration}
-                      className="w-full py-2.5 rounded-full bg-[var(--lavDeep)] hover:opacity-90 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                      style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                      className="w-full py-2.5 rounded-full text-white text-xs font-bold hover:opacity-90 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-[#582F89]/20 active:scale-95"
                     >
-                      <Wand2 className="w-3.5 h-3.5" />
+                      <Wand2 className="w-3.5 h-3.5 text-white fill-white" />
                       <span>Сгенерировать интерьер</span>
                     </button>
                   </div>
@@ -4315,6 +4604,119 @@ export default function MoodboardEditor({ projects, onSaveToProject, showToast, 
                 </div>
               )}
 
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* CATEGORY ICON MANAGER MODAL */}
+      <AnimatePresence>
+        {showCategoryIconManager && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white dark:bg-zinc-900 rounded-[28px] p-6 max-w-xl w-full border border-zinc-200 dark:border-zinc-800 shadow-2xl space-y-5 max-h-[85vh] flex flex-col"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 bg-[#EAE4F8] dark:bg-purple-950 rounded-xl text-[#5B3E88] dark:text-purple-300">
+                    <Sliders className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100">Иконки категорий редактора</h3>
+                    <p className="text-xs text-zinc-400">Настройка значков боковой панели</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowCategoryIconManager(false)}
+                  className="p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Instructions Box */}
+              <div className="p-3.5 rounded-2xl bg-purple-50/60 dark:bg-purple-950/20 border border-purple-200/50 dark:border-purple-800/30 text-xs text-zinc-600 dark:text-zinc-300 space-y-1.5 shrink-0">
+                <div className="font-bold text-[#5B3E88] dark:text-purple-300 flex items-center gap-1.5">
+                  <Folder className="w-4 h-4" />
+                  <span>Папка в проекте: /public/category-icons/</span>
+                </div>
+                <p className="leading-relaxed text-[11px]">
+                  Вы можете поместить файлы своих иконок (в формате <strong>.svg</strong> или <strong>.png</strong>) в папку <code>/public/category-icons/</code> с соответствующими именами (напр. <code>favorites.svg</code>, <code>warehouse.svg</code>, <code>arches.svg</code>, <code>tables.svg</code> и др.).
+                </p>
+                <p className="leading-relaxed text-[11px]">
+                  Также вы можете загрузить любую иконку прямо отсюда кнопкой «Загрузить».
+                </p>
+              </div>
+
+              {/* Categories list */}
+              <div className="flex-1 overflow-y-auto space-y-2 pr-1 divide-y divide-zinc-100 dark:divide-zinc-800/50">
+                {NEW_CATALOG_CATEGORIES.map((cat) => {
+                  const hasCustom = !!localStorage.getItem(`cat_icon_${cat.id}`);
+                  return (
+                    <div key={cat.id} className="pt-2.5 first:pt-0 flex items-center justify-between text-xs gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-9 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center shrink-0 border border-zinc-200/50 dark:border-zinc-700/50">
+                          <CategoryIcon cat={cat} />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-bold text-zinc-800 dark:text-zinc-200 truncate">{cat.title}</div>
+                          <div className="text-[10px] text-zinc-400 font-mono">/public/category-icons/{cat.id}.svg</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        {hasCustom && (
+                          <button
+                            onClick={() => {
+                              localStorage.removeItem(`cat_icon_${cat.id}`);
+                              window.dispatchEvent(new Event('cat_icons_updated'));
+                              showToast('Сброшено', `Иконка категории "${cat.title}" возвращена к файлу в папке/стандарту.`, 'info');
+                            }}
+                            className="px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 text-zinc-600 dark:text-zinc-300 text-[11px] font-medium transition-colors cursor-pointer"
+                          >
+                            Сбросить
+                          </button>
+                        )}
+                        <label className="px-3 py-1.5 rounded-full bg-gradient-to-r from-[#8C52D0] to-[#582F89] hover:opacity-90 text-white text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-xs">
+                          <Upload className="w-3 h-3" />
+                          <span>Загрузить</span>
+                          <input
+                            type="file"
+                            accept="image/svg+xml,image/png,image/jpeg"
+                            className="hidden"
+                            onChange={(e) => {
+                              if (e.target.files && e.target.files[0]) {
+                                const file = e.target.files[0];
+                                const reader = new FileReader();
+                                reader.onload = (event) => {
+                                  if (event.target?.result) {
+                                    localStorage.setItem(`cat_icon_${cat.id}`, event.target.result as string);
+                                    window.dispatchEvent(new Event('cat_icons_updated'));
+                                    showToast('Иконка обновлена', `Иконка категории "${cat.title}" сохранена.`, 'success');
+                                  }
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 flex justify-end">
+                <button
+                  onClick={() => setShowCategoryIconManager(false)}
+                  className="px-5 py-2.5 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 text-zinc-800 dark:text-zinc-200 font-bold text-xs transition-colors cursor-pointer"
+                >
+                  Закрыть
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

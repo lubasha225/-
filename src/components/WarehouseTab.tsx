@@ -567,23 +567,7 @@ export default function WarehouseTab({
                   </div>
                 )}
 
-                {/* Optional URL pasting input */}
-                <div className="space-y-1">
-                  <span className="text-xs font-normal text-[var(--soft)] uppercase tracking-wider block">
-                    Или вставьте ссылку на изображение
-                  </span>
-                  <input
-                    type="text"
-                    placeholder="https://example.com/photo.jpg"
-                    value={newItemImageUrl}
-                    onChange={(e) => {
-                      setNewItemImageUrl(e.target.value);
-                      setOriginalImgBeforeBgRemoval('');
-                      setHasRemovedBg(false);
-                    }}
-                    className="w-full text-xs px-3 py-1.5 rounded-xl bg-white/80 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 text-[var(--ink)] placeholder:text-zinc-400 focus:outline-none focus:border-[var(--lavenderAccent)] transition-all"
-                  />
-                </div>
+
               </div>
 
               {/* Right Column: Item Fields */}

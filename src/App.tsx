@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, ReactNode, useCallback } from 'rea
 import { motion, AnimatePresence } from 'motion/react';
 import {
   FolderKanban,
+  FolderOpen,
   Warehouse,
   Image as ImageIcon,
   FileText,
@@ -29,6 +30,8 @@ import {
   Eye,
   Trash2,
   Copy,
+  Edit,
+  Palette,
   LayoutGrid,
   List,
   MapPin,
@@ -59,7 +62,7 @@ export default function App() {
   });
 
   // Main active tab state
-  const [activeTab, setActiveTab] = useState<'projects' | 'warehouse' | 'images' | 'documents' | 'profile' | 'moodboard' | 'calendar'>('projects');
+  const [activeTab, setActiveTab] = useState<'projects' | 'projectCard' | 'warehouse' | 'images' | 'documents' | 'profile' | 'moodboard' | 'calendar'>('projects');
 
   // Core database states with local persistence
   const [projects, setProjects] = useState<Project[]>(() => {
@@ -77,6 +80,106 @@ export default function App() {
     return saved ? JSON.parse(saved) : initialTasks;
   });
 
+  // Global Project Tasks and Notes state synchronized with project modals
+  const [globalProjectTasksNotes, setGlobalProjectTasksNotes] = useState<any[]>(() => {
+    const saved = localStorage.getItem('pop_project_tasks_v2');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
+    return [
+      {
+        id: 'ptn_101',
+        projectId: 'p2',
+        projectName: 'День рождения · 30 лет',
+        type: 'task',
+        title: 'Заполнить бриф с именинником и согласовать неоновый стиль',
+        dueDate: '2026-07-18',
+        completed: false,
+        category: 'Клиент',
+        createdAt: '12.07.2026'
+      },
+      {
+        id: 'ptn_102',
+        projectId: 'p2',
+        projectName: 'День рождения · 30 лет',
+        type: 'task',
+        title: 'Подготовить мудборд световой арки и задника фотозоны',
+        dueDate: '2026-07-18',
+        completed: true,
+        category: 'Монтаж',
+        createdAt: '13.07.2026'
+      },
+      {
+        id: 'ptn_103',
+        projectId: 'p2',
+        projectName: 'День рождения · 30 лет',
+        type: 'note',
+        title: 'Заказчик попросил золотые подсвечники и серые текстильные салфетки',
+        dueDate: '2026-07-18',
+        category: 'Закупка',
+        createdAt: '14.07.2026'
+      },
+      {
+        id: 'ptn_104',
+        projectId: 'p1',
+        projectName: 'Свадьба · Ролл',
+        type: 'task',
+        title: 'Заехать к флористу и забрать пионовидные розы',
+        dueDate: '2026-07-20',
+        completed: false,
+        category: 'Закупка',
+        createdAt: '14.07.2026'
+      },
+      {
+        id: 'ptn_105',
+        projectId: 'p1',
+        projectName: 'Свадьба · Ролл',
+        type: 'note',
+        title: 'Везд на площадки «Ролл Резорт» через КПП №2 только с 14:00',
+        dueDate: '2026-07-20',
+        category: 'Логистика',
+        createdAt: '15.07.2026'
+      },
+      {
+        id: 'ptn_106',
+        projectId: 'p3',
+        projectName: 'Корпоратив · Бренд X',
+        type: 'task',
+        title: 'Проверить состояние текстиля и чехлов перед погрузкой',
+        dueDate: '2026-08-02',
+        completed: true,
+        category: 'Логистика',
+        createdAt: '28.07.2026'
+      },
+      {
+        id: 'ptn_107',
+        projectId: 'p1',
+        projectName: 'Свадьба · Ролл',
+        type: 'task',
+        title: 'Согласовать схему расстановки столов и арки с менеджером площадки',
+        dueDate: '2026-08-15',
+        completed: false,
+        category: 'Монтаж',
+        createdAt: '01.08.2026'
+      },
+      {
+        id: 'ptn_108',
+        projectId: 'p1',
+        projectName: 'Свадьба · Ролл',
+        type: 'note',
+        title: 'Площадка просит демонтировать конструкции не позднее 02:00 ночи',
+        dueDate: '2026-08-15',
+        category: 'Важное',
+        createdAt: '02.08.2026'
+      }
+    ];
+  });
+
+  const [sidebarTaskFilter, setSidebarTaskFilter] = useState<'date' | 'all'>('date');
+
   const [documents, setDocuments] = useState<DocumentItem[]>(initialDocuments);
   const [images, setImages] = useState<ImageItem[]>(initialImages);
 
@@ -89,7 +192,37 @@ export default function App() {
   const [isProfileExpanded, setIsProfileExpanded] = useState(false);
   const [isLeftSidebarExpanded, setIsLeftSidebarExpanded] = useState(true);
   const [isRightSidebarExpanded, setIsRightSidebarExpanded] = useState(true);
+  const [calendarYear, setCalendarYear] = useState<number>(2026);
+  const [calendarMonth, setCalendarMonth] = useState<number>(6); // 0 = Jan, 6 = July
   const [selectedCalendarDay, setSelectedCalendarDay] = useState<number>(18);
+
+  const monthNames = [
+    'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+    'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+  ];
+
+  const monthNamesGenitive = [
+    'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+    'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
+  ];
+
+  const handlePrevMonth = () => {
+    if (calendarMonth === 0) {
+      setCalendarMonth(11);
+      setCalendarYear(prev => prev - 1);
+    } else {
+      setCalendarMonth(prev => prev - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (calendarMonth === 11) {
+      setCalendarMonth(0);
+      setCalendarYear(prev => prev + 1);
+    } else {
+      setCalendarMonth(prev => prev + 1);
+    }
+  };
   const [moodboardHeaderActions, setMoodboardHeaderActions] = useState<ReactNode | null>(null);
   const [imagesHeaderActions, setImagesHeaderActions] = useState<ReactNode | null>(null);
 
@@ -99,6 +232,7 @@ export default function App() {
   const [projectViewMode, setProjectViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isHeaderCalendarOpen, setIsHeaderCalendarOpen] = useState(false);
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(2);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isMobileProfileMenuOpen, setIsMobileProfileMenuOpen] = useState(false);
@@ -139,6 +273,49 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('pop_tasks', JSON.stringify(tasks));
   }, [tasks]);
+
+  useEffect(() => {
+    localStorage.setItem('pop_project_tasks_v2', JSON.stringify(globalProjectTasksNotes));
+  }, [globalProjectTasksNotes]);
+
+  useEffect(() => {
+    const handleSyncTasks = () => {
+      const saved = localStorage.getItem('pop_project_tasks_v2');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            setGlobalProjectTasksNotes(parsed);
+          }
+        } catch (e) {}
+      }
+    };
+    window.addEventListener('project_tasks_updated', handleSyncTasks);
+    window.addEventListener('storage', handleSyncTasks);
+    return () => {
+      window.removeEventListener('project_tasks_updated', handleSyncTasks);
+      window.removeEventListener('storage', handleSyncTasks);
+    };
+  }, []);
+
+  // Toggle tasks and notes from the right sidebar
+  const handleToggleGlobalTaskNote = (id: string) => {
+    setGlobalProjectTasksNotes(prev => {
+      const updated = prev.map(item => {
+        if (item.id === id && item.type === 'task') {
+          const nextVal = !item.completed;
+          if (nextVal) {
+            showToast('Задача выполнена', `Отмечено как выполнено: "${item.title}"`, 'success');
+          }
+          return { ...item, completed: nextVal };
+        }
+        return item;
+      });
+      localStorage.setItem('pop_project_tasks_v2', JSON.stringify(updated));
+      window.dispatchEvent(new Event('project_tasks_updated'));
+      return updated;
+    });
+  };
 
   useEffect(() => {
     localStorage.setItem('theme', theme);
@@ -183,6 +360,21 @@ export default function App() {
     };
 
     setProjects([created, ...projects]);
+
+    // Automatically focus calendar on newly created project date
+    if (created.date) {
+      const parts = created.date.split('T')[0].split('-');
+      if (parts.length >= 3) {
+        const py = parseInt(parts[0], 10);
+        const pm = parseInt(parts[1], 10) - 1;
+        const pd = parseInt(parts[2], 10);
+        if (!isNaN(py) && !isNaN(pm) && !isNaN(pd)) {
+          setCalendarYear(py);
+          setCalendarMonth(pm);
+          setSelectedCalendarDay(pd);
+        }
+      }
+    }
     
     // Also generate mock invoice/contract for this
     const newDoc: DocumentItem = {
@@ -217,16 +409,29 @@ export default function App() {
     }
   };
 
-  // Visualizer editor attachment: updates project image mock, estimate list and budget
-  const handleAttachVisualizerToProject = useCallback((projectId: string, imageUrl: string, estimateItems?: EstimateItem[], budget?: number) => {
+  // Visualizer editor attachment: updates project image mock, estimate list, budget, scenes and floor plan
+  const handleAttachVisualizerToProject = useCallback((
+    projectId: string,
+    imageUrl: string,
+    estimateItems?: EstimateItem[],
+    budget?: number,
+    scenesData?: any[],
+    floorPlanData?: any[]
+  ) => {
     setProjects(prev => prev.map(p => {
       if (p.id === projectId) {
-        const updated = { ...p, imageUrl };
+        const updated = { ...p, imageUrl, updatedAt: new Date().toISOString() };
         if (estimateItems) {
           updated.estimate = estimateItems;
         }
         if (budget !== undefined) {
           updated.budget = budget;
+        }
+        if (scenesData) {
+          updated.scenesData = scenesData;
+        }
+        if (floorPlanData) {
+          updated.floorPlanData = floorPlanData;
         }
         return updated;
       }
@@ -328,63 +533,91 @@ export default function App() {
     return { inProgress, waiting, totalBudget, successPercent };
   }, [projects]);
 
-  const stepsList = ['Бриф', 'Визуал', 'Смета', 'Согл.', 'Финал'];
+  const stepsList = ['Бриф', 'Визуал', 'Смета', 'Согласование'];
+  const stageOrdinals = ['первый этап', 'второй этап', 'третий этап', 'четвертый этап'];
 
-  // July 2026 Calendar Events Data
-  const calendarEvents: Record<number, Array<{ title: string; desc: string; time: string; type: 'warn' | 'sage' | 'indigo' | 'lavender' }>> = {
-    6: [
-      { title: 'Свадьба · Ролл', desc: 'Заполнение брифа клиентом', time: '12:00', type: 'warn' }
-    ],
-    14: [
-      { title: 'Открытие шоурума · ARTEL', desc: 'Встреча для согласования сметы', time: '15:30', type: 'indigo' }
-    ],
-    18: [
-      { title: 'День рождения · 30 лет', desc: 'Монтаж декора в Лофт «Верх», Краснодар', time: '08:00', type: 'lavender' }
-    ],
-    25: [
-      { title: 'Юбилей компании · 10 лет', desc: 'Получение предоплаты / Аванс', time: '11:00', type: 'sage' }
-    ]
-  };
+    // Dynamic Calendar Events derived strictly from active Projects
+  const calendarEvents = useMemo(() => {
+    const eventsMap: Record<number, Array<{
+      id: string;
+      title: string;
+      desc: string;
+      time: string;
+      type: 'warn' | 'sage' | 'indigo' | 'lavender';
+      project: Project;
+    }>> = {};
 
-  const calendarDays = [
-    { num: 29, currentMonth: false },
-    { num: 30, currentMonth: false },
-    { num: 1, currentMonth: true },
-    { num: 2, currentMonth: true },
-    { num: 3, currentMonth: true },
-    { num: 4, currentMonth: true },
-    { num: 5, currentMonth: true },
-    { num: 6, currentMonth: true, eventType: 'warn' },
-    { num: 7, currentMonth: true },
-    { num: 8, currentMonth: true },
-    { num: 9, currentMonth: true },
-    { num: 10, currentMonth: true },
-    { num: 11, currentMonth: true },
-    { num: 12, currentMonth: true },
-    { num: 13, currentMonth: true },
-    { num: 14, currentMonth: true, eventType: 'indigo' },
-    { num: 15, currentMonth: true },
-    { num: 16, currentMonth: true },
-    { num: 17, currentMonth: true },
-    { num: 18, currentMonth: true, eventType: 'lavender' },
-    { num: 19, currentMonth: true },
-    { num: 20, currentMonth: true },
-    { num: 21, currentMonth: true },
-    { num: 22, currentMonth: true },
-    { num: 23, currentMonth: true },
-    { num: 24, currentMonth: true },
-    { num: 25, currentMonth: true, eventType: 'sage' },
-    { num: 26, currentMonth: true },
-    { num: 27, currentMonth: true },
-    { num: 28, currentMonth: true },
-    { num: 29, currentMonth: true },
-    { num: 30, currentMonth: true },
-    { num: 31, currentMonth: true },
-    { num: 1, currentMonth: false },
-    { num: 2, currentMonth: false },
-  ];
+    projects.filter(p => p.status !== 'trash').forEach(p => {
+      if (!p.date) return;
+      const parts = p.date.split('T')[0].split('-');
+      if (parts.length < 3) return;
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1; // 0-indexed
+      const day = parseInt(parts[2], 10);
 
-  const getProjectImage = (id: string) => {
+      if (year === calendarYear && month === calendarMonth && !isNaN(day)) {
+        if (!eventsMap[day]) eventsMap[day] = [];
+
+        let type: 'warn' | 'sage' | 'indigo' | 'lavender' = 'lavender';
+        if (p.status === 'approved') type = 'sage';
+        else if (p.status === 'waiting') type = 'indigo';
+        else if (p.status === 'archive') type = 'warn';
+
+        const stepNames = ['Бриф', 'Визуализация', 'Смета', 'Согласование'];
+        const stepText = stepNames[p.currentStep] || 'Проект';
+
+        eventsMap[day].push({
+          id: p.id,
+          title: p.name,
+          desc: `${p.venue} · ${p.clientName}`,
+          time: stepText,
+          type,
+          project: p
+        });
+      }
+    });
+
+    return eventsMap;
+  }, [projects, calendarYear, calendarMonth]);
+
+  // Dynamic Month Calendar Grid Generator
+  const calendarDays = useMemo(() => {
+    const days: Array<{ num: number; currentMonth: boolean; eventType?: 'warn' | 'sage' | 'indigo' | 'lavender' }> = [];
+    
+    const firstDay = new Date(calendarYear, calendarMonth, 1);
+    let startDayOfWeek = firstDay.getDay(); // 0 = Sun, 1 = Mon...
+    const startDayMon = (startDayOfWeek === 0 ? 7 : startDayOfWeek) - 1; // 0 = Mon
+
+    const prevMonthLastDay = new Date(calendarYear, calendarMonth, 0).getDate();
+    const currentMonthDays = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+
+    // Prev month trailing days
+    for (let i = startDayMon - 1; i >= 0; i--) {
+      days.push({ num: prevMonthLastDay - i, currentMonth: false });
+    }
+
+    // Current month days
+    for (let d = 1; d <= currentMonthDays; d++) {
+      const dayEvents = calendarEvents[d];
+      const eventType = dayEvents && dayEvents.length > 0 ? dayEvents[0].type : undefined;
+      days.push({ num: d, currentMonth: true, eventType });
+    }
+
+    // Next month leading days
+    const remaining = (7 - (days.length % 7)) % 7;
+    for (let d = 1; d <= remaining; d++) {
+      days.push({ num: d, currentMonth: false });
+    }
+
+    return days;
+  }, [calendarYear, calendarMonth, calendarEvents]);
+
+  const getProjectImage = (p: Project | string) => {
+    const proj = typeof p === 'string' ? projects.find(item => item.id === p) : p;
+    if (proj?.imageUrl) {
+      return proj.imageUrl;
+    }
+    const id = typeof p === 'string' ? p : p.id;
     const imagesMap: Record<string, string> = {
       p1: 'https://images.unsplash.com/photo-1519225495810-7512c696505a?auto=format&fit=crop&w=600&q=80',
       p2: 'https://images.unsplash.com/photo-1513201099705-a9746e1e201f?auto=format&fit=crop&w=600&q=80',
@@ -449,7 +682,9 @@ export default function App() {
             >
               {[
                 { value: 'projects', label: 'Мои проекты', icon: <FolderKanban className="w-4 h-4" /> },
+                { value: 'projectCard', label: 'Карточка проекта', icon: <FolderOpen className="w-4 h-4" /> },
                 { value: 'moodboard', label: 'Редактор', icon: <Layout className="w-4 h-4" /> },
+                { value: 'calendar', label: 'Календарь', icon: <Calendar className="w-4 h-4" /> },
                 { value: 'warehouse', label: 'Мой склад', icon: <Warehouse className="w-4 h-4" /> },
                 { value: 'images', label: 'Мои изображения', icon: <ImageIcon className="w-4 h-4" /> },
                 { value: 'documents', label: 'Мои документы', icon: <FileText className="w-4 h-4" /> },
@@ -511,7 +746,7 @@ export default function App() {
 
       {/* 1. BRAND SIDEBAR (LEFT) */}
       <aside
-        className={`shrink-0 hidden lg:flex flex-col gap-4 sticky top-0 h-screen border-r backdrop-blur-xl z-20 transition-all duration-300 ${
+        className={`shrink-0 hidden md:flex flex-col gap-4 sticky top-0 h-screen border-r backdrop-blur-xl z-20 transition-all duration-300 ${
           isLeftSidebarExpanded ? 'w-56 p-4' : 'w-14 items-center py-4 px-1.5'
         }`}
         style={{ backgroundColor: 'var(--sidebar-bg)', borderColor: 'var(--sidebar-border)' }}
@@ -670,29 +905,30 @@ export default function App() {
       </aside>
 
       {/* 2. DYNAMIC MAIN CONTAINER WRAPPER WITH RIGHT SIDEBAR */}
-      <div className="flex-1 flex flex-col lg:flex-row min-w-0 h-full overflow-hidden">
+      <div className="flex-1 flex flex-row min-w-0 h-full overflow-hidden">
         
         {/* CENTRAL WORKSPACE */}
         <main className={`flex-1 relative flex flex-col min-w-0 ${
           activeTab === 'moodboard'
             ? 'p-2 sm:p-3 space-y-1.5 h-full overflow-hidden'
-            : 'p-5 sm:p-8 space-y-6 h-full overflow-y-auto overflow-x-hidden'
+            : 'p-4 sm:p-6 lg:p-8 space-y-6 h-full overflow-y-auto overflow-x-hidden'
         }`}>
           
-          {/* Responsive Mobile / Tablet Header Navigation (Hamburger only, positioned on the right) */}
+          {/* Responsive Mobile Header Navigation (Hamburger only, positioned on the right) */}
           {activeTab !== 'moodboard' && (
-            <div className="lg:hidden flex items-center justify-end shrink-0 relative z-30 pointer-events-auto pb-1">
+            <div className="md:hidden flex items-center justify-end shrink-0 relative z-30 pointer-events-auto pb-1">
               {renderMobileNavButton()}
             </div>
           )}
 
-          {/* MAIN PANEL TOP NAVBAR Header (Shown on tabs except Moodboard Editor) */}
-          {activeTab !== 'moodboard' && !selectedProject && (
+          {/* MAIN PANEL TOP NAVBAR Header (Shown on tabs except Moodboard Editor and Project Card) */}
+          {activeTab !== 'moodboard' && activeTab !== 'projectCard' && !selectedProject && (
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 shrink-0">
               <div>
                 <div className="flex items-center gap-3">
                   <h1 className="text-3xl font-semibold tracking-tight text-[var(--ink)]">
                     {activeTab === 'projects' && 'Мои проекты'}
+                    {activeTab === 'calendar' && 'Календарь мероприятий'}
                     {activeTab === 'warehouse' && 'Складской инвентарь'}
                     {activeTab === 'images' && 'Галерея'}
                     {activeTab === 'documents' && 'Мои документы'}
@@ -761,6 +997,82 @@ export default function App() {
                     </AnimatePresence>
                   </div>
 
+                  {/* Quick Calendar Button & Dropdown (Mobile & Tablet only, hidden on Desktop where right sidebar exists) */}
+                  <div className="relative xl:hidden">
+                    <button
+                      onClick={() => setIsHeaderCalendarOpen(!isHeaderCalendarOpen)}
+                      title="Календарь событий декоратора"
+                      className={`h-9 px-3 rounded-full glass-panel flex items-center gap-1.5 text-xs font-semibold transition-all shadow-sm cursor-pointer ${
+                        activeTab === 'calendar' || isHeaderCalendarOpen
+                          ? 'bg-[var(--lavDeep)] text-white'
+                          : 'text-[var(--soft)] hover:text-[var(--ink)]'
+                      }`}
+                    >
+                      <Calendar className="w-4 h-4 shrink-0" />
+                      <span className="hidden sm:inline">Календарь</span>
+                    </button>
+
+                    <AnimatePresence>
+                      {isHeaderCalendarOpen && (
+                        <>
+                          <div className="fixed inset-0 z-30" onClick={() => setIsHeaderCalendarOpen(false)} />
+                          <motion.div
+                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                            className="absolute right-0 mt-2 w-80 bg-white/90 dark:bg-zinc-900/95 backdrop-blur-2xl border border-white/80 dark:border-zinc-700/80 rounded-2xl shadow-2xl p-4 z-40 space-y-3"
+                            style={{
+                              backdropFilter: 'blur(20px)',
+                              WebkitBackdropFilter: 'blur(20px)',
+                            }}
+                          >
+                            <div className="flex justify-between items-center pb-2 border-b border-[var(--glass-edge)]">
+                              <span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
+                                <Calendar className="w-4 h-4 text-[var(--lavenderAccent)]" /> {monthNames[calendarMonth]} {calendarYear}
+                              </span>
+                              <button
+                                onClick={() => {
+                                  setActiveTab('calendar');
+                                  setIsHeaderCalendarOpen(false);
+                                }}
+                                className="text-xs text-[var(--lavenderAccent)] font-semibold hover:underline cursor-pointer"
+                              >
+                                Открыть весь календарь
+                              </button>
+                            </div>
+
+                            <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                              {Object.entries(calendarEvents).length === 0 ? (
+                                <p className="text-xs text-[var(--soft)] italic py-3 text-center">В этом месяце нет проектов с датами.</p>
+                              ) : (
+                                Object.entries(calendarEvents).map(([dayNum, events]) => (
+                                  <div
+                                    key={dayNum}
+                                    onClick={() => {
+                                      setSelectedCalendarDay(Number(dayNum));
+                                      setActiveTab('calendar');
+                                      setIsHeaderCalendarOpen(false);
+                                    }}
+                                    className="p-2.5 rounded-xl bg-white/60 dark:bg-zinc-800/60 border border-[var(--glass-edge)] hover:border-[var(--lavenderAccent)] cursor-pointer transition-all space-y-1 text-left"
+                                  >
+                                    <div className="flex justify-between items-center">
+                                      <span className="font-bold text-xs text-[var(--lavDeep)] dark:text-purple-300">{dayNum} {monthNamesGenitive[calendarMonth]} {calendarYear}</span>
+                                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--lavenderSoft)] text-[var(--lavDeep)]">
+                                        {events[0]?.time}
+                                      </span>
+                                    </div>
+                                    <div className="font-semibold text-xs text-[var(--ink)]">{events[0]?.title}</div>
+                                    <p className="text-[11px] text-[var(--soft)] line-clamp-1">{events[0]?.desc}</p>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          </motion.div>
+                        </>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
                   {/* Theme Toggle Button */}
                   <button
                     onClick={toggleTheme}
@@ -772,6 +1084,7 @@ export default function App() {
                 
                 <p className="text-[var(--soft)] mt-1 text-[13px] leading-relaxed">
                   {activeTab === 'projects' && 'Создавайте макеты, открывайте сметный калькулятор и возвращайтесь к ним в любой момент.'}
+                  {activeTab === 'calendar' && 'График монтажей, сдачи проектов, выездов команды и встреч с клиентами.'}
                   {activeTab === 'warehouse' && 'Каталог вашего декора, флористики и оборудования. Учет остатков и задействованных в проектах позиций.'}
                   {activeTab === 'images' && 'Ваша галерея загруженных референсов, сгенерированных ИИ фонов, элементов флористики и декора для оформления.'}
                   {activeTab === 'documents' && 'Реквизиты, на кого оформляется договор, шаблоны договора и акта. Только автоматическая генерация и печать, оплата не принимается в сервисе.'}
@@ -800,6 +1113,12 @@ export default function App() {
               {activeTab === 'images' && imagesHeaderActions && (
                 <div className="shrink-0 flex items-center gap-2">
                   {imagesHeaderActions}
+                </div>
+              )}
+
+              {activeTab === 'editor' && moodboardHeaderActions && (
+                <div className="shrink-0 flex items-center gap-2">
+                  {moodboardHeaderActions}
                 </div>
               )}
             </div>
@@ -877,27 +1196,19 @@ export default function App() {
                   transition={{ duration: 0.3 }}
                   className="space-y-6"
                 >
-                  {selectedProject ? (
-                    <ProjectDetailModal
-                      project={selectedProject}
-                      onClose={() => setSelectedProject(null)}
-                      onUpdateProject={handleUpdateProject}
-                      showToast={showToast}
-                    />
-                  ) : (
-                    <>
+                  <>
                       {/* Header controls */}
                   <div className="space-y-4">
                     {/* Row 1: Categories / Status Filter pills */}
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       <div className="flex flex-wrap gap-2">
                         {[
-                          { key: 'all', label: 'Все проекты', count: counts.all, dotColor: 'bg-amber-400', badgeStyle: 'bg-amber-500/15 text-amber-700 dark:text-amber-300' },
-                          { key: 'progress', label: 'В работе', count: counts.progress, dotColor: 'bg-emerald-500', badgeStyle: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' },
-                          { key: 'waiting', label: 'Ждут ответа', count: counts.waiting, dotColor: 'bg-sky-500', badgeStyle: 'bg-sky-500/15 text-sky-700 dark:text-sky-300' },
-                          { key: 'approved', label: 'Согласованы', count: counts.approved, dotColor: 'bg-violet-500', badgeStyle: 'bg-violet-500/15 text-violet-700 dark:text-violet-300' },
-                          { key: 'archive', label: 'Архив', count: counts.archive, dotColor: 'bg-zinc-400', badgeStyle: 'bg-zinc-500/15 text-zinc-600 dark:text-zinc-300' },
-                          { key: 'trash', label: 'Корзина', count: counts.trash, dotColor: 'bg-rose-500', badgeStyle: 'bg-rose-500/15 text-rose-700 dark:text-rose-300' }
+                          { key: 'all', label: 'Все проекты', count: counts.all, badgeStyle: 'bg-amber-500/15 text-amber-700 dark:text-amber-300' },
+                          { key: 'progress', label: 'В работе', count: counts.progress, badgeStyle: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' },
+                          { key: 'waiting', label: 'Ждут ответа', count: counts.waiting, badgeStyle: 'bg-sky-500/15 text-sky-700 dark:text-sky-300' },
+                          { key: 'approved', label: 'Согласованы', count: counts.approved, badgeStyle: 'bg-violet-500/15 text-violet-700 dark:text-violet-300' },
+                          { key: 'archive', label: 'Архив', count: counts.archive, badgeStyle: 'bg-zinc-500/15 text-zinc-600 dark:text-zinc-300' },
+                          { key: 'trash', label: 'Корзина', count: counts.trash, badgeStyle: 'bg-rose-500/15 text-rose-700 dark:text-rose-300' }
                         ].map((pill) => {
                           const isActive = projectFilter === pill.key;
 
@@ -911,7 +1222,6 @@ export default function App() {
                                   : 'bg-transparent text-[var(--soft)] hover:text-[var(--ink)] border border-transparent px-2 py-1'
                               }`}
                             >
-                              <span className={`w-2 h-2 rounded-full ${pill.dotColor} shrink-0 ring-2 ring-white/20`} />
                               <span>{pill.label}</span>
                               <span className={`inline-flex items-center justify-center rounded-full text-[11px] font-bold min-w-[20px] h-5 px-1.5 transition-all duration-200 ${
                                 isActive
@@ -1000,9 +1310,9 @@ export default function App() {
                             className="glass-panel glass-interactive rounded-2xl sm:rounded-3xl overflow-hidden flex flex-col justify-between h-full transition-all duration-300 hover:shadow-lg"
                           >
                             {/* Top Image Visual Cover box - Aspect ratio adapted for mobile/tablet */}
-                            <div className="aspect-[16/10] sm:aspect-[4/3] w-full relative shrink-0 overflow-hidden bg-zinc-100 dark:bg-zinc-800/40">
+                            <div className="aspect-[16/10] sm:aspect-[4/3] w-full relative shrink-0 overflow-hidden bg-white dark:bg-zinc-900">
                               <img
-                                src={getProjectImage(p.id)}
+                                src={getProjectImage(p)}
                                 alt={p.name}
                                 className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                                 referrerPolicy="no-referrer"
@@ -1029,83 +1339,89 @@ export default function App() {
                                 </span>
                               </span>
                               
-                              <button
-                                onClick={() => handleTrashClick(p)}
-                                className="absolute top-2.5 right-2.5 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/70 dark:bg-black/30 backdrop-blur flex items-center justify-center text-[var(--ink)] hover:text-red-500 transition-colors z-10"
-                                title={p.status === 'trash' ? "Удалить навсегда" : "Переместить в корзину"}
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-
-                              {/* Date Tag */}
-                              <span className="absolute bottom-2.5 right-2.5 text-[10px] sm:text-xs bg-zinc-900/60 backdrop-blur-md text-white font-medium px-2.5 py-0.5 sm:py-1 rounded-full border border-white/10 flex items-center gap-1">
-                                <Calendar className="w-3 h-3 text-white/80 shrink-0" />
-                                <span>{new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'short' })}</span>
-                              </span>
+                              <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 z-10">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigator.clipboard.writeText(`https://fleur-decor.ru/brief/${p.id}`);
+                                    showToast('Бриф скопирован', 'Отправьте ссылку клиенту для прохождения опроса.', 'success');
+                                  }}
+                                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/70 dark:bg-black/30 backdrop-blur flex items-center justify-center text-[var(--ink)] hover:text-purple-600 transition-colors cursor-pointer"
+                                  title="Копировать бриф"
+                                >
+                                  <Copy className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleTrashClick(p);
+                                  }}
+                                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/70 dark:bg-black/30 backdrop-blur flex items-center justify-center text-[var(--ink)] hover:text-red-500 transition-colors cursor-pointer"
+                                  title={p.status === 'trash' ? "Удалить навсегда" : "Переместить в корзину"}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
                             </div>
 
-                            {/* Info area */}
-                            <div className="p-3.5 sm:p-4 md:p-5 space-y-2.5 sm:space-y-3.5 flex-1 flex flex-col justify-between">
-                              <div className="space-y-1">
+                            {/* Info area - Compact padding & tight margins */}
+                            <div className="p-2.5 sm:p-3 space-y-1 sm:space-y-1.5 flex-1 flex flex-col justify-between">
+                              <div className="space-y-0.5">
                                 {p.client && (
                                   <div className="flex items-center gap-1 text-[10px] sm:text-xs font-bold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] uppercase tracking-wider truncate">
                                     <User className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0 opacity-75" />
                                     <span className="truncate">{p.client}</span>
                                   </div>
                                 )}
-                                <h3 className="font-bold text-[var(--ink)] text-sm sm:text-base leading-snug truncate">{p.name}</h3>
-                                <div className="flex items-center gap-1 text-[11px] sm:text-xs text-[var(--faint)] truncate">
+                                <h3 className="font-bold text-[var(--ink)] text-xs sm:text-sm leading-tight truncate">{p.name}</h3>
+                                <div className="flex items-center gap-1 text-[10px] sm:text-[11px] text-[var(--faint)] truncate">
                                   <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0 text-zinc-400" />
                                   <span className="truncate">{p.venue}</span>
                                 </div>
                               </div>
 
                               {/* Custom Stepper with connecting line and dots */}
-                              <div className="stepper py-1 sm:py-1.5">
-                                <div className="relative flex items-center justify-between">
+                              <div className="stepper py-1">
+                                <div className="relative flex items-center justify-between px-2">
                                   {/* Horizontal track line */}
-                                  <div className="absolute top-1/2 -translate-y-1/2 left-2 right-2 h-[2px] bg-zinc-200 dark:bg-zinc-800/60 z-0 rounded-full" />
+                                  <div className="absolute top-1/2 -translate-y-1/2 left-3 right-3 h-[2px] bg-zinc-200 dark:bg-zinc-800/60 z-0 rounded-full" />
                                   {/* Filled track line progress */}
                                   <div
-                                    className="absolute top-1/2 -translate-y-1/2 left-2 h-[2px] bg-[var(--sage)] z-0 rounded-full transition-all duration-500"
-                                    style={{ width: `${(p.currentStep / 4) * 96}%` }}
+                                    className="absolute top-1/2 -translate-y-1/2 left-3 h-[2px] bg-[var(--sage)] z-0 rounded-full transition-all duration-500"
+                                    style={{ width: `${(Math.min(p.currentStep, 3) / 3) * 90}%` }}
                                   />
                                   
-                                  {stepsList.map((stepName, idx) => {
+                                  {stepsList.map((_, idx) => {
                                     const isDone = idx < p.currentStep;
                                     const isCurrent = idx === p.currentStep;
                                     return (
-                                      <div key={idx} className="step flex flex-col items-center relative z-10 flex-1">
+                                      <div key={idx} className="step flex flex-col items-center relative z-10">
                                         <div
-                                          className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full border-2 transition-all duration-300 ${
+                                          className={`w-3 h-3 rounded-full border-2 transition-all duration-300 ${
                                             isDone
                                               ? 'bg-[var(--sage)] border-[var(--sage)]'
                                               : isCurrent
-                                              ? 'bg-[var(--lavenderAccent)] border-[var(--lavenderAccent)] shadow-[0_0_0_3px_rgba(192,142,244,0.25)]'
+                                              ? 'bg-[#8C52D0] border-[#8C52D0] shadow-[0_0_0_3px_rgba(140,82,208,0.25)]'
                                               : 'bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700'
                                           }`}
                                         />
-                                        <span
-                                          className={`hidden sm:block text-[10px] sm:text-xs font-medium tracking-tight mt-1 transition-colors duration-300 truncate ${
-                                            isDone || isCurrent
-                                              ? 'text-[var(--ink)] font-medium'
-                                              : 'text-[var(--faint)]'
-                                          }`}
-                                        >
-                                          {stepName}
-                                        </span>
                                       </div>
                                     );
                                   })}
                                 </div>
-                                {/* Compact Mobile Stage Label */}
-                                <div className="sm:hidden text-center text-[10px] font-semibold text-[var(--soft)] mt-1.5">
-                                  Этап {p.currentStep + 1}/4: <span className="text-[var(--ink)]">{stepsList[p.currentStep] || 'Завершено'}</span>
+                                {/* Clean Stage Label underneath */}
+                                <div className="text-center mt-1.5 leading-snug">
+                                  <span className="block text-[10px] text-zinc-400 dark:text-zinc-500 font-medium lowercase">
+                                    {['первый этап', 'второй этап', 'третий этап', 'четвертый этап'][p.currentStep] || 'этап'}
+                                  </span>
+                                  <span className="block text-xs font-bold text-stone-800 dark:text-stone-100 lowercase">
+                                    {['бриф', 'визуал', 'смета', 'согласование'][p.currentStep] || '—'}
+                                  </span>
                                 </div>
                               </div>
 
                               {/* Footer stats metadata */}
-                              <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-zinc-100 dark:border-zinc-800/40">
+                              <div className="flex items-center justify-between gap-2 pt-0.5 border-t border-zinc-100 dark:border-zinc-800/40">
                                 <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs text-[var(--soft)]">
                                   <Calendar className="w-3 h-3 text-zinc-400 shrink-0" />
                                   <span>{new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
@@ -1116,7 +1432,7 @@ export default function App() {
                               </div>
 
                               {/* Buttons */}
-                              <div className="flex gap-2 pt-1">
+                              <div className="flex gap-1.5 pt-0.5">
                                 {p.status === 'trash' ? (
                                   <>
                                     <button
@@ -1124,7 +1440,7 @@ export default function App() {
                                         setProjects(prev => prev.map(item => item.id === p.id ? { ...item, status: 'progress' as const } : item));
                                         showToast('Проект восстановлен', `Проект «${p.name}» возвращен в работу.`, 'success');
                                       }}
-                                      className="flex-1 bg-[var(--sage)] hover:opacity-90 text-white rounded-xl sm:rounded-full py-2 sm:py-2.5 text-xs font-semibold transition-all cursor-pointer text-center"
+                                      className="flex-1 bg-[var(--sage)] hover:opacity-90 text-white rounded-full py-1.5 sm:py-2 text-xs font-semibold transition-all cursor-pointer text-center"
                                     >
                                       Восстановить
                                     </button>
@@ -1133,7 +1449,7 @@ export default function App() {
                                         setProjects(prev => prev.filter(item => item.id !== p.id));
                                         showToast('Удалено навсегда', `Проект «${p.name}» удален окончательно.`, 'warn');
                                       }}
-                                      className="w-8 sm:w-10 shrink-0 rounded-xl sm:rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 transition-all flex items-center justify-center cursor-pointer"
+                                      className="w-8 sm:w-9 shrink-0 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 transition-all flex items-center justify-center cursor-pointer"
                                       title="Удалить навсегда"
                                     >
                                       <Trash2 className="w-3.5 h-3.5" />
@@ -1144,21 +1460,24 @@ export default function App() {
                                     <button
                                       onClick={() => {
                                         setSelectedProject(p);
-                                        setActiveTab('projects');
+                                        setActiveTab('projectCard');
                                       }}
-                                      className="flex-1 bg-[var(--lavDeep)] hover:opacity-90 text-white rounded-xl sm:rounded-full py-2 sm:py-2.5 text-xs font-semibold transition-all cursor-pointer"
+                                      style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                                      className="flex-1 text-white rounded-full py-1.5 sm:py-2 text-xs font-semibold shadow-xs hover:shadow-md hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 cursor-pointer flex items-center justify-center gap-1"
                                     >
-                                      Открыть проект
+                                      <FolderKanban className="w-3.5 h-3.5 shrink-0" />
+                                      <span>Проект</span>
                                     </button>
                                     <button
                                       onClick={() => {
-                                        navigator.clipboard.writeText(`https://fleur-decor.ru/brief/${p.id}`);
-                                        showToast('Бриф скопирован', 'Отправьте ссылку клиенту для прохождения опроса.', 'success');
+                                        setSelectedProject(p);
+                                        setActiveTab('moodboard');
                                       }}
-                                      className="w-8 sm:w-10 shrink-0 rounded-xl sm:rounded-full bg-white/30 hover:bg-white/50 dark:bg-white/5 border border-[var(--glass-edge)] text-[var(--ink)] transition-all flex items-center justify-center cursor-pointer"
-                                      title="Копировать бриф"
+                                      style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                                      className="flex-1 text-white rounded-full py-1.5 sm:py-2 text-xs font-semibold shadow-xs hover:shadow-md hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 cursor-pointer flex items-center justify-center gap-1"
                                     >
-                                      <Copy className="w-3.5 h-3.5" />
+                                      <Palette className="w-3.5 h-3.5 shrink-0" />
+                                      <span>Редактор</span>
                                     </button>
                                   </>
                                 )}
@@ -1173,7 +1492,7 @@ export default function App() {
                       {processedProjects.map((p) => {
                         const totalSum = p.estimate.reduce((sum, item) => sum + (item.quantity * item.price), 0);
                         const displayPrice = totalSum > 0 ? totalSum : p.budget;
-                        const projectImg = getProjectImage(p.id);
+                        const projectImg = getProjectImage(p);
 
                         return (
                           <React.Fragment key={p.id}>
@@ -1211,19 +1530,26 @@ export default function App() {
                                   </span>
                                 </span>
 
-                                <button
-                                  onClick={() => handleTrashClick(p)}
-                                  className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-white/75 dark:bg-black/35 backdrop-blur flex items-center justify-center text-[var(--ink)] hover:text-red-500 transition-colors z-10"
-                                  title={p.status === 'trash' ? "Удалить навсегда" : "Переместить в корзину"}
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-
-                                {/* Date Tag */}
-                                <span className="absolute bottom-2.5 left-2.5 text-[10px] bg-black/50 backdrop-blur-md text-white font-medium px-2 py-0.5 rounded-full border border-white/10 flex items-center gap-1">
-                                  <Calendar className="w-2.5 h-2.5 text-white/80 shrink-0" />
-                                  <span>{new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'short' })}</span>
-                                </span>
+                                <div className="absolute top-2.5 right-2.5 flex items-center gap-1 z-10">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigator.clipboard.writeText(`https://fleur-decor.ru/brief/${p.id}`);
+                                      showToast('Бриф скопирован', 'Отправьте ссылку клиенту для прохождения опроса.', 'success');
+                                    }}
+                                    className="w-7 h-7 rounded-full bg-white/75 dark:bg-black/35 backdrop-blur flex items-center justify-center text-[var(--ink)] hover:text-purple-600 transition-colors cursor-pointer"
+                                    title="Копировать бриф"
+                                  >
+                                    <Copy className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleTrashClick(p)}
+                                    className="w-7 h-7 rounded-full bg-white/75 dark:bg-black/35 backdrop-blur flex items-center justify-center text-[var(--ink)] hover:text-red-500 transition-colors z-10"
+                                    title={p.status === 'trash' ? "Удалить навсегда" : "Переместить в корзину"}
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
                               </div>
 
                               {/* Right Content Section */}
@@ -1245,44 +1571,40 @@ export default function App() {
                                       <span className="truncate">{p.venue}</span>
                                     </div>
                                   </div>
-                                  <button
-                                    onClick={() => {
-                                      navigator.clipboard.writeText(`https://fleur-decor.ru/brief/${p.id}`);
-                                      showToast('Бриф скопирован', 'Отправьте ссылку клиенту для прохождения опроса.', 'success');
-                                    }}
-                                    className="w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 text-[var(--ink)] flex items-center justify-center transition-colors shrink-0 cursor-pointer"
-                                    title="Копировать бриф"
-                                  >
-                                    <Copy className="w-3.5 h-3.5" />
-                                  </button>
+
                                 </div>
 
                                 {/* Row 2: Custom Compact Stepper */}
-                                <div className="relative flex items-center justify-between w-32 py-1">
-                                  {/* Background Line */}
-                                  <div className="absolute left-1 right-1 top-1/2 -translate-y-1/2 h-[2px] bg-zinc-100 dark:bg-zinc-800" />
-                                  {/* Progress Line */}
-                                  <div
-                                    className="absolute left-1 top-1/2 -translate-y-1/2 h-[2px] bg-[#0A7B5C] transition-all duration-500"
-                                    style={{ width: `${(p.currentStep / 4) * 100}%` }}
-                                  />
-                                  {Array.from({ length: 5 }).map((_, idx) => {
-                                    const isDone = idx < p.currentStep;
-                                    const isCurrent = idx === p.currentStep;
-                                    return (
-                                      <div key={idx} className="relative z-10 flex items-center justify-center">
-                                        <div
-                                          className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
-                                            isDone
-                                              ? 'bg-[#0A7B5C]'
-                                              : isCurrent
-                                              ? 'bg-[#8B5CF6] ring-[4px] ring-[#8B5CF6]/20'
-                                              : 'bg-white dark:bg-zinc-900 border-2 border-zinc-200 dark:border-zinc-800'
-                                          }`}
-                                        />
-                                      </div>
-                                    );
-                                  })}
+                                <div className="flex flex-col items-center">
+                                  <div className="relative flex items-center justify-between w-32 py-1">
+                                    {/* Background Line */}
+                                    <div className="absolute left-1 right-1 top-1/2 -translate-y-1/2 h-[2px] bg-zinc-100 dark:bg-zinc-800" />
+                                    {/* Progress Line */}
+                                    <div
+                                      className="absolute left-1 top-1/2 -translate-y-1/2 h-[2px] bg-[#0A7B5C] transition-all duration-500"
+                                      style={{ width: `${(Math.min(p.currentStep, 3) / 3) * 100}%` }}
+                                    />
+                                    {Array.from({ length: 4 }).map((_, idx) => {
+                                      const isDone = idx < p.currentStep;
+                                      const isCurrent = idx === p.currentStep;
+                                      return (
+                                        <div key={idx} className="relative z-10 flex items-center justify-center">
+                                          <div
+                                            className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                                              isDone
+                                                ? 'bg-[#0A7B5C]'
+                                                : isCurrent
+                                                ? 'bg-[#8C52D0] ring-[3px] ring-[#8C52D0]/20'
+                                                : 'bg-white dark:bg-zinc-900 border-2 border-zinc-200 dark:border-zinc-800'
+                                            }`}
+                                          />
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                  <span className="text-[10px] font-bold text-stone-700 dark:text-stone-300 lowercase mt-0.5">
+                                    {['первый этап: бриф', 'второй этап: визуал', 'третий этап: смета', 'четвертый этап: согласование'][p.currentStep] || ''}
+                                  </span>
                                 </div>
 
                                 {/* Row 3: Metadata tags on left, Open button on right */}
@@ -1321,9 +1643,9 @@ export default function App() {
                                     <button
                                       onClick={() => {
                                         setSelectedProject(p);
-                                        setActiveTab('projects');
+                                        setActiveTab('projectCard');
                                       }}
-                                      className="bg-[#5D3E8D] hover:bg-[#4E3175] text-white rounded-full font-semibold text-[11px] py-1.5 px-5 shadow-sm transition-colors cursor-pointer shrink-0"
+                                      style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }} className="text-white rounded-full font-semibold text-[11px] py-1.5 px-5 shadow-sm transition-all duration-300 hover:shadow-md hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0"
                                     >
                                       Открыть
                                     </button>
@@ -1395,7 +1717,7 @@ export default function App() {
                                      <div className="absolute top-[8px] left-1 right-1 h-[2px] bg-zinc-100 dark:bg-zinc-800/60 z-0 rounded-full" />
                                      <div
                                        className="absolute top-[8px] left-1 h-[2px] bg-[var(--sage)] z-0 rounded-full transition-all duration-500"
-                                       style={{ width: `${(p.currentStep / 4) * 92}%` }}
+                                       style={{ width: `${(Math.min(p.currentStep, 3) / 3) * 92}%` }}
                                      />
                                      {stepsList.map((stepName, idx) => {
                                        const isDone = idx < p.currentStep;
@@ -1417,7 +1739,7 @@ export default function App() {
                                      })}
                                    </div>
                                    <div className="text-center text-xs text-[var(--faint)] mt-1">
-                                     Этап: {stepsList[p.currentStep] || 'Завершен'}
+                                     ['первый этап: бриф', 'второй этап: визуал', 'третий этап: смета', 'четвертый этап: согласование'][p.currentStep] || ''
                                    </div>
                                  </div>
 
@@ -1450,9 +1772,9 @@ export default function App() {
                                        <button
                                          onClick={() => {
                                            setSelectedProject(p);
-                                           setActiveTab('projects');
+                                           setActiveTab('projectCard');
                                          }}
-                                         className="flex-1 sm:flex-initial bg-gradient-to-r from-[#8C52D0] to-[#582F89] hover:opacity-90 text-white rounded-full px-5 py-2 text-xs font-semibold transition-all duration-300 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] cursor-pointer whitespace-nowrap"
+                                         style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }} className="flex-1 sm:flex-initial text-white rounded-full px-5 py-2 text-xs font-semibold shadow-sm transition-all duration-300 hover:shadow-md hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] cursor-pointer whitespace-nowrap"
                                        >
                                          Открыть проект
                                        </button>
@@ -1514,8 +1836,8 @@ export default function App() {
                                    <Trash2 className="w-3.5 h-3.5" />
                                  </button>
 
-                                 {/* Date Tag on Bottom Right */}
-                                 <span className="absolute bottom-3.5 right-3.5 text-[11px] bg-black/50 backdrop-blur-md text-white font-medium px-2.5 py-1 rounded-full border border-white/10 flex items-center gap-1.5">
+                                 {/* Date Tag Removed */}
+                                 <span className="hidden">
                                    <Calendar className="w-3 h-3 text-white/80 shrink-0" />
                                    <span>{new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'short' })}</span>
                                  </span>
@@ -1545,7 +1867,7 @@ export default function App() {
                                        navigator.clipboard.writeText(`https://fleur-decor.ru/brief/${p.id}`);
                                        showToast('Бриф скопирован', 'Отправьте ссылку клиенту для прохождения опроса.', 'success');
                                      }}
-                                     className="w-[38px] h-[38px] rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors shrink-0 cursor-pointer shadow-sm text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+                                     className="hidden"
                                      title="Копировать бриф"
                                    >
                                      <Copy className="w-4 h-4" />
@@ -1559,7 +1881,7 @@ export default function App() {
                                    {/* Progress Line */}
                                    <div
                                      className="absolute left-[15px] top-[5px] h-[2px] bg-[#0A7B5C] transition-all duration-500"
-                                     style={{ width: `${p.currentStep * 25}%` }}
+                                     style={{ width: `${(Math.min(p.currentStep, 3) / 3) * 92}%` }}
                                    />
                                    <div className="flex items-center justify-between relative z-10">
                                      {stepsList.map((stepName, idx) => {
@@ -1623,15 +1945,30 @@ export default function App() {
                                        </button>
                                      </div>
                                    ) : (
-                                     <button
-                                       onClick={() => {
-                                         setSelectedProject(p);
-                                         setActiveTab('projects');
-                                       }}
-                                       className="bg-gradient-to-r from-[#8C52D0] to-[#582F89] hover:opacity-90 text-white rounded-full font-semibold text-[12px] py-2 px-5.5 shadow-sm transition-all duration-300 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0"
-                                     >
-                                       Открыть проект
-                                     </button>
+                                     <div className="flex items-center gap-2 shrink-0">
+                                       <button
+                                         onClick={() => {
+                                           setSelectedProject(p);
+                                           setActiveTab('projectCard');
+                                         }}
+                                         style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                                         className="text-white rounded-full font-semibold text-[12px] py-2 px-3.5 shadow-sm transition-all duration-300 hover:shadow-md hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0 flex items-center gap-1.5"
+                                       >
+                                         <FolderKanban className="w-3.5 h-3.5 shrink-0" />
+                                         <span>Проект</span>
+                                       </button>
+                                       <button
+                                         onClick={() => {
+                                           setSelectedProject(p);
+                                           setActiveTab('moodboard');
+                                         }}
+                                         style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                                         className="text-white rounded-full font-semibold text-[12px] py-2 px-3.5 shadow-sm transition-all duration-300 hover:shadow-md hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0 flex items-center gap-1.5"
+                                       >
+                                         <Palette className="w-3.5 h-3.5 shrink-0" />
+                                         <span>Редактор</span>
+                                       </button>
+                                     </div>
                                    )}
                                  </div>
                                </div>
@@ -1642,7 +1979,29 @@ export default function App() {
                     </div>
                   )}
                     </>
-                  )}
+                </motion.div>
+              )}
+
+              {/* PROJECT CARD TAB */}
+              {activeTab === 'projectCard' && (
+                <motion.div
+                  key="project-card-tab"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-6"
+                >
+                  <ProjectDetailModal
+                    project={selectedProject || projects[0]}
+                    onClose={() => {
+                      setSelectedProject(null);
+                      setActiveTab('projects');
+                    }}
+                    onUpdateProject={handleUpdateProject}
+                    showToast={showToast}
+                    onOpenEditor={() => setActiveTab('moodboard')}
+                  />
                 </motion.div>
               )}
 
@@ -1658,7 +2017,15 @@ export default function App() {
                 >
                   <MoodboardEditor
                     projects={projects}
+                    initialProjectId={selectedProject?.id}
                     onSaveToProject={handleAttachVisualizerToProject}
+                    onBackToProjectCard={(projId) => {
+                      const targetProj = (projId && projects.find(p => p.id === projId)) || selectedProject || projects[0];
+                      if (targetProj) {
+                        setSelectedProject(targetProj);
+                      }
+                      setActiveTab('projectCard');
+                    }}
                     showToast={showToast}
                     setHeaderActions={setMoodboardHeaderActions}
                     mobileNavButton={renderMobileNavButton()}
@@ -1749,9 +2116,23 @@ export default function App() {
                         <p className="text-xs text-[var(--soft)]">График монтажей, сдачи проектов и выездов команды</p>
                       </div>
                       <div className="flex items-center gap-2">
+                        <button
+                          onClick={handlePrevMonth}
+                          className="p-1.5 rounded-full bg-white/60 dark:bg-zinc-800/60 hover:bg-white dark:hover:bg-zinc-700 text-[var(--soft)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+                          title="Предыдущий месяц"
+                        >
+                          <ChevronDown className="w-4 h-4 rotate-90" />
+                        </button>
                         <span className="px-3 py-1 bg-[var(--lavenderSoft)] text-[var(--lavDeep)] rounded-full text-xs font-semibold">
-                          Июль 2026
+                          {monthNames[calendarMonth]} {calendarYear}
                         </span>
+                        <button
+                          onClick={handleNextMonth}
+                          className="p-1.5 rounded-full bg-white/60 dark:bg-zinc-800/60 hover:bg-white dark:hover:bg-zinc-700 text-[var(--soft)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+                          title="Следующий месяц"
+                        >
+                          <ChevronDown className="w-4 h-4 -rotate-90" />
+                        </button>
                       </div>
                     </div>
 
@@ -1812,24 +2193,37 @@ export default function App() {
                     {/* Detailed Event Log for selected day */}
                     <div className="pt-4 border-t border-[var(--line)]">
                       <h3 className="text-sm font-bold text-[var(--ink)] mb-3">
-                        Детализация расписания на {selectedCalendarDay} июля 2026:
+                        Детализация расписания на {selectedCalendarDay} {monthNamesGenitive[calendarMonth]} {calendarYear}:
                       </h3>
                       {calendarEvents[selectedCalendarDay] ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {calendarEvents[selectedCalendarDay].map((ev, i) => (
-                            <div key={i} className="p-4 rounded-2xl bg-white/60 dark:bg-zinc-800/60 border border-[var(--glass-edge)] shadow-xs">
+                            <div
+                              key={i}
+                              onClick={() => {
+                                setSelectedProject(ev.project);
+                                setActiveTab('projectCard');
+                              }}
+                              className="p-4 rounded-2xl bg-white/60 dark:bg-zinc-800/60 border border-[var(--glass-edge)] hover:border-[var(--lavenderAccent)] cursor-pointer transition-all shadow-xs group"
+                            >
                               <div className="flex justify-between items-center mb-1">
-                                <span className="font-bold text-sm text-[var(--ink)]">{ev.title}</span>
+                                <span className="font-bold text-sm text-[var(--ink)] group-hover:text-[var(--lavDeep)] transition-colors">
+                                  {ev.title}
+                                </span>
                                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--lavenderSoft)] text-[var(--lavDeep)]">
                                   {ev.time}
                                 </span>
                               </div>
-                              <p className="text-xs text-[var(--soft)]">{ev.desc}</p>
+                              <p className="text-xs text-[var(--soft)] mb-2">{ev.desc}</p>
+                              <div className="text-[11px] font-semibold text-[var(--lavenderAccent)] flex items-center gap-1">
+                                <span>Открыть карточку проекта</span>
+                                <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                              </div>
                             </div>
                           ))}
                         </div>
                       ) : (
-                        <p className="text-xs text-[var(--soft)] italic">На эту дату нет запланированных выездов и монтажей.</p>
+                        <p className="text-xs text-[var(--soft)] italic">На эту дату нет запланированных проектов и монтажей.</p>
                       )}
                     </div>
                   </div>
@@ -1858,7 +2252,7 @@ export default function App() {
 
         {/* RIGHT SIDEBAR (Collapsible, dynamic panel) */}
         <aside
-          className={`shrink-0 hidden lg:flex flex-col sticky top-0 h-screen border-l backdrop-blur-xl z-20 transition-all duration-300 overflow-hidden ${
+          className={`shrink-0 hidden xl:flex flex-col sticky top-0 h-screen border-l backdrop-blur-xl z-20 transition-all duration-300 overflow-hidden ${
             isRightSidebarExpanded ? 'w-64 p-4' : 'w-14 items-center py-4 px-1.5'
           }`}
           style={{ backgroundColor: 'var(--sidebar-bg)', borderColor: 'var(--sidebar-border)' }}
@@ -1885,10 +2279,10 @@ export default function App() {
                 
                 <div className="glass-panel p-4 rounded-2xl flex flex-col gap-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-[var(--ink)]">Июль 2026</span>
+                    <span className="text-xs font-semibold text-[var(--ink)]">{monthNames[calendarMonth]} {calendarYear}</span>
                     <div className="flex gap-1">
-                      <button onClick={() => showToast('Календарь', 'Прошлый месяц', 'info')} className="p-1 text-[var(--faint)] hover:text-[var(--ink)] text-xs focus:outline-none"><ChevronDown className="w-3 h-3 rotate-90" /></button>
-                      <button onClick={() => showToast('Календарь', 'Следующий месяц', 'info')} className="p-1 text-[var(--faint)] hover:text-[var(--ink)] text-xs focus:outline-none"><ChevronDown className="w-3 h-3 -rotate-90" /></button>
+                      <button onClick={handlePrevMonth} title="Предыдущий месяц" className="p-1 text-[var(--faint)] hover:text-[var(--ink)] text-xs focus:outline-none cursor-pointer"><ChevronDown className="w-3 h-3 rotate-90" /></button>
+                      <button onClick={handleNextMonth} title="Следующий месяц" className="p-1 text-[var(--faint)] hover:text-[var(--ink)] text-xs focus:outline-none cursor-pointer"><ChevronDown className="w-3 h-3 -rotate-90" /></button>
                     </div>
                   </div>
                   
@@ -1942,7 +2336,7 @@ export default function App() {
                 {/* Dynamic event display area */}
                 <div className="glass-panel p-3.5 rounded-2xl bg-white/20 dark:bg-black/20 border border-[var(--glass-edge)] mt-2">
                   <p className="text-xs font-semibold text-[var(--ink)] uppercase tracking-wider mb-2">
-                    События: {selectedCalendarDay} июля 2026
+                    События: {selectedCalendarDay} {monthNamesGenitive[calendarMonth]} {calendarYear}
                   </p>
                   {calendarEvents[selectedCalendarDay] ? (
                     <div className="space-y-2">
@@ -1956,7 +2350,11 @@ export default function App() {
                         return (
                           <div
                             key={i}
-                            className="p-2.5 rounded-xl border-l-2 text-[var(--ink)] transition-all duration-300 hover:translate-x-1"
+                            onClick={() => {
+                              setSelectedProject(ev.project);
+                              setActiveTab('projectCard');
+                            }}
+                            className="p-2.5 rounded-xl border-l-2 text-[var(--ink)] transition-all duration-300 hover:translate-x-1 cursor-pointer"
                             style={{ borderLeftColor: borderCol, backgroundColor: bgCol }}
                           >
                             <div className="flex justify-between items-center mb-1">
@@ -1976,67 +2374,159 @@ export default function App() {
 
               <div className="h-px bg-[var(--glass-edge)]" style={{ background: 'var(--line)' }} />
 
-              {/* Tasks list (styled ultra-compactly matching the screenshot) */}
+              {/* Synchronized Project Tasks and Notes list filtered by selected calendar date */}
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-base font-semibold text-[var(--ink)] tracking-tight flex items-center gap-2">
+                <div className="flex items-center justify-between flex-wrap gap-1">
+                  <h2 className="text-sm font-semibold text-[var(--ink)] tracking-tight flex items-center gap-1.5">
                     <CheckSquare className="w-4 h-4 text-[var(--lavenderAccent)]" />
-                    <span>Задачи</span>
-                    <span className="text-xs font-semibold px-2 py-0.5 bg-[var(--lavenderSoft)] text-[var(--lavDeep)] dark:bg-purple-950/40 dark:text-[var(--lavenderAccent)] rounded-full select-none shrink-0">
-                      {tasks.filter(t => !t.completed).length}
-                    </span>
+                    <span>Задачи и заметки</span>
                   </h2>
-                </div>
 
-                <div className="space-y-2.5">
-                  {tasks.map(task => (
-                    <div
-                      key={task.id}
-                      onClick={() => handleToggleTask(task.id)}
-                      className={`glass-panel py-2 px-3 rounded-xl flex items-center gap-3 transition-all duration-300 hover:scale-[1.01] cursor-pointer ${
-                        task.completed ? 'opacity-40 scale-[0.98]' : ''
+                  {/* Filter toggle: Selected Date vs All */}
+                  <div className="flex bg-stone-100 dark:bg-zinc-800 p-0.5 rounded-full border border-stone-200 dark:border-zinc-700 text-[10px]">
+                    <button
+                      onClick={() => setSidebarTaskFilter('date')}
+                      className={`px-2 py-0.5 rounded-full font-bold transition-all cursor-pointer ${
+                        sidebarTaskFilter === 'date'
+                          ? 'bg-[#582F89] text-white shadow-2xs'
+                          : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
                       }`}
+                      title={`Задачи на ${selectedCalendarDay} ${monthNamesGenitive[calendarMonth]}`}
                     >
-                      {/* Circular Checkbox */}
-                      <div
-                        className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-all ${
-                          task.completed 
-                            ? 'bg-emerald-500 border-emerald-500 text-white' 
-                            : 'border-zinc-300 dark:border-zinc-700 bg-white/50 dark:bg-black/10 hover:border-[var(--lavenderAccent)]'
-                        }`}
-                      >
-                        {task.completed && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
-                      </div>
-
-                      {/* Text details */}
-                      <div className="flex-1 min-w-0">
-                        <h4 className={`text-xs font-medium text-[var(--ink)] leading-snug truncate ${task.completed ? 'line-through text-[var(--faint)]' : ''}`}>
-                          {task.title}
-                        </h4>
-                        <div className="flex items-center gap-1.5 text-xs text-[var(--soft)] mt-0.5 font-medium">
-                          <span className="truncate">{task.projectRelation}</span>
-                          <span>•</span>
-                          <span 
-                            className="px-1.5 py-0.5 rounded text-xs font-medium shrink-0"
-                            style={{
-                              backgroundColor: task.color === 'warn' ? 'var(--warnSoft)' : task.color === 'sage' ? 'var(--sageSoft)' : 'var(--lavenderSoft)',
-                              color: task.color === 'warn' ? 'var(--warn)' : task.color === 'sage' ? 'var(--sage)' : 'var(--lavDeep)'
-                            }}
-                          >
-                            {task.dueDate}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Right category indicator dot */}
-                      <span 
-                        className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                          task.color === 'warn' ? 'bg-[var(--warn)]' : task.color === 'sage' ? 'bg-[var(--sage)]' : 'bg-[var(--lavenderAccent)]'
-                        }`} 
-                      />
-                    </div>
-                  ))}
+                      {selectedCalendarDay} {monthNamesGenitive[calendarMonth]?.slice(0, 3)}
+                    </button>
+                    <button
+                      onClick={() => setSidebarTaskFilter('all')}
+                      className={`px-2 py-0.5 rounded-full font-bold transition-all cursor-pointer ${
+                        sidebarTaskFilter === 'all'
+                          ? 'bg-[#582F89] text-white shadow-2xs'
+                          : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
+                      }`}
+                      title="Показать все записи"
+                    >
+                      Все ({globalProjectTasksNotes.length})
+                    </button>
+                  </div>
                 </div>
+
+                {/* Filter computation */}
+                {(() => {
+                  const dayStr = selectedCalendarDay < 10 ? `0${selectedCalendarDay}` : `${selectedCalendarDay}`;
+                  const monthStr = (calendarMonth + 1) < 10 ? `0${calendarMonth + 1}` : `${calendarMonth + 1}`;
+                  const selectedFullDate = `${calendarYear}-${monthStr}-${dayStr}`;
+
+                  const itemsForDate = globalProjectTasksNotes.filter((item: any) => {
+                    if (!item.dueDate) return false;
+                    return item.dueDate === selectedFullDate || item.dueDate.endsWith(`-${monthStr}-${dayStr}`);
+                  });
+
+                  const activeList = sidebarTaskFilter === 'date' ? itemsForDate : globalProjectTasksNotes;
+
+                  if (activeList.length === 0) {
+                    return (
+                      <div className="glass-panel p-3.5 rounded-xl text-center space-y-2">
+                        <CheckSquare className="w-5 h-5 mx-auto text-[var(--soft)] opacity-40" />
+                        <p className="text-xs text-[var(--soft)]">
+                          {sidebarTaskFilter === 'date'
+                            ? `На ${selectedCalendarDay} ${monthNamesGenitive[calendarMonth]} нет задач или заметок.`
+                            : 'Журнал задач пуст.'}
+                        </p>
+                        {sidebarTaskFilter === 'date' && globalProjectTasksNotes.length > 0 && (
+                          <button
+                            onClick={() => setSidebarTaskFilter('all')}
+                            className="text-[10px] font-bold text-[#8C52D0] hover:underline cursor-pointer"
+                          >
+                            Показать все записи ({globalProjectTasksNotes.length})
+                          </button>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="space-y-2 max-h-72 overflow-y-auto pr-0.5 custom-scrollbar">
+                      {activeList.map((item: any) => {
+                        const isTask = item.type === 'task';
+                        const isCompleted = item.completed;
+
+                        // Category styles
+                        const categoryBadges: Record<string, string> = {
+                          'Монтаж': 'bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300',
+                          'Закупка': 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300',
+                          'Смета': 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300',
+                          'Логистика': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300',
+                          'Клиент': 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300',
+                          'Важное': 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300',
+                          'Общее': 'bg-stone-100 text-stone-700 dark:bg-zinc-800 dark:text-stone-300'
+                        };
+                        const catClass = categoryBadges[item.category] || categoryBadges['Общее'];
+
+                        return (
+                          <div
+                            key={item.id}
+                            className={`glass-panel p-2.5 rounded-xl border transition-all duration-300 hover:scale-[1.01] ${
+                              isCompleted ? 'opacity-50' : ''
+                            }`}
+                          >
+                            <div className="flex items-start gap-2">
+                              {/* Left Icon or Checkbox */}
+                              {isTask ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleGlobalTaskNote(item.id)}
+                                  className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 cursor-pointer transition-all ${
+                                    isCompleted
+                                      ? 'bg-emerald-500 border-emerald-500 text-white'
+                                      : 'border-zinc-400 dark:border-zinc-600 hover:border-[#8C52D0] bg-white/50'
+                                  }`}
+                                >
+                                  {isCompleted && <Check className="w-3 h-3 stroke-[3]" />}
+                                </button>
+                              ) : (
+                                <div className="w-4 h-4 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-300 flex items-center justify-center shrink-0 mt-0.5">
+                                  <FileText className="w-2.5 h-2.5" />
+                                </div>
+                              )}
+
+                              {/* Main Content */}
+                              <div className="flex-1 min-w-0 space-y-1">
+                                <p className={`text-xs font-medium text-[var(--ink)] leading-tight ${isCompleted ? 'line-through text-[var(--faint)]' : ''}`}>
+                                  {item.title}
+                                </p>
+
+                                <div className="flex items-center flex-wrap gap-1 text-[9px] font-medium">
+                                  {/* Project badge */}
+                                  <button
+                                    onClick={() => {
+                                      const found = projects.find(p => p.id === item.projectId || p.name === item.projectName);
+                                      if (found) {
+                                        setSelectedProject(found);
+                                        setActiveTab('projectCard');
+                                      }
+                                    }}
+                                    className="px-1.5 py-0.5 rounded bg-purple-100/80 dark:bg-purple-900/40 text-[#582F89] dark:text-purple-300 hover:underline truncate max-w-[120px] cursor-pointer"
+                                  >
+                                    {item.projectName || 'Проект'}
+                                  </button>
+
+                                  {/* Category */}
+                                  <span className={`px-1.5 py-0.5 rounded ${catClass}`}>
+                                    {item.category}
+                                  </span>
+
+                                  {/* Type pill */}
+                                  <span className="text-stone-400 dark:text-stone-500">
+                                    • {isTask ? 'Задача' : 'Заметка'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
               </div>
 
             </div>
@@ -2101,14 +2591,7 @@ export default function App() {
             onSubmit={handleCreateProject}
           />
         )}
-        {selectedProject && (
-          <ProjectDetailModal
-            project={selectedProject}
-            onClose={() => setSelectedProject(null)}
-            onUpdateProject={handleUpdateProject}
-            showToast={showToast}
-          />
-        )}
+        
       </AnimatePresence>
 
     </div>

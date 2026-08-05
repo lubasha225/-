@@ -9,7 +9,9 @@ import {
   Download, 
   ShieldCheck, 
   User, 
-  Coins 
+  Coins,
+  UserCheck,
+  Receipt
 } from 'lucide-react';
 
 interface DocumentsTabProps {
@@ -65,12 +67,24 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
   const [actType, setActType] = useState<'standard' | 'custom'>(() => {
     return (localStorage.getItem('pop_act_template_type') as 'standard' | 'custom') || 'standard';
   });
+  const [consentType, setConsentType] = useState<'standard' | 'custom'>(() => {
+    return (localStorage.getItem('pop_consent_template_type') as 'standard' | 'custom') || 'standard';
+  });
+  const [depositType, setDepositType] = useState<'standard' | 'custom'>(() => {
+    return (localStorage.getItem('pop_deposit_template_type') as 'standard' | 'custom') || 'standard';
+  });
 
   const [customContractFile, setCustomContractFile] = useState<string | null>(() => {
     return localStorage.getItem('pop_custom_contract_filename') || 'shablon_dogovora.docx';
   });
   const [customActFile, setCustomActFile] = useState<string | null>(() => {
     return localStorage.getItem('pop_custom_act_filename') || 'shablon_akta.docx';
+  });
+  const [customConsentFile, setCustomConsentFile] = useState<string | null>(() => {
+    return localStorage.getItem('pop_custom_consent_filename') || 'soglasiye_na_obrabotku_pd.docx';
+  });
+  const [customDepositFile, setCustomDepositFile] = useState<string | null>(() => {
+    return localStorage.getItem('pop_custom_deposit_filename') || 'soglasheniye_o_zadatke.docx';
   });
 
   const [copiedTag, setCopiedTag] = useState<string | null>(null);
@@ -103,17 +117,33 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
     localStorage.setItem('pop_act_template_type', actType);
   }, [actType]);
 
-  const handleFileUpload = (type: 'contract' | 'act', e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    localStorage.setItem('pop_consent_template_type', consentType);
+  }, [consentType]);
+
+  useEffect(() => {
+    localStorage.setItem('pop_deposit_template_type', depositType);
+  }, [depositType]);
+
+  const handleFileUpload = (type: 'contract' | 'act' | 'consent' | 'deposit', e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       if (type === 'contract') {
         setCustomContractFile(file.name);
         localStorage.setItem('pop_custom_contract_filename', file.name);
         showToast('Шаблон договора загружен', `Файл "${file.name}" успешно привязан.`, 'success');
-      } else {
+      } else if (type === 'act') {
         setCustomActFile(file.name);
         localStorage.setItem('pop_custom_act_filename', file.name);
         showToast('Шаблон акта загружен', `Файл "${file.name}" успешно привязан.`, 'success');
+      } else if (type === 'consent') {
+        setCustomConsentFile(file.name);
+        localStorage.setItem('pop_custom_consent_filename', file.name);
+        showToast('Шаблон согласия ПД загружен', `Файл "${file.name}" успешно привязан.`, 'success');
+      } else if (type === 'deposit') {
+        setCustomDepositFile(file.name);
+        localStorage.setItem('pop_custom_deposit_filename', file.name);
+        showToast('Шаблон соглашения о задатке загружен', `Файл "${file.name}" успешно привязан.`, 'success');
       }
     }
   };
@@ -492,6 +522,150 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                   <Upload className="w-4 h-4 text-zinc-400" />
                   <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300">Загрузить новый акт (.docx)</span>
                   <input type="file" accept=".docx" className="hidden" onChange={(e) => handleFileUpload('act', e)} />
+                </label>
+              </div>
+            )}
+          </div>
+
+          {/* Card 3: Consent Template */}
+          <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[32px] p-6 border border-zinc-200/50 dark:border-zinc-800/40 space-y-4 shadow-xs w-full">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800/50">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-[var(--lavenderSoft)] rounded-xl text-[var(--lavDeep)] shrink-0">
+                  <UserCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-base text-zinc-900 dark:text-zinc-100">Согласие на обработку ПД</h4>
+                  <p className="text-xs text-zinc-400">Формат шаблона .docx для автозаполнения</p>
+                </div>
+              </div>
+              <div className="flex bg-zinc-100/80 dark:bg-zinc-950/40 p-0.5 rounded-full border border-zinc-200/40 dark:border-zinc-800/40 shrink-0">
+                <button
+                  onClick={() => setConsentType('standard')}
+                  className={`px-3 py-1 text-xs font-medium rounded-full transition-all cursor-pointer ${
+                    consentType === 'standard'
+                      ? 'bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-xs'
+                      : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
+                  }`}
+                >
+                  Типовой
+                </button>
+                <button
+                  onClick={() => setConsentType('custom')}
+                  className={`px-3 py-1 text-xs font-medium rounded-full transition-all cursor-pointer ${
+                    consentType === 'custom'
+                      ? 'bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-xs'
+                      : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
+                  }`}
+                >
+                  Свой
+                </button>
+              </div>
+            </div>
+
+            {consentType === 'standard' ? (
+              <div className="space-y-3 pt-1">
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  Официальное согласие клиента на хранение и обработку персональных данных (152-ФЗ) и разрешение на фотосъемку объектов декора.
+                </p>
+                <div className="flex items-center justify-between pt-2 text-xs">
+                  <span className="text-zinc-400 font-medium">Готов к генерации</span>
+                  <button 
+                    onClick={() => showToast('Образец загружен', 'Типовое согласие на обработку ПД отправлено на скачивание.', 'success')}
+                    className="text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:opacity-85 font-medium inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Скачать образец</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4 pt-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-zinc-400">Активный файл:</span>
+                  <span className="inline-flex items-center gap-1 font-medium text-[var(--metricGreenText)] dark:text-[var(--sage)] text-xs uppercase tracking-wide bg-[var(--sageSoft)] px-2 rounded-full">
+                    ✓ загружен
+                  </span>
+                </div>
+                <div className="p-3 rounded-xl bg-zinc-50/50 dark:bg-zinc-950/20 border border-zinc-200/50 dark:border-zinc-800/40 text-xs font-mono text-zinc-600 dark:text-zinc-300 truncate">
+                  {customConsentFile}
+                </div>
+                <label className="border border-dashed border-zinc-200 dark:border-zinc-800 hover:border-[var(--lavenderAccent)]/60 hover:bg-[var(--lavenderSoft)]/10 rounded-2xl p-4 text-center flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer">
+                  <Upload className="w-4 h-4 text-zinc-400" />
+                  <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300">Загрузить новое согласие (.docx)</span>
+                  <input type="file" accept=".docx" className="hidden" onChange={(e) => handleFileUpload('consent', e)} />
+                </label>
+              </div>
+            )}
+          </div>
+
+          {/* Card 4: Deposit Agreement Template */}
+          <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[32px] p-6 border border-zinc-200/50 dark:border-zinc-800/40 space-y-4 shadow-xs w-full">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800/50">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-[var(--lavenderSoft)] rounded-xl text-[var(--lavDeep)] shrink-0">
+                  <Receipt className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-base text-zinc-900 dark:text-zinc-100">Соглашение о задатке</h4>
+                  <p className="text-xs text-zinc-400">Формат шаблона .docx для автозаполнения</p>
+                </div>
+              </div>
+              <div className="flex bg-zinc-100/80 dark:bg-zinc-950/40 p-0.5 rounded-full border border-zinc-200/40 dark:border-zinc-800/40 shrink-0">
+                <button
+                  onClick={() => setDepositType('standard')}
+                  className={`px-3 py-1 text-xs font-medium rounded-full transition-all cursor-pointer ${
+                    depositType === 'standard'
+                      ? 'bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-xs'
+                      : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
+                  }`}
+                >
+                  Типовой
+                </button>
+                <button
+                  onClick={() => setDepositType('custom')}
+                  className={`px-3 py-1 text-xs font-medium rounded-full transition-all cursor-pointer ${
+                    depositType === 'custom'
+                      ? 'bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-xs'
+                      : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
+                  }`}
+                >
+                  Свой
+                </button>
+              </div>
+            </div>
+
+            {depositType === 'standard' ? (
+              <div className="space-y-3 pt-1">
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  Юридическое соглашение о внесении задатка для гарантийного бронирования даты мероприятия и обеспечения обязательств сторон.
+                </p>
+                <div className="flex items-center justify-between pt-2 text-xs">
+                  <span className="text-zinc-400 font-medium">Готов к генерации</span>
+                  <button 
+                    onClick={() => showToast('Образец загружен', 'Типовое соглашение о задатке отправлено на скачивание.', 'success')}
+                    className="text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:opacity-85 font-medium inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Скачать образец</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4 pt-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-zinc-400">Активный файл:</span>
+                  <span className="inline-flex items-center gap-1 font-medium text-[var(--metricGreenText)] dark:text-[var(--sage)] text-xs uppercase tracking-wide bg-[var(--sageSoft)] px-2 rounded-full">
+                    ✓ загружен
+                  </span>
+                </div>
+                <div className="p-3 rounded-xl bg-zinc-50/50 dark:bg-zinc-950/20 border border-zinc-200/50 dark:border-zinc-800/40 text-xs font-mono text-zinc-600 dark:text-zinc-300 truncate">
+                  {customDepositFile}
+                </div>
+                <label className="border border-dashed border-zinc-200 dark:border-zinc-800 hover:border-[var(--lavenderAccent)]/60 hover:bg-[var(--lavenderSoft)]/10 rounded-2xl p-4 text-center flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer">
+                  <Upload className="w-4 h-4 text-zinc-400" />
+                  <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300">Загрузить новое соглашение (.docx)</span>
+                  <input type="file" accept=".docx" className="hidden" onChange={(e) => handleFileUpload('deposit', e)} />
                 </label>
               </div>
             )}

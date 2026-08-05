@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   X,
+  ArrowLeft,
   Plus,
   Trash2,
   Check,
@@ -50,7 +51,15 @@ import {
   Filter,
   MessageSquare,
   Layers,
-  Award
+  Award,
+  Save,
+  Flower2,
+  Truck,
+  ShieldCheck,
+  FileSignature,
+  Wallet,
+  Receipt,
+  CreditCard
 } from 'lucide-react';
 import { Project, EstimateItem } from '../types';
 
@@ -60,6 +69,7 @@ interface ProjectDetailModalProps {
   onClose: () => void;
   onUpdateProject: (updated: Project) => void;
   showToast: (title: string, message: string, type?: 'success' | 'info' | 'warn') => void;
+  onOpenEditor?: () => void;
 }
 
 interface JournalEntry {
@@ -74,14 +84,12 @@ export default function ProjectDetailModal({
   project,
   onClose,
   onUpdateProject,
-  showToast
+  showToast,
+  onOpenEditor
 }: ProjectDetailModalProps) {
   if (!project) return null;
 
-  // Variant Switcher: 1 = Classic Structured Grid (1:1 Figma), 2 = Modern Ergonomic Workspace
-  const [designVariant, setDesignVariant] = useState<1 | 2>(1);
-
-  // Tabs for Variant 1 & 2: 'all' | 'brief' | 'design' | 'calc' | 'journal' | 'docs' | 'calendar'
+  // Tabs for Variant 1: 'all' | 'brief' | 'design' | 'calc' | 'journal' | 'docs' | 'calendar'
   const [activeTab, setActiveTab] = useState<'all' | 'brief' | 'design' | 'calc' | 'journal' | 'docs' | 'calendar'>('all');
 
   // Commercial financial calculation settings
@@ -93,9 +101,44 @@ export default function ProjectDetailModal({
   // Hotspot modal state
   const [activeArchPoint, setActiveArchPoint] = useState<string>('A-304');
   const [isSpecModalOpen, setIsSpecModalOpen] = useState<boolean>(false);
-  const [isBriefEditOpen, setIsBriefEditOpen] = useState<boolean>(false);
   const [briefCollapsed, setBriefCollapsed] = useState<boolean>(false);
   const [journalCollapsed, setJournalCollapsed] = useState<boolean>(false);
+
+  // Custom decorator fields dynamically added by user
+  const [customDecoratorFields, setCustomDecoratorFields] = useState<{ id: string; key: string }[]>([]);
+  const [isAddingCustomField, setIsAddingCustomField] = useState<boolean>(false);
+  const [newFieldName, setNewFieldName] = useState<string>('');
+
+  // Brief values state for direct inline editing on cards
+  const [briefValues, setBriefValues] = useState<Record<string, string>>(() => ({
+    "ИМЯ КЛИЕНТА": project.clientName || "Анна Соколова",
+    "ТЕЛЕФОН": "+7 905 123 45 67",
+    "РЕКВИЗИТЫ ПЛАТЕЛЬЩИКА": "ФИО Соколова А. В., ИНН 7712345678",
+    "СОБЫТИЕ": "Свадьба",
+    "ДАТА": project.date || "15.08.2026",
+    "ГОСТЕЙ": `${project.brief?.guestsCount || 50}`,
+    "ФОРМАТ СОБЫТИЯ": "Выездная регистрация",
+    "ПЛОЩАДКА": project.venue || "Площадка не указана",
+    "АДРЕС": "Москва, ул. Воробьевское шоссе, 2Б",
+    "КОНТАКТ ПЛОЩАДКИ": "Менеджер Игорь (+7 916 555-44-33)",
+    "РАЗМЕР ЗОНЫ МОНТАЖА": "8 х 5 м",
+    "КРЕПЕЖ К СТЕНАМ": "Да",
+    "КРЕПЕЖ К ПОТОЛКУ": "Да, до 15 кг",
+    "СОГЛАСОВАНИЕ ОФОРМЛЕНИЯ": "",
+    "ЭЛЕКТРИЧЕСТВО У СЦЕНЫ": "Есть, в радиусе 5м",
+    "ПОДЪЕЗД / ГРУЗОВОЙ ЛИФТ": "",
+    "ПРАЗДНИК НА УЛИЦЕ": "",
+    "ДОСТУП НА МОНТАЖ": "14.08, с 18:00",
+    "ОКНО МОНТАЖА": "4 часа",
+    "ХРАНЕНИЕ НА ПЛОЩАДКЕ": "Можно, до утра",
+    "ДЕМОНТАЖ / ВЫВОЗ": "",
+    "КТО ПРИНИМАЕТ РАБОТЫ": "Заказчик",
+    "ПАЛИТРА ОФОРМЛЕНИЯ": project.brief?.colors?.join(', ') || "#FFFFFF",
+    "СТИЛЬ ОФОРМЛЕНИЯ": project.brief?.style || "Не выбран",
+    "КОНСТРУКЦИИ ДЕКОРА": "Арка, фотозона, столы",
+    "ОРИЕНТИРОВОЧНЫЙ БЮДЖЕТ": `${(project.budget || 150000).toLocaleString('ru')} ₽`,
+    "ДОПОЛНИТЕЛЬНАЯ ИНФОРМАЦИЯ": project.brief?.specialRequests || "Нет примечаний.",
+  }));
   const [calendarCollapsed, setCalendarCollapsed] = useState<boolean>(false);
   const [timelineFilter, setTimelineFilter] = useState<'all' | 'user-note' | 'system'>('all');
 
@@ -104,39 +147,177 @@ export default function ProjectDetailModal({
   const [newEstCat, setNewEstCat] = useState('Декор');
   const [newEstPrice, setNewEstPrice] = useState(1500);
 
-  // Journal logs submission form
-  const [journalInputText, setJournalInputText] = useState('');
-  const [journalInputLink, setJournalInputLink] = useState('');
-  const [journalInputType, setJournalInputType] = useState<'user-note' | 'important' | 'client-agreed'>('user-note');
+  // Dedicated Decor & Work inputs
+  const [newDecorName, setNewDecorName] = useState('');
+  const [newDecorPrice, setNewDecorPrice] = useState<number | ''>('');
+  const [newWorkName, setNewWorkName] = useState('');
+  const [newWorkPrice, setNewWorkPrice] = useState<number | ''>('');
+  const [showAddDecorRow, setShowAddDecorRow] = useState(false);
+  const [showAddWorkRow, setShowAddWorkRow] = useState(false);
 
-  // Local state for chronologic timeline events
-  const [journalLogs, setJournalLogs] = useState<JournalEntry[]>([
-    { id: '1', timestamp: "15.08.2026, 13:45", type: "system", text: "Смета переведена в стадию калькуляции расценок", linkedItemId: null },
-    { id: '2', timestamp: "15.08.2026, 11:30", type: "system", text: "Анна Соколова заполнила анкету технического брифа", linkedItemId: null },
-    { id: '3', timestamp: "15.08.2026, 10:12", type: "system", text: "Проект создан в системе", linkedItemId: null }
-  ]);
+  // Journal tasks and notes interface & state
+  interface ProjectTaskNoteItem {
+    id: string;
+    projectId?: string;
+    projectName?: string;
+    type: 'task' | 'note';
+    title: string;
+    dueDate: string; // e.g. "2026-08-15"
+    completed?: boolean;
+    category: 'Закупка' | 'Монтаж' | 'Смета' | 'Логистика' | 'Клиент' | 'Важное' | 'Общее';
+    createdAt: string;
+  }
+
+  const [taskNoteList, setTaskNoteList] = useState<ProjectTaskNoteItem[]>(() => {
+    const saved = localStorage.getItem('pop_project_tasks_v2');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const matching = parsed.filter((item: any) => item.projectId === project.id || item.projectName === project.name);
+          if (matching.length > 0) return matching;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // Default items for current project
+    const defaultDate = project.date?.split('T')[0] || '2026-08-15';
+    return [
+      {
+        id: `tn_${project.id}_1`,
+        projectId: project.id,
+        projectName: project.name,
+        type: 'task',
+        title: 'Заехать к флористу и подтвердить поставку пионовидных роз',
+        dueDate: defaultDate,
+        completed: true,
+        category: 'Закупка',
+        createdAt: '12.08.2026'
+      },
+      {
+        id: `tn_${project.id}_2`,
+        projectId: project.id,
+        projectName: project.name,
+        type: 'task',
+        title: 'Согласовать схему расстановки столов и арки с менеджером площадки',
+        dueDate: defaultDate,
+        completed: false,
+        category: 'Монтаж',
+        createdAt: '13.08.2026'
+      },
+      {
+        id: `tn_${project.id}_3`,
+        projectId: project.id,
+        projectName: project.name,
+        type: 'task',
+        title: 'Проверить состояние текстиля и чехлов перед погрузкой в автомобиль',
+        dueDate: defaultDate,
+        completed: false,
+        category: 'Логистика',
+        createdAt: '14.08.2026'
+      },
+      {
+        id: `tn_${project.id}_4`,
+        projectId: project.id,
+        projectName: project.name,
+        type: 'note',
+        title: 'Заказчик просила использовать золотые подсвечники вместо серебряных',
+        dueDate: defaultDate,
+        category: 'Клиент',
+        createdAt: '14.08.2026'
+      },
+      {
+        id: `tn_${project.id}_5`,
+        projectId: project.id,
+        projectName: project.name,
+        type: 'note',
+        title: 'Везд на площадку через КПП №2 только с 14:00, при себе иметь паспорт',
+        dueDate: defaultDate,
+        category: 'Важное',
+        createdAt: '15.08.2026'
+      }
+    ];
+  });
+
+  // Helper to persist taskNoteList locally and globally for right sidebar synchronization
+  const syncGlobalProjectTasks = (updatedProjectTasks: ProjectTaskNoteItem[]) => {
+    setTaskNoteList(updatedProjectTasks);
+    const saved = localStorage.getItem('pop_project_tasks_v2');
+    let allGlobalTasks: ProjectTaskNoteItem[] = [];
+    if (saved) {
+      try { allGlobalTasks = JSON.parse(saved); } catch (e) { }
+    }
+    const otherTasks = allGlobalTasks.filter(item => item.projectId !== project.id && item.projectName !== project.name);
+    const newGlobalList = [...updatedProjectTasks, ...otherTasks];
+    localStorage.setItem('pop_project_tasks_v2', JSON.stringify(newGlobalList));
+    window.dispatchEvent(new Event('project_tasks_updated'));
+  };
+
+  // Form input states for adding task/note
+  const [newType, setNewType] = useState<'task' | 'note'>('task');
+  const [newTitle, setNewTitle] = useState('');
+  const [newDueDate, setNewDueDate] = useState('2026-08-15');
+  const [newCategory, setNewCategory] = useState<'Закупка' | 'Монтаж' | 'Смета' | 'Логистика' | 'Клиент' | 'Важное' | 'Общее'>('Монтаж');
+
+  // Filter states
+  const [journalFilterType, setJournalFilterType] = useState<'all' | 'task' | 'note'>('all');
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState<string>('all'); // 'all' or '2026-08-15'
+
+  // Auto-save & Manual Save state
+  const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+
+  const handleSaveProject = (isAuto = false) => {
+    setIsSaving(true);
+    const updatedProject: Project = {
+      ...project,
+      budget: finalPrice,
+      updatedAt: new Date().toISOString()
+    };
+    onUpdateProject(updatedProject);
+
+    const now = new Date();
+    const formattedTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    setLastSavedTime(formattedTime);
+
+    setTimeout(() => {
+      setIsSaving(false);
+      if (!isAuto) {
+        showToast('Проект сохранен', `Все изменения проекта успешно сохранены в ${formattedTime}`, 'success');
+      }
+    }, 400);
+  };
+
+  // Auto-save every 5 minutes (300,000 ms)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      handleSaveProject(true);
+    }, 300000); // 5 minutes
+
+    return () => clearInterval(timer);
+  }, [project, finalPrice]);
 
   // Carousel state for Visualizations
   const [vizIndex, setVizIndex] = useState<number>(0);
   const visualizations = [
     {
       id: 1,
-      title: 'ВИЗУАЛИЗАЦИЯ 1 (Арка A-D)',
-      subtitle: 'Кликните контрольную точку A, B, C, D',
-      type: 'svg-arc'
+      title: 'ВИЗУАЛИЗАЦИЯ 1 (АРКА И ЦВЕТОЧНАЯ ЗОНА)',
+      subtitle: 'Концепция декор-арки и зоны церемонии',
+      image: project?.imageUrl || 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=800&q=80'
     },
     {
       id: 2,
-      title: 'ВИЗУАЛИЗАЦИЯ 2 (Президиум & Стол)',
+      title: 'ВИЗУАЛИЗАЦИЯ 2 (ПРЕЗИДИУМ & СТОЛ)',
       subtitle: '3D Эскиз оформления центрального стола',
-      type: 'image',
       image: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=800&q=80'
     },
     {
       id: 3,
-      title: 'ВИЗУАЛИЗАЦИЯ 3 (Welcome-зона)',
+      title: 'ВИЗУАЛИЗАЦИЯ 3 (WELCOME-ЗОНА)',
       subtitle: 'Приветственный стенд и композиции у входа',
-      type: 'image',
       image: 'https://images.unsplash.com/photo-1478146896981-b80fe463b330?auto=format&fit=crop&w=800&q=80'
     }
   ];
@@ -154,18 +335,24 @@ export default function ProjectDetailModal({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (venuePhotos.length >= 6) {
+      showToast('Лимит достигнут', 'Максимальное количество фото в галерее — 6', 'info');
+      if (e.target) e.target.value = '';
+      return;
+    }
     const files = e.target.files;
     if (files && files.length > 0) {
       const file = files[0];
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {
-          setVenuePhotos(prev => [...prev, event.target!.result as string]);
+          setVenuePhotos(prev => prev.length < 6 ? [...prev, event.target!.result as string] : prev);
           showToast('Фото загружено', 'Новое фото площадки успешно добавлено в проект', 'success');
         }
       };
       reader.readAsDataURL(file);
     }
+    if (e.target) e.target.value = '';
   };
 
   // Horizontal gallery drag-to-scroll & navigation arrow handlers
@@ -231,21 +418,21 @@ export default function ProjectDetailModal({
   };
 
   const addJournalLog = (text: string, type: 'system' | 'user-note' | 'important' | 'client-agreed', linkedId: string | null = null) => {
-    const now = new Date();
-    const timestampStr = `${now.toLocaleDateString('ru-RU')}, ${now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`;
-    const newEntry: JournalEntry = {
-      id: `${Date.now()}`,
-      timestamp: timestampStr,
-      type,
-      text,
-      linkedItemId: linkedId
+    const todayStr = new Date().toISOString().split('T')[0];
+    const newEntry: ProjectTaskNoteItem = {
+      id: `tn_${Date.now()}`,
+      type: 'note',
+      title: text,
+      dueDate: todayStr,
+      category: 'Общее',
+      createdAt: new Date().toLocaleDateString('ru-RU')
     };
-    setJournalLogs(prev => [newEntry, ...prev]);
+    setTaskNoteList(prev => [newEntry, ...prev]);
   };
 
   // Stepper labels
-  const steps = ['Бриф', 'Визуализация', 'Смета', 'Согласовано', 'Выполнено'];
-  const progressPercentages = [20, 45, 64, 85, 100];
+  const steps = ['Бриф', 'Визуализация', 'Смета', 'Согласовано'];
+  const progressPercentages = [25, 50, 75, 100];
 
   const handleStepClick = (stepIndex: number) => {
     const updated = { ...project, currentStep: stepIndex };
@@ -254,18 +441,188 @@ export default function ProjectDetailModal({
     showToast('Этап изменен', `Проект переведен в статус: ${steps[stepIndex]}`, 'success');
   };
 
-  // Cost calculations
-  const decorEstimate = project.estimate.filter(item => item.category !== 'Работа' && item.category !== 'Доставка');
-  const serviceEstimate = project.estimate.filter(item => item.category === 'Работа' || item.category === 'Доставка');
+  // Disabled scenes state & custom scene prices
+  const [disabledSceneIds, setDisabledSceneIds] = useState<string[]>(() => project.disabledSceneIds || []);
+  const [customScenePrices, setCustomScenePrices] = useState<Record<string, number>>(() => project.customScenePrices || {});
 
-  const decorCost = decorEstimate.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const serviceCost = serviceEstimate.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  // Sync state if project props change
+  useEffect(() => {
+    if (project.disabledSceneIds) {
+      setDisabledSceneIds(project.disabledSceneIds);
+    }
+    if (project.customScenePrices) {
+      setCustomScenePrices(project.customScenePrices);
+    }
+  }, [project.id]);
+
+  // Construct visualization scenes list
+  const defaultVisualizationScenes = [
+    {
+      id: 'scene-1',
+      name: 'Визуализация 1',
+      subtitle: 'Декор-арка и зона торжественной церемонии',
+      defaultPrice: 70000,
+      elements: [
+        { name: 'Конструктив фотозоны каркас', price: 25000 },
+        { name: 'Живая сортовая флористика (розы)', price: 45000 }
+      ]
+    },
+    {
+      id: 'scene-2',
+      name: 'Визуализация 2',
+      subtitle: '3D Эскиз оформления президиума и столов',
+      defaultPrice: 45000,
+      elements: [
+        { name: 'Оформление президиума текстилем', price: 20000 },
+        { name: 'Композиция из цветов на стол', price: 25000 }
+      ]
+    },
+    {
+      id: 'scene-3',
+      name: 'Визуализация 3',
+      subtitle: 'Приветственная Welcome-зона и план рассадки',
+      defaultPrice: 35000,
+      elements: [
+        { name: 'Приветственный задекорированный стенд', price: 15000 },
+        { name: 'Декоративные свечи и стойки', price: 20000 }
+      ]
+    }
+  ];
+
+  const visualizationScenes = (project.scenesData && project.scenesData.length > 0)
+    ? project.scenesData
+    : defaultVisualizationScenes;
+
+  // Helper function to calculate total cost for a scene
+  const getSceneCost = (sc: any) => {
+    if (customScenePrices[sc.id] !== undefined) {
+      return customScenePrices[sc.id];
+    }
+    if (sc.elements && Array.isArray(sc.elements) && sc.elements.length > 0) {
+      return sc.elements.reduce((sum: number, el: any) => sum + (Number(el.price) || 0), 0);
+    }
+    return sc.defaultPrice || 45000;
+  };
+
+  // Service estimate (Work & Delivery)
+  const rawServiceEstimate = project.estimate ? project.estimate.filter(item => item.category === 'Работа' || item.category === 'Доставка') : [];
+  const serviceEstimate = rawServiceEstimate.length > 0 ? rawServiceEstimate : [
+    { id: 'def_work_1', name: 'Монтаж и демонтаж конструкций', category: 'Работа', quantity: 1, price: 12000 },
+    { id: 'def_work_2', name: 'Транспортная доставка (Грузовой авто)', category: 'Доставка', quantity: 1, price: 5000 }
+  ];
+
+  const decorCost = visualizationScenes.reduce((sum: number, sc: any) => {
+    if (disabledSceneIds.includes(sc.id)) return sum;
+    return sum + getSceneCost(sc);
+  }, 0);
+
+  const serviceCost = serviceEstimate.reduce((sum, item) => sum + (Number(item.price) || 0) * (item.quantity || 1), 0);
   const totalCost = decorCost + serviceCost;
 
   const recommendedPrice = totalCost * (1 + (markupPercent / 100));
   const taxAmount = finalPrice * (taxRate / 100);
   const calculatedProfit = finalPrice - totalCost - taxAmount;
   const profitMarginPercent = finalPrice > 0 ? Math.round((calculatedProfit / finalPrice) * 100) : 0;
+
+  // Toggle visualization scene (Вкл / Выкл) in estimate
+  const handleToggleSceneInEstimate = (sceneId: string) => {
+    const isCurrentlyDisabled = disabledSceneIds.includes(sceneId);
+    let nextDisabled: string[];
+    if (isCurrentlyDisabled) {
+      nextDisabled = disabledSceneIds.filter(id => id !== sceneId);
+    } else {
+      nextDisabled = [...disabledSceneIds, sceneId];
+    }
+    setDisabledSceneIds(nextDisabled);
+
+    const nextDecorCost = visualizationScenes.reduce((sum: number, sc: any) => {
+      if (nextDisabled.includes(sc.id)) return sum;
+      return sum + getSceneCost(sc);
+    }, 0);
+
+    const newTotalBudget = nextDecorCost + serviceCost;
+    setFinalPrice(newTotalBudget);
+    onUpdateProject({
+      ...project,
+      disabledSceneIds: nextDisabled,
+      budget: newTotalBudget
+    });
+
+    const sceneObj = visualizationScenes.find((sc: any) => sc.id === sceneId);
+    const sceneName = sceneObj?.name || sceneId;
+    if (isCurrentlyDisabled) {
+      showToast('Включено в смету', `«${sceneName}» включена в расчет сметы`, 'success');
+    } else {
+      showToast('Исключено из сметы', `«${sceneName}» отключена и не учитывается в расчете`, 'info');
+    }
+  };
+
+  // Update scene price directly in table
+  const handleUpdateScenePrice = (sceneId: string, newPrice: number) => {
+    const nextCustom = { ...customScenePrices, [sceneId]: newPrice };
+    setCustomScenePrices(nextCustom);
+
+    const nextDecorCost = visualizationScenes.reduce((sum: number, sc: any) => {
+      if (disabledSceneIds.includes(sc.id)) return sum;
+      const price = sc.id === sceneId ? newPrice : (nextCustom[sc.id] ?? getSceneCost(sc));
+      return sum + price;
+    }, 0);
+
+    const newTotalBudget = nextDecorCost + serviceCost;
+    setFinalPrice(newTotalBudget);
+    onUpdateProject({
+      ...project,
+      customScenePrices: nextCustom,
+      budget: newTotalBudget
+    });
+  };
+
+  const handleUpdateEstimateItemName = (id: string, name: string) => {
+    const updatedEstimate = serviceEstimate.map(item => item.id === id ? { ...item, name } : item);
+    onUpdateProject({ ...project, estimate: updatedEstimate });
+  };
+
+  const handleUpdateEstimateItemPrice = (id: string, price: number) => {
+    const updatedEstimate = serviceEstimate.map(item => item.id === id ? { ...item, price } : item);
+    const nextServiceCost = updatedEstimate.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const nextBudget = decorCost + nextServiceCost;
+    onUpdateProject({ ...project, estimate: updatedEstimate, budget: nextBudget });
+    setFinalPrice(nextBudget);
+  };
+
+  const handleDeleteEstimateItem = (id: string) => {
+    const updatedEstimate = serviceEstimate.filter(item => item.id !== id);
+    const nextServiceCost = updatedEstimate.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const nextBudget = decorCost + nextServiceCost;
+    onUpdateProject({ ...project, estimate: updatedEstimate, budget: nextBudget });
+    setFinalPrice(nextBudget);
+    showToast('Позиция удалена', 'Позиция удалена из сметы', 'info');
+  };
+
+  const handleAddWorkPosition = () => {
+    if (!showAddWorkRow) {
+      setShowAddWorkRow(true);
+      return;
+    }
+    const nameToAdd = newWorkName.trim() || 'Новые монтажные работы';
+    const priceToAdd = newWorkPrice !== '' ? Number(newWorkPrice) : 0;
+    const newItem: EstimateItem = {
+      id: `work_${Date.now()}`,
+      name: nameToAdd,
+      category: 'Доставка',
+      quantity: 1,
+      price: priceToAdd
+    };
+    const updatedEstimate = [...serviceEstimate, newItem];
+    const nextServiceCost = updatedEstimate.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const nextBudget = decorCost + nextServiceCost;
+    onUpdateProject({ ...project, estimate: updatedEstimate, budget: nextBudget });
+    setFinalPrice(nextBudget);
+    setNewWorkName('');
+    setNewWorkPrice('');
+    setShowAddWorkRow(false);
+    showToast('Работа добавлена', `Добавлена позиция «${nameToAdd}» (${priceToAdd.toLocaleString('ru')} ₽)`, 'success');
+  };
 
   // Add Estimate Item via Form
   const handleAddEstimate = (e: React.FormEvent) => {
@@ -366,17 +723,53 @@ export default function ProjectDetailModal({
     showToast('Сброшено', 'Смета переустановлена к изначальным спецификациям.', 'info');
   };
 
-  // Add Custom Event from Journal block
-  const handleSubmitCustomJournal = () => {
-    if (!journalInputText.trim()) {
-      showToast('Ошибка ввода', 'Пожалуйста, введите текст заметки.', 'warn');
+  // Add Custom Task/Note Handler
+  const handleAddTaskNote = () => {
+    if (!newTitle.trim()) {
+      showToast('Заполните название', 'Пожалуйста, введите текст задачи или заметки.', 'warn');
       return;
     }
 
-    addJournalLog(journalInputText.trim(), journalInputType, journalInputLink || null);
-    setJournalInputText('');
-    setJournalInputLink('');
-    showToast('Запись внесена', 'Событие успешно зарегистрировано в журнале проекта.', 'success');
+    const newItem: ProjectTaskNoteItem = {
+      id: `tn_${Date.now()}`,
+      projectId: project.id,
+      projectName: project.name,
+      type: newType,
+      title: newTitle.trim(),
+      dueDate: newDueDate || project.date?.split('T')[0] || '2026-08-15',
+      completed: newType === 'task' ? false : undefined,
+      category: newCategory,
+      createdAt: new Date().toLocaleDateString('ru-RU')
+    };
+
+    const nextList = [newItem, ...taskNoteList];
+    syncGlobalProjectTasks(nextList);
+    setNewTitle('');
+    showToast(
+      newType === 'task' ? 'Задача добавлена' : 'Заметка добавлена',
+      `Запись успешно привязана к дате ${newItem.dueDate} и синхронизирована с календарем`,
+      'success'
+    );
+  };
+
+  const handleToggleTaskNote = (id: string) => {
+    const nextList = taskNoteList.map(item => {
+      if (item.id === id && item.type === 'task') {
+        const nextVal = !item.completed;
+        if (nextVal) {
+          showToast('Задача выполнена', `Отмечено как выполнено: "${item.title}"`, 'success');
+        }
+        return { ...item, completed: nextVal };
+      }
+      return item;
+    });
+    syncGlobalProjectTasks(nextList);
+  };
+
+  const handleDeleteTaskNote = (id: string) => {
+    const nextList = taskNoteList.filter(item => item.id !== id);
+    syncGlobalProjectTasks(nextList);
+    showToast('Удалено', 'Запись удалена из журнала проекта.', 'info');
   };
 
   // Hotspot selective Spec modal opener
@@ -385,180 +778,68 @@ export default function ProjectDetailModal({
     setIsSpecModalOpen(true);
   };
 
-  // Complete Brief field dataset matching screenshot exactly (27 items)
-  const briefFields = [
-    { key: "ИМЯ КЛИЕНТА", val: project.clientName || "Анна Соколова", filled: true },
-    { key: "ТЕЛЕФОН", val: "+7 905 123 45 67", filled: true },
-    { key: "РЕКВИЗИТЫ ПЛАТЕЛЬЩИКА", val: "ФИО Соколова А. В., ИНН 7712345678", filled: true },
-    { key: "СОБЫТИЕ", val: "Свадьба", filled: true },
-    { key: "ДАТА", val: project.date || "15.08.2026", filled: true },
-    { key: "ГОСТЕЙ", val: `${project.brief?.guestsCount || 80}`, filled: true },
-    { key: "ФОРМАТ СОБЫТИЯ", val: "Выездная регистрация", filled: true },
-    { key: "ПЛОЩАДКА", val: project.venue || "Ресторан «Сафиса»", filled: true },
-    { key: "АДРЕС", val: "Москва, ул. Воробьевское шоссе, 2Б", filled: true },
-    { key: "КОНТАКТ ПЛОЩАДКИ", val: "Менеджер Игорь (+7 916 555-44-33)", filled: true },
-    { key: "РАЗМЕР ЗОНЫ МОНТАЖА", val: "8 х 5 м", filled: true },
-    { key: "КРЕПЕЖ К СТЕНАМ", val: "Да", filled: true },
-    { key: "КРЕПЕЖ К ПОТОЛКУ", val: "Да, до 15 кг", filled: true },
-    { key: "СОГЛАСОВАНИЕ ОФОРМЛЕНИЯ", val: "(требует заполнения)", filled: false },
-    { key: "ЭЛЕКТРИЧЕСТВО У СЦЕНЫ", val: "Есть, в радиусе 5м", filled: true },
-    { key: "ПОДЪЕЗД / ГРУЗОВОЙ ЛИФТ", val: "(требует заполнения)", filled: false },
-    { key: "ПРАЗДНИК НА УЛИЦЕ", val: "(требует заполнения)", filled: false },
-    { key: "ДОСТУП НА МОНТАЖ", val: "14.08, с 18:00", filled: true },
-    { key: "ОКНО МОНТАЖА", val: "4 часа", filled: true },
-    { key: "ХРАНЕНИЕ НА ПЛОЩАДКЕ", val: "Можно, до утра", filled: true },
-    { key: "ДЕМОНТАЖ / ВЫВОЗ", val: "(требует заполнения)", filled: false },
-    { key: "КТО ПРИНИМАЕТ РАБОТЫ", val: "Заказчик", filled: true },
-    { key: "ПАЛИТРА ОФОРМЛЕНИЯ", val: project.brief?.colors?.join(', ') || "Розовое золото - айвори", filled: true },
-    { key: "СТИЛЬ ОФОРМЛЕНИЯ", val: project.brief?.style || "Романтика, классика", filled: true },
-    { key: "КОНСТРУКЦИИ ДЕКОРА", val: "Арка, фотозона, столы", filled: true },
-    { key: "ОРИЕНТИРОВОЧНЫЙ БЮДЖЕТ", val: `${(project.budget || 60000).toLocaleString('ru')} ₽`, filled: true },
-    { key: "ДОПОЛНИТЕЛЬНАЯ ИНФОРМАЦИЯ", val: project.brief?.specialRequests || "Предпочтение живым розам нежно-розового оттенка", filled: true },
+  // Brief field dataset grouped systematically: Client fields first, then Decorator fields
+  const baseBriefFieldDefinitions: { key: string; filledBy: 'client' | 'designer'; multiline?: boolean }[] = [
+    // --- 1. КЛИЕНТСКИЙ БЛОК (24 поля) ---
+    { key: "ИМЯ КЛИЕНТА", filledBy: 'client' },
+    { key: "ТЕЛЕФОН", filledBy: 'client' },
+    { key: "РЕКВИЗИТЫ ПЛАТЕЛЬЩИКА", filledBy: 'client' },
+    { key: "СОБЫТИЕ", filledBy: 'client' },
+    { key: "ДАТА", filledBy: 'client' },
+    { key: "ГОСТЕЙ", filledBy: 'client' },
+    { key: "ФОРМАТ СОБЫТИЯ", filledBy: 'client' },
+    { key: "ПЛОЩАДКА", filledBy: 'client' },
+    { key: "АДРЕС", filledBy: 'client' },
+    { key: "КОНТАКТ ПЛОЩАДКИ", filledBy: 'client' },
+    { key: "РАЗМЕР ЗОНЫ МОНТАЖА", filledBy: 'client' },
+    { key: "КРЕПЕЖ К СТЕНАМ", filledBy: 'client' },
+    { key: "КРЕПЕЖ К ПОТОЛКУ", filledBy: 'client' },
+    { key: "СОГЛАСОВАНИЕ ОФОРМЛЕНИЯ", filledBy: 'client' },
+    { key: "ЭЛЕКТРИЧЕСТВО У СЦЕНЫ", filledBy: 'client' },
+    { key: "ПОДЪЕЗД / ГРУЗОВОЙ ЛИФТ", filledBy: 'client' },
+    { key: "ПРАЗДНИК НА УЛИЦЕ", filledBy: 'client' },
+    { key: "ХРАНЕНИЕ НА ПЛОЩАДКЕ", filledBy: 'client' },
+    { key: "ДЕМОНТАЖ / ВЫВОЗ", filledBy: 'client' },
+    { key: "КТО ПРИНИМАЕТ РАБОТЫ", filledBy: 'client' },
+    { key: "ПАЛИТРА ОФОРМЛЕНИЯ", filledBy: 'client' },
+    { key: "СТИЛЬ ОФОРМЛЕНИЯ", filledBy: 'client' },
+    { key: "ОРИЕНТИРОВОЧНЫЙ БЮДЖЕТ", filledBy: 'client' },
+    { key: "ДОПОЛНИТЕЛЬНАЯ ИНФОРМАЦИЯ", filledBy: 'client', multiline: true },
+
+    // --- 2. БЛОК ДЕКОРАТОРА (базовые + пользовательские поля) ---
+    { key: "ДОСТУП НА МОНТАЖ", filledBy: 'designer' },
+    { key: "ОКНО МОНТАЖА", filledBy: 'designer' },
+    { key: "КОНСТРУКЦИИ ДЕКОРА", filledBy: 'designer' },
   ];
 
+  const briefFieldDefinitions = [
+    ...baseBriefFieldDefinitions,
+    ...customDecoratorFields.map(f => ({ key: f.key, filledBy: 'designer' as const }))
+  ];
+
+  const filledBriefCount = briefFieldDefinitions.filter(f => {
+    const v = briefValues[f.key];
+    return v && v.trim() !== "" && v !== "(требует заполнения)";
+  }).length;
+  const totalBriefCount = briefFieldDefinitions.length;
+  const briefFilledPercentage = Math.round((filledBriefCount / totalBriefCount) * 100);
+  const briefEmptyCount = totalBriefCount - filledBriefCount;
+
   return (
-    <div className="w-full flex flex-col bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl border border-stone-200/80 dark:border-zinc-800/80 rounded-3xl shadow-xl overflow-hidden transition-all">
-      
-      {/* 0. DESIGN VARIANT COMPARISON SWITCHER BAR */}
-      <div className="bg-stone-900/90 backdrop-blur-md text-stone-100 p-3 flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-stone-800">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center shrink-0">
-            <Sparkles className="w-4 h-4 text-amber-400" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-stone-200 uppercase tracking-wider">Выбор формата карточки</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/30">
-                Сравнение
-              </span>
-            </div>
-            <p className="text-[11px] text-stone-400 font-normal">
-              Выберите удобный для вас вариант отображения данных проекта
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1.5 bg-[#2A1224] p-1 rounded-full border border-[#4A1D3D] shrink-0">
-          <button
-            onClick={() => setDesignVariant(1)}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${
-              designVariant === 1
-                ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-sm'
-                : 'text-stone-300 hover:text-white hover:bg-white/10'
-            }`}
-          >
-            <Layout className="w-3.5 h-3.5" />
-            <span>Вариант 1 (Классика)</span>
-          </button>
-          <button
-            onClick={() => setDesignVariant(2)}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${
-              designVariant === 2
-                ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-sm'
-                : 'text-stone-300 hover:text-white hover:bg-white/10'
-            }`}
-          >
-            <Zap className="w-3.5 h-3.5 text-purple-200" />
-            <span>Вариант 2 (Современный Рабочий Стенд)</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 1. TOP HEADER NAVIGATION BAR */}
-      <header className="bg-white/60 dark:bg-zinc-900/60 backdrop-blur-md border-b border-stone-200 dark:border-zinc-800 p-4 sm:p-5 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 shrink-0">
-        <div className="flex-1 min-w-0 space-y-2.5">
-          {/* Title & Status / Progress Badges */}
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-stone-900 dark:text-stone-50">
-              {project.name}
-            </h1>
-            <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950/60 text-purple-900 dark:text-purple-200 border border-purple-300/40">
-              <span className="w-2 h-2 rounded-full bg-[#582F89]" /> {steps[project.currentStep]?.toUpperCase()}
-            </span>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-stone-100 dark:bg-zinc-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-zinc-700 text-xs font-semibold">
-              <span className="text-[10px] uppercase font-bold text-stone-400">Прогресс:</span>
-              <span className="text-purple-900 dark:text-purple-300 font-bold">{progressPercentages[project.currentStep]}%</span>
-            </div>
-          </div>
-
-          {/* Client & Project Info */}
-          <div className="flex flex-wrap items-center gap-y-1.5 gap-x-4 text-xs text-stone-600 dark:text-stone-400">
-            <span className="flex items-center gap-1.5 font-medium text-stone-800 dark:text-stone-200">
-              <User className="w-3.5 h-3.5 text-[#582F89]" /> Клиент: <strong className="font-bold">{project.clientName}</strong>
-            </span>
-            <span className="text-stone-300 dark:text-stone-700">•</span>
-            <a href="tel:+79051234567" className="flex items-center gap-1.5 font-medium text-stone-800 dark:text-stone-200 hover:text-[#582F89] transition-colors">
-              <Phone className="w-3.5 h-3.5 text-[#582F89]" /> +7 905 123 45 67
-            </a>
-            <span className="text-stone-300 dark:text-stone-700">•</span>
-            <a href="mailto:socolova.design@mail.ru" className="flex items-center gap-1.5 font-medium text-stone-800 dark:text-stone-200 hover:text-[#582F89] transition-colors truncate">
-              <Mail className="w-3.5 h-3.5 text-[#582F89]" /> socolova.design@mail.ru
-            </a>
-            <span className="text-stone-300 dark:text-stone-700">•</span>
-            <span className="flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-[#582F89]" /> {project.date}
-            </span>
-            <span className="text-stone-300 dark:text-stone-700">•</span>
-            <span className="flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-[#582F89]" /> {project.venue}
-            </span>
-          </div>
-        </div>
-
-        {/* Action Buttons Block with Gradient background & fully rounded corners */}
-        <div className="flex flex-wrap items-center gap-2 shrink-0 self-start xl:self-center">
-          <button
-            onClick={() => showToast('Звонок клиенту', `Набираем номер клиента ${project.clientName} (+7 905 123 45 67)...`, 'info')}
-            className="px-3.5 py-1.5 text-white rounded-full text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-all duration-300 hover:shadow-md hover:opacity-95 active:scale-[0.98] cursor-pointer"
-            style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
-          >
-            <Phone className="w-3.5 h-3.5" /> Позвонить
-          </button>
-
-          <button
-            onClick={() => showToast('Сообщение', `Открываем диалог с ${project.clientName}...`, 'info')}
-            className="px-3.5 py-1.5 text-white rounded-full text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-all duration-300 hover:shadow-md hover:opacity-95 active:scale-[0.98] cursor-pointer"
-            style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
-          >
-            <MessageSquare className="w-3.5 h-3.5" /> Написать
-          </button>
-
-          <button
-            onClick={() => showToast('Бриф отправлен', `Ссылка на бриф отправлена клиенту ${project.clientName}`, 'success')}
-            className="px-3.5 py-1.5 text-white rounded-full text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-all duration-300 hover:shadow-md hover:opacity-95 active:scale-[0.98] cursor-pointer"
-            style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
-          >
-            <Send className="w-3.5 h-3.5" /> Отправить бриф
-          </button>
-
-          <button
-            onClick={() => {
-              navigator.clipboard.writeText(`https://fleur-decor.ru/share/${project.id}`);
-              showToast('Ссылка скопирована', 'Гостевая ссылка сохранена в буфер обмена.', 'success');
-            }}
-            className="px-3 py-1.5 border border-stone-300 dark:border-zinc-700 hover:border-[#582F89] text-stone-700 dark:text-stone-300 hover:text-[#582F89] dark:hover:text-purple-300 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all duration-300 hover:bg-purple-50 dark:hover:bg-purple-950/30 cursor-pointer"
-          >
-            <Share2 className="w-3.5 h-3.5" /> Поделиться
-          </button>
-        </div>
-      </header>
-
-      {/* ========================================================================= */}
-      {/* VARIANT 1: CLASSIC FULL GRID SCREENSHOT REPRODUCTION                      */}
-      {/* ========================================================================= */}
-      {designVariant === 1 && (
-        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-          {/* LEFT SIDEBAR */}
-          <aside className="w-full lg:w-60 shrink-0 border-r border-stone-200/80 dark:border-zinc-800 p-4 bg-white/40 dark:bg-zinc-950/20 backdrop-blur-md flex flex-col justify-between space-y-4 overflow-y-auto">
-            <div className="space-y-3">
+    <div className="w-full transition-all">
+      {/* 2-COLUMN MAIN WORKSPACE */}
+      <div className="flex-1 flex flex-col lg:flex-row gap-6 min-w-0 items-start">
+          {/* LEFT SIDEBAR (STICKY FROM TOP) */}
+          <aside className="w-full lg:w-60 shrink-0 flex flex-col space-y-4 lg:sticky lg:top-4 z-20 self-start">
+            {/* SIDEBAR NAVIGATION CARD */}
+            <div className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-[var(--glass-edge)] rounded-3xl p-3 shadow-sm">
               <nav className="space-y-1">
                 {[
-                  { id: 'all', label: 'Общий вид', icon: Layout, badge: '8', badgeColor: 'bg-stone-200/80 text-stone-700 dark:bg-zinc-800 dark:text-stone-300' },
+                  { id: 'all', label: 'Общий вид', icon: Layout, badge: '7', badgeColor: 'bg-stone-200/80 text-stone-700 dark:bg-zinc-800 dark:text-stone-300' },
                   { id: 'brief', label: 'Бриф', icon: Clipboard, badge: '4!', badgeColor: 'bg-rose-100/90 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300' },
                   { id: 'design', label: 'Дизайн', icon: Palette, badge: 'OK', badgeColor: 'bg-emerald-100/90 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300' },
                   { id: 'calc', label: 'Расчет & Смета', icon: SlidersHorizontal, badge: '2!', badgeColor: 'bg-purple-100/90 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300' },
-                  { id: 'calendar', label: 'Календарь', icon: Calendar, badge: '02.08', badgeColor: 'bg-blue-100/90 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300' },
-                  { id: 'journal', label: 'Заметки', icon: Clock, badge: journalLogs.length.toString(), badgeColor: 'bg-stone-200/80 text-stone-700 dark:bg-zinc-800 dark:text-stone-300' },
+                  { id: 'journal', label: 'Задачи и заметки', icon: CheckSquare, badge: taskNoteList.filter(t => t.type === 'task' && !t.completed).length.toString(), badgeColor: 'bg-purple-100/90 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300' },
                   { id: 'docs', label: 'Документы', icon: FolderOpen, badge: '4', badgeColor: 'bg-stone-200/80 text-stone-700 dark:bg-zinc-800 dark:text-stone-300' }
                 ].map(tab => {
                   const Icon = tab.icon;
@@ -575,7 +856,7 @@ export default function ProjectDetailModal({
                       }`}
                     >
                       <span className="flex items-center gap-2">
-                        <Icon className="w-4 h-4 shrink-0 text-[#582F89]" />
+                        <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-[#582F89] dark:text-purple-400'}`} />
                         <span>{tab.label}</span>
                       </span>
                       <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold ${tab.badgeColor}`}>
@@ -587,33 +868,135 @@ export default function ProjectDetailModal({
               </nav>
             </div>
 
-            {/* FINANCIAL CHECKLIST */}
-            <div className="bg-white/60 dark:bg-zinc-900/60 backdrop-blur-md border border-stone-200/80 dark:border-zinc-800 rounded-2xl p-3.5 space-y-2.5 shadow-xs">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400 block">
-                Финансовый чек-лист
-              </span>
-              <div className="space-y-1.5 text-xs font-medium">
-                <div className="flex justify-between items-center">
-                  <span className="text-stone-500">Полная стоимость:</span>
-                  <span className="font-bold text-stone-900 dark:text-stone-100">{finalPrice.toLocaleString('ru')} ₽</span>
+            {/* FINANCIAL CHECKLIST CARD - SLEEK COMPACT STYLE */}
+            <div className="bg-white dark:bg-zinc-900 border border-stone-200/90 dark:border-zinc-800 rounded-3xl p-3.5 space-y-3 shadow-xs transition-all duration-300">
+              {/* Header */}
+              <div className="flex items-center justify-between pb-2 border-b border-stone-100 dark:border-zinc-800/80 gap-2">
+                <span className="text-[11px] font-black uppercase tracking-wider text-[#582F89] dark:text-purple-300 flex items-center gap-1.5">
+                  <Receipt className="w-3.5 h-3.5 text-[#8C52D0]" />
+                  Чек-лист
+                </span>
+                <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300 bg-purple-100/70 dark:bg-purple-900/50 px-2 py-0.5 rounded-full">
+                  Инфо
+                </span>
+              </div>
+
+              {/* Clean Row Data without inner frames */}
+              <div className="space-y-2.5 text-xs">
+                {/* 1. СТОИМОСТЬ */}
+                <div className="flex items-center justify-between">
+                  <span className="text-stone-500 dark:text-stone-400 font-medium flex items-center gap-1.5">
+                    <Wallet className="w-3.5 h-3.5 text-[#8C52D0]" /> Стоимость:
+                  </span>
+                  <span className="font-mono font-black text-sm text-[#582F89] dark:text-purple-200">
+                    {finalPrice.toLocaleString('ru')} ₽
+                  </span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-stone-500">Предоплата:</span>
-                  <span className="font-bold text-emerald-600">{prepayment.toLocaleString('ru')} ₽</span>
+
+                {/* 2. ПРЕДОПЛАТА */}
+                <div className="flex items-center justify-between">
+                  <span className="text-stone-500 dark:text-stone-400 font-medium flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Предоплата:
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-md">
+                      {finalPrice > 0 ? Math.round((prepayment / finalPrice) * 100) : 0}%
+                    </span>
+                    <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                      {prepayment.toLocaleString('ru')} ₽
+                    </span>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center pt-1.5 border-t border-stone-100 dark:border-zinc-800">
-                  <span className="text-stone-500 font-semibold">Остаток к оплате:</span>
-                  <span className="font-bold text-purple-800 dark:text-purple-300">{Math.max(0, finalPrice - prepayment).toLocaleString('ru')} ₽</span>
+
+                {/* 3. ОСТАТОК */}
+                <div className="flex items-center justify-between pt-1 border-t border-stone-100 dark:border-zinc-800/80">
+                  <span className="text-stone-500 dark:text-stone-400 font-medium flex items-center gap-1.5">
+                    <CreditCard className="w-3.5 h-3.5 text-amber-500" /> Остаток:
+                  </span>
+                  <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
+                    {Math.max(0, finalPrice - prepayment).toLocaleString('ru')} ₽
+                  </span>
                 </div>
+              </div>
+
+              {/* Single smooth progress bar */}
+              <div className="w-full h-1.5 bg-amber-100 dark:bg-amber-950/40 rounded-full overflow-hidden flex">
+                <div
+                  className="h-full bg-emerald-500 transition-all duration-300"
+                  style={{ width: `${finalPrice > 0 ? Math.min(100, Math.round((prepayment / finalPrice) * 100)) : 0}%` }}
+                />
               </div>
             </div>
           </aside>
 
           {/* MAIN CONTENT AREA */}
-          <main className="flex-1 p-4 sm:p-6 pt-0 sm:pt-0 overflow-y-auto space-y-6 relative">
+          <main className="flex-1 min-w-0 space-y-6">
             
-            {/* STEPPER PROGRESS BAR (STICKY WITH BACKDROP BLUR OVER SCROLLING CARDS) */}
-            <nav className="sticky top-0 z-30 bg-white/40 dark:bg-zinc-950/40 backdrop-blur-xl border-b border-stone-200/80 dark:border-zinc-800/80 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 shadow-xs overflow-x-auto hide-scrollbar">
+            {/* 1. TOP HEADER NAVIGATION BAR */}
+            <header className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 shrink-0 px-1">
+              <div className="flex-1 min-w-0 space-y-2.5">
+                {/* Title & Status / Progress Badges */}
+                <div className="flex flex-wrap items-center gap-3">
+                  <h1 className="text-xl sm:text-2xl font-black tracking-tight text-stone-900 dark:text-stone-50 truncate">
+                    {project.name}
+                  </h1>
+                  <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full bg-purple-100/90 dark:bg-purple-950/60 text-[#582F89] dark:text-purple-200 border border-purple-200/80 dark:border-purple-800/60 shadow-2xs shrink-0">
+                    <span className="w-2 h-2 rounded-full bg-[#8C52D0]" /> {steps[project.currentStep]?.toUpperCase()}
+                  </span>
+                </div>
+
+                {/* Client & Project Info */}
+                <div className="flex flex-wrap items-center gap-y-2 gap-x-3 text-xs text-stone-600 dark:text-stone-400">
+                  <span className="flex items-center gap-1.5 font-medium text-stone-800 dark:text-stone-200 shrink-0">
+                    <User className="w-3.5 h-3.5 text-[#8C52D0]" /> Клиент: <strong className="font-bold text-stone-900 dark:text-stone-100">{project.clientName}</strong>
+                  </span>
+                  <span className="text-stone-300 dark:text-stone-700 hidden sm:inline">•</span>
+                  <a href="tel:+79051234567" className="flex items-center gap-1.5 font-medium text-stone-700 dark:text-stone-300 hover:text-[#8C52D0] transition-colors shrink-0">
+                    <Phone className="w-3.5 h-3.5 text-[#8C52D0]" /> +7 905 123 45 67
+                  </a>
+                  <span className="text-stone-300 dark:text-stone-700 hidden sm:inline">•</span>
+                  <a href="mailto:socolova.design@mail.ru" className="flex items-center gap-1.5 font-medium text-stone-700 dark:text-stone-300 hover:text-[#8C52D0] transition-colors truncate max-w-[220px]">
+                    <Mail className="w-3.5 h-3.5 text-[#8C52D0] shrink-0" /> socolova.design@mail.ru
+                  </a>
+                  <span className="text-stone-300 dark:text-stone-700 hidden sm:inline">•</span>
+                  <span className="flex items-center gap-1.5 text-stone-700 dark:text-stone-300 shrink-0">
+                    <Calendar className="w-3.5 h-3.5 text-[#8C52D0]" /> {project.date}
+                  </span>
+                  <span className="text-stone-300 dark:text-stone-700 hidden sm:inline">•</span>
+                  <span className="flex items-center gap-1.5 text-stone-700 dark:text-stone-300 shrink-0">
+                    <MapPin className="w-3.5 h-3.5 text-[#8C52D0]" /> {project.venue}
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Buttons Block */}
+              <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-start xl:self-center">
+                <button
+                  onClick={() => {
+                    const briefUrl = `${window.location.origin}/brief/${project.id}`;
+                    navigator.clipboard.writeText(briefUrl);
+                    showToast('Ссылка отправлена клиенту', `Ссылка для клиента ${project.clientName} скопирована в буфер обмена: ${briefUrl}`, 'success');
+                  }}
+                  className="h-9 px-5 text-white rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all duration-300 hover:shadow-lg hover:opacity-95 active:scale-[0.98] cursor-pointer shrink-0 shadow-md"
+                  style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                >
+                  <Share2 className="w-3.5 h-3.5" /> Отправить клиенту
+                </button>
+
+                <button
+                  onClick={() => handleSaveProject(false)}
+                  disabled={isSaving}
+                  title={lastSavedTime ? `Последнее сохранение: ${lastSavedTime} (автосохранение каждые 5 мин)` : 'Автосохранение каждые 5 минут'}
+                  className="h-9 px-4 border border-emerald-600 dark:border-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all duration-300 cursor-pointer disabled:opacity-70 shrink-0"
+                >
+                  <Save className={`w-3.5 h-3.5 ${isSaving ? 'animate-spin' : ''}`} />
+                  {isSaving ? 'Сохранение...' : lastSavedTime ? `Сохранено (${lastSavedTime})` : 'Сохранить'}
+                </button>
+              </div>
+            </header>
+
+            {/* STEPPER PROGRESS BAR (STANDALONE CARD) */}
+            <nav className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-[var(--glass-edge)] rounded-3xl p-4 sm:p-5 shadow-sm overflow-x-auto hide-scrollbar">
               <div className="flex items-center justify-between min-w-[650px] px-2">
                 {steps.map((label, idx) => {
                   const isCompleted = idx < project.currentStep;
@@ -660,25 +1043,32 @@ export default function ProjectDetailModal({
             
             {/* BRIEF GRID */}
             {(activeTab === 'all' || activeTab === 'brief') && (
-              <section className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-stone-200/80 dark:border-zinc-800/80 rounded-2xl overflow-hidden shadow-xs">
+              <section className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-[var(--glass-edge)] rounded-3xl overflow-hidden shadow-sm">
                 <div className="bg-[#F0EBF9]/80 dark:bg-[#20152B]/80 backdrop-blur-md border-b border-[#D8C7F0] dark:border-[#3D2554] px-5 py-3.5 flex justify-between items-center flex-wrap gap-2">
                   <div className="flex items-center gap-2">
                     <Clipboard className="w-4 h-4 text-[#582F89]" />
                     <div>
                       <h2 className="font-bold text-sm text-stone-900 dark:text-stone-100">Анкета и Бриф проекта</h2>
                       <p className="text-[10px] text-stone-400">
-                        Заполнено: <strong className="text-emerald-600 font-bold">85%</strong> (4 критических полей пусто)
+                        Заполнено: <strong className="text-emerald-600 font-bold">{briefFilledPercentage}%</strong> {briefEmptyCount > 0 ? `(${briefEmptyCount} полей требует заполнения)` : '(Все поля заполнены)'}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+
+                  {/* Header Actions: Send Brief button directly before Collapse button */}
+                  <div className="flex items-center gap-2 flex-wrap">
                     <button
-                      onClick={() => setIsBriefEditOpen(true)}
-                      className="px-3.5 py-1.5 text-white rounded-full text-xs font-semibold flex items-center gap-1 cursor-pointer transition-all duration-300 hover:shadow-md hover:opacity-95 active:scale-[0.98] shadow-xs"
+                      onClick={() => {
+                        const briefUrl = `${window.location.origin}/brief/${project.id}`;
+                        navigator.clipboard.writeText(briefUrl);
+                        showToast('Ссылка на бриф скопирована', `Ссылка для клиента ${project.clientName} скопирована в буфер обмена: ${briefUrl}`, 'success');
+                      }}
+                      className="px-4 py-1.5 text-white rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all duration-300 hover:shadow-md hover:opacity-95 active:scale-[0.98] cursor-pointer shadow-xs"
                       style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
                     >
-                      <Edit2 className="w-3 h-3" /> Редактировать бриф
+                      <Send className="w-3.5 h-3.5 text-white" /> Отправить бриф
                     </button>
+
                     <button
                       onClick={() => setBriefCollapsed(!briefCollapsed)}
                       className="px-3.5 py-1.5 border border-stone-300 dark:border-zinc-700 hover:border-stone-400 dark:hover:border-zinc-600 bg-white/50 dark:bg-zinc-800/50 text-stone-700 dark:text-stone-300 rounded-full text-xs font-semibold flex items-center gap-1 cursor-pointer transition-all duration-300 hover:bg-stone-100 dark:hover:bg-zinc-800"
@@ -697,27 +1087,240 @@ export default function ProjectDetailModal({
                 </div>
 
                 {!briefCollapsed && (
-                  <div className="p-4 sm:p-5">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
-                      {briefFields.map((field, i) => (
-                        <div
-                          key={i}
-                          className={`p-3 rounded-xl border text-left transition-all ${
-                            !field.filled
-                              ? 'border-dashed border-rose-300 bg-rose-50/50 dark:bg-rose-950/30 backdrop-blur-xs'
-                              : 'border-stone-200/70 dark:border-zinc-800/80 bg-white/50 dark:bg-zinc-950/30 backdrop-blur-xs'
-                          }`}
-                        >
-                          <span className="text-[9px] uppercase tracking-wider font-bold text-stone-400 block mb-0.5">
-                            {field.key}
-                          </span>
-                          <span className={`text-xs font-bold block truncate ${
-                            !field.filled ? 'text-rose-600 dark:text-rose-400 italic' : 'text-stone-800 dark:text-stone-100'
-                          }`}>
-                            {field.val}
-                          </span>
-                        </div>
-                      ))}
+                  <div className="p-4 sm:p-5 space-y-6">
+                    {/* SECTION 1: CLIENT FIELDS */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 border-b border-purple-100 dark:border-purple-950/60 pb-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#8C52D0] shrink-0" />
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-[#582F89] dark:text-purple-300">
+                          Поля клиента
+                        </h3>
+                        <span className="text-[10px] font-semibold text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-950/80 px-2 py-0.5 rounded-full">
+                          {briefFieldDefinitions.filter(f => f.filledBy === 'client').length} полей
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5">
+                        {briefFieldDefinitions.filter(f => f.filledBy === 'client').map((field) => {
+                          const val = briefValues[field.key] || '';
+                          const isEmpty = !val.trim() || val === "(требует заполнения)";
+
+                          return (
+                            <div
+                              key={field.key}
+                              className={`p-2.5 rounded-xl border border-l-2 text-left transition-all flex flex-col justify-between shadow-2xs ${
+                                isEmpty
+                                  ? 'border-dashed border-rose-400/90 border-l-rose-500 dark:border-rose-800 bg-rose-50/60 dark:bg-rose-950/30'
+                                  : 'border-purple-200/80 border-l-[#8C52D0] dark:border-purple-900/50 bg-purple-50/20 dark:bg-purple-950/10'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-1 mb-1.5">
+                                <span className="text-[9px] uppercase tracking-wider font-bold text-stone-500 dark:text-stone-400 truncate">
+                                  {field.key}
+                                </span>
+                                <span
+                                  className="w-2.5 h-2.5 rounded-full bg-[#8C52D0] shrink-0 shadow-xs"
+                                  title="Заполняет клиент"
+                                />
+                              </div>
+
+                              {field.multiline ? (
+                                <textarea
+                                  rows={2}
+                                  value={val === "(требует заполнения)" ? "" : val}
+                                  onChange={(e) => setBriefValues(prev => ({ ...prev, [field.key]: e.target.value }))}
+                                  placeholder="(требует заполнения)"
+                                  className={`w-full text-xs font-semibold rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] resize-none ${
+                                    isEmpty
+                                      ? 'bg-rose-100/50 text-rose-600 placeholder-rose-500 italic font-medium border-rose-300 dark:bg-rose-950/40 dark:text-rose-400 dark:placeholder-rose-400'
+                                      : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
+                                  }`}
+                                />
+                              ) : (
+                                <input
+                                  type="text"
+                                  value={val === "(требует заполнения)" ? "" : val}
+                                  onChange={(e) => setBriefValues(prev => ({ ...prev, [field.key]: e.target.value }))}
+                                  placeholder="(требует заполнения)"
+                                  className={`w-full text-xs font-semibold rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] ${
+                                    isEmpty
+                                      ? 'bg-rose-100/50 text-rose-600 placeholder-rose-500 italic font-medium border-rose-300 dark:bg-rose-950/40 dark:text-rose-400 dark:placeholder-rose-400'
+                                      : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
+                                  }`}
+                                />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* SECTION 2: DECORATOR FIELDS */}
+                    <div className="space-y-3 pt-2 border-t border-stone-200/60 dark:border-zinc-800/80">
+                      <div className="flex items-center gap-2 border-b border-stone-200 dark:border-zinc-800 pb-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-stone-400 dark:bg-zinc-400 shrink-0" />
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-300">
+                          Поля декоратора
+                        </h3>
+                        <span className="text-[10px] font-semibold text-stone-600 dark:text-stone-400 bg-stone-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full">
+                          {briefFieldDefinitions.filter(f => f.filledBy === 'designer').length} полей
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5">
+                        {briefFieldDefinitions.filter(f => f.filledBy === 'designer').map((field) => {
+                          const val = briefValues[field.key] || '';
+                          const isEmpty = !val.trim() || val === "(требует заполнения)";
+                          const isCustom = customDecoratorFields.some(cf => cf.key === field.key);
+
+                          return (
+                            <div
+                              key={field.key}
+                              className={`p-2.5 rounded-xl border border-l-2 text-left transition-all flex flex-col justify-between shadow-2xs relative group ${
+                                isEmpty
+                                  ? 'border-dashed border-rose-400/90 border-l-rose-500 dark:border-rose-800 bg-rose-50/60 dark:bg-rose-950/30'
+                                  : 'border-stone-200/80 border-l-stone-400 dark:border-l-zinc-500 dark:border-zinc-800/80 bg-white/60 dark:bg-zinc-950/30'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-1 mb-1.5">
+                                <span className="text-[9px] uppercase tracking-wider font-bold text-stone-500 dark:text-stone-400 truncate">
+                                  {field.key}
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  {isCustom && (
+                                    <button
+                                      onClick={() => {
+                                        setCustomDecoratorFields(prev => prev.filter(cf => cf.key !== field.key));
+                                        setBriefValues(prev => {
+                                          const copy = { ...prev };
+                                          delete copy[field.key];
+                                          return copy;
+                                        });
+                                      }}
+                                      title="Удалить поле"
+                                      className="text-stone-300 hover:text-rose-500 transition-colors p-0.5 cursor-pointer"
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </button>
+                                  )}
+                                  <span
+                                    className="w-2.5 h-2.5 rounded-full bg-stone-400 dark:bg-zinc-400 shrink-0 shadow-xs"
+                                    title="Заполняет декоратор"
+                                  />
+                                </div>
+                              </div>
+
+                              {field.multiline ? (
+                                <textarea
+                                  rows={2}
+                                  value={val === "(требует заполнения)" ? "" : val}
+                                  onChange={(e) => setBriefValues(prev => ({ ...prev, [field.key]: e.target.value }))}
+                                  placeholder="(требует заполнения)"
+                                  className={`w-full text-xs font-semibold rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] resize-none ${
+                                    isEmpty
+                                      ? 'bg-rose-100/50 text-rose-600 placeholder-rose-500 italic font-medium border-rose-300 dark:bg-rose-950/40 dark:text-rose-400 dark:placeholder-rose-400'
+                                      : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
+                                  }`}
+                                />
+                              ) : (
+                                <input
+                                  type="text"
+                                  value={val === "(требует заполнения)" ? "" : val}
+                                  onChange={(e) => setBriefValues(prev => ({ ...prev, [field.key]: e.target.value }))}
+                                  placeholder="(требует заполнения)"
+                                  className={`w-full text-xs font-semibold rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] ${
+                                    isEmpty
+                                      ? 'bg-rose-100/50 text-rose-600 placeholder-rose-500 italic font-medium border-rose-300 dark:bg-rose-950/40 dark:text-rose-400 dark:placeholder-rose-400'
+                                      : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
+                                  }`}
+                                />
+                              )}
+                            </div>
+                          );
+                        })}
+
+                        {/* DASHED CARD TO ADD A CUSTOM DECORATOR FIELD */}
+                        {isAddingCustomField ? (
+                          <div className="p-2.5 rounded-xl border border-l-2 border-dashed border-purple-300 border-l-stone-400 dark:border-purple-800 bg-purple-50/30 dark:bg-purple-950/20 text-left flex flex-col justify-between gap-2 shadow-2xs">
+                            <div className="flex items-center justify-between gap-1">
+                              <span className="text-[9px] uppercase tracking-wider font-bold text-[#582F89] dark:text-purple-300">
+                                Новое поле декоратора
+                              </span>
+                              <span className="w-2.5 h-2.5 rounded-full bg-stone-400 dark:bg-zinc-400 shrink-0" />
+                            </div>
+                            <input
+                              type="text"
+                              autoFocus
+                              value={newFieldName}
+                              onChange={(e) => setNewFieldName(e.target.value)}
+                              placeholder="Название поля..."
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && newFieldName.trim()) {
+                                  const keyUpper = newFieldName.trim().toUpperCase();
+                                  setCustomDecoratorFields(prev => [...prev, { id: Date.now().toString(), key: keyUpper }]);
+                                  setBriefValues(prev => ({ ...prev, [keyUpper]: '' }));
+                                  setNewFieldName('');
+                                  setIsAddingCustomField(false);
+                                  showToast('Поле добавлено', `Добавлено новое поле: ${keyUpper}`, 'success');
+                                }
+                              }}
+                              className="w-full text-xs font-semibold rounded-lg px-2 py-1 border border-purple-200 dark:border-purple-800 bg-white dark:bg-zinc-900 text-stone-800 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-[#8C52D0]"
+                            />
+                            <div className="flex items-center gap-1.5 pt-0.5">
+                              <button
+                                onClick={() => {
+                                  if (newFieldName.trim()) {
+                                    const keyUpper = newFieldName.trim().toUpperCase();
+                                    setCustomDecoratorFields(prev => [...prev, { id: Date.now().toString(), key: keyUpper }]);
+                                    setBriefValues(prev => ({ ...prev, [keyUpper]: '' }));
+                                    setNewFieldName('');
+                                    setIsAddingCustomField(false);
+                                    showToast('Поле добавлено', `Добавлено новое поле: ${keyUpper}`, 'success');
+                                  }
+                                }}
+                                className="flex-1 py-1 px-2 text-white rounded-full text-[11px] font-bold transition-all cursor-pointer hover:opacity-95"
+                                style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                              >
+                                Сохранить
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setNewFieldName('');
+                                  setIsAddingCustomField(false);
+                                }}
+                                className="px-2 py-1 text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 text-[11px] font-medium cursor-pointer"
+                              >
+                                Отмена
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setIsAddingCustomField(true)}
+                            className="p-3 rounded-xl border border-l-2 border-dashed border-stone-300 border-l-stone-400 dark:border-zinc-700 hover:border-[#8C52D0] dark:hover:border-[#8C52D0] bg-stone-50/40 dark:bg-zinc-900/30 hover:bg-purple-50/40 dark:hover:bg-purple-950/20 text-stone-500 hover:text-[#582F89] dark:text-stone-400 dark:hover:text-purple-300 text-xs font-semibold transition-all duration-300 flex flex-col items-center justify-center gap-1.5 min-h-[82px] cursor-pointer group"
+                          >
+                            <div className="w-6 h-6 rounded-full bg-stone-200/80 dark:bg-zinc-800 group-hover:bg-purple-200 dark:group-hover:bg-purple-900/60 flex items-center justify-center transition-colors">
+                              <Plus className="w-3.5 h-3.5 text-stone-600 dark:text-stone-300 group-hover:text-[#582F89] dark:group-hover:text-purple-200" />
+                            </div>
+                            <span className="text-[11px] font-bold">+ Добавить поле</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* BOTTOM LEGEND AT THE VERY BOTTOM OF BRIEF CARD */}
+                    <div className="pt-4 border-t border-stone-200/60 dark:border-zinc-800/80 flex items-center justify-between flex-wrap gap-2 text-xs">
+                      <div className="flex items-center gap-4 flex-wrap">
+                        <span className="inline-flex items-center gap-1.5 text-xs text-[#582F89] dark:text-purple-300 font-semibold bg-purple-100/90 dark:bg-purple-950/70 px-3 py-1 rounded-full border border-purple-200/70 dark:border-purple-800/50">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#8C52D0] shadow-xs" /> Заполняет клиент
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 text-xs text-stone-600 dark:text-stone-300 font-semibold bg-stone-100 dark:bg-zinc-800 px-3 py-1 rounded-full border border-stone-200 dark:border-zinc-700">
+                          <span className="w-2.5 h-2.5 rounded-full bg-stone-400 dark:bg-zinc-400 shadow-xs" /> Декоратор
+                        </span>
+                      </div>
+                      <span className="text-[11px] font-medium text-stone-400">
+                        Всего полей в брифе: {totalBriefCount}
+                      </span>
                     </div>
                   </div>
                 )}
@@ -726,14 +1329,17 @@ export default function ProjectDetailModal({
 
             {/* DESIGN & VISUALIZATION */}
             {(activeTab === 'all' || activeTab === 'design') && (
-              <section className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-stone-200/80 dark:border-zinc-800/80 rounded-2xl overflow-hidden shadow-xs">
+              <section className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-[var(--glass-edge)] rounded-3xl overflow-hidden shadow-sm">
                 <div className="bg-[#F0EBF9]/80 dark:bg-[#20152B]/80 backdrop-blur-md border-b border-[#D8C7F0] dark:border-[#3D2554] px-5 py-3.5 flex justify-between items-center flex-wrap gap-2">
                   <div className="flex items-center gap-2">
                     <Palette className="w-4 h-4 text-[#582F89]" />
                     <h2 className="font-bold text-sm text-stone-900 dark:text-stone-100">Дизайн & Визуализация</h2>
                   </div>
                   <button
-                    onClick={() => showToast('Редактор дизайна', 'Открытие встроенного графического редактора...', 'info')}
+                    onClick={() => {
+                      showToast('Редактор дизайна', 'Переход в встроенный графический редактор...', 'info');
+                      if (onOpenEditor) onOpenEditor();
+                    }}
                     className="px-3.5 py-1.5 text-white rounded-full text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all duration-300 hover:shadow-md hover:opacity-95 active:scale-[0.98] shadow-xs"
                     style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
                   >
@@ -743,7 +1349,7 @@ export default function ProjectDetailModal({
 
                 <div className="p-4 sm:p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
                   {/* LEFT CAROUSEL VISUALIZATION CARD */}
-                  <div className="bg-white/40 dark:bg-zinc-950/30 rounded-2xl p-4 border border-stone-200/80 dark:border-zinc-800 flex flex-col justify-between items-center relative min-h-[240px] backdrop-blur-xs select-none">
+                  <div className="bg-white/40 dark:bg-zinc-950/30 rounded-2xl p-4 border border-stone-200/80 dark:border-zinc-800 flex flex-col justify-between items-center relative min-h-[260px] backdrop-blur-xs select-none">
                     
                     {/* LEFT & RIGHT NAVIGATION ARROWS (1px border) */}
                     <button
@@ -765,7 +1371,7 @@ export default function ProjectDetailModal({
                     </button>
 
                     {/* CARD TITLE */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 mb-1">
                       <span className="text-[10px] font-bold uppercase tracking-wider text-purple-800 dark:text-purple-300">
                         {visualizations[vizIndex].title}
                       </span>
@@ -774,58 +1380,42 @@ export default function ProjectDetailModal({
                       </span>
                     </div>
 
-                    {/* VISUALIZATION CONTENT AREA */}
-                    <div className="w-full flex-1 flex items-center justify-center my-2 px-10 min-h-[150px]">
-                      {visualizations[vizIndex].type === 'svg-arc' ? (
-                        <svg className="w-4/5 max-h-[140px] h-auto my-1" viewBox="0 0 150 120" fill="none">
-                          <path d="M30 115 L30 55 Q30 20 75 20 Q120 20 120 55 L120 115" stroke="currentColor" strokeWidth="4.5" strokeLinecap="round" fill="none" opacity="0.25" />
-                          
-                          <g onClick={() => handleSelectHotspot('A-304')} className="cursor-pointer group">
-                            <circle cx="34" cy="52" r="9" fill="#582F89" className="transition-transform group-hover:scale-110" stroke="#FFF" strokeWidth="1.5" />
-                            <text x="34" y="55" fill="#FFF" fontSize="8" fontWeight="bold" textAnchor="middle">A</text>
-                          </g>
-                          <g onClick={() => handleSelectHotspot('B-012')} className="cursor-pointer group">
-                            <circle cx="75" cy="22" r="9" fill="#059669" className="transition-transform group-hover:scale-110" stroke="#FFF" strokeWidth="1.5" />
-                            <text x="75" y="25" fill="#FFF" fontSize="8" fontWeight="bold" textAnchor="middle">B</text>
-                          </g>
-                          <g onClick={() => handleSelectHotspot('C-001')} className="cursor-pointer group">
-                            <circle cx="116" cy="52" r="9" fill="#2563EB" className="transition-transform group-hover:scale-110" stroke="#FFF" strokeWidth="1.5" />
-                            <text x="116" y="55" fill="#FFF" fontSize="8" fontWeight="bold" textAnchor="middle">C</text>
-                          </g>
-                          <g onClick={() => handleSelectHotspot('D-210')} className="cursor-pointer group">
-                            <circle cx="75" cy="85" r="9" fill="#E11D48" className="transition-transform group-hover:scale-110" stroke="#FFF" strokeWidth="1.5" />
-                            <text x="75" y="88" fill="#FFF" fontSize="8" fontWeight="bold" textAnchor="middle">D</text>
-                          </g>
-                        </svg>
-                      ) : (
-                        <div className="w-full h-full max-h-[150px] overflow-hidden rounded-xl border border-stone-200/80 dark:border-zinc-800 shadow-xs relative group">
-                          <img
-                            src={visualizations[vizIndex].image}
-                            alt={visualizations[vizIndex].title}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent flex items-end p-2.5">
-                            <span className="text-[10px] text-white font-semibold drop-shadow-xs">
-                              {visualizations[vizIndex].subtitle}
-                            </span>
-                          </div>
+                    {/* VISUALIZATION CONTENT AREA (CLICKABLE -> OPENS EDITOR) */}
+                    <div
+                      onClick={() => {
+                        showToast('Редактор визуализации', `Переход в редактор: ${visualizations[vizIndex].title}`, 'info');
+                        if (onOpenEditor) onOpenEditor();
+                      }}
+                      className="w-full flex-1 flex items-center justify-center my-1 px-1 cursor-pointer group"
+                      title="Нажмите, чтобы открыть визуализацию в редакторе"
+                    >
+                      <div className="aspect-square w-full max-w-[280px] sm:max-w-[300px] overflow-hidden rounded-2xl border border-stone-200/80 dark:border-zinc-800 shadow-xs relative transition-all duration-300 group-hover:shadow-md group-hover:border-[#8C52D0]">
+                        <img
+                          src={visualizations[vizIndex].image}
+                          alt={visualizations[vizIndex].title}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex flex-col justify-end p-3 transition-opacity">
+                          <span className="text-[11px] text-white font-bold leading-tight drop-shadow-xs">
+                            {visualizations[vizIndex].subtitle}
+                          </span>
                         </div>
-                      )}
+                        {/* HOVER BADGE */}
+                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/60 dark:bg-black/75 backdrop-blur-md text-white text-[9px] font-bold px-2.5 py-1 rounded-full shadow-md flex items-center gap-1 border border-white/20">
+                          <Edit2 className="w-2.5 h-2.5" /> Редактировать
+                        </div>
+                      </div>
                     </div>
-
-                    <span className="text-[10px] text-stone-400 font-medium text-center">
-                      {visualizations[vizIndex].subtitle}
-                    </span>
                   </div>
 
-                  {/* RIGHT VENUE PHOTOS CARD WITH MULTIPLE WINDOWS & UPLOAD */}
+                  {/* RIGHT CARDS WITH AI AND VISUALIZATION */}
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400 block">
-                        ФОТО ПЛОЩАДКИ
+                        ВИЗУАЛИЗАЦИИ
                       </span>
                       <span className="text-[10px] font-semibold text-[#582F89] dark:text-purple-300">
-                        {venuePhotos.length} фото
+                        ИИ Визуализации
                       </span>
                     </div>
 
@@ -835,26 +1425,26 @@ export default function ProjectDetailModal({
                       ref={fileInputRef}
                       onChange={handlePhotoUpload}
                       accept="image/*"
+                      disabled={venuePhotos.length >= 6}
                       className="hidden"
                     />
 
-                    {/* 4 WINDOWS (2x2 GRID) - SHOWS 4 SELECTED PHOTOS */}
+                    {/* 4 WINDOWS (2x2 GRID) - SHOWS "ИИ и Визуализация" */}
                     <div className="grid grid-cols-2 gap-2.5">
-                      {venuePhotos.slice(0, 4).map((photoUrl, idx) => (
+                      {[1, 2, 3, 4].map((num) => (
                         <div
-                          key={idx}
-                          className="relative group rounded-xl aspect-4/3 overflow-hidden border border-stone-200/80 dark:border-zinc-800 bg-stone-100 dark:bg-zinc-950/40 shadow-2xs"
+                          key={num}
+                          className="relative group rounded-xl aspect-4/3 overflow-hidden border border-purple-200/80 dark:border-purple-900/50 bg-gradient-to-br from-purple-50/80 via-white to-purple-100/50 dark:from-purple-950/40 dark:via-zinc-900 dark:to-zinc-900 p-3 shadow-2xs flex flex-col items-center justify-center text-center transition-all duration-300 hover:shadow-xs hover:border-purple-300 dark:hover:border-purple-700 select-none"
                         >
-                          <img
-                            src={photoUrl}
-                            alt={`Площадка ${idx + 1}`}
-                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                          />
-                          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
-                            <span className="text-[10px] font-bold text-white bg-black/60 px-2 py-0.5 rounded-full">
-                              Окно {idx + 1}
-                            </span>
+                          <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/60 text-[#582F89] dark:text-purple-300 flex items-center justify-center mb-1.5 shadow-2xs">
+                            <Sparkles className="w-4 h-4 stroke-[2]" />
                           </div>
+                          <span className="text-xs font-bold text-[#582F89] dark:text-purple-300 leading-tight">
+                            ИИ и Визуализация
+                          </span>
+                          <span className="text-[10px] text-stone-400 font-medium mt-0.5">
+                            Окно {num}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -865,7 +1455,7 @@ export default function ProjectDetailModal({
                 <div className="mx-4 sm:mx-5 mb-4 sm:mb-5 pt-3.5 border-t border-stone-200/60 dark:border-zinc-800/80 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
-                      Все загруженные фото проекта ({venuePhotos.length})
+                      Все загруженные фото проекта ({venuePhotos.length} / 6)
                     </span>
                     <span className="text-[10px] text-stone-400 font-medium hidden sm:inline">
                       Перетягивайте мышкой или используйте стрелки &lt;&gt;
@@ -885,15 +1475,34 @@ export default function ProjectDetailModal({
                     </button>
 
                     {/* STATIC UPLOAD CARD OUTSIDE SCROLLABLE CONTAINER */}
-                    <div
-                      onClick={() => fileInputRef.current?.click()}
-                      className="shrink-0 w-28 h-20 rounded-xl border-2 border-dashed border-[#8C52D0]/60 hover:border-[#8C52D0] bg-[#F0EBF9]/40 dark:bg-[#20152B]/40 hover:bg-[#F0EBF9] dark:hover:bg-[#20152B] flex flex-col items-center justify-center p-1 cursor-pointer transition-all group shadow-2xs z-10"
+                    <button
+                      type="button"
+                      disabled={venuePhotos.length >= 6}
+                      onClick={() => {
+                        if (venuePhotos.length < 6) {
+                          fileInputRef.current?.click();
+                        }
+                      }}
+                      className={`shrink-0 w-28 h-20 rounded-xl border-2 border-dashed flex flex-col items-center justify-center p-1 transition-all group shadow-2xs z-10 ${
+                        venuePhotos.length >= 6
+                          ? 'border-stone-300 dark:border-zinc-700 bg-stone-100 dark:bg-zinc-800/50 text-stone-400 dark:text-zinc-500 cursor-not-allowed opacity-60'
+                          : 'border-[#8C52D0]/60 hover:border-[#8C52D0] bg-[#F0EBF9]/40 dark:bg-[#20152B]/40 hover:bg-[#F0EBF9] dark:hover:bg-[#20152B] cursor-pointer'
+                      }`}
+                      title={venuePhotos.length >= 6 ? 'Максимум 6 фото (лимит достигнут)' : 'Загрузить фото'}
                     >
-                      <Plus className="w-4 h-4 text-[#582F89] dark:text-purple-300 group-hover:scale-110 transition-transform stroke-[2.5]" />
-                      <span className="text-[9px] font-bold text-[#582F89] dark:text-purple-300 mt-0.5">
-                        Загрузить
+                      <Plus className={`w-4 h-4 stroke-[2.5] ${
+                        venuePhotos.length >= 6
+                          ? 'text-stone-400 dark:text-zinc-500'
+                          : 'text-[#582F89] dark:text-purple-300 group-hover:scale-110 transition-transform'
+                      }`} />
+                      <span className={`text-[9px] font-bold mt-0.5 ${
+                        venuePhotos.length >= 6
+                          ? 'text-stone-400 dark:text-zinc-500'
+                          : 'text-[#582F89] dark:text-purple-300'
+                      }`}>
+                        {venuePhotos.length >= 6 ? 'Лимит (6/6)' : 'Загрузить'}
                       </span>
-                    </div>
+                    </button>
 
                     {/* DRAGGABLE GALLERY CONTAINER (PHOTO THUMBNAILS ONLY) */}
                     <div
@@ -910,31 +1519,28 @@ export default function ProjectDetailModal({
                         <div
                           key={idx}
                           className="shrink-0 w-28 h-20 rounded-xl overflow-hidden border border-stone-200/80 dark:border-zinc-800 bg-stone-100 dark:bg-zinc-900 relative group cursor-pointer shadow-2xs hover:border-[#8C52D0] transition-all"
-                          onClick={() => {
-                            // Swap clicked photo to top window position if not already top
-                            if (idx >= 4) {
-                              setVenuePhotos(prev => {
-                                const updated = [...prev];
-                                const temp = updated[0];
-                                updated[0] = updated[idx];
-                                updated[idx] = temp;
-                                return updated;
-                              });
-                              showToast(`Фото #${idx + 1}`, 'Фотография перемещена в верхнюю панель', 'info');
-                            } else {
-                              showToast(`Фото #${idx + 1}`, 'Отображается в верхней панели', 'info');
-                            }
-                          }}
                         >
                           <img
                             src={photoUrl}
                             alt={`Превью ${idx + 1}`}
                             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110 pointer-events-none"
                           />
-                          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-1">
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-between p-1.5">
                             <span className="text-[8px] font-bold text-white bg-black/60 px-1.5 py-0.5 rounded-md">
                               #{idx + 1}
                             </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setVenuePhotos(prev => prev.filter((_, i) => i !== idx));
+                                showToast('Фото удалено', `Фотография #${idx + 1} удалена из галереи`, 'info');
+                              }}
+                              className="p-1 rounded-full bg-red-600/80 hover:bg-red-600 text-white transition-transform hover:scale-110"
+                              title="Удалить фото"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
                           </div>
                         </div>
                       ))}
@@ -956,7 +1562,7 @@ export default function ProjectDetailModal({
 
             {/* ESTIMATE SHEET */}
             {(activeTab === 'all' || activeTab === 'calc') && (
-              <section className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-stone-200/80 dark:border-zinc-800/80 rounded-2xl overflow-hidden shadow-xs">
+              <section className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-[var(--glass-edge)] rounded-3xl overflow-hidden shadow-sm">
                 <div className="bg-[#F0EBF9]/80 dark:bg-[#20152B]/80 backdrop-blur-md border-b border-[#D8C7F0] dark:border-[#3D2554] px-5 py-3.5 flex justify-between items-center">
                   <div className="flex items-center gap-2">
                     <DollarSign className="w-4 h-4 text-[#582F89]" />
@@ -969,220 +1575,375 @@ export default function ProjectDetailModal({
 
                 <div className="p-4 sm:p-5 space-y-4">
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
+                    <table className="w-full text-left text-xs border-collapse">
                       <thead>
-                        <tr className="border-b border-stone-200 dark:border-zinc-800 text-stone-400 font-bold pb-2">
-                          <th className="pb-2">Наименование</th>
-                          <th className="pb-2">Категория</th>
-                          <th className="pb-2 text-center">Кол-во</th>
-                          <th className="pb-2 text-right">Цена (₽)</th>
-                          <th className="pb-2 text-right">Сумма (₽)</th>
+                        <tr className="border-b border-stone-200/80 dark:border-zinc-800 text-stone-400 font-medium">
+                          <th className="pb-3 pt-1 px-3 w-12 text-stone-400 font-normal">Превью</th>
+                          <th className="pb-3 pt-1 px-3 text-stone-400 font-normal">Визуализация / Позиция</th>
+                          <th className="pb-3 pt-1 px-3 text-center text-stone-400 font-normal">Включение в смету</th>
+                          <th className="pb-3 pt-1 px-3 text-right text-stone-400 font-normal">Общая стоимость (₽)</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-stone-100 dark:divide-zinc-800">
-                        {project.estimate.map((item) => (
-                          <tr key={item.id} id={`calc-row-${item.id}`}>
-                            <td className="py-2.5 font-bold text-stone-800 dark:text-stone-200 flex items-center gap-2">
-                              <span className="w-2 h-2 rounded-full bg-[#582F89] shrink-0" />
-                              {item.name}
+                      <tbody className="divide-y divide-stone-100 dark:divide-zinc-800/80">
+                        {/* SECTION TITLE: VISUALIZATIONS */}
+                        <tr className="bg-purple-50/60 dark:bg-purple-950/40 text-[#582F89] dark:text-purple-300 font-bold">
+                          <td colSpan={4} className="py-2 px-3 text-[11px] uppercase tracking-wider font-extrabold">
+                            ✨ Визуализации декора (общая стоимость по объектам)
+                          </td>
+                        </tr>
+
+                        {/* VISUALIZATIONS SUMMARY ROWS */}
+                        {visualizationScenes.map((sc: any, idx: number) => {
+                          const isIncluded = !disabledSceneIds.includes(sc.id);
+                          const cost = getSceneCost(sc);
+
+                          return (
+                            <tr
+                              key={sc.id || idx}
+                              className={`group transition-colors ${
+                                isIncluded
+                                  ? 'hover:bg-purple-50/30 dark:hover:bg-purple-950/20'
+                                  : 'opacity-50 bg-stone-50/60 dark:bg-zinc-900/40'
+                              }`}
+                            >
+                              {/* PREVIEW ICON */}
+                              <td className="py-3 px-3">
+                                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shadow-2xs border ${
+                                  isIncluded
+                                    ? 'bg-purple-100/80 dark:bg-purple-900/50 border-purple-200 dark:border-purple-800 text-[#8C52D0] dark:text-purple-300'
+                                    : 'bg-stone-200/60 dark:bg-zinc-800 border-stone-300 dark:border-zinc-700 text-stone-400'
+                                }`}>
+                                  <Palette className="w-4 h-4 stroke-[2]" />
+                                </div>
+                              </td>
+
+                              {/* SCENE NAME & SUBTITLE */}
+                              <td className="py-3 px-3">
+                                <div className="flex flex-col">
+                                  <span className={`font-bold text-xs ${
+                                    isIncluded ? 'text-stone-900 dark:text-stone-100' : 'line-through text-stone-400 dark:text-zinc-500'
+                                  }`}>
+                                    {sc.name || `Визуализация ${idx + 1}`}
+                                  </span>
+                                  <span className="text-[10px] text-stone-400 dark:text-stone-500 font-medium">
+                                    {sc.subtitle || (sc.elements ? `${sc.elements.length} элементов декора в составе` : 'Полный комплект оформления')}
+                                  </span>
+                                </div>
+                              </td>
+
+                              {/* TOGGLE BUTTON (ВКЛ / ВЫКЛ) */}
+                              <td className="py-3 px-3 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleSceneInEstimate(sc.id)}
+                                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold inline-flex items-center gap-1.5 transition-all duration-300 cursor-pointer shadow-2xs ${
+                                    isIncluded
+                                      ? 'bg-purple-50/40 hover:bg-purple-100/70 dark:bg-purple-950/30 dark:hover:bg-purple-900/50 text-[#8C52D0] dark:text-purple-300 border border-[#8C52D0] dark:border-purple-400 active:scale-[0.98]'
+                                      : 'bg-stone-200/70 hover:bg-stone-300 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-stone-500 dark:text-stone-400 border border-stone-300 dark:border-zinc-700'
+                                  }`}
+                                  title={isIncluded ? 'Нажмите, чтобы исключить из расчета сметы' : 'Нажмите, чтобы включить в расчет сметы'}
+                                >
+                                  {isIncluded ? (
+                                    <>
+                                      <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.5]" />
+                                      <span>Включено</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <X className="w-3.5 h-3.5 stroke-[2.5]" />
+                                      <span>Выключено</span>
+                                    </>
+                                  )}
+                                </button>
+                              </td>
+
+                              {/* TOTAL COST */}
+                              <td className="py-3 px-3 text-right">
+                                <div className="inline-flex items-center gap-1.5 justify-end">
+                                  {isIncluded ? (
+                                    <input
+                                      type="number"
+                                      value={cost || ''}
+                                      onChange={(e) => handleUpdateScenePrice(sc.id, Number(e.target.value) || 0)}
+                                      className="w-28 bg-white dark:bg-zinc-800 border border-purple-200 dark:border-purple-800 px-2.5 py-1 rounded-xl text-right font-black text-xs text-[#582F89] dark:text-purple-200 focus:outline-none focus:ring-1 focus:ring-[#8C52D0] shadow-2xs"
+                                    />
+                                  ) : (
+                                    <span className="font-mono font-bold text-xs line-through text-stone-400 dark:text-zinc-600">
+                                      {cost.toLocaleString('ru')} ₽
+                                    </span>
+                                  )}
+                                  <span className={`font-medium text-xs ${isIncluded ? 'text-stone-500' : 'text-stone-400'}`}>₽</span>
+                                </div>
+                                {!isIncluded && (
+                                  <span className="block text-[9px] text-rose-500 dark:text-rose-400 font-bold mt-0.5">
+                                    Не учитывается в смете
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+
+                        {/* SECTION TITLE: WORK & DELIVERY */}
+                        <tr className="bg-stone-100/90 dark:bg-zinc-800/80 text-stone-700 dark:text-stone-300 font-bold">
+                          <td colSpan={4} className="py-2 px-3 text-[11px] uppercase tracking-wider font-extrabold">
+                            🚚 Монтаж, логистика и сервисные работы
+                          </td>
+                        </tr>
+
+                        {/* SERVICE / WORK ROWS */}
+                        {serviceEstimate.map((item) => (
+                          <tr key={item.id} className="group hover:bg-stone-100/60 dark:hover:bg-zinc-800/60 transition-colors">
+                            <td className="py-2.5 px-3">
+                              <div className="w-8 h-8 rounded-xl bg-stone-100 dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 text-stone-700 dark:text-stone-300 flex items-center justify-center shadow-2xs">
+                                <Truck className="w-4 h-4 stroke-[2]" />
+                              </div>
                             </td>
-                            <td className="py-2.5 text-stone-500">{item.category}</td>
-                            <td className="py-2.5 text-center font-bold">{item.quantity}</td>
-                            <td className="py-2.5 text-right font-mono">{item.price.toLocaleString('ru')} ₽</td>
-                            <td className="py-2.5 text-right font-bold font-mono">{(item.quantity * item.price).toLocaleString('ru')} ₽</td>
+                            <td className="py-2.5 px-3 font-bold text-stone-800 dark:text-stone-100">
+                              <input
+                                type="text"
+                                value={item.name}
+                                onChange={(e) => handleUpdateEstimateItemName(item.id, e.target.value)}
+                                className="bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-stone-400 rounded px-1 py-0.5 w-full font-bold text-stone-800 dark:text-stone-100 text-xs"
+                              />
+                            </td>
+                            <td className="py-2.5 px-3 text-center">
+                              <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-stone-100 dark:bg-zinc-800 text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-zinc-700">
+                                Обязательно
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-3 text-right">
+                              <div className="inline-flex items-center gap-1.5 justify-end">
+                                <input
+                                  type="number"
+                                  value={item.price || ''}
+                                  onChange={(e) => handleUpdateEstimateItemPrice(item.id, Number(e.target.value) || 0)}
+                                  className="w-28 bg-white dark:bg-zinc-800 border border-stone-200/90 dark:border-zinc-700 px-2.5 py-1 rounded-xl text-right font-bold text-xs text-stone-800 dark:text-stone-100 focus:outline-none focus:border-stone-400 shadow-2xs"
+                                />
+                                <span className="font-medium text-stone-500 dark:text-stone-400 text-xs">₽</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteEstimateItem(item.id)}
+                                  className="p-1 text-stone-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  title="Удалить"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
                           </tr>
                         ))}
+
+                        {/* NEW WORK INPUT ROW (CONDITIONAL) */}
+                        {showAddWorkRow && (
+                          <tr className="bg-stone-200/60 dark:bg-zinc-700/60 transition-colors">
+                            <td className="py-2.5 px-3">
+                              <div className="w-8 h-8 rounded-xl bg-white/90 dark:bg-zinc-800 border border-stone-300 dark:border-zinc-600 text-stone-700 dark:text-stone-300 flex items-center justify-center shadow-2xs">
+                                <Truck className="w-4 h-4 stroke-[2]" />
+                              </div>
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <input
+                                type="text"
+                                autoFocus
+                                placeholder="Введите название работ..."
+                                value={newWorkName}
+                                onChange={(e) => setNewWorkName(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleAddWorkPosition();
+                                }}
+                                className="w-full bg-transparent border-none focus:outline-none placeholder:text-stone-400 text-xs font-bold text-stone-800 dark:text-stone-100"
+                              />
+                            </td>
+                            <td className="py-2.5 px-3 text-center">
+                              <span className="text-[10px] text-stone-400">Новая запись</span>
+                            </td>
+                            <td className="py-2.5 px-3 text-right">
+                              <div className="inline-flex items-center gap-1.5 justify-end">
+                                <input
+                                  type="number"
+                                  placeholder="0"
+                                  value={newWorkPrice}
+                                  onChange={(e) => setNewWorkPrice(e.target.value ? Number(e.target.value) : '')}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleAddWorkPosition();
+                                  }}
+                                  className="w-28 border border-stone-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-stone-800 dark:text-stone-100 placeholder:text-stone-400 px-2.5 py-1 rounded-xl text-right font-bold text-xs focus:outline-none shadow-2xs"
+                                />
+                                <span className="font-medium text-stone-500 dark:text-stone-400 text-xs">₽</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setShowAddWorkRow(false)}
+                                  className="p-1 text-stone-300 hover:text-rose-500 transition-colors"
+                                  title="Отмена"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </div>
 
-                  {/* 3 FINANCIAL CALCULATION PANELS (FIGMA MATCH) */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-3 border-t border-stone-100 dark:border-zinc-800">
-                    <div className="p-3.5 bg-white/50 dark:bg-zinc-950/40 rounded-xl border border-stone-200/80 dark:border-zinc-800 space-y-1 text-xs backdrop-blur-xs">
-                      <div className="flex justify-between text-stone-500">
-                        <span>Себестоимость декора:</span>
-                        <strong className="text-stone-800 dark:text-stone-200 font-mono">{decorCost.toLocaleString('ru')} ₽</strong>
-                      </div>
-                      <div className="flex justify-between text-stone-500">
-                        <span>Себестоимость работ:</span>
-                        <strong className="text-stone-800 dark:text-stone-200 font-mono">{serviceCost.toLocaleString('ru')} ₽</strong>
-                      </div>
-                      <div className="flex justify-between font-bold pt-1 border-t border-stone-200/60 dark:border-zinc-800 text-stone-900 dark:text-stone-100">
-                        <span>Итого себестоимость:</span>
-                        <strong className="font-mono">{totalCost.toLocaleString('ru')} ₽</strong>
-                      </div>
-                    </div>
-
-                    <div className="p-3.5 bg-emerald-50/70 dark:bg-emerald-950/40 rounded-xl border border-emerald-300/40 space-y-1 text-xs backdrop-blur-xs">
-                      <div className="flex justify-between items-center">
-                        <span className="text-emerald-800 dark:text-emerald-300 font-bold uppercase text-[10px]">Чистая прибыль</span>
-                        <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/60 px-2 py-0.5 rounded-full">
-                          Эффективность {profitMarginPercent}%
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-emerald-700/80 dark:text-emerald-400/80">С учетом себестоимости и налога 6%</p>
-                      <p className="text-lg font-bold font-mono text-emerald-800 dark:text-emerald-300 pt-0.5">
-                        {calculatedProfit.toLocaleString('ru')} ₽
-                      </p>
-                    </div>
-
-                    <div className="p-3.5 bg-purple-50/70 dark:bg-purple-950/40 rounded-xl border border-purple-300/40 space-y-1 text-xs backdrop-blur-xs">
-                      <span className="text-purple-900 dark:text-purple-200 font-bold uppercase text-[10px] block">Чек клиента</span>
-                      <p className="text-[10px] text-purple-700/80 dark:text-purple-300/80">Уходит в смету и финальный договор</p>
-                      <p className="text-lg font-bold font-mono text-purple-900 dark:text-purple-200 pt-0.5">
-                        {finalPrice.toLocaleString('ru')} ₽
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </section>
-            )}
-
-            {/* CALENDAR & TIMELINE CARD */}
-            {(activeTab === 'all' || activeTab === 'calendar') && (
-              <section className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-stone-200/80 dark:border-zinc-800/80 rounded-2xl overflow-hidden shadow-xs">
-                <div className="bg-[#F0EBF9]/80 dark:bg-[#20152B]/80 backdrop-blur-md border-b border-[#D8C7F0] dark:border-[#3D2554] px-5 py-3.5 flex justify-between items-center flex-wrap gap-2">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-[#582F89]" />
-                    <div>
-                      <h2 className="font-bold text-sm text-stone-900 dark:text-stone-100">Календарь & График этапов</h2>
-                      <p className="text-[10px] text-stone-400">График монтажа, демонтажа и контрольные даты проекта</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
+                  {/* ACTION BUTTONS */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                     <button
-                      onClick={() => showToast('Новый этап', 'Открытие формы добавления этапа в календарь...', 'info')}
-                      className="px-3.5 py-1.5 text-white rounded-full text-xs font-semibold flex items-center gap-1 cursor-pointer transition-all duration-300 hover:shadow-md hover:opacity-95 active:scale-[0.98] shadow-xs"
+                      type="button"
+                      onClick={() => {
+                        const newNum = visualizationScenes.length + 1;
+                        const newScene = {
+                          id: `scene-${Date.now()}`,
+                          name: `Визуализация ${newNum}`,
+                          subtitle: `Сцена визуализации ${newNum}`,
+                          defaultPrice: 40000,
+                          elements: []
+                        };
+                        const updatedScenes = [...visualizationScenes, newScene];
+                        onUpdateProject({ ...project, scenesData: updatedScenes });
+                        showToast('Добавлена визуализация', `Создана новая запись: Визуализация ${newNum}`, 'success');
+                      }}
+                      className="w-full py-3 px-5 rounded-full text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 hover:shadow-md hover:opacity-95 active:scale-[0.98]"
                       style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
                     >
-                      <Plus className="w-3.5 h-3.5" /> Добавить этап
+                      <Plus className="w-4 h-4 stroke-[2.5]" />
+                      <span>+ Добавить визуализацию</span>
                     </button>
+
                     <button
-                      onClick={() => setCalendarCollapsed(!calendarCollapsed)}
-                      className="px-3.5 py-1.5 border border-stone-300 dark:border-zinc-700 hover:border-stone-400 dark:hover:border-zinc-600 bg-transparent text-stone-700 dark:text-stone-300 rounded-full text-xs font-semibold flex items-center gap-1 cursor-pointer transition-all duration-300 hover:bg-stone-100 dark:hover:bg-zinc-800"
+                      type="button"
+                      onClick={handleAddWorkPosition}
+                      className="w-full py-3 px-5 rounded-full text-stone-700 dark:text-stone-200 bg-stone-100 hover:bg-stone-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 border border-stone-300 dark:border-zinc-600 font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 hover:shadow-md active:scale-[0.98]"
                     >
-                      {calendarCollapsed ? (
-                        <>
-                          <ChevronDown className="w-3.5 h-3.5" /> Развернуть
-                        </>
-                      ) : (
-                        <>
-                          <ChevronUp className="w-3.5 h-3.5" /> Свернуть
-                        </>
-                      )}
+                      <Truck className="w-4 h-4 stroke-[2.5] text-stone-700 dark:text-stone-300" />
+                      <span>+ Работа / Доставка</span>
                     </button>
                   </div>
-                </div>
 
-                {!calendarCollapsed && (
-                  <div className="p-4 sm:p-5 grid grid-cols-1 md:grid-cols-3 gap-5">
-                    {/* MINI CALENDAR GRID */}
-                    <div className="p-4 bg-white/50 dark:bg-zinc-950/30 rounded-xl border border-stone-200/80 dark:border-zinc-800 space-y-3 backdrop-blur-xs">
-                      <div className="flex justify-between items-center">
-                        <span className="font-bold text-xs text-stone-800 dark:text-stone-200">Август 2026</span>
-                        <div className="flex gap-1">
-                          <button className="p-1 hover:bg-stone-200 dark:hover:bg-zinc-800 rounded-md text-stone-600 cursor-pointer">
-                            <ChevronLeft className="w-3.5 h-3.5" />
-                          </button>
-                          <button className="p-1 hover:bg-stone-200 dark:hover:bg-zinc-800 rounded-md text-stone-600 cursor-pointer">
-                            <ChevronRight className="w-3.5 h-3.5" />
-                          </button>
+                  {/* 3 FINANCIAL CALCULATION PANELS (MODERN DESIGN) */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-4 border-t border-stone-200/70 dark:border-zinc-800">
+                    {/* CARD 1: COST BREAKDOWN */}
+                    <div className="p-4 bg-white/80 dark:bg-zinc-900/80 rounded-2xl border border-stone-200/80 dark:border-zinc-800 shadow-2xs flex flex-col justify-between space-y-2">
+                      <div className="flex items-center justify-between pb-1.5 border-b border-stone-100 dark:border-zinc-800">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-lg bg-stone-100 dark:bg-zinc-800 text-stone-600 dark:text-stone-300 flex items-center justify-center">
+                            <FileSpreadsheet className="w-4 h-4" />
+                          </div>
+                          <span className="text-stone-500 dark:text-stone-400 font-bold uppercase text-[10px] tracking-wider">Себестоимость</span>
                         </div>
                       </div>
-
-                      {/* DAYS OF WEEK */}
-                      <div className="grid grid-cols-7 text-center text-[10px] font-bold text-stone-400">
-                        <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
+                      <div className="space-y-1.5 text-xs">
+                        <div className="flex justify-between text-stone-500 dark:text-stone-400">
+                          <span>Декор:</span>
+                          <strong className="text-stone-800 dark:text-stone-200 font-mono font-semibold">{decorCost.toLocaleString('ru')} ₽</strong>
+                        </div>
+                        <div className="flex justify-between text-stone-500 dark:text-stone-400">
+                          <span>Работы:</span>
+                          <strong className="text-stone-800 dark:text-stone-200 font-mono font-semibold">{serviceCost.toLocaleString('ru')} ₽</strong>
+                        </div>
                       </div>
-
-                      {/* CALENDAR DAYS */}
-                      <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold">
-                        {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => {
-                          const isEvent = day === 2;
-                          const isMontage = day === 14;
-                          const isDemontage = day === 15;
-
-                          return (
-                            <button
-                              key={day}
-                              onClick={() => showToast('Дата выбранного этапа', `События на ${day} августа 2026`, 'info')}
-                              className={`h-7 rounded-lg flex items-center justify-center text-[11px] transition-all cursor-pointer ${
-                                isEvent
-                                  ? 'bg-[#582F89] text-white font-bold shadow-xs'
-                                  : isMontage
-                                  ? 'bg-amber-500 text-white font-bold'
-                                  : isDemontage
-                                  ? 'bg-purple-200 text-purple-900 font-bold dark:bg-purple-900 dark:text-purple-100'
-                                  : 'hover:bg-stone-200/60 dark:hover:bg-zinc-800 text-stone-700 dark:text-stone-300'
-                              }`}
-                            >
-                              {day}
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      {/* LEGEND */}
-                      <div className="pt-2 border-t border-stone-200/60 dark:border-zinc-800 space-y-1 text-[10px]">
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-[#582F89]" />
-                          <span className="text-stone-600 dark:text-stone-400">День мероприятия (02.08)</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                          <span className="text-stone-600 dark:text-stone-400">Монтаж площадки (14.08)</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-purple-300 dark:bg-purple-800" />
-                          <span className="text-stone-600 dark:text-stone-400">Демонтаж (15.08)</span>
-                        </div>
+                      <div className="flex justify-between items-center font-bold pt-2.5 border-t border-stone-200/60 dark:border-zinc-800 text-stone-900 dark:text-stone-100 text-xs bg-stone-50/80 dark:bg-zinc-800/50 -mx-4 -mb-4 p-3 rounded-b-2xl">
+                        <span>Итого себестоимость:</span>
+                        <strong className="font-mono text-sm">{totalCost.toLocaleString('ru')} ₽</strong>
                       </div>
                     </div>
 
-                    {/* KEY TIMELINE STAGES */}
-                    <div className="md:col-span-2 space-y-2.5">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500 block">План-график выполнения</span>
-                      <div className="space-y-2">
-                        {[
-                          { date: '01 Августа, 12:00', title: 'Финальная сборка конструкций на складе', status: 'Выполнено', statusBg: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300', icon: CheckCircle },
-                          { date: '02 Августа, 10:00', title: 'День мероприятия • Отель «Марин Парк»', status: 'Главная дата', statusBg: 'bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300', icon: Calendar },
-                          { date: '14 Августа, 18:00', title: 'Заезд команды декораторов и монтаж сцены', status: 'Запланировано', statusBg: 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300', icon: Clock },
-                          { date: '15 Августа, 02:00', title: 'Ночной демонтаж и вывоз флористики', status: 'В очереди', statusBg: 'bg-stone-100 text-stone-700 dark:bg-zinc-800 dark:text-stone-300', icon: Sparkles }
-                        ].map((stage, idx) => {
-                          const StageIcon = stage.icon;
-                          return (
-                            <div key={idx} className="p-3 bg-white/50 dark:bg-zinc-950/40 rounded-xl border border-stone-200/70 dark:border-zinc-800 flex items-center justify-between gap-3 backdrop-blur-xs">
-                              <div className="flex items-center gap-3 min-w-0">
-                                <div className="p-2 rounded-lg bg-white/80 dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 text-[#582F89]">
-                                  <StageIcon className="w-4 h-4" />
-                                </div>
-                                <div className="min-w-0">
-                                  <h4 className="font-bold text-xs text-stone-800 dark:text-stone-200 truncate">{stage.title}</h4>
-                                  <p className="text-[10px] text-stone-400">{stage.date}</p>
-                                </div>
+                    {/* CARD 2: NET PROFIT */}
+                    {(() => {
+                      const isProfitPositive = calculatedProfit >= 0;
+                      return (
+                        <div className={`p-4 rounded-2xl border shadow-2xs flex flex-col justify-between space-y-2 transition-all ${
+                          isProfitPositive
+                            ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200/80 dark:border-emerald-800/50'
+                            : 'bg-rose-50/70 dark:bg-rose-950/30 border-rose-200/80 dark:border-rose-800/50'
+                        }`}>
+                          <div className="flex justify-between items-center pb-1">
+                            <div className="flex items-center gap-2">
+                              <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                                isProfitPositive
+                                  ? 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300'
+                                  : 'bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300'
+                              }`}>
+                                {isProfitPositive ? <TrendingUp className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
                               </div>
-                              <span className={`text-[9px] font-bold px-2.5 py-1 rounded-full shrink-0 ${stage.statusBg}`}>
-                                {stage.status}
+                              <span className={`font-bold uppercase text-[10px] tracking-wider ${
+                                isProfitPositive ? 'text-emerald-900 dark:text-emerald-300' : 'text-rose-900 dark:text-rose-300'
+                              }`}>
+                                Чистая прибыль
                               </span>
                             </div>
-                          );
-                        })}
+                            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full shadow-2xs ${
+                              isProfitPositive
+                                ? 'text-emerald-800 dark:text-emerald-200 bg-emerald-100/90 dark:bg-emerald-900/80 border border-emerald-200/80 dark:border-emerald-700/60'
+                                : 'text-rose-800 dark:text-rose-200 bg-rose-100/90 dark:bg-rose-900/80 border border-rose-200/80 dark:border-rose-700/60'
+                            }`}>
+                              {isProfitPositive ? `Эффективность ${profitMarginPercent}%` : `Убыток ${profitMarginPercent}%`}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-stone-500 dark:text-stone-400">С учетом себестоимости и налога 6%</p>
+                          <div className="pt-1">
+                            <p className={`text-2xl font-black font-mono tracking-tight ${
+                              isProfitPositive ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                            }`}>
+                              {calculatedProfit.toLocaleString('ru')} ₽
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* CARD 3: CLIENT CHECK */}
+                    <div className="p-4 bg-gradient-to-br from-purple-50/90 via-purple-50/50 to-white dark:from-purple-950/40 dark:via-purple-950/20 dark:to-zinc-900 rounded-2xl border border-purple-200/90 dark:border-purple-800/60 shadow-2xs flex flex-col justify-between space-y-2">
+                      <div className="flex items-center justify-between pb-1 border-b border-purple-100 dark:border-purple-900/50">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-lg bg-purple-100 dark:bg-purple-900/60 text-[#8C52D0] dark:text-purple-300 flex items-center justify-center">
+                            <Award className="w-4 h-4" />
+                          </div>
+                          <span className="text-[#582F89] dark:text-purple-300 font-bold uppercase text-[10px] tracking-wider">Чек клиента</span>
+                        </div>
+                        <span className="text-[10px] font-bold text-white bg-gradient-to-r from-[#8C52D0] to-[#582F89] px-2.5 py-0.5 rounded-full shadow-2xs">
+                          Ручной ввод
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-purple-800/80 dark:text-purple-300/80 font-medium">Сумма для сметы и договора:</p>
+                      <div className="pt-1">
+                        <div className="relative flex items-center">
+                          <input
+                            type="number"
+                            value={finalPrice === 0 ? '' : finalPrice}
+                            onChange={(e) => {
+                              const val = e.target.value === '' ? 0 : Number(e.target.value);
+                              setFinalPrice(val);
+                              onUpdateProject({ ...project, budget: val });
+                            }}
+                            className="w-full bg-white dark:bg-zinc-800 border border-[#8C52D0]/50 dark:border-purple-500/50 rounded-xl px-3 py-1.5 font-black font-mono text-xl sm:text-2xl text-[#582F89] dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-[#8C52D0] shadow-2xs transition-all"
+                            placeholder="0"
+                          />
+                          <span className="absolute right-3.5 font-black font-mono text-lg text-[#8C52D0] dark:text-purple-300 pointer-events-none">
+                            ₽
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                )}
+                </div>
               </section>
             )}
 
-            {/* JOURNAL NOTES CARD */}
+
+
+            {/* JOURNAL OF TASKS AND NOTES CARD */}
             {(activeTab === 'all' || activeTab === 'journal') && (
-              <section className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-stone-200/80 dark:border-zinc-800/80 rounded-2xl overflow-hidden shadow-xs">
+              <section className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-[var(--glass-edge)] rounded-3xl overflow-hidden shadow-sm">
                 <div className="bg-[#F0EBF9]/80 dark:bg-[#20152B]/80 backdrop-blur-md border-b border-[#D8C7F0] dark:border-[#3D2554] px-5 py-3.5 flex justify-between items-center flex-wrap gap-2">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-[#582F89]" />
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-[#582F89]/10 dark:bg-purple-900/40 text-[#582F89] dark:text-purple-300 flex items-center justify-center">
+                      <CheckSquare className="w-4 h-4" />
+                    </div>
                     <div>
-                      <h2 className="font-bold text-sm text-stone-900 dark:text-stone-100">Журнал заметок</h2>
-                      <p className="text-[10px] text-stone-400">История операций и рабочие записи декораторов</p>
+                      <h2 className="font-bold text-sm text-stone-900 dark:text-stone-100">Журнал задач и заметок</h2>
+                      <p className="text-[10px] text-stone-500 dark:text-stone-400">Оперативные задачи и заметки декоратора с привязкой к датам</p>
                     </div>
                   </div>
                   <button
@@ -1202,41 +1963,272 @@ export default function ProjectDetailModal({
                 </div>
 
                 {!journalCollapsed && (
-                  <div className="p-4 sm:p-5 grid grid-cols-1 md:grid-cols-3 gap-5">
-                    <div className="space-y-3 bg-white/50 dark:bg-zinc-950/30 p-4 rounded-xl border border-stone-200/80 dark:border-zinc-800 backdrop-blur-xs">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500 block">Добавить событие</span>
-                      <textarea
-                        rows={3}
-                        placeholder="Опишите событие или добавьте заметку..."
-                        value={journalInputText}
-                        onChange={(e) => setJournalInputText(e.target.value)}
-                        className="w-full bg-white/80 dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 rounded-xl p-2.5 text-xs text-stone-800 dark:text-stone-100 focus:outline-none"
-                      />
-                      <button
-                        onClick={handleSubmitCustomJournal}
-                        className="w-full py-2 text-white rounded-full text-xs font-bold transition-all duration-300 hover:shadow-md hover:opacity-95 active:scale-[0.99] cursor-pointer shadow-xs"
-                        style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
-                      >
-                        Добавить запись
-                      </button>
-                    </div>
-
-                    <div className="md:col-span-2 space-y-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500 block mb-2">Хронологическая лента</span>
-                      <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                        {journalLogs.map((log) => (
-                          <div key={log.id} className="p-3 bg-white/50 dark:bg-zinc-950/40 rounded-xl border border-stone-200/60 dark:border-zinc-800 flex items-start gap-3 text-xs backdrop-blur-xs">
-                            <span className="w-2 h-2 rounded-full bg-[#582F89] mt-1.5 shrink-0" />
-                            <div className="flex-1">
-                              <div className="flex justify-between items-center mb-0.5">
-                                <strong className="text-stone-800 dark:text-stone-200 font-semibold">{log.text}</strong>
-                                <span className="text-[10px] text-stone-400 font-mono">{log.timestamp}</span>
-                              </div>
-                              <span className="text-[10px] uppercase font-bold text-stone-400">{log.type}</span>
+                  <div className="p-4 sm:p-5">
+                    {/* TWO-COLUMN LAYOUT: 40% FORM / 60% RECORDS LIST */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                      
+                      {/* LEFT COLUMN (~40% WIDTH): FORM TO CREATE TASK OR NOTE */}
+                      <div className="lg:col-span-5 bg-white/60 dark:bg-zinc-950/40 p-4 sm:p-5 rounded-2xl border border-stone-200/80 dark:border-zinc-800 backdrop-blur-xs space-y-4 flex flex-col justify-between">
+                        <div className="space-y-3.5">
+                          <div className="flex items-center justify-between pb-2 border-b border-stone-200/60 dark:border-zinc-800">
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-[#582F89] dark:text-purple-300 flex items-center gap-1.5">
+                              <Plus className="w-3.5 h-3.5" /> Создать запись для проекта
+                            </span>
+                            {/* Type toggle */}
+                            <div className="flex bg-stone-100 dark:bg-zinc-800 p-0.5 rounded-full border border-stone-200 dark:border-zinc-700">
+                              <button
+                                type="button"
+                                onClick={() => setNewType('task')}
+                                className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                                  newType === 'task'
+                                    ? 'bg-[#582F89] text-white shadow-2xs'
+                                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
+                                }`}
+                              >
+                                Задача
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setNewType('note')}
+                                className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                                  newType === 'note'
+                                    ? 'bg-[#582F89] text-white shadow-2xs'
+                                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
+                                }`}
+                              >
+                                Заметка
+                              </button>
                             </div>
                           </div>
-                        ))}
+
+                          {/* Title input */}
+                          <div>
+                            <label className="block text-[10px] font-bold uppercase text-stone-500 mb-1">
+                              {newType === 'task' ? 'Текст задачи' : 'Содержание заметки'}
+                            </label>
+                            <textarea
+                              rows={3}
+                              placeholder={newType === 'task' ? 'Заехать к флористу, подготовить неоновую вывеску, заказать декор...' : 'Важные примечания по монтажу, пожелания заказчика...'}
+                              value={newTitle}
+                              onChange={(e) => setNewTitle(e.target.value)}
+                              className="w-full bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs text-stone-800 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-[#8C52D0]"
+                            />
+                          </div>
+
+                          {/* Date and Category row */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[10px] font-bold uppercase text-stone-500 mb-1">Дата выполнения</label>
+                              <input
+                                type="date"
+                                value={newDueDate}
+                                onChange={(e) => setNewDueDate(e.target.value)}
+                                className="w-full bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-xl px-3 py-2 text-xs text-stone-800 dark:text-stone-100 focus:outline-none"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[10px] font-bold uppercase text-stone-500 mb-1">Категория</label>
+                              <select
+                                value={newCategory}
+                                onChange={(e) => setNewCategory(e.target.value as any)}
+                                className="w-full bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-xl px-3 py-2 text-xs text-stone-800 dark:text-stone-100 focus:outline-none cursor-pointer"
+                              >
+                                <option value="Монтаж">Монтаж</option>
+                                <option value="Закупка">Закупка</option>
+                                <option value="Смета">Смета</option>
+                                <option value="Логистика">Логистика</option>
+                                <option value="Клиент">Клиент</option>
+                                <option value="Важное">Важное</option>
+                                <option value="Общее">Общее</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Submit button following required gradient and pill style */}
+                        <button
+                          type="button"
+                          onClick={handleAddTaskNote}
+                          className="w-full mt-3 py-2.5 text-white rounded-full text-xs font-bold transition-all duration-300 hover:shadow-md hover:opacity-95 active:scale-[0.99] cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
+                          style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Добавить {newType === 'task' ? 'задачу' : 'заметку'}</span>
+                        </button>
                       </div>
+
+                      {/* RIGHT COLUMN (~60% WIDTH): FILTER TABS & TASK/NOTE RECORDS LIST */}
+                      <div className="lg:col-span-7 bg-white/40 dark:bg-zinc-950/20 p-4 sm:p-5 rounded-2xl border border-stone-200/80 dark:border-zinc-800 backdrop-blur-xs space-y-3.5 flex flex-col">
+                        
+                        {/* Filter Controls Header */}
+                        <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-stone-200/60 dark:border-zinc-800">
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setJournalFilterType('all')}
+                              className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                                journalFilterType === 'all'
+                                  ? 'bg-[#582F89] text-white shadow-2xs'
+                                  : 'bg-stone-100 dark:bg-zinc-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200'
+                              }`}
+                            >
+                              Все записи ({taskNoteList.length})
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setJournalFilterType('task')}
+                              className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                                journalFilterType === 'task'
+                                  ? 'bg-[#582F89] text-white shadow-2xs'
+                                  : 'bg-stone-100 dark:bg-zinc-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200'
+                              }`}
+                            >
+                              Задачи ({taskNoteList.filter(i => i.type === 'task').length})
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setJournalFilterType('note')}
+                              className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                                journalFilterType === 'note'
+                                  ? 'bg-[#582F89] text-white shadow-2xs'
+                                  : 'bg-stone-100 dark:bg-zinc-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200'
+                              }`}
+                            >
+                              Заметки ({taskNoteList.filter(i => i.type === 'note').length})
+                            </button>
+                          </div>
+
+                          {selectedCalendarDate !== 'all' && (
+                            <button
+                              onClick={() => setSelectedCalendarDate('all')}
+                              className="text-[10px] font-bold text-[#582F89] dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 px-2.5 py-1 rounded-full border border-purple-200 dark:border-purple-800 hover:bg-purple-100 cursor-pointer flex items-center gap-1"
+                            >
+                              <RotateCcw className="w-2.5 h-2.5" /> Сбросить дату: {selectedCalendarDate}
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Scrollable Records List */}
+                        <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1 flex-1 custom-scrollbar">
+                          {(() => {
+                            const filtered = taskNoteList.filter(item => {
+                              // Type filter
+                              if (journalFilterType !== 'all' && item.type !== journalFilterType) return false;
+                              
+                              // Date filter from side calendar if active
+                              if (selectedCalendarDate !== 'all') {
+                                const dayPart = selectedCalendarDate.split('-')[2];
+                                if (item.dueDate) {
+                                  return item.dueDate.endsWith(dayPart) || item.dueDate === selectedCalendarDate;
+                                }
+                                return false;
+                              }
+                              return true;
+                            });
+
+                            if (filtered.length === 0) {
+                              return (
+                                <div className="p-8 text-center bg-stone-50/50 dark:bg-zinc-950/20 rounded-2xl border border-dashed border-stone-200 dark:border-zinc-800 text-stone-400 space-y-1">
+                                  <CheckSquare className="w-6 h-6 mx-auto opacity-40 mb-1" />
+                                  <p className="text-xs font-semibold">Нет записей в журнале</p>
+                                  <p className="text-[10px]">Создайте первую задачу или заметку в форме слева.</p>
+                                </div>
+                              );
+                            }
+
+                            return filtered.map((item) => {
+                              const isTask = item.type === 'task';
+
+                              // Category styling
+                              const categoryStyles: Record<string, string> = {
+                                'Монтаж': 'bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200',
+                                'Закупка': 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200',
+                                'Смета': 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200',
+                                'Логистика': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300 border-indigo-200',
+                                'Клиент': 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200',
+                                'Важное': 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border-rose-200',
+                                'Общее': 'bg-stone-100 text-stone-700 dark:bg-zinc-800 dark:text-stone-300 border-stone-200'
+                              };
+
+                              const catClass = categoryStyles[item.category] || categoryStyles['Общее'];
+
+                              return (
+                                <div
+                                  key={item.id}
+                                  className={`p-3 rounded-2xl border transition-all duration-300 flex items-center justify-between gap-3 ${
+                                    isTask && item.completed
+                                      ? 'bg-stone-50/70 dark:bg-zinc-950/30 border-stone-200/60 dark:border-zinc-800 opacity-60'
+                                      : 'bg-white/90 dark:bg-zinc-900/90 border-stone-200 dark:border-zinc-800 hover:border-purple-300 shadow-2xs'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                                    {/* Task Checkbox or Note Icon */}
+                                    {isTask ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleToggleTaskNote(item.id)}
+                                        className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-all cursor-pointer ${
+                                          item.completed
+                                            ? 'bg-emerald-500 border-emerald-500 text-white'
+                                            : 'border-stone-300 dark:border-zinc-600 hover:border-[#8C52D0] bg-white dark:bg-zinc-800'
+                                        }`}
+                                      >
+                                        {item.completed && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
+                                      </button>
+                                    ) : (
+                                      <div className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                                        <FileText className="w-3 h-3" />
+                                      </div>
+                                    )}
+
+                                    {/* Title & details */}
+                                    <div className="flex-1 min-w-0">
+                                      <p className={`text-xs font-medium text-stone-800 dark:text-stone-200 leading-snug ${
+                                        isTask && item.completed ? 'line-through text-stone-400 dark:text-stone-500' : ''
+                                      }`}>
+                                        {item.title}
+                                      </p>
+                                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                        {/* Type badge */}
+                                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
+                                          isTask
+                                            ? 'bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300 border-purple-200 dark:border-purple-800'
+                                            : 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+                                        }`}>
+                                          {isTask ? 'Задача' : 'Заметка'}
+                                        </span>
+
+                                        {/* Category badge */}
+                                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${catClass}`}>
+                                          {item.category}
+                                        </span>
+
+                                        {/* Due Date badge */}
+                                        <span className="text-[10px] text-stone-400 dark:text-stone-500 font-mono flex items-center gap-1">
+                                          <Clock className="w-2.5 h-2.5" />
+                                          {item.dueDate}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Delete Action */}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteTaskNote(item.id)}
+                                    className="text-stone-400 hover:text-rose-500 p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-all cursor-pointer shrink-0"
+                                    title="Удалить запись"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              );
+                            });
+                          })()}
+                        </div>
+                      </div>
+
                     </div>
                   </div>
                 )}
@@ -1245,7 +2237,7 @@ export default function ProjectDetailModal({
 
             {/* DOCUMENTS WORKFLOW CARD */}
             {(activeTab === 'all' || activeTab === 'docs') && (
-              <section className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-stone-200/80 dark:border-zinc-800/80 rounded-2xl overflow-hidden shadow-xs">
+              <section className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-[var(--glass-edge)] rounded-3xl overflow-hidden shadow-sm">
                 <div className="bg-[#F0EBF9]/80 dark:bg-[#20152B]/80 backdrop-blur-md border-b border-[#D8C7F0] dark:border-[#3D2554] px-5 py-3.5 flex justify-between items-center">
                   <div className="flex items-center gap-2">
                     <FolderOpen className="w-4 h-4 text-[#582F89]" />
@@ -1263,52 +2255,226 @@ export default function ProjectDetailModal({
                   </button>
                 </div>
 
-                <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {[
-                    { title: 'Договор на декор №CB-2026', status: 'Черновик', statusColor: 'bg-purple-100/90 text-purple-800' },
-                    { title: 'Смета декора (Инвойс)', status: 'Готово', statusColor: 'bg-emerald-100/90 text-emerald-800' },
-                    { title: 'Акт приемки работ', status: 'Ожидание финала', statusColor: 'bg-stone-100/90 text-stone-600' },
-                    { title: 'Photo Release', status: 'Подписано', statusColor: 'bg-emerald-100/90 text-emerald-800' }
-                  ].map((doc, i) => (
-                    <div key={i} className="p-3.5 bg-white/50 dark:bg-zinc-950/40 rounded-xl border border-stone-200/80 dark:border-zinc-800 flex flex-col justify-between gap-3 text-left backdrop-blur-xs">
-                      <div>
-                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full inline-block mb-1.5 ${doc.statusColor}`}>
-                          {doc.status}
-                        </span>
-                        <h4 className="font-bold text-xs text-stone-800 dark:text-stone-200">{doc.title}</h4>
+                    {
+                      id: 'decor-contract',
+                      title: 'Договор на декор',
+                      code: '№ ДК-2026/08',
+                      date: '01.08.2026',
+                      size: '2.4 МБ',
+                      status: 'Подписан',
+                      statusBadge: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+                      desc: 'Договор оказания услуг по оформлению и декорированию площадки',
+                      icon: FileText,
+                      iconBg: 'bg-purple-100 dark:bg-purple-950/80 text-[#8C52D0] dark:text-purple-300 border-purple-200 dark:border-purple-800',
+                      accentColor: 'from-purple-500/10 to-transparent'
+                    },
+                    {
+                      id: 'deposit-agreement',
+                      title: 'Соглашение о задатке',
+                      code: '№ СЗ-2026/08',
+                      date: '01.08.2026',
+                      size: '1.1 МБ',
+                      status: 'Подтвержден',
+                      statusBadge: 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+                      desc: 'Гарантийная сумма бронирования даты (30 000 ₽)',
+                      icon: ShieldCheck,
+                      iconBg: 'bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+                      accentColor: 'from-amber-500/10 to-transparent'
+                    },
+                    {
+                      id: 'acceptance-act',
+                      title: 'Акт сдачи-приёмки',
+                      code: '№ АКТ-2026/15',
+                      date: 'В процессе',
+                      size: '850 КБ',
+                      status: 'Черновик',
+                      statusBadge: 'bg-stone-100 text-stone-700 dark:bg-zinc-800 dark:text-stone-300 border-stone-200 dark:border-zinc-700',
+                      desc: 'Акт приемки выполненных декораторских работ',
+                      icon: FileCheck,
+                      iconBg: 'bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800',
+                      accentColor: 'from-blue-500/10 to-transparent'
+                    },
+                    {
+                      id: 'pd-consent',
+                      title: 'Согласие на обработку ПД',
+                      code: '№ ОПД-2026/01',
+                      date: '01.08.2026',
+                      size: '420 КБ',
+                      status: 'Активен',
+                      statusBadge: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+                      desc: 'Согласие 152-ФЗ и разрешение на фотосъемку декора',
+                      icon: FileSignature,
+                      iconBg: 'bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800',
+                      accentColor: 'from-indigo-500/10 to-transparent'
+                    }
+                  ].map((doc) => {
+                    const DocIcon = doc.icon;
+                    return (
+                      <div
+                        key={doc.id}
+                        className="group relative p-4 bg-white/80 dark:bg-zinc-950/60 rounded-2xl border border-stone-200/80 dark:border-zinc-800 flex flex-col justify-between gap-3 text-left backdrop-blur-xs transition-all duration-300 hover:shadow-md hover:border-purple-300/80 dark:hover:border-purple-800 overflow-hidden"
+                      >
+                        {/* ACCENT BACKGROUND SHIMMER */}
+                        <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${doc.accentColor} rounded-bl-full pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity`} />
+
+                        <div className="space-y-2.5 relative z-10">
+                          {/* TOP HEADER: ICON + STATUS */}
+                          <div className="flex items-start justify-between gap-2">
+                            <div className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 shadow-2xs ${doc.iconBg}`}>
+                              <DocIcon className="w-4 h-4 stroke-[2.2]" />
+                            </div>
+                            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border shadow-2xs ${doc.statusBadge}`}>
+                              {doc.status}
+                            </span>
+                          </div>
+
+                          {/* TITLE & CODE */}
+                          <div>
+                            <span className="text-[10px] font-mono text-stone-400 dark:text-stone-500 font-semibold block">{doc.code}</span>
+                            <h4 className="font-bold text-xs text-stone-900 dark:text-stone-100 group-hover:text-[#582F89] dark:group-hover:text-purple-300 transition-colors">
+                              {doc.title}
+                            </h4>
+                          </div>
+
+                          {/* DESCRIPTION */}
+                          <p className="text-[11px] text-stone-500 dark:text-stone-400 line-clamp-2 leading-relaxed">
+                            {doc.desc}
+                          </p>
+                        </div>
+
+                        {/* BOTTOM METADATA & ACTIONS */}
+                        <div className="pt-3 border-t border-stone-100 dark:border-zinc-800/80 flex items-center justify-between gap-2 relative z-10">
+                          <div className="text-[10px] text-stone-400 font-mono space-x-1.5">
+                            <span className="font-bold text-stone-500 dark:text-stone-400">PDF</span>
+                            <span>•</span>
+                            <span>{doc.size}</span>
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => showToast('Просмотр документа', `Открываем ${doc.title}...`, 'info')}
+                              className="p-1.5 hover:bg-purple-100 dark:hover:bg-purple-900/40 text-stone-500 hover:text-[#582F89] dark:hover:text-purple-300 rounded-lg transition-colors cursor-pointer"
+                              title="Просмотреть"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => showToast('Скачивание', `Загрузка файла ${doc.title}...`, 'success')}
+                              className="p-1.5 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-stone-500 hover:text-emerald-600 dark:hover:text-emerald-300 rounded-lg transition-colors cursor-pointer"
+                              title="Скачать PDF"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex justify-end gap-1.5 pt-2 border-t border-stone-200/50 dark:border-zinc-800">
-                        <button onClick={() => showToast('Просмотр', `Открываем ${doc.title}...`, 'info')} className="p-1.5 hover:bg-stone-200 dark:hover:bg-zinc-800 rounded-lg text-stone-500 cursor-pointer">
-                          <Eye className="w-3.5 h-3.5" />
-                        </button>
-                        <button onClick={() => showToast('Скачивание', `Загрузка ${doc.title}...`, 'success')} className="p-1.5 hover:bg-stone-200 dark:hover:bg-zinc-800 rounded-lg text-stone-500 cursor-pointer">
-                          <Download className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             )}
 
-            {/* BOTTOM FLOATING ACTION BAR (LIGHT LAVENDER THEME) */}
-            <div className="bg-[#F0EBF9]/80 dark:bg-[#20152B]/80 backdrop-blur-md border border-[#D8C7F0] dark:border-[#3D2554] p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
-              <div className="flex items-center gap-6">
-                <div>
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-[#6A6375] dark:text-purple-300 block">Полная стоимость</span>
-                  <span className="text-lg font-bold font-mono text-[#2A1224] dark:text-white">{finalPrice.toLocaleString('ru')} ₽</span>
+            {/* BOTTOM FLOATING ACTION BAR */}
+            <div 
+              className="px-6 py-4 rounded-3xl flex flex-col lg:flex-row items-center justify-between gap-4 shadow-2xl text-white border border-white/20 transition-all"
+              style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+            >
+              <div className="flex flex-wrap items-center gap-4 sm:gap-6 w-full lg:w-auto">
+                {/* METRIC 1: СТОИМОСТЬ */}
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-white/15 text-white border border-white/25 flex items-center justify-center shrink-0 shadow-2xs">
+                    <Wallet className="w-5 h-5 stroke-[2.2]" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-purple-200 block">
+                      Итоговая стоимость
+                    </span>
+                    <span className="text-xl sm:text-2xl font-black font-mono text-white tracking-tight">
+                      {finalPrice.toLocaleString('ru')} ₽
+                    </span>
+                  </div>
                 </div>
-                <div className="h-8 w-px bg-[#D8C7F0] dark:bg-[#3D2554] hidden sm:block" />
-                <div>
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-[#6A6375] dark:text-purple-300 block">Предоплата</span>
-                  <span className="text-lg font-bold font-mono text-emerald-700 dark:text-emerald-400">{prepayment.toLocaleString('ru')} ₽</span>
+
+                <div className="h-8 w-px bg-white/20 hidden sm:block" />
+
+                {/* METRIC 2: ПРЕДОПЛАТА */}
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-white/15 text-white border border-white/25 flex items-center justify-center shrink-0 shadow-2xs">
+                    <CheckCircle2 className="w-5 h-5 stroke-[2.2]" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-purple-200">
+                        Предоплата:
+                      </span>
+                      {/* Presets 30%, 50%, 100% without extra background frame */}
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setPrepayment(Math.round(finalPrice * 0.3))}
+                          className={`text-xs font-black px-3 py-0.5 rounded-full transition-all duration-200 cursor-pointer shadow-xs ${
+                            prepayment === Math.round(finalPrice * 0.3) && finalPrice > 0
+                              ? 'bg-white text-[#582F89] ring-2 ring-white shadow-md scale-105'
+                              : 'bg-white text-[#582F89] hover:bg-purple-50 active:scale-95 opacity-90 hover:opacity-100'
+                          }`}
+                          title="Выбрать 30% предоплаты"
+                        >
+                          30%
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPrepayment(Math.round(finalPrice * 0.5))}
+                          className={`text-xs font-black px-3 py-0.5 rounded-full transition-all duration-200 cursor-pointer shadow-xs ${
+                            prepayment === Math.round(finalPrice * 0.5) && finalPrice > 0
+                              ? 'bg-amber-200 text-amber-950 ring-2 ring-amber-300 shadow-md scale-105'
+                              : 'bg-amber-100 text-amber-900 hover:bg-amber-200 active:scale-95 opacity-90 hover:opacity-100'
+                          }`}
+                          title="Выбрать 50% предоплаты"
+                        >
+                          50%
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPrepayment(finalPrice)}
+                          className={`text-xs font-black px-3 py-0.5 rounded-full transition-all duration-200 cursor-pointer shadow-xs ${
+                            prepayment === finalPrice && finalPrice > 0
+                              ? 'bg-emerald-300 text-emerald-950 ring-2 ring-emerald-300 shadow-md scale-105'
+                              : 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200 active:scale-95 opacity-90 hover:opacity-100'
+                          }`}
+                          title="Выбрать 100% предоплаты"
+                        >
+                          100%
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Manual Input */}
+                    <div className="relative w-full mt-1.5 flex items-center">
+                      <input
+                        type="number"
+                        value={prepayment === 0 ? '' : prepayment}
+                        onChange={(e) => {
+                          const val = e.target.value === '' ? 0 : Number(e.target.value);
+                          setPrepayment(val);
+                        }}
+                        className="w-full pl-3 pr-7 py-1 bg-white border border-stone-200 rounded-xl text-xs font-black font-mono text-[#582F89] placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-sm"
+                        placeholder="Ручной ввод..."
+                      />
+                      <span className="absolute right-2.5 text-xs font-black font-mono text-[#8C52D0] pointer-events-none">
+                        ₽
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              {/* ACTIONS */}
+              <div className="flex items-center gap-3 shrink-0">
                 <button
                   onClick={onClose}
-                  className="px-4 py-2 bg-white/80 hover:bg-purple-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-[#3B1C32] dark:text-purple-200 border border-[#D8C7F0] dark:border-[#3D2554] rounded-full text-xs font-bold transition-colors cursor-pointer"
+                  className="px-5 py-2.5 bg-white/15 hover:bg-white/25 text-white border border-white/30 rounded-full text-xs font-bold transition-all cursor-pointer hover:shadow-xs active:scale-[0.98]"
                 >
                   Отменить
                 </button>
@@ -1317,336 +2483,15 @@ export default function ProjectDetailModal({
                     showToast('Проект завершен', 'Статус проекта обновлен на «Выполнено»', 'success');
                     onClose();
                   }}
-                  className="px-5 py-2 text-white rounded-full text-xs font-bold transition-all duration-300 hover:shadow-lg hover:opacity-95 active:scale-[0.98] cursor-pointer flex items-center gap-1.5 shadow-md"
-                  style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                  className="px-6 py-2.5 bg-white text-[#582F89] hover:bg-purple-50 rounded-full text-xs font-black transition-all duration-300 hover:shadow-lg active:scale-[0.98] cursor-pointer flex items-center gap-2 shadow-md"
                 >
-                  <CheckCircle className="w-4 h-4" /> Заказ сдан
+                  <CheckCircle className="w-4 h-4 text-[#8C52D0] stroke-[2.5]" />
+                  <span>Заказ сдан</span>
                 </button>
               </div>
             </div>
           </main>
         </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* VARIANT 2: ERGONOMIC INTERACTIVE WORKSPACE                                */}
-      {/* ========================================================================= */}
-      {designVariant === 2 && (
-        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden bg-transparent">
-          
-          {/* LEFT STICKY SIDEBAR */}
-          <aside className="w-full lg:w-80 shrink-0 border-r border-stone-200/80 dark:border-zinc-800 p-4 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-md flex flex-col justify-between space-y-4 overflow-y-auto">
-            <div className="space-y-4">
-              
-              {/* CARD 2: FINANCIAL SUMMARY WIDGET */}
-              <div className="p-4 rounded-2xl bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-stone-200/80 dark:border-zinc-800 space-y-3 shadow-xs">
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
-                    Экономика проекта
-                  </span>
-                  <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-300/40">
-                    +{profitMarginPercent}% Маржа
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-left">
-                  <div className="p-2.5 rounded-xl bg-white/50 dark:bg-zinc-950/40 border border-stone-200/80 dark:border-zinc-800 backdrop-blur-xs">
-                    <span className="text-[9px] text-stone-400 uppercase font-bold block">Смета</span>
-                    <span className="text-sm font-bold font-mono text-stone-900 dark:text-stone-100">
-                      {finalPrice.toLocaleString('ru')} ₽
-                    </span>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-300/40 backdrop-blur-xs">
-                    <span className="text-[9px] text-emerald-700 dark:text-emerald-400 uppercase font-bold block">Прибыль</span>
-                    <span className="text-sm font-bold font-mono text-emerald-700 dark:text-emerald-400">
-                      {calculatedProfit.toLocaleString('ru')} ₽
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-2 pt-1 text-xs">
-                  <div className="flex justify-between items-center text-[11px]">
-                    <span className="text-stone-500 font-medium">Наценка на себестоимость:</span>
-                    <strong className="text-purple-800 dark:text-purple-300 font-bold">{markupPercent}%</strong>
-                  </div>
-                  <input
-                    type="range"
-                    min="5"
-                    max="60"
-                    value={markupPercent}
-                    onChange={(e) => {
-                      const val = Number(e.target.value);
-                      setMarkupPercent(val);
-                      setFinalPrice(Math.round(totalCost * (1 + val / 100)));
-                    }}
-                    className="w-full accent-[#582F89] cursor-pointer"
-                  />
-                </div>
-
-                <div className="pt-2 border-t border-stone-100 dark:border-zinc-800 flex justify-between items-center text-xs">
-                  <span className="text-stone-400 font-medium">Предоплата полученная:</span>
-                  <span className="font-bold text-stone-800 dark:text-stone-200">{prepayment.toLocaleString('ru')} ₽</span>
-                </div>
-              </div>
-
-              {/* CARD 3: DOCUMENT EXPORT ACTIONS */}
-              <div className="p-4 rounded-2xl bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-stone-200/80 dark:border-zinc-800 space-y-2 shadow-xs">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400 block">
-                  Печать и Выгрузка
-                </span>
-                <div className="space-y-1.5">
-                  <button
-                    onClick={() => showToast('Генерация КП', 'Формируем КП в PDF формате...', 'success')}
-                    className="w-full py-2 px-3 bg-white/50 dark:bg-zinc-800/60 hover:bg-purple-50 dark:hover:bg-purple-950/40 border border-stone-200 dark:border-zinc-700/60 text-stone-800 dark:text-stone-200 rounded-full text-xs font-semibold flex items-center justify-between transition-all cursor-pointer backdrop-blur-xs"
-                  >
-                    <span className="flex items-center gap-2">
-                      <FileSpreadsheet className="w-4 h-4 text-[#582F89]" />
-                      <span>Коммерческое предложение (КП)</span>
-                    </span>
-                    <Download className="w-3 h-3 text-stone-400" />
-                  </button>
-
-                  <button
-                    onClick={() => showToast('Договор готов', 'Печатная форма договора создана.', 'success')}
-                    className="w-full py-2 px-3 bg-white/50 dark:bg-zinc-800/60 hover:bg-purple-50 dark:hover:bg-purple-950/40 border border-stone-200 dark:border-zinc-700/60 text-stone-800 dark:text-stone-200 rounded-full text-xs font-semibold flex items-center justify-between transition-all cursor-pointer backdrop-blur-xs"
-                  >
-                    <span className="flex items-center gap-2">
-                      <FileCheck className="w-4 h-4 text-emerald-600" />
-                      <span>Договор и Спецификации</span>
-                    </span>
-                    <Download className="w-3 h-3 text-stone-400" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </aside>
-
-          {/* RIGHT WORKSPACE AREA */}
-          <main className="flex-1 p-4 sm:p-6 pt-0 sm:pt-0 overflow-y-auto space-y-6 relative">
-            
-            {/* STEPPER PROGRESS BAR (STICKY WITH BACKDROP BLUR OVER SCROLLING CARDS) */}
-            <nav className="sticky top-0 z-30 bg-white/40 dark:bg-zinc-950/40 backdrop-blur-xl border-b border-stone-200/80 dark:border-zinc-800/80 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 shadow-xs overflow-x-auto hide-scrollbar">
-              <div className="flex items-center justify-between min-w-[650px] px-2">
-                {steps.map((label, idx) => {
-                  const isCompleted = idx < project.currentStep;
-                  const isCurrent = idx === project.currentStep;
-
-                  return (
-                    <React.Fragment key={idx}>
-                      <button
-                        onClick={() => handleStepClick(idx)}
-                        className="flex items-center gap-2 outline-none group cursor-pointer"
-                      >
-                        <span
-                          className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                            isCompleted
-                              ? 'bg-emerald-600 text-white shadow-xs'
-                              : isCurrent
-                              ? 'bg-stone-900 dark:bg-stone-100 text-stone-100 dark:text-stone-950 shadow-md'
-                              : 'bg-stone-200 dark:bg-zinc-800 text-stone-400 group-hover:text-stone-600'
-                          }`}
-                        >
-                          {isCompleted ? '✓' : idx + 1}
-                        </span>
-                        <div className="text-left leading-tight">
-                          <span className="block text-[9px] uppercase tracking-wider font-bold text-stone-400">
-                            {isCurrent ? 'Текущий' : isCompleted ? `Этап ${idx + 1}` : `Этап ${idx + 1}`}
-                          </span>
-                          <span className={`text-xs font-bold transition-colors ${
-                            isCurrent ? 'text-purple-800 dark:text-purple-300' : isCompleted ? 'text-stone-800 dark:text-stone-200' : 'text-stone-400 group-hover:text-stone-600'
-                          }`}>{label}</span>
-                        </div>
-                      </button>
-                      {idx < steps.length - 1 && (
-                        <div
-                          className={`h-0.5 flex-1 mx-3 rounded-full transition-all ${
-                            idx < project.currentStep ? 'bg-emerald-500' : 'bg-stone-200 dark:bg-zinc-800'
-                          }`}
-                        />
-                      )}
-                    </React.Fragment>
-                  );
-                })}
-              </div>
-            </nav>
-            
-            {/* COMPLETE 27-FIELD BRIEF GRID */}
-            <section className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-stone-200/80 dark:border-zinc-800/80 rounded-2xl p-5 space-y-4 shadow-xs">
-              <div className="flex justify-between items-center flex-wrap gap-2 pb-3 border-b border-stone-100 dark:border-zinc-800">
-                <div>
-                  <h2 className="font-bold text-sm text-stone-900 dark:text-stone-100 flex items-center gap-2">
-                    <Clipboard className="w-4 h-4 text-[#582F89]" /> Технический Бриф Проекта
-                  </h2>
-                  <p className="text-[10px] text-stone-400">Полный реестр 27 параметров с площадки</p>
-                </div>
-                <button
-                  onClick={() => setIsBriefEditOpen(true)}
-                  className="px-3.5 py-1.5 text-white rounded-full text-xs font-semibold flex items-center gap-1 cursor-pointer transition-all duration-300 hover:shadow-md hover:opacity-95"
-                  style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
-                >
-                  <Edit2 className="w-3 h-3" /> Заполнить поля
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
-                {briefFields.map((field, i) => (
-                  <div
-                    key={i}
-                    className={`p-3 rounded-xl border text-left transition-all ${
-                      !field.filled
-                        ? 'border-dashed border-rose-300 bg-rose-50/50 dark:bg-rose-950/30 backdrop-blur-xs'
-                        : 'border-stone-200/80 dark:border-zinc-800 bg-white/50 dark:bg-zinc-950/30 backdrop-blur-xs'
-                    }`}
-                  >
-                    <span className="text-[9px] uppercase tracking-wider font-bold text-stone-400 block mb-0.5">
-                      {field.key}
-                    </span>
-                    <span className={`text-xs font-bold block truncate ${
-                      !field.filled ? 'text-rose-600 dark:text-rose-400 italic' : 'text-stone-800 dark:text-stone-100'
-                    }`}>
-                      {field.val}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* VISUALIZER + CALCULATION SHEET */}
-            <section className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-stone-200/80 dark:border-zinc-800/80 rounded-2xl p-5 space-y-4 shadow-xs">
-              <div className="flex justify-between items-center pb-3 border-b border-stone-100 dark:border-zinc-800">
-                <h2 className="font-bold text-sm text-stone-900 dark:text-stone-100 flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-[#582F89]" /> Интерактивная Калькуляция и Смета
-                </h2>
-                <button onClick={handleResetCalculator} className="text-xs text-stone-400 hover:text-rose-500 cursor-pointer">
-                  Сбросить к исходным
-                </button>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-stone-200 dark:border-zinc-800 text-stone-400 font-bold pb-2">
-                      <th className="pb-2 w-8">#</th>
-                      <th className="pb-2">Позиция</th>
-                      <th className="pb-2">Категория</th>
-                      <th className="pb-2 text-center">Количество</th>
-                      <th className="pb-2 text-right">Цена за ед. (₽)</th>
-                      <th className="pb-2 text-right">Сумма (₽)</th>
-                      <th className="pb-2 w-8"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-stone-100 dark:divide-zinc-800">
-                    {project.estimate.map((item, idx) => (
-                      <tr key={item.id} id={`calc-row-${item.id}`}>
-                        <td className="py-2.5 text-stone-400 font-mono text-[10px]">{idx + 1}</td>
-                        <td className="py-2.5 font-bold text-stone-800 dark:text-stone-200">{item.name}</td>
-                        <td className="py-2.5">
-                          <span className="text-[10px] bg-stone-100 dark:bg-zinc-800 text-stone-600 font-semibold px-2 py-0.5 rounded-full">
-                            {item.category}
-                          </span>
-                        </td>
-                        <td className="py-2.5 text-center">
-                          <div className="inline-flex items-center gap-1">
-                            <button
-                              onClick={() => handleUpdateItemQty(item.id, Math.max(1, item.quantity - 1))}
-                              className="w-5 h-5 rounded hover:bg-stone-200 dark:hover:bg-zinc-800 text-stone-500 font-bold"
-                            >
-                              -
-                            </button>
-                            <span className="font-bold font-mono text-stone-800 dark:text-stone-100 w-5 text-center">{item.quantity}</span>
-                            <button
-                              onClick={() => handleUpdateItemQty(item.id, item.quantity + 1)}
-                              className="w-5 h-5 rounded hover:bg-stone-200 dark:hover:bg-zinc-800 text-stone-500 font-bold"
-                            >
-                              +
-                            </button>
-                          </div>
-                        </td>
-                        <td className="py-2.5 text-right">
-                          <input
-                            type="number"
-                            value={item.price}
-                            onChange={(e) => handleUpdateItemPrice(item.id, parseFloat(e.target.value) || 0)}
-                            className="w-20 text-right bg-stone-50 dark:bg-zinc-950 border border-stone-200 dark:border-zinc-800 rounded px-1.5 py-0.5 text-xs font-mono focus:outline-none"
-                          />
-                        </td>
-                        <td className="py-2.5 text-right font-bold font-mono text-stone-800 dark:text-stone-100">
-                          {(item.quantity * item.price).toLocaleString('ru')} ₽
-                        </td>
-                        <td className="py-2.5 text-center">
-                          <button
-                            onClick={() => handleRemoveEstimate(item.id, item.name)}
-                            className="text-stone-400 hover:text-rose-500 cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Form to add row */}
-              <form onSubmit={handleAddEstimate} className="p-3 bg-stone-50 dark:bg-zinc-950 rounded-xl border border-dashed border-stone-200 dark:border-zinc-800 flex flex-wrap gap-2 items-center">
-                <input
-                  type="text"
-                  placeholder="+ Наименование позиций"
-                  required
-                  value={newEstName}
-                  onChange={(e) => setNewEstName(e.target.value)}
-                  className="flex-1 min-w-[180px] bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 text-xs py-1.5 px-3 rounded-lg focus:outline-none"
-                />
-                <select
-                  value={newEstCat}
-                  onChange={(e) => setNewEstCat(e.target.value)}
-                  className="w-28 bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 text-xs py-1.5 px-2 rounded-lg focus:outline-none"
-                >
-                  <option value="Декор">Декор</option>
-                  <option value="Конструкции">Конструкции</option>
-                  <option value="Флористика">Флористика</option>
-                  <option value="Работа">Работа</option>
-                </select>
-                <input
-                  type="number"
-                  placeholder="Цена ₽"
-                  value={newEstPrice}
-                  onChange={(e) => setNewEstPrice(parseFloat(e.target.value) || 0)}
-                  className="w-20 bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 text-xs py-1.5 px-2 text-right rounded-lg focus:outline-none"
-                />
-                <button
-                  type="submit"
-                  className="bg-gradient-to-r from-[#8C52D0] to-[#582F89] hover:opacity-95 text-white font-bold text-xs py-1.5 px-3 rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" /> Добавить
-                </button>
-              </form>
-            </section>
-
-            {/* JOURNAL TIMELINE LOGS */}
-            <section className="bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 rounded-2xl p-5 space-y-4 shadow-xs">
-              <h2 className="font-bold text-sm text-stone-900 dark:text-stone-100 flex items-center gap-2">
-                <Clock className="w-4 h-4 text-[#582F89]" /> Журнал Событий и Историй Изменений
-              </h2>
-
-              <div className="space-y-2">
-                {journalLogs.map((log) => (
-                  <div key={log.id} className="p-3 bg-stone-50 dark:bg-zinc-950/40 rounded-xl border border-stone-200/60 dark:border-zinc-800 flex items-start gap-3 text-xs">
-                    <span className="w-2 h-2 rounded-full bg-[#582F89] mt-1.5 shrink-0" />
-                    <div className="flex-1">
-                      <div className="flex justify-between items-center mb-0.5">
-                        <strong className="text-stone-800 dark:text-stone-200 font-semibold">{log.text}</strong>
-                        <span className="text-[10px] text-stone-400 font-mono">{log.timestamp}</span>
-                      </div>
-                      <span className="text-[10px] uppercase font-bold text-stone-400">{log.type}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </main>
-        </div>
-      )}
 
       {/* SPECIFICATION HOTSPOT MODAL */}
       <AnimatePresence>
@@ -1675,46 +2520,10 @@ export default function ProjectDetailModal({
               <div className="pt-2 flex justify-end gap-2">
                 <button
                   onClick={() => setIsSpecModalOpen(false)}
-                  className="px-4 py-2 bg-gradient-to-r from-[#8C52D0] to-[#582F89] hover:opacity-95 text-white rounded-xl text-xs font-bold cursor-pointer"
+                  className="px-4 py-2 text-white rounded-full text-xs font-bold transition-all duration-300 hover:shadow-lg hover:opacity-95 active:scale-[0.98] cursor-pointer"
+                  style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
                 >
                   Закрыть
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* BRIEF EDITING MODAL */}
-      <AnimatePresence>
-        {isBriefEditOpen && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 p-6 rounded-3xl max-w-lg w-full space-y-4 shadow-xl text-left"
-            >
-              <div className="flex justify-between items-center border-b border-stone-100 dark:border-zinc-800 pb-3">
-                <h3 className="font-bold text-base text-stone-900 dark:text-stone-100">Редактирование параметров брифа</h3>
-                <button onClick={() => setIsBriefEditOpen(false)} className="text-stone-400 hover:text-stone-600">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <p className="text-xs text-stone-500">
-                Все изменения сохраняются в режиме реального времени и передаются декораторам на объекте.
-              </p>
-
-              <div className="pt-3 flex justify-end gap-2">
-                <button
-                  onClick={() => {
-                    setIsBriefEditOpen(false);
-                    showToast('Сохранено', 'Бриф проекта обновлен.', 'success');
-                  }}
-                  className="px-4 py-2 bg-gradient-to-r from-[#8C52D0] to-[#582F89] hover:opacity-95 text-white rounded-xl text-xs font-bold cursor-pointer"
-                >
-                  Сохранить Бриф
                 </button>
               </div>
             </motion.div>

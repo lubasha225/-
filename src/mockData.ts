@@ -128,7 +128,7 @@ export const initialProjects: Project[] = [
     venue: 'Бизнес-парк «Комета», Москва',
     date: '2025-12-28',
     status: 'archive',
-    currentStep: 4, // Финал
+    currentStep: 3, // Согласовано
     budget: 210000,
     estimate: [
       { id: 'e6_1', name: 'Дизайнерская ель 4 метра с украшениями', category: 'Конструкции', quantity: 1, price: 95000 },
