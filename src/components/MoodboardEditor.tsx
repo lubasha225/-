@@ -544,13 +544,13 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
     if (!activeProjectId) return;
     if (loadedProjectIdRef.current !== activeProjectId) {
       loadedProjectIdRef.current = activeProjectId;
+      setIsLeftToolbarCollapsed(true);
+      setIsRightToolbarCollapsed(false);
       const proj = projects.find(p => p.id === activeProjectId);
       if (proj) {
         if (proj.scenesData && proj.scenesData.length > 0) {
           setScenes(proj.scenesData);
-          if (!proj.scenesData.some(s => s.id === activeWorkspaceTab)) {
-            setActiveWorkspaceTab(proj.scenesData[0].id);
-          }
+          setActiveWorkspaceTab(prev => (proj.scenesData && proj.scenesData.some(s => s.id === prev)) ? prev : proj.scenesData[0].id);
         } else {
           setScenes([
             {
@@ -572,7 +572,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
         }
       }
     }
-  }, [activeProjectId, projects, activeWorkspaceTab]);
+  }, [activeProjectId, projects]);
 
   // Selection IDs on the Canvas (Supports multi-selection group)
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -601,8 +601,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
   const [mobileDrawerTab, setMobileDrawerTab] = useState<'library' | 'layers' | null>(null);
   const [isBackdropPopoverOpen, setIsBackdropPopoverOpen] = useState<boolean>(false);
 
-  // Collapsible toolbars states
-  const [isLeftToolbarCollapsed, setIsLeftToolbarCollapsed] = useState<boolean>(false);
+  // Collapsible toolbars states (Right library panel stays open by default)
+  const [isLeftToolbarCollapsed, setIsLeftToolbarCollapsed] = useState<boolean>(true);
   const [isRightToolbarCollapsed, setIsRightToolbarCollapsed] = useState<boolean>(false);
 
   // Undo/Redo Stacking
@@ -614,6 +614,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
   const [libSearch, setLibSearch] = useState<string>('');
   const [favoritesList, setFavoritesList] = useState<string[]>(['text-1', 'arch-1']);
   const [showCategoryIconManager, setShowCategoryIconManager] = useState<boolean>(false);
+  const [itemToPreview, setItemToPreview] = useState<LibraryItem | null>(null);
   const categoryScrollRef = useRef<HTMLDivElement>(null);
 
   // Canvas Dimension Configurations
@@ -659,10 +660,11 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
   const [canvasScale, setCanvasScale] = useState<number>(1);
 
   useEffect(() => {
+    let rafId: number;
     const updateScale = () => {
       if (!viewportRef.current) return;
-      const parentWidth = viewportRef.current.clientWidth - 24;
-      const parentHeight = viewportRef.current.clientHeight - 24;
+      const parentWidth = Math.max(viewportRef.current.clientWidth - 24, 100);
+      const parentHeight = Math.max(viewportRef.current.clientHeight - 24, 100);
       
       const canvasWidth = canvasWidthMm / 10;
       const canvasHeight = canvasHeightMm / 10;
@@ -670,25 +672,30 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
       const scaleW = parentWidth / canvasWidth;
       const scaleH = parentHeight / canvasHeight;
       
-      // Calculate a comfortable scale to fit the canvas inside the viewport
       const newScale = Math.min(scaleW, scaleH, 2.5);
-      setCanvasScale(newScale > 0.1 ? newScale : 1);
+      const targetScale = newScale > 0.1 ? newScale : 1;
+      setCanvasScale(prev => (Math.abs(prev - targetScale) > 0.01 ? targetScale : prev));
+    };
+
+    const handleResizeObs = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(updateScale);
     };
 
     updateScale();
-    window.addEventListener('resize', updateScale);
+    window.addEventListener('resize', handleResizeObs);
     
-    // Also use ResizeObserver to catch any layout changes (like sidebars expanding/collapsing)
     let observer: ResizeObserver | null = null;
     if (viewportRef.current) {
       observer = new ResizeObserver(() => {
-        updateScale();
+        handleResizeObs();
       });
       observer.observe(viewportRef.current);
     }
 
     return () => {
-      window.removeEventListener('resize', updateScale);
+      cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', handleResizeObs);
       if (observer) observer.disconnect();
     };
   }, [canvasWidthMm, canvasHeightMm]);
@@ -932,6 +939,39 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
     updateActiveSceneElements(prev => [...prev, newEl]);
     setSelectedId(newEl.id);
     showToast('Добавлено', `Элемент "${item.name}" добавлен на сцену.`, 'success');
+  };
+
+  // Add Item to Canvas at dropped coordinates
+  const handleAddElementAtPosition = (item: LibraryItem, posX: number, posY: number) => {
+    const defaultW = item.width;
+    const defaultH = item.height;
+    
+    const newEl: CanvasElement = {
+      id: `${item.id}-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      name: item.name,
+      type: item.category,
+      x: posX,
+      y: posY,
+      w: defaultW,
+      h: defaultH,
+      rotation: 0,
+      exposure: 0,
+      hue: 0,
+      temp: 0,
+      saturate: 100,
+      opacity: 100,
+      price: item.price,
+      comment: '',
+      isLocked: false,
+      isVisible: true,
+      isFlippedH: false,
+      isFlippedV: false,
+      svgMarkup: item.svgMarkup
+    };
+
+    updateActiveSceneElements(prev => [...prev, newEl]);
+    setSelectedId(newEl.id);
+    showToast('Перенесено', `Элемент "${item.name}" размещен на сцене.`, 'success');
   };
 
   // Upload own PNG onto Canvas
@@ -1755,9 +1795,14 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                     return (
                       <div
                         key={item.id}
-                        onClick={() => handleAddElementToScene(item)}
-                        className="group relative aspect-square w-full rounded-2xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-[#5B3E88] hover:shadow-md cursor-pointer transition-all p-1.5 flex items-center justify-center overflow-hidden"
-                        title={item.name}
+                        draggable
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData('application/json', JSON.stringify(item));
+                          e.dataTransfer.effectAllowed = 'copy';
+                        }}
+                        onClick={() => setItemToPreview(item)}
+                        className="group relative aspect-square w-full rounded-2xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-[#5B3E88] hover:shadow-md cursor-grab active:cursor-grabbing transition-all p-1.5 flex items-center justify-center overflow-hidden"
+                        title={`${item.name} (нажмите для просмотра или перетащите на холст)`}
                       >
                         {/* Overlay Header Mini Actions */}
                         <div className="absolute top-1.5 left-1.5 right-1.5 flex justify-between items-center z-10 pointer-events-none">
@@ -1771,22 +1816,22 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleAddElementToScene(item);
+                              setItemToPreview(item);
                             }}
                             className="p-1 rounded-full bg-[#EAE4F8] dark:bg-purple-950 text-[#5B3E88] dark:text-purple-300 hover:scale-110 transition-transform cursor-pointer pointer-events-auto shadow-2xs"
-                            title="Добавить на сцену"
+                            title="Открыть просмотр и добавить"
                           >
                             <Plus className="w-3 h-3" />
                           </button>
                         </div>
 
                         {/* Element Vector preview */}
-                        <div className="w-full h-full p-2.5 flex items-center justify-center group-hover:scale-105 transition-transform">
+                        <div className="w-full h-full p-2.5 flex items-center justify-center group-hover:scale-105 transition-transform pointer-events-none">
                           <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: item.svgMarkup }} />
                         </div>
 
                         {/* Title Caption overlay on hover */}
-                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-zinc-950/80 to-transparent p-1.5 pt-4 text-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-zinc-950/80 to-transparent p-1.5 pt-4 text-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                           <span className="text-[9px] font-bold text-white truncate block">
                             {item.name}
                           </span>
@@ -2089,8 +2134,10 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
         accept="image/*"
       />
       
-      {/* LEFT COLUMN: ACTIVE WORKSPACE & HEADER (70% WIDTH) */}
-      <div className="md:col-span-7 lg:col-span-8 flex flex-col gap-1 sm:gap-2.5 h-full min-h-0 min-w-0">
+      {/* LEFT COLUMN: ACTIVE WORKSPACE & HEADER */}
+      <div className={`flex flex-col gap-1 sm:gap-2.5 h-full min-h-0 min-w-0 transition-all duration-300 ${
+        isRightToolbarCollapsed ? 'md:col-span-12' : 'md:col-span-7 lg:col-span-8'
+      }`}>
 
         {/* TOP EDITOR HEADER BAR - WITH ELEGANT PADDING */}
         <div className="flex flex-col gap-1 pt-1.5 pb-1 px-1 sm:px-2 shrink-0 print:hidden">
@@ -2291,8 +2338,21 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                   </button>
                 </div>
 
-                {/* FLOATING TOP UNDO/REDO PILL */}
-                <div className="absolute top-1.5 right-1.5 sm:right-2 z-30 pointer-events-auto">
+                {/* FLOATING TOP UNDO/REDO PILL & RIGHT SIDEBAR TOGGLE */}
+                <div className="absolute top-1.5 right-1.5 sm:right-2 z-30 pointer-events-auto flex items-center gap-1.5">
+                  {/* Expand Right Sidebar button when collapsed */}
+                  {isRightToolbarCollapsed && (
+                    <button
+                      onClick={() => setIsRightToolbarCollapsed(false)}
+                      className="px-3 py-1.5 sm:py-2 rounded-full bg-white/80 dark:bg-zinc-900/80 text-[#5B3E88] dark:text-purple-300 backdrop-blur-md shadow-md border border-white/80 dark:border-zinc-700/60 hover:bg-white dark:hover:bg-zinc-800 flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer active:scale-95 animate-fadeIn"
+                      title="Развернуть боковую панель (Библиотека и элементы)"
+                    >
+                      <BookOpen className="w-3.5 h-3.5 text-[#5B3E88] dark:text-purple-300 shrink-0" />
+                      <span className="hidden sm:inline">Библиотека</span>
+                      <ChevronLeft className="w-3.5 h-3.5 text-[#5B3E88] dark:text-purple-300 shrink-0" />
+                    </button>
+                  )}
+
                   <div className="p-0.5 sm:p-1 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md shadow-md border border-white/80 dark:border-zinc-700/60 flex items-center gap-1">
                     <button
                       onClick={handleUndo}
@@ -2695,7 +2755,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                 </div>
 
                 {/* BOTTOM RIGHT GROUP: Color Correction Tools & Zoom Button */}
-                <div className="absolute bottom-1.5 right-1.5 z-30 flex flex-col items-end pointer-events-none pr-0.5 pb-0.5">
+                <div className="absolute bottom-1.5 right-1.5 z-[60] flex flex-col items-end pointer-events-none pr-0.5 pb-0.5">
                   <div className="flex flex-col items-center gap-1.5 pointer-events-auto">
                     {isRightToolbarCollapsed ? (
                       /* COLLAPSED SINGLE BUTTON */
@@ -2727,11 +2787,14 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         {/* POPUP ADJUSTMENT TOOL SLIDER OR ZOOM (Positioned directly next to bottom-right toolbar, semi-transparent & compact) */}
                       {activeFilterTool && (activeFilterTool === 'zoom' || selectedElem) && (
                         <div
-                          className={`absolute ${activeFilterTool === 'recolor' ? 'right-full mr-2 bottom-0 w-56 p-2.5 bg-white/45 dark:bg-zinc-900/60' : 'bottom-full mb-2 right-0 w-12 sm:w-14 p-2 bg-white/45 dark:bg-zinc-900/60'} z-50 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 rounded-2xl shadow-xl shadow-purple-950/10 flex flex-col items-center gap-2 animate-fadeIn pointer-events-auto transition-all select-none`}
+                          className={`absolute ${
+                            activeFilterTool === 'recolor'
+                              ? 'bottom-[56px] right-2 sm:right-full sm:mr-2 sm:bottom-0 w-64 max-w-[calc(100vw-32px)] p-3 bg-white/45 dark:bg-zinc-900/60'
+                              : 'bottom-full mb-2 right-0 w-12 sm:w-14 p-2 bg-white/45 dark:bg-zinc-900/60'
+                          } z-50 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 rounded-2xl shadow-xl shadow-purple-950/10 flex flex-col items-center gap-2 animate-fadeIn pointer-events-auto transition-all select-none`}
                           style={{
                             backdropFilter: 'blur(16px)',
                             WebkitBackdropFilter: 'blur(16px)',
-                            backgroundColor: 'rgba(255, 255, 255, 0.45)'
                           }}
                         >
                           
@@ -3169,6 +3232,33 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                       width: `${canvasWidthMm / 10}px`,
                       height: `${canvasHeightMm / 10}px`,
                       transform: `translate(${panX}px, ${panY}px) scale(${canvasScale * zoomScale})`,
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'copy';
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      try {
+                        const rawData = e.dataTransfer.getData('application/json');
+                        if (rawData) {
+                          const item: LibraryItem = JSON.parse(rawData);
+                          if (canvasContainerRef.current) {
+                            const rect = canvasContainerRef.current.getBoundingClientRect();
+                            const dropX = (e.clientX - rect.left) / (canvasScale * zoomScale);
+                            const dropY = (e.clientY - rect.top) / (canvasScale * zoomScale);
+                            handleAddElementAtPosition(
+                              item,
+                              Math.max(10, Math.round(dropX - item.width / 2)),
+                              Math.max(10, Math.round(dropY - item.height / 2))
+                            );
+                          } else {
+                            handleAddElementToScene(item);
+                          }
+                        }
+                      } catch (err) {
+                        console.error('Failed to parse dropped element JSON', err);
+                      }
                     }}
                     onClick={(e) => {
                       if (e.target === e.currentTarget) {
@@ -3903,7 +3993,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: '100%' }}
                           transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                          className="absolute bottom-0 inset-x-0 z-40 w-full max-h-[65%] sm:max-h-[420px] flex flex-col bg-white/45 dark:bg-zinc-900/50 border-t border-x border-white/70 dark:border-white/15 rounded-t-[28px] shadow-[0_-12px_35px_rgba(0,0,0,0.15)] backdrop-blur-[24px] overflow-hidden pointer-events-auto"
+                          className="absolute bottom-0 inset-x-0 z-[70] w-full max-h-[65%] sm:max-h-[420px] flex flex-col bg-white/45 dark:bg-zinc-900/50 border-t border-x border-white/70 dark:border-white/15 rounded-t-[28px] shadow-[0_-12px_35px_rgba(0,0,0,0.15)] backdrop-blur-[24px] overflow-hidden pointer-events-auto"
                         >
                           {/* Drawer Header with Tabs at the Top */}
                           <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-white/40 dark:border-white/10 bg-white/25 dark:bg-zinc-900/30 backdrop-blur-md shrink-0">
@@ -4276,43 +4366,54 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
         </div>
 
         {/* RIGHT COLUMN: CONTROL SIDE PANEL (30% WIDTH) - DESKTOP & TABLET */}
-        <div className="hidden md:flex md:col-span-5 lg:col-span-4 flex-col bg-white/70 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-xs backdrop-blur-md h-full min-h-0 min-w-0">
-          
-          {/* TAB BAR SELECTORS IN A CLEAN ROUNDED CONTAINER */}
-          <div className="p-1.5 bg-zinc-100/90 dark:bg-zinc-900/60 rounded-full m-3 mb-0 grid grid-cols-2 gap-1 border border-zinc-200/60 dark:border-zinc-800/60 shrink-0">
-            <button
-              onClick={() => setActiveSidebarTab('library')}
-              className={`py-2 px-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                activeSidebarTab === 'library'
-                  ? 'bg-[#EAE4F8] text-[#5B3E88] dark:bg-purple-950 dark:text-purple-200 shadow-xs border border-[#D4C5ED]/50'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
-              }`}
-            >
-              <BookOpen className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">Библиотека</span>
-            </button>
-            <button
-              onClick={() => setActiveSidebarTab('layers')}
-              className={`py-2 px-1 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                activeSidebarTab === 'layers'
-                  ? 'bg-[#EAE4F8] text-[#5B3E88] dark:bg-purple-950 dark:text-purple-200 shadow-xs border border-[#D4C5ED]/50'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">Элементы</span>
-              <span className="px-1.5 py-0.5 rounded-full bg-[#5B3E88] text-white text-[9px] font-extrabold leading-none shrink-0">
-                {activeScene.elements.length}
-              </span>
-            </button>
-          </div>
+        {!isRightToolbarCollapsed && (
+          <div className="hidden md:flex md:col-span-5 lg:col-span-4 flex-col bg-white/70 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-xs backdrop-blur-md h-full min-h-0 min-w-0 transition-all duration-300 animate-fadeIn">
+            
+            {/* TAB BAR SELECTORS WITH COLLAPSE BUTTON */}
+            <div className="p-1.5 bg-zinc-100/90 dark:bg-zinc-900/60 rounded-full m-3 mb-0 flex items-center gap-1 border border-zinc-200/60 dark:border-zinc-800/60 shrink-0">
+              <div className="flex-1 grid grid-cols-2 gap-1">
+                <button
+                  onClick={() => setActiveSidebarTab('library')}
+                  className={`py-2 px-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    activeSidebarTab === 'library'
+                      ? 'bg-[#EAE4F8] text-[#5B3E88] dark:bg-purple-950 dark:text-purple-200 shadow-xs border border-[#D4C5ED]/50'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                  }`}
+                >
+                  <BookOpen className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Библиотека</span>
+                </button>
+                <button
+                  onClick={() => setActiveSidebarTab('layers')}
+                  className={`py-2 px-1 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    activeSidebarTab === 'layers'
+                      ? 'bg-[#EAE4F8] text-[#5B3E88] dark:bg-purple-950 dark:text-purple-200 shadow-xs border border-[#D4C5ED]/50'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Элементы</span>
+                  <span className="px-1.5 py-0.5 rounded-full bg-[#5B3E88] text-white text-[9px] font-extrabold leading-none shrink-0">
+                    {activeScene.elements.length}
+                  </span>
+                </button>
+              </div>
+              <button
+                onClick={() => setIsRightToolbarCollapsed(true)}
+                className="p-1.5 rounded-full hover:bg-zinc-200/80 dark:hover:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors cursor-pointer shrink-0"
+                title="Свернуть боковую панель"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
 
-          {/* TAB SCROLLABLE CONTENT BODY */}
-          <div className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden p-3.5 space-y-3 min-w-0">
-            {renderSidebarTabContent(activeSidebarTab)}
-          </div>
+            {/* TAB SCROLLABLE CONTENT BODY */}
+            <div className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden p-3.5 space-y-3 min-w-0">
+              {renderSidebarTabContent(activeSidebarTab)}
+            </div>
 
-        </div>
+          </div>
+        )}
 
       {/* DETAILED PRINT SPECIFICATION ONLY */}
       <div className="hidden print:block bg-white text-zinc-900 p-8 space-y-8 min-h-screen">
@@ -4498,6 +4599,94 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                 </div>
               )}
 
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ENLARGED ELEMENT PREVIEW & CONFIRMATION MODAL */}
+      <AnimatePresence>
+        {itemToPreview && (
+          <div className="fixed inset-0 z-[250] flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setItemToPreview(null)}
+              className="absolute inset-0 bg-black/50 backdrop-blur-md"
+            />
+
+            {/* Modal Card */}
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 15 }}
+              className="relative w-full max-w-md bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl rounded-3xl border border-white/80 dark:border-zinc-700/80 shadow-2xl p-6 overflow-hidden z-10 flex flex-col gap-4"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-zinc-200/80 dark:border-zinc-800">
+                <div>
+                  <h3 className="font-extrabold text-base text-zinc-900 dark:text-zinc-100">
+                    {itemToPreview.name}
+                  </h3>
+                  <p className="text-xs text-zinc-400 mt-0.5">
+                    Артикул / Код: <span className="font-mono font-bold text-zinc-600 dark:text-zinc-300">{itemToPreview.code}</span>
+                  </p>
+                </div>
+                <button
+                  onClick={() => setItemToPreview(null)}
+                  className="p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors cursor-pointer"
+                  title="Закрыть окно"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Enlarged Vector Preview */}
+              <div className="w-full h-64 bg-zinc-50 dark:bg-zinc-950/60 rounded-2xl border border-zinc-200/60 dark:border-zinc-800 p-6 flex items-center justify-center relative overflow-hidden group">
+                <div
+                  className="w-full h-full flex items-center justify-center drop-shadow-md"
+                  dangerouslySetInnerHTML={{ __html: itemToPreview.svgMarkup }}
+                />
+              </div>
+
+              {/* Specifications/Details */}
+              <div className="grid grid-cols-2 gap-2 text-xs bg-purple-50/60 dark:bg-purple-950/20 p-3.5 rounded-2xl border border-purple-200/40 dark:border-purple-800/30">
+                <div>
+                  <span className="text-zinc-400 text-[11px] block font-medium">Габариты (Ш × В):</span>
+                  <span className="font-bold text-zinc-800 dark:text-zinc-200">
+                    {itemToPreview.width * 10} × {itemToPreview.height * 10} мм ({toDisplayValue(itemToPreview.width * 10)} × {toDisplayValue(itemToPreview.height * 10)} {activeUnit})
+                  </span>
+                </div>
+                <div>
+                  <span className="text-zinc-400 text-[11px] block font-medium">Стоимость:</span>
+                  <span className="font-bold text-[#5B3E88] dark:text-purple-300">
+                    {itemToPreview.price.toLocaleString('ru')} ₽
+                  </span>
+                </div>
+              </div>
+
+              {/* Modal Buttons: Primary (Gradient) and Secondary (Outline 1px) */}
+              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-zinc-200/80 dark:border-zinc-800">
+                <button
+                  onClick={() => setItemToPreview(null)}
+                  className="px-5 py-2.5 rounded-full text-zinc-700 dark:text-zinc-300 text-xs font-bold hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all cursor-pointer border border-zinc-300 dark:border-zinc-700 bg-transparent active:scale-95"
+                >
+                  Отмена
+                </button>
+                <button
+                  onClick={() => {
+                    handleAddElementToScene(itemToPreview);
+                    setItemToPreview(null);
+                  }}
+                  style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                  className="px-6 py-2.5 rounded-full text-white text-xs font-bold hover:opacity-90 transition-all cursor-pointer shadow-md shadow-[#582F89]/20 active:scale-95 flex items-center gap-1.5"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>ОК</span>
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

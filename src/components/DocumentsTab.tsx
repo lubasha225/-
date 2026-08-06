@@ -380,51 +380,53 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
 
         </div>
 
-        {/* RIGHT COLUMN: Document Templates (2 separate cards) + Auto-completion Card */}
+        {/* RIGHT COLUMN: Document Templates (3 separate cards) + Auto-completion Card */}
         <div className="space-y-6 w-full">
           
           {/* Card 1: Contract Template */}
-          <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[32px] p-6 border border-zinc-200/50 dark:border-zinc-800/40 space-y-4 shadow-xs w-full">
-            <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800/50">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-[var(--lavenderSoft)] rounded-xl text-[var(--lavDeep)] shrink-0">
-                  <FileText className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="font-medium text-base text-zinc-900 dark:text-zinc-100">Шаблон Договора</h4>
-                  <p className="text-xs text-zinc-400">Формат шаблона .docx для автозаполнения</p>
-                </div>
+          <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[28px] p-5 sm:p-6 border border-zinc-200/50 dark:border-zinc-800/40 space-y-3.5 shadow-xs w-full">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 bg-[var(--lavenderSoft)] rounded-xl text-[var(--lavDeep)] shrink-0">
+                <FileText className="w-5 h-5" />
               </div>
-              <div className="flex bg-zinc-100/80 dark:bg-zinc-950/40 p-0.5 rounded-full border border-zinc-200/40 dark:border-zinc-800/40 shrink-0">
-                <button
-                  onClick={() => setContractType('standard')}
-                  className={`px-3 py-1 text-xs font-medium rounded-full transition-all cursor-pointer ${
-                    contractType === 'standard'
-                      ? 'bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-xs'
-                      : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
-                  }`}
-                >
-                  Типовой
-                </button>
-                <button
-                  onClick={() => setContractType('custom')}
-                  className={`px-3 py-1 text-xs font-medium rounded-full transition-all cursor-pointer ${
-                    contractType === 'custom'
-                      ? 'bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-xs'
-                      : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
-                  }`}
-                >
-                  Свой
-                </button>
-              </div>
+              <h4 className="font-semibold text-base sm:text-lg text-zinc-900 dark:text-zinc-100 truncate">Шаблон Договора</h4>
+            </div>
+
+            <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
+              Формат шаблона .docx для автозаполнения
+            </p>
+
+            <div className="flex items-center gap-1.5 bg-zinc-100/80 dark:bg-zinc-950/40 p-1 rounded-full border border-zinc-200/40 dark:border-zinc-800/40 w-fit">
+              <button
+                onClick={() => setContractType('standard')}
+                style={contractType === 'standard' ? { background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' } : {}}
+                className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-all cursor-pointer ${
+                  contractType === 'standard'
+                    ? 'text-white shadow-xs'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 bg-transparent border border-transparent'
+                }`}
+              >
+                Типовой
+              </button>
+              <button
+                onClick={() => setContractType('custom')}
+                style={contractType === 'custom' ? { background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' } : {}}
+                className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-all cursor-pointer ${
+                  contractType === 'custom'
+                    ? 'text-white shadow-xs'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 bg-transparent border border-transparent'
+                }`}
+              >
+                Свой
+              </button>
             </div>
 
             {contractType === 'standard' ? (
-              <div className="space-y-3 pt-1">
-                <p className="text-xs text-zinc-500 leading-relaxed">
+              <div className="space-y-3 pt-1.5 border-t border-zinc-100 dark:border-zinc-800/40">
+                <p className="text-xs sm:text-sm text-zinc-500 leading-relaxed">
                   Базовый договор на оказание декораторских услуг. Содержит все необходимые пункты, форс-мажоры и порядок расчетов.
                 </p>
-                <div className="flex items-center justify-between pt-2 text-xs">
+                <div className="flex items-center justify-between pt-1 text-xs">
                   <span className="text-zinc-400 font-medium">Готов к генерации</span>
                   <button 
                     onClick={() => showToast('Образец загружен', 'Типовой договор отправлен на скачивание.', 'success')}
@@ -436,7 +438,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                 </div>
               </div>
             ) : (
-              <div className="space-y-4 pt-1">
+              <div className="space-y-3.5 pt-1.5 border-t border-zinc-100 dark:border-zinc-800/40">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-zinc-400">Активный файл:</span>
                   <span className="inline-flex items-center gap-1 font-medium text-[var(--metricGreenText)] dark:text-[var(--sage)] text-xs uppercase tracking-wide bg-[var(--sageSoft)] px-2 rounded-full">
@@ -456,47 +458,49 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
           </div>
 
           {/* Card 2: Act Template */}
-          <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[32px] p-6 border border-zinc-200/50 dark:border-zinc-800/40 space-y-4 shadow-xs w-full">
-            <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800/50">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-[var(--lavenderSoft)] rounded-xl text-[var(--lavDeep)] shrink-0">
-                  <FileSpreadsheet className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="font-medium text-base text-zinc-900 dark:text-zinc-100">Шаблон Акта выполненных работ</h4>
-                  <p className="text-xs text-zinc-400">Формат шаблона .docx для автозаполнения</p>
-                </div>
+          <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[28px] p-5 sm:p-6 border border-zinc-200/50 dark:border-zinc-800/40 space-y-3.5 shadow-xs w-full">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 bg-[var(--lavenderSoft)] rounded-xl text-[var(--lavDeep)] shrink-0">
+                <FileSpreadsheet className="w-5 h-5" />
               </div>
-              <div className="flex bg-zinc-100/80 dark:bg-zinc-950/40 p-0.5 rounded-full border border-zinc-200/40 dark:border-zinc-800/40 shrink-0">
-                <button
-                  onClick={() => setActType('standard')}
-                  className={`px-3 py-1 text-xs font-medium rounded-full transition-all cursor-pointer ${
-                    actType === 'standard'
-                      ? 'bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-xs'
-                      : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
-                  }`}
-                >
-                  Типовой
-                </button>
-                <button
-                  onClick={() => setActType('custom')}
-                  className={`px-3 py-1 text-xs font-medium rounded-full transition-all cursor-pointer ${
-                    actType === 'custom'
-                      ? 'bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-xs'
-                      : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
-                  }`}
-                >
-                  Свой
-                </button>
-              </div>
+              <h4 className="font-semibold text-base sm:text-lg text-zinc-900 dark:text-zinc-100 truncate">Шаблон Акта выполненных работ</h4>
+            </div>
+
+            <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
+              Формат шаблона .docx для автозаполнения
+            </p>
+
+            <div className="flex items-center gap-1.5 bg-zinc-100/80 dark:bg-zinc-950/40 p-1 rounded-full border border-zinc-200/40 dark:border-zinc-800/40 w-fit">
+              <button
+                onClick={() => setActType('standard')}
+                style={actType === 'standard' ? { background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' } : {}}
+                className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-all cursor-pointer ${
+                  actType === 'standard'
+                    ? 'text-white shadow-xs'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 bg-transparent border border-transparent'
+                }`}
+              >
+                Типовой
+              </button>
+              <button
+                onClick={() => setActType('custom')}
+                style={actType === 'custom' ? { background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' } : {}}
+                className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-all cursor-pointer ${
+                  actType === 'custom'
+                    ? 'text-white shadow-xs'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 bg-transparent border border-transparent'
+                }`}
+              >
+                Свой
+              </button>
             </div>
 
             {actType === 'standard' ? (
-              <div className="space-y-3 pt-1">
-                <p className="text-xs text-zinc-500 leading-relaxed">
+              <div className="space-y-3 pt-1.5 border-t border-zinc-100 dark:border-zinc-800/40">
+                <p className="text-xs sm:text-sm text-zinc-500 leading-relaxed">
                   Стандартный одностраничный акт сдачи-приемки оказанных услуг. Подтверждает выполнение всех обязательств по проекту.
                 </p>
-                <div className="flex items-center justify-between pt-2 text-xs">
+                <div className="flex items-center justify-between pt-1 text-xs">
                   <span className="text-zinc-400 font-medium">Готов к генерации</span>
                   <button 
                     onClick={() => showToast('Образец загружен', 'Типовой акт отправлен на скачивание.', 'success')}
@@ -508,7 +512,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                 </div>
               </div>
             ) : (
-              <div className="space-y-4 pt-1">
+              <div className="space-y-3.5 pt-1.5 border-t border-zinc-100 dark:border-zinc-800/40">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-zinc-400">Активный файл:</span>
                   <span className="inline-flex items-center gap-1 font-medium text-[var(--metricGreenText)] dark:text-[var(--sage)] text-xs uppercase tracking-wide bg-[var(--sageSoft)] px-2 rounded-full">
@@ -528,47 +532,49 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
           </div>
 
           {/* Card 3: Consent Template */}
-          <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[32px] p-6 border border-zinc-200/50 dark:border-zinc-800/40 space-y-4 shadow-xs w-full">
-            <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800/50">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-[var(--lavenderSoft)] rounded-xl text-[var(--lavDeep)] shrink-0">
-                  <UserCheck className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="font-medium text-base text-zinc-900 dark:text-zinc-100">Согласие на обработку ПД</h4>
-                  <p className="text-xs text-zinc-400">Формат шаблона .docx для автозаполнения</p>
-                </div>
+          <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[28px] p-5 sm:p-6 border border-zinc-200/50 dark:border-zinc-800/40 space-y-3.5 shadow-xs w-full">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 bg-[var(--lavenderSoft)] rounded-xl text-[var(--lavDeep)] shrink-0">
+                <UserCheck className="w-5 h-5" />
               </div>
-              <div className="flex bg-zinc-100/80 dark:bg-zinc-950/40 p-0.5 rounded-full border border-zinc-200/40 dark:border-zinc-800/40 shrink-0">
-                <button
-                  onClick={() => setConsentType('standard')}
-                  className={`px-3 py-1 text-xs font-medium rounded-full transition-all cursor-pointer ${
-                    consentType === 'standard'
-                      ? 'bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-xs'
-                      : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
-                  }`}
-                >
-                  Типовой
-                </button>
-                <button
-                  onClick={() => setConsentType('custom')}
-                  className={`px-3 py-1 text-xs font-medium rounded-full transition-all cursor-pointer ${
-                    consentType === 'custom'
-                      ? 'bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-xs'
-                      : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
-                  }`}
-                >
-                  Свой
-                </button>
-              </div>
+              <h4 className="font-semibold text-base sm:text-lg text-zinc-900 dark:text-zinc-100 truncate">Согласие на обработку ПД</h4>
+            </div>
+
+            <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
+              Формат шаблона .docx для автозаполнения
+            </p>
+
+            <div className="flex items-center gap-1.5 bg-zinc-100/80 dark:bg-zinc-950/40 p-1 rounded-full border border-zinc-200/40 dark:border-zinc-800/40 w-fit">
+              <button
+                onClick={() => setConsentType('standard')}
+                style={consentType === 'standard' ? { background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' } : {}}
+                className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-all cursor-pointer ${
+                  consentType === 'standard'
+                    ? 'text-white shadow-xs'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 bg-transparent border border-transparent'
+                }`}
+              >
+                Типовой
+              </button>
+              <button
+                onClick={() => setConsentType('custom')}
+                style={consentType === 'custom' ? { background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' } : {}}
+                className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-all cursor-pointer ${
+                  consentType === 'custom'
+                    ? 'text-white shadow-xs'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 bg-transparent border border-transparent'
+                }`}
+              >
+                Свой
+              </button>
             </div>
 
             {consentType === 'standard' ? (
-              <div className="space-y-3 pt-1">
-                <p className="text-xs text-zinc-500 leading-relaxed">
+              <div className="space-y-3 pt-1.5 border-t border-zinc-100 dark:border-zinc-800/40">
+                <p className="text-xs sm:text-sm text-zinc-500 leading-relaxed">
                   Официальное согласие клиента на хранение и обработку персональных данных (152-ФЗ) и разрешение на фотосъемку объектов декора.
                 </p>
-                <div className="flex items-center justify-between pt-2 text-xs">
+                <div className="flex items-center justify-between pt-1 text-xs">
                   <span className="text-zinc-400 font-medium">Готов к генерации</span>
                   <button 
                     onClick={() => showToast('Образец загружен', 'Типовое согласие на обработку ПД отправлено на скачивание.', 'success')}
@@ -580,7 +586,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                 </div>
               </div>
             ) : (
-              <div className="space-y-4 pt-1">
+              <div className="space-y-3.5 pt-1.5 border-t border-zinc-100 dark:border-zinc-800/40">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-zinc-400">Активный файл:</span>
                   <span className="inline-flex items-center gap-1 font-medium text-[var(--metricGreenText)] dark:text-[var(--sage)] text-xs uppercase tracking-wide bg-[var(--sageSoft)] px-2 rounded-full">
@@ -600,47 +606,49 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
           </div>
 
           {/* Card 4: Deposit Agreement Template */}
-          <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[32px] p-6 border border-zinc-200/50 dark:border-zinc-800/40 space-y-4 shadow-xs w-full">
-            <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800/50">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-[var(--lavenderSoft)] rounded-xl text-[var(--lavDeep)] shrink-0">
-                  <Receipt className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="font-medium text-base text-zinc-900 dark:text-zinc-100">Соглашение о задатке</h4>
-                  <p className="text-xs text-zinc-400">Формат шаблона .docx для автозаполнения</p>
-                </div>
+          <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[28px] p-5 sm:p-6 border border-zinc-200/50 dark:border-zinc-800/40 space-y-3.5 shadow-xs w-full">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 bg-[var(--lavenderSoft)] rounded-xl text-[var(--lavDeep)] shrink-0">
+                <Receipt className="w-5 h-5" />
               </div>
-              <div className="flex bg-zinc-100/80 dark:bg-zinc-950/40 p-0.5 rounded-full border border-zinc-200/40 dark:border-zinc-800/40 shrink-0">
-                <button
-                  onClick={() => setDepositType('standard')}
-                  className={`px-3 py-1 text-xs font-medium rounded-full transition-all cursor-pointer ${
-                    depositType === 'standard'
-                      ? 'bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-xs'
-                      : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
-                  }`}
-                >
-                  Типовой
-                </button>
-                <button
-                  onClick={() => setDepositType('custom')}
-                  className={`px-3 py-1 text-xs font-medium rounded-full transition-all cursor-pointer ${
-                    depositType === 'custom'
-                      ? 'bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-xs'
-                      : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
-                  }`}
-                >
-                  Свой
-                </button>
-              </div>
+              <h4 className="font-semibold text-base sm:text-lg text-zinc-900 dark:text-zinc-100 truncate">Соглашение о задатке</h4>
+            </div>
+
+            <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
+              Формат шаблона .docx для автозаполнения
+            </p>
+
+            <div className="flex items-center gap-1.5 bg-zinc-100/80 dark:bg-zinc-950/40 p-1 rounded-full border border-zinc-200/40 dark:border-zinc-800/40 w-fit">
+              <button
+                onClick={() => setDepositType('standard')}
+                style={depositType === 'standard' ? { background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' } : {}}
+                className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-all cursor-pointer ${
+                  depositType === 'standard'
+                    ? 'text-white shadow-xs'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 bg-transparent border border-transparent'
+                }`}
+              >
+                Типовой
+              </button>
+              <button
+                onClick={() => setDepositType('custom')}
+                style={depositType === 'custom' ? { background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' } : {}}
+                className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-all cursor-pointer ${
+                  depositType === 'custom'
+                    ? 'text-white shadow-xs'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 bg-transparent border border-transparent'
+                }`}
+              >
+                Свой
+              </button>
             </div>
 
             {depositType === 'standard' ? (
-              <div className="space-y-3 pt-1">
-                <p className="text-xs text-zinc-500 leading-relaxed">
+              <div className="space-y-3 pt-1.5 border-t border-zinc-100 dark:border-zinc-800/40">
+                <p className="text-xs sm:text-sm text-zinc-500 leading-relaxed">
                   Юридическое соглашение о внесении задатка для гарантийного бронирования даты мероприятия и обеспечения обязательств сторон.
                 </p>
-                <div className="flex items-center justify-between pt-2 text-xs">
+                <div className="flex items-center justify-between pt-1 text-xs">
                   <span className="text-zinc-400 font-medium">Готов к генерации</span>
                   <button 
                     onClick={() => showToast('Образец загружен', 'Типовое соглашение о задатке отправлено на скачивание.', 'success')}
@@ -652,7 +660,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                 </div>
               </div>
             ) : (
-              <div className="space-y-4 pt-1">
+              <div className="space-y-3.5 pt-1.5 border-t border-zinc-100 dark:border-zinc-800/40">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-zinc-400">Активный файл:</span>
                   <span className="inline-flex items-center gap-1 font-medium text-[var(--metricGreenText)] dark:text-[var(--sage)] text-xs uppercase tracking-wide bg-[var(--sageSoft)] px-2 rounded-full">

@@ -199,14 +199,20 @@ export default function App() {
   });
   const [isRightSidebarExpanded, setIsRightSidebarExpanded] = useState(true);
 
-  // Collapse left sidebar by default on tablet screens (< 1280px)
+  // Collapse left menu sidebar and right calendar sidebar automatically when entering moodboard editor
+  useEffect(() => {
+    if (activeTab === 'moodboard') {
+      setIsLeftSidebarExpanded(false);
+      setIsRightSidebarExpanded(false);
+    }
+  }, [activeTab]);
+
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 1280) {
         setIsLeftSidebarExpanded(false);
       }
     };
-    handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);

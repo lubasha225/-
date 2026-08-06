@@ -826,7 +826,7 @@ export default function WarehouseTab({
               return (
                 <div 
                   key={item.id} 
-                  className="glass-panel rounded-[24px] overflow-hidden flex flex-row items-stretch border border-zinc-200/85 dark:border-zinc-800 shadow-[0_8px_30px_rgba(0,0,0,0.03)] bg-white dark:bg-zinc-900/40 backdrop-blur-md h-[142px] sm:h-[152px] w-full relative group hover:border-[var(--lavenderAccent)]/50 transition-all duration-300 text-left"
+                  className="glass-panel rounded-[24px] overflow-hidden flex flex-row items-stretch border border-zinc-200/85 dark:border-zinc-800 shadow-[0_8px_30px_rgba(0,0,0,0.03)] bg-white dark:bg-zinc-900/40 backdrop-blur-md min-h-[148px] sm:min-h-[156px] h-auto w-full relative group hover:border-[var(--lavenderAccent)]/50 transition-all duration-300 text-left"
                 >
                   {/* Left part - Image section without padding */}
                   <div className="w-[115px] sm:w-[150px] shrink-0 relative overflow-hidden bg-zinc-100 dark:bg-zinc-850">
@@ -843,10 +843,10 @@ export default function WarehouseTab({
                   </div>
 
                   {/* Right part - Details */}
-                  <div className="flex-1 min-w-0 flex flex-col justify-between p-3.5 sm:p-4 h-full w-full">
+                  <div className="flex-1 min-w-0 flex flex-col justify-between p-3 sm:p-4 h-full w-full">
                     <div className="space-y-1">
                       <div className="flex items-start justify-between gap-2">
-                        <h4 className="font-bold text-[14px] sm:text-[15px] text-[var(--ink)] leading-snug tracking-tight line-clamp-1 group-hover:text-[var(--lavDeep)] dark:group-hover:text-[var(--lavenderAccent)] transition-colors duration-300" title={item.name}>
+                        <h4 className="font-bold text-[14px] sm:text-[15px] text-[var(--ink)] leading-snug tracking-tight line-clamp-2 group-hover:text-[var(--lavDeep)] dark:group-hover:text-[var(--lavenderAccent)] transition-colors duration-300" title={item.name}>
                           {item.name}
                         </h4>
                       </div>
