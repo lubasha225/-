@@ -229,11 +229,14 @@ body {
 .btn-plum {
   background: linear-gradient(135deg, #8C52D0 0%, #582F89 100%) !important;
   color: #FFFFFF !important;
+  border-radius: 9999px !important;
+  transition: all 0.3s ease !important;
 }
 
 .btn-plum:hover {
   background: linear-gradient(135deg, #985DE0 0%, #63369A 100%) !important;
-  box-shadow: 0 4px 15px -3px rgba(140, 82, 208, 0.4);
+  box-shadow: 0 4px 15px -3px rgba(140, 82, 208, 0.4) !important;
+  opacity: 0.95;
 }
 
 

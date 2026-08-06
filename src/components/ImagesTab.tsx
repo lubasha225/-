@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { UploadCloud, Trash2, Plus, Pencil, Check, X, ChevronDown, Sparkles, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ImageItem } from '../types';
+import DeleteConfirmModal from './DeleteConfirmModal';
 
 interface CategoryItem {
   key: string;
@@ -27,6 +28,18 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
   const [sourceFilter, setSourceFilter] = useState<'all' | 'uploaded' | 'ai'>('all');
   const [activeDropdownImageId, setActiveDropdownImageId] = useState<string | null>(null);
   const [zoomedImage, setZoomedImage] = useState<ImageItem | null>(null);
+
+  // Delete confirmation modal state
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    isOpen: boolean;
+    title?: string;
+    itemName?: string;
+    description?: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    onConfirm: () => {}
+  });
   
   // Custom categories state
   const [customCategories, setCustomCategories] = useState<CategoryItem[]>(() => {
@@ -63,10 +76,19 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
     showToast('Категория изменена', 'Категория изображения успешно обновлена.', 'success');
   };
 
-  const handleDeleteImage = (imgId: string) => {
-    const updated = images.filter(img => img.id !== imgId);
-    onUpdateImages(updated);
-    showToast('Изображение удалено', 'Изображение успешно удалено из галереи.', 'info');
+  const handleDeleteImage = (img: ImageItem) => {
+    setDeleteConfirm({
+      isOpen: true,
+      title: 'Удалить изображение?',
+      itemName: img.title || 'Изображение',
+      description: 'Вы действительно хотите удалить это изображение из галереи? Действие нельзя отменить.',
+      onConfirm: () => {
+        const updated = images.filter(i => i.id !== img.id);
+        onUpdateImages(updated);
+        showToast('Изображение удалено', 'Изображение успешно удалено из галереи.', 'info');
+        setDeleteConfirm(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   const handleUploadPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -149,17 +171,27 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
 
   // Delete category
   const handleDeleteCategory = (key: string, label: string) => {
-    const updatedCats = customCategories.filter(cat => cat.key !== key);
-    setCustomCategories(updatedCats);
-    
-    // Reset images belonging to this deleted category to general or another valid category
-    const fallbackCat = updatedCats.length > 0 ? updatedCats[0].key : 'all';
-    const updatedImages = images.map(img => 
-      img.category === key ? { ...img, category: fallbackCat } : img
-    );
-    onUpdateImages(updatedImages);
-    setSelectedCategory('all');
-    showToast('Категория удалена', `Категория "${label}" была удалена.`, 'info');
+    setDeleteConfirm({
+      isOpen: true,
+      title: 'Удалить категорию?',
+      itemName: label,
+      description: `Вы действительно хотите удалить категорию «${label}»? Изображения из нее будут перемещены в общую галерею.`,
+      onConfirm: () => {
+        const updatedCats = customCategories.filter(cat => cat.key !== key);
+        setCustomCategories(updatedCats);
+        
+        const fallbackCat = updatedCats.length > 0 ? updatedCats[0].key : 'all';
+        const updatedImages = images.map(img => 
+          img.category === key ? { ...img, category: fallbackCat } : img
+        );
+        onUpdateImages(updatedImages);
+        if (selectedCategory === key) {
+          setSelectedCategory('all');
+        }
+        showToast('Категория удалена', `Категория "${label}" была удалена.`, 'info');
+        setDeleteConfirm(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   const filteredImages = images.filter(img => {
@@ -461,7 +493,7 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
                 </div>
 
                 <button
-                  onClick={() => handleDeleteImage(img.id)}
+                  onClick={() => handleDeleteImage(img)}
                   className="p-2 text-rose-200 hover:text-white bg-black/50 hover:bg-rose-600/70 rounded-full border border-white/10 backdrop-blur-md transition-all cursor-pointer shrink-0"
                   title="Удалить"
                 >
@@ -547,6 +579,16 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
           </div>
         )}
       </AnimatePresence>
+
+      {/* Delete confirmation modal */}
+      <DeleteConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        title={deleteConfirm.title}
+        itemName={deleteConfirm.itemName}
+        description={deleteConfirm.description}
+        onClose={() => setDeleteConfirm(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={deleteConfirm.onConfirm}
+      />
     </div>
   );
 }

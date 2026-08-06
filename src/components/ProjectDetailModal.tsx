@@ -62,6 +62,7 @@ import {
   CreditCard
 } from 'lucide-react';
 import { Project, EstimateItem } from '../types';
+import DeleteConfirmModal from './DeleteConfirmModal';
 
 interface ProjectDetailModalProps {
   project: Project | null;
@@ -95,7 +96,7 @@ export default function ProjectDetailModal({
   // Commercial financial calculation settings
   const [markupPercent, setMarkupPercent] = useState<number>(20);
   const [taxRate, setTaxRate] = useState<number>(6);
-  const [finalPrice, setFinalPrice] = useState<number>(project.budget || 65000);
+  const [finalPrice, setFinalPrice] = useState<number>(() => project.clientPrice !== undefined ? project.clientPrice : (project.budget || 95000));
   const [prepayment, setPrepayment] = useState<number>(30000);
 
   // Hotspot modal state
@@ -104,41 +105,86 @@ export default function ProjectDetailModal({
   const [briefCollapsed, setBriefCollapsed] = useState<boolean>(false);
   const [journalCollapsed, setJournalCollapsed] = useState<boolean>(false);
 
+  // Delete confirmation modal state
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    isOpen: boolean;
+    title?: string;
+    itemName?: string;
+    description?: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    onConfirm: () => {}
+  });
+
   // Custom decorator fields dynamically added by user
   const [customDecoratorFields, setCustomDecoratorFields] = useState<{ id: string; key: string }[]>([]);
   const [isAddingCustomField, setIsAddingCustomField] = useState<boolean>(false);
   const [newFieldName, setNewFieldName] = useState<string>('');
 
   // Brief values state for direct inline editing on cards
-  const [briefValues, setBriefValues] = useState<Record<string, string>>(() => ({
-    "ИМЯ КЛИЕНТА": project.clientName || "Анна Соколова",
-    "ТЕЛЕФОН": "+7 905 123 45 67",
-    "РЕКВИЗИТЫ ПЛАТЕЛЬЩИКА": "ФИО Соколова А. В., ИНН 7712345678",
-    "СОБЫТИЕ": "Свадьба",
-    "ДАТА": project.date || "15.08.2026",
-    "ГОСТЕЙ": `${project.brief?.guestsCount || 50}`,
-    "ФОРМАТ СОБЫТИЯ": "Выездная регистрация",
-    "ПЛОЩАДКА": project.venue || "Площадка не указана",
-    "АДРЕС": "Москва, ул. Воробьевское шоссе, 2Б",
-    "КОНТАКТ ПЛОЩАДКИ": "Менеджер Игорь (+7 916 555-44-33)",
-    "РАЗМЕР ЗОНЫ МОНТАЖА": "8 х 5 м",
-    "КРЕПЕЖ К СТЕНАМ": "Да",
-    "КРЕПЕЖ К ПОТОЛКУ": "Да, до 15 кг",
-    "СОГЛАСОВАНИЕ ОФОРМЛЕНИЯ": "",
-    "ЭЛЕКТРИЧЕСТВО У СЦЕНЫ": "Есть, в радиусе 5м",
-    "ПОДЪЕЗД / ГРУЗОВОЙ ЛИФТ": "",
-    "ПРАЗДНИК НА УЛИЦЕ": "",
-    "ДОСТУП НА МОНТАЖ": "14.08, с 18:00",
-    "ОКНО МОНТАЖА": "4 часа",
-    "ХРАНЕНИЕ НА ПЛОЩАДКЕ": "Можно, до утра",
-    "ДЕМОНТАЖ / ВЫВОЗ": "",
-    "КТО ПРИНИМАЕТ РАБОТЫ": "Заказчик",
-    "ПАЛИТРА ОФОРМЛЕНИЯ": project.brief?.colors?.join(', ') || "#FFFFFF",
-    "СТИЛЬ ОФОРМЛЕНИЯ": project.brief?.style || "Не выбран",
-    "КОНСТРУКЦИИ ДЕКОРА": "Арка, фотозона, столы",
-    "ОРИЕНТИРОВОЧНЫЙ БЮДЖЕТ": `${(project.budget || 150000).toLocaleString('ru')} ₽`,
-    "ДОПОЛНИТЕЛЬНАЯ ИНФОРМАЦИЯ": project.brief?.specialRequests || "Нет примечаний.",
-  }));
+  const [briefValues, setBriefValues] = useState<Record<string, string>>(() => {
+    const saved = project.briefValues || {};
+    return {
+      "ИМЯ КЛИЕНТА": project.clientName && project.clientName !== 'Не указан' ? project.clientName : (saved["ИМЯ КЛИЕНТА"] || ""),
+      "ТЕЛЕФОН": project.clientPhone || saved["ТЕЛЕФОН"] || "",
+      "РЕКВИЗИТЫ ПЛАТЕЛЬЩИКА": saved["РЕКВИЗИТЫ ПЛАТЕЛЬЩИКА"] || "",
+      "СОБЫТИЕ": project.name && !project.name.startsWith('proj_') ? project.name : (saved["СОБЫТИЕ"] || ""),
+      "ДАТА": project.date || saved["ДАТА"] || "",
+      "ГОСТЕЙ": project.brief?.guestsCount ? String(project.brief.guestsCount) : (saved["ГОСТЕЙ"] || ""),
+      "ФОРМАТ СОБЫТИЯ": saved["ФОРМАТ СОБЫТИЯ"] || "",
+      "ПЛОЩАДКА": project.venue && project.venue !== 'Площадка не указана' ? project.venue : (saved["ПЛОЩАДКА"] || ""),
+      "АДРЕС": saved["АДРЕС"] || "",
+      "КОНТАКТ ПЛОЩАДКИ": saved["КОНТАКТ ПЛОЩАДКИ"] || "",
+      "РАЗМЕР ЗОНЫ МОНТАЖА": saved["РАЗМЕР ЗОНЫ МОНТАЖА"] || "",
+      "КРЕПЕЖ К СТЕНАМ": saved["КРЕПЕЖ К СТЕНАМ"] || "",
+      "КРЕПЕЖ К ПОТОЛКУ": saved["КРЕПЕЖ К ПОТОЛКУ"] || "",
+      "СОГЛАСОВАНИЕ ОФОРМЛЕНИЯ": saved["СОГЛАСОВАНИЕ ОФОРМЛЕНИЯ"] || "",
+      "ЭЛЕКТРИЧЕСТВО У СЦЕНЫ": saved["ЭЛЕКТРИЧЕСТВО У СЦЕНЫ"] || "",
+      "ПОДЪЕЗД / ГРУЗОВОЙ ЛИФТ": saved["ПОДЪЕЗД / ГРУЗОВОЙ ЛИФТ"] || "",
+      "ПРАЗДНИК НА УЛИЦЕ": saved["ПРАЗДНИК НА УЛИЦЕ"] || "",
+      "ДОСТУП НА МОНТАЖ": saved["ДОСТУП НА МОНТАЖ"] || "",
+      "ОКНО МОНТАЖА": saved["ОКНО МОНТАЖА"] || "",
+      "ХРАНЕНИЕ НА ПЛОЩАДКЕ": saved["ХРАНЕНИЕ НА ПЛОЩАДКЕ"] || "",
+      "ДЕМОНТАЖ / ВЫВОЗ": saved["ДЕМОНТАЖ / ВЫВОЗ"] || "",
+      "КТО ПРИНИМАЕТ РАБОТЫ": saved["КТО ПРИНИМАЕТ РАБОТЫ"] || "",
+      "ПАЛИТРА ОФОРМЛЕНИЯ": project.brief?.colors && project.brief.colors.length > 0 && project.brief.colors[0] !== '#FFFFFF' ? project.brief.colors.join(', ') : (saved["ПАЛИТРА ОФОРМЛЕНИЯ"] || ""),
+      "СТИЛЬ ОФОРМЛЕНИЯ": project.brief?.style && project.brief.style !== 'Не выбран' ? project.brief.style : (saved["СТИЛЬ ОФОРМЛЕНИЯ"] || ""),
+      "КОНСТРУКЦИИ ДЕКОРА": saved["КОНСТРУКЦИИ ДЕКОРА"] || "",
+      "ОРИЕНТИРОВОЧНЫЙ БЮДЖЕТ": project.budget ? `${project.budget.toLocaleString('ru')} ₽` : (saved["ОРИЕНТИРОВОЧНЫЙ БЮДЖЕТ"] || ""),
+      "ДОПОЛНИТЕЛЬНАЯ ИНФОРМАЦИЯ": project.brief?.specialRequests && project.brief.specialRequests !== 'Нет примечаний.' ? project.brief.specialRequests : (saved["ДОПОЛНИТЕЛЬНАЯ ИНФОРМАЦИЯ"] || ""),
+    };
+  });
+
+  const handleUpdateBriefField = (key: string, value: string) => {
+    setBriefValues(prev => {
+      const next = { ...prev, [key]: value };
+      let updatedBudget = project.budget;
+      let updatedClientPrice = project.clientPrice;
+
+      if (key === "ОРИЕНТИРОВОЧНЫЙ БЮДЖЕТ") {
+        const digits = value.replace(/\D/g, '');
+        if (digits) {
+          const num = parseInt(digits, 10);
+          if (!isNaN(num)) {
+            updatedBudget = num;
+            if (project.clientPrice === undefined) {
+              updatedClientPrice = num;
+              setFinalPrice(num);
+            }
+          }
+        }
+      }
+
+      onUpdateProject({
+        ...project,
+        briefValues: next,
+        budget: updatedBudget,
+        clientPrice: updatedClientPrice
+      });
+      return next;
+    });
+  };
   const [calendarCollapsed, setCalendarCollapsed] = useState<boolean>(false);
   const [timelineFilter, setTimelineFilter] = useState<'all' | 'user-note' | 'system'>('all');
 
@@ -174,83 +220,91 @@ export default function ProjectDetailModal({
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          const matching = parsed.filter((item: any) => item.projectId === project.id || item.projectName === project.name);
-          if (matching.length > 0) return matching;
+          const hasRecord = parsed.some((item: any) => item.projectId === project.id || item.projectName === project.name || item._projectTouch === project.id);
+          if (hasRecord) {
+            return parsed.filter((item: any) => item.projectId === project.id || item.projectName === project.name);
+          }
         }
       } catch (e) {
         console.error(e);
       }
     }
 
-    // Default items for current project
-    const defaultDate = project.date?.split('T')[0] || '2026-08-15';
-    return [
-      {
-        id: `tn_${project.id}_1`,
-        projectId: project.id,
-        projectName: project.name,
-        type: 'task',
-        title: 'Заехать к флористу и подтвердить поставку пионовидных роз',
-        dueDate: defaultDate,
-        completed: true,
-        category: 'Закупка',
-        createdAt: '12.08.2026'
-      },
-      {
-        id: `tn_${project.id}_2`,
-        projectId: project.id,
-        projectName: project.name,
-        type: 'task',
-        title: 'Согласовать схему расстановки столов и арки с менеджером площадки',
-        dueDate: defaultDate,
-        completed: false,
-        category: 'Монтаж',
-        createdAt: '13.08.2026'
-      },
-      {
-        id: `tn_${project.id}_3`,
-        projectId: project.id,
-        projectName: project.name,
-        type: 'task',
-        title: 'Проверить состояние текстиля и чехлов перед погрузкой в автомобиль',
-        dueDate: defaultDate,
-        completed: false,
-        category: 'Логистика',
-        createdAt: '14.08.2026'
-      },
-      {
-        id: `tn_${project.id}_4`,
-        projectId: project.id,
-        projectName: project.name,
-        type: 'note',
-        title: 'Заказчик просила использовать золотые подсвечники вместо серебряных',
-        dueDate: defaultDate,
-        category: 'Клиент',
-        createdAt: '14.08.2026'
-      },
-      {
-        id: `tn_${project.id}_5`,
-        projectId: project.id,
-        projectName: project.name,
-        type: 'note',
-        title: 'Везд на площадку через КПП №2 только с 14:00, при себе иметь паспорт',
-        dueDate: defaultDate,
-        category: 'Важное',
-        createdAt: '15.08.2026'
-      }
-    ];
+    // Default sample items ONLY for initial mock projects 'p1' or 'p2'
+    if (project.id === 'p1' || project.id === 'p2') {
+      const defaultDate = project.date?.split('T')[0] || '2026-08-15';
+      return [
+        {
+          id: `tn_${project.id}_1`,
+          projectId: project.id,
+          projectName: project.name,
+          type: 'task',
+          title: 'Заехать к флористу и подтвердить поставку пионовидных роз',
+          dueDate: defaultDate,
+          completed: true,
+          category: 'Закупка',
+          createdAt: '12.08.2026'
+        },
+        {
+          id: `tn_${project.id}_2`,
+          projectId: project.id,
+          projectName: project.name,
+          type: 'task',
+          title: 'Согласовать схему расстановки столов и арки с менеджером площадки',
+          dueDate: defaultDate,
+          completed: false,
+          category: 'Монтаж',
+          createdAt: '13.08.2026'
+        },
+        {
+          id: `tn_${project.id}_3`,
+          projectId: project.id,
+          projectName: project.name,
+          type: 'task',
+          title: 'Проверить состояние текстиля и чехлов перед погрузкой в автомобиль',
+          dueDate: defaultDate,
+          completed: false,
+          category: 'Логистика',
+          createdAt: '14.08.2026'
+        },
+        {
+          id: `tn_${project.id}_4`,
+          projectId: project.id,
+          projectName: project.name,
+          type: 'note',
+          title: 'Заказчик просила использовать золотые подсвечники вместо серебряных',
+          dueDate: defaultDate,
+          category: 'Клиент',
+          createdAt: '14.08.2026'
+        },
+        {
+          id: `tn_${project.id}_5`,
+          projectId: project.id,
+          projectName: project.name,
+          type: 'note',
+          title: 'Везд на площадку через КПП №2 только с 14:00, при себе иметь паспорт',
+          dueDate: defaultDate,
+          category: 'Важное',
+          createdAt: '15.08.2026'
+        }
+      ];
+    }
+
+    // For any new project, start with an empty journal list
+    return [];
   });
 
   // Helper to persist taskNoteList locally and globally for right sidebar synchronization
   const syncGlobalProjectTasks = (updatedProjectTasks: ProjectTaskNoteItem[]) => {
     setTaskNoteList(updatedProjectTasks);
     const saved = localStorage.getItem('pop_project_tasks_v2');
-    let allGlobalTasks: ProjectTaskNoteItem[] = [];
+    let allGlobalTasks: any[] = [];
     if (saved) {
       try { allGlobalTasks = JSON.parse(saved); } catch (e) { }
     }
-    const otherTasks = allGlobalTasks.filter(item => item.projectId !== project.id && item.projectName !== project.name);
-    const newGlobalList = [...updatedProjectTasks, ...otherTasks];
+    const otherTasks = allGlobalTasks.filter(item => item.projectId !== project.id && item.projectName !== project.name && item._projectTouch !== project.id);
+    const touchMarker = { _projectTouch: project.id, projectId: project.id, projectName: project.name };
+    const newGlobalList = [...updatedProjectTasks, ...otherTasks, touchMarker];
     localStorage.setItem('pop_project_tasks_v2', JSON.stringify(newGlobalList));
     window.dispatchEvent(new Event('project_tasks_updated'));
   };
@@ -392,10 +446,13 @@ export default function ProjectDetailModal({
   };
 
   useEffect(() => {
-    if (project.budget) {
-      setFinalPrice(project.budget);
+    if (project) {
+      const priceToSet = project.clientPrice !== undefined
+        ? project.clientPrice
+        : (project.budget || 95000);
+      setFinalPrice(priceToSet);
     }
-  }, [project]);
+  }, [project.id]);
 
   // Point specs mapping
   const pointSpecifications: Record<string, { title: string; desc: string }> = {
@@ -489,9 +546,9 @@ export default function ProjectDetailModal({
     }
   ];
 
-  const visualizationScenes = (project.scenesData && project.scenesData.length > 0)
+  const visualizationScenes = (project.scenesData && Array.isArray(project.scenesData))
     ? project.scenesData
-    : defaultVisualizationScenes;
+    : (project.id && project.id.startsWith('p') ? defaultVisualizationScenes : []);
 
   // Helper function to calculate total cost for a scene
   const getSceneCost = (sc: any) => {
@@ -501,15 +558,17 @@ export default function ProjectDetailModal({
     if (sc.elements && Array.isArray(sc.elements) && sc.elements.length > 0) {
       return sc.elements.reduce((sum: number, el: any) => sum + (Number(el.price) || 0), 0);
     }
-    return sc.defaultPrice || 45000;
+    return sc.defaultPrice || 0;
   };
 
   // Service estimate (Work & Delivery)
   const rawServiceEstimate = project.estimate ? project.estimate.filter(item => item.category === 'Работа' || item.category === 'Доставка') : [];
-  const serviceEstimate = rawServiceEstimate.length > 0 ? rawServiceEstimate : [
-    { id: 'def_work_1', name: 'Монтаж и демонтаж конструкций', category: 'Работа', quantity: 1, price: 12000 },
-    { id: 'def_work_2', name: 'Транспортная доставка (Грузовой авто)', category: 'Доставка', quantity: 1, price: 5000 }
-  ];
+  const serviceEstimate = (project.estimate && project.estimate.length > 0)
+    ? rawServiceEstimate
+    : (project.id && project.id.startsWith('p') ? [
+        { id: 'def_work_1', name: 'Монтаж и демонтаж конструкций', category: 'Работа', quantity: 1, price: 12000 },
+        { id: 'def_work_2', name: 'Транспортная доставка (Грузовой авто)', category: 'Доставка', quantity: 1, price: 5000 }
+      ] : []);
 
   const decorCost = visualizationScenes.reduce((sum: number, sc: any) => {
     if (disabledSceneIds.includes(sc.id)) return sum;
@@ -535,17 +594,9 @@ export default function ProjectDetailModal({
     }
     setDisabledSceneIds(nextDisabled);
 
-    const nextDecorCost = visualizationScenes.reduce((sum: number, sc: any) => {
-      if (nextDisabled.includes(sc.id)) return sum;
-      return sum + getSceneCost(sc);
-    }, 0);
-
-    const newTotalBudget = nextDecorCost + serviceCost;
-    setFinalPrice(newTotalBudget);
     onUpdateProject({
       ...project,
-      disabledSceneIds: nextDisabled,
-      budget: newTotalBudget
+      disabledSceneIds: nextDisabled
     });
 
     const sceneObj = visualizationScenes.find((sc: any) => sc.id === sceneId);
@@ -562,18 +613,41 @@ export default function ProjectDetailModal({
     const nextCustom = { ...customScenePrices, [sceneId]: newPrice };
     setCustomScenePrices(nextCustom);
 
-    const nextDecorCost = visualizationScenes.reduce((sum: number, sc: any) => {
-      if (disabledSceneIds.includes(sc.id)) return sum;
-      const price = sc.id === sceneId ? newPrice : (nextCustom[sc.id] ?? getSceneCost(sc));
-      return sum + price;
-    }, 0);
-
-    const newTotalBudget = nextDecorCost + serviceCost;
-    setFinalPrice(newTotalBudget);
     onUpdateProject({
       ...project,
-      customScenePrices: nextCustom,
-      budget: newTotalBudget
+      customScenePrices: nextCustom
+    });
+  };
+
+  const handleUpdateSceneName = (sceneId: string, name: string) => {
+    const updatedScenes = visualizationScenes.map((sc: any) =>
+      sc.id === sceneId ? { ...sc, name } : sc
+    );
+    onUpdateProject({ ...project, scenesData: updatedScenes });
+  };
+
+  const handleDeleteScene = (sceneId: string) => {
+    const sceneObj = visualizationScenes.find((sc: any) => sc.id === sceneId);
+    const sceneName = sceneObj?.name || 'Позиция декора';
+    setDeleteConfirm({
+      isOpen: true,
+      title: 'Удалить декор из сметы?',
+      itemName: sceneName,
+      description: `Вы действительно хотите безвозвратно удалить «${sceneName}» из сметного расчета?`,
+      onConfirm: () => {
+        const updatedScenes = visualizationScenes.filter((sc: any) => sc.id !== sceneId);
+        const nextCustom = { ...customScenePrices };
+        delete nextCustom[sceneId];
+        setCustomScenePrices(nextCustom);
+
+        onUpdateProject({
+          ...project,
+          scenesData: updatedScenes,
+          customScenePrices: nextCustom
+        });
+        showToast('Декор удален', 'Позиция декора удалена из сметы', 'info');
+        setDeleteConfirm(prev => ({ ...prev, isOpen: false }));
+      }
     });
   };
 
@@ -584,19 +658,24 @@ export default function ProjectDetailModal({
 
   const handleUpdateEstimateItemPrice = (id: string, price: number) => {
     const updatedEstimate = serviceEstimate.map(item => item.id === id ? { ...item, price } : item);
-    const nextServiceCost = updatedEstimate.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const nextBudget = decorCost + nextServiceCost;
-    onUpdateProject({ ...project, estimate: updatedEstimate, budget: nextBudget });
-    setFinalPrice(nextBudget);
+    onUpdateProject({ ...project, estimate: updatedEstimate });
   };
 
   const handleDeleteEstimateItem = (id: string) => {
-    const updatedEstimate = serviceEstimate.filter(item => item.id !== id);
-    const nextServiceCost = updatedEstimate.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const nextBudget = decorCost + nextServiceCost;
-    onUpdateProject({ ...project, estimate: updatedEstimate, budget: nextBudget });
-    setFinalPrice(nextBudget);
-    showToast('Позиция удалена', 'Позиция удалена из сметы', 'info');
+    const item = serviceEstimate.find(i => i.id === id);
+    const itemName = item?.name || 'Позиция';
+    setDeleteConfirm({
+      isOpen: true,
+      title: 'Удалить позицию?',
+      itemName,
+      description: `Вы действительно хотите удалить «${itemName}» из сметы?`,
+      onConfirm: () => {
+        const updatedEstimate = serviceEstimate.filter(i => i.id !== id);
+        onUpdateProject({ ...project, estimate: updatedEstimate });
+        showToast('Позиция удалена', 'Позиция удалена из сметы', 'info');
+        setDeleteConfirm(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   const handleAddWorkPosition = () => {
@@ -614,10 +693,7 @@ export default function ProjectDetailModal({
       price: priceToAdd
     };
     const updatedEstimate = [...serviceEstimate, newItem];
-    const nextServiceCost = updatedEstimate.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const nextBudget = decorCost + nextServiceCost;
-    onUpdateProject({ ...project, estimate: updatedEstimate, budget: nextBudget });
-    setFinalPrice(nextBudget);
+    onUpdateProject({ ...project, estimate: updatedEstimate });
     setNewWorkName('');
     setNewWorkPrice('');
     setShowAddWorkRow(false);
@@ -638,16 +714,13 @@ export default function ProjectDetailModal({
     };
 
     const nextEstimate = [...project.estimate, newItem];
-    const nextBudget = nextEstimate.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
     const updated = {
       ...project,
-      estimate: nextEstimate,
-      budget: nextBudget
+      estimate: nextEstimate
     };
 
     onUpdateProject(updated);
-    setFinalPrice(nextBudget);
     addJournalLog(`Добавлена новая позиция сметы: «${newEstName}»`, 'system', newItem.id);
 
     setNewEstName('');
@@ -656,46 +729,44 @@ export default function ProjectDetailModal({
 
   // Remove item
   const handleRemoveEstimate = (itemId: string, name: string) => {
-    const nextEstimate = project.estimate.filter(item => item.id !== itemId);
-    const nextBudget = nextEstimate.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-    const updated = {
-      ...project,
-      estimate: nextEstimate,
-      budget: nextBudget
-    };
-
-    onUpdateProject(updated);
-    setFinalPrice(nextBudget);
-    addJournalLog(`Позиция «${name}» удалена из сметы`, 'system');
-    showToast('Удалено', 'Строка сметы исключена из расчетов.', 'info');
+    setDeleteConfirm({
+      isOpen: true,
+      title: 'Удалить из сметы?',
+      itemName: name,
+      description: `Вы действительно хотите удалить «${name}» из сметы?`,
+      onConfirm: () => {
+        const nextEstimate = project.estimate.filter(item => item.id !== itemId);
+        const updated = {
+          ...project,
+          estimate: nextEstimate
+        };
+        onUpdateProject(updated);
+        addJournalLog(`Позиция «${name}» удалена из сметы`, 'system');
+        showToast('Удалено', 'Строка сметы исключена из расчетов.', 'info');
+        setDeleteConfirm(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   // Edit item quantity/price inline
   const handleUpdateItemPrice = (itemId: string, price: number) => {
     const nextEstimate = project.estimate.map(item => item.id === itemId ? { ...item, price } : item);
-    const nextBudget = nextEstimate.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
     const updated = {
       ...project,
-      estimate: nextEstimate,
-      budget: nextBudget
+      estimate: nextEstimate
     };
     onUpdateProject(updated);
-    setFinalPrice(nextBudget);
   };
 
   const handleUpdateItemQty = (itemId: string, quantity: number) => {
     const nextEstimate = project.estimate.map(item => item.id === itemId ? { ...item, quantity } : item);
-    const nextBudget = nextEstimate.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
     const updated = {
       ...project,
-      estimate: nextEstimate,
-      budget: nextBudget
+      estimate: nextEstimate
     };
     onUpdateProject(updated);
-    setFinalPrice(nextBudget);
   };
 
   // Reset estimates list
@@ -709,15 +780,12 @@ export default function ProjectDetailModal({
       { id: "S-002", name: "Транспортная доставка (Грузовой борт)", category: "Доставка", quantity: 1, price: 2500 }
     ];
 
-    const nextBudget = defaultEstimate.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const updated = {
       ...project,
-      estimate: defaultEstimate,
-      budget: nextBudget
+      estimate: defaultEstimate
     };
 
     onUpdateProject(updated);
-    setFinalPrice(nextBudget);
     setMarkupPercent(20);
     addJournalLog("Выполнен полный сброс калькулятора сметы к изначальным спецификациям", "system");
     showToast('Сброшено', 'Смета переустановлена к изначальным спецификациям.', 'info');
@@ -767,9 +835,21 @@ export default function ProjectDetailModal({
   };
 
   const handleDeleteTaskNote = (id: string) => {
-    const nextList = taskNoteList.filter(item => item.id !== id);
-    syncGlobalProjectTasks(nextList);
-    showToast('Удалено', 'Запись удалена из журнала проекта.', 'info');
+    const item = taskNoteList.find(i => i.id === id);
+    const itemTitle = item?.title || 'Запись';
+    const isTask = item?.type === 'task';
+    setDeleteConfirm({
+      isOpen: true,
+      title: isTask ? 'Удалить задачу?' : 'Удалить заметку?',
+      itemName: itemTitle,
+      description: `Вы действительно хотите удалить ${isTask ? 'задачу' : 'заметку'} «${itemTitle}» из журнала?`,
+      onConfirm: () => {
+        const nextList = taskNoteList.filter(i => i.id !== id);
+        syncGlobalProjectTasks(nextList);
+        showToast('Удалено', 'Запись удалена из журнала проекта.', 'info');
+        setDeleteConfirm(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   // Hotspot selective Spec modal opener
@@ -826,83 +906,186 @@ export default function ProjectDetailModal({
   const briefEmptyCount = totalBriefCount - filledBriefCount;
 
   return (
-    <div className="w-full transition-all">
-      {/* 2-COLUMN MAIN WORKSPACE */}
-      <div className="flex-1 flex flex-col lg:flex-row gap-6 min-w-0 items-start">
-          {/* LEFT SIDEBAR (STICKY FROM TOP) */}
-          <aside className="w-full lg:w-60 shrink-0 flex flex-col space-y-4 lg:sticky lg:top-4 z-20 self-start">
-            {/* SIDEBAR NAVIGATION CARD */}
-            <div className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-[var(--glass-edge)] rounded-3xl p-3 shadow-sm">
-              <nav className="space-y-1">
-                {[
-                  { id: 'all', label: 'Общий вид', icon: Layout, badge: '7', badgeColor: 'bg-stone-200/80 text-stone-700 dark:bg-zinc-800 dark:text-stone-300' },
-                  { id: 'brief', label: 'Бриф', icon: Clipboard, badge: '4!', badgeColor: 'bg-rose-100/90 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300' },
-                  { id: 'design', label: 'Дизайн', icon: Palette, badge: 'OK', badgeColor: 'bg-emerald-100/90 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300' },
-                  { id: 'calc', label: 'Расчет & Смета', icon: SlidersHorizontal, badge: '2!', badgeColor: 'bg-purple-100/90 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300' },
-                  { id: 'journal', label: 'Задачи и заметки', icon: CheckSquare, badge: taskNoteList.filter(t => t.type === 'task' && !t.completed).length.toString(), badgeColor: 'bg-purple-100/90 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300' },
-                  { id: 'docs', label: 'Документы', icon: FolderOpen, badge: '4', badgeColor: 'bg-stone-200/80 text-stone-700 dark:bg-zinc-800 dark:text-stone-300' }
-                ].map(tab => {
-                  const Icon = tab.icon;
-                  const isActive = activeTab === tab.id;
+    <div className="w-full max-w-full min-w-0 overflow-hidden space-y-6 transition-all">
+      {/* 1. TOP HEADER NAVIGATION BAR (Full Width at Top) */}
+      <header className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 shrink-0 px-1 w-full min-w-0">
+        <div className="flex-1 min-w-0 w-full space-y-2.5">
+          {/* Title & Status / Progress Badges */}
+          <div className="flex flex-wrap items-center gap-3 w-full min-w-0">
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-stone-900 dark:text-stone-50 truncate max-w-full">
+              {project.name}
+            </h1>
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full bg-purple-100/90 dark:bg-purple-950/60 text-[#582F89] dark:text-purple-200 border border-purple-200/80 dark:border-purple-800/60 shadow-2xs shrink-0">
+              <span className="w-2 h-2 rounded-full bg-[#8C52D0]" /> {steps[project.currentStep]?.toUpperCase()}
+            </span>
+          </div>
 
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id as any)}
-                      className={`w-full flex items-center justify-between p-2.5 rounded-full text-xs font-semibold transition-all duration-300 text-left cursor-pointer ${
-                        isActive
-                          ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-xs'
-                          : 'text-stone-600 dark:text-stone-300 hover:bg-stone-200/60 dark:hover:bg-zinc-800'
-                      }`}
-                    >
-                      <span className="flex items-center gap-2">
-                        <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-[#582F89] dark:text-purple-400'}`} />
-                        <span>{tab.label}</span>
+          {/* Client & Project Info */}
+          <div className="flex flex-wrap items-center gap-y-2 gap-x-3 text-xs text-stone-600 dark:text-stone-400 w-full min-w-0">
+            <span className="flex items-center gap-1.5 font-medium text-stone-800 dark:text-stone-200 shrink-0">
+              <User className="w-3.5 h-3.5 text-[#8C52D0]" /> Клиент: <strong className="font-bold text-stone-900 dark:text-stone-100">{project.clientName}</strong>
+            </span>
+            <span className="text-stone-300 dark:text-stone-700 hidden sm:inline">•</span>
+            <a href={`tel:${project.clientPhone || briefValues["ТЕЛЕФОН"] || '+7 905 123 45 67'}`} className="flex items-center gap-1.5 font-medium text-stone-700 dark:text-stone-300 hover:text-[#8C52D0] transition-colors shrink-0">
+              <Phone className="w-3.5 h-3.5 text-[#8C52D0]" /> {project.clientPhone || briefValues["ТЕЛЕФОН"] || '+7 905 123 45 67'}
+            </a>
+            <span className="text-stone-300 dark:text-stone-700 hidden sm:inline">•</span>
+            <a href={`mailto:${project.clientEmail || 'socolova.design@mail.ru'}`} className="flex items-center gap-1.5 font-medium text-stone-700 dark:text-stone-300 hover:text-[#8C52D0] transition-colors truncate max-w-[220px]">
+              <Mail className="w-3.5 h-3.5 text-[#8C52D0] shrink-0" /> {project.clientEmail || 'socolova.design@mail.ru'}
+            </a>
+            <span className="text-stone-300 dark:text-stone-700 hidden sm:inline">•</span>
+            <span className="flex items-center gap-1.5 text-stone-700 dark:text-stone-300 shrink-0">
+              <Calendar className="w-3.5 h-3.5 text-[#8C52D0]" /> {project.date}
+            </span>
+            <span className="text-stone-300 dark:text-stone-700 hidden sm:inline">•</span>
+            <span className="flex items-center gap-1.5 text-stone-700 dark:text-stone-300 shrink-0">
+              <MapPin className="w-3.5 h-3.5 text-[#8C52D0]" /> {project.venue}
+            </span>
+          </div>
+        </div>
+
+        {/* Action Buttons Block */}
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-start xl:self-center w-full sm:w-auto">
+          <button
+            onClick={() => {
+              const briefUrl = `${window.location.origin}/brief/${project.id}`;
+              navigator.clipboard.writeText(briefUrl);
+              showToast('Ссылка отправлена клиенту', `Ссылка для клиента ${project.clientName} скопирована в буфер обмена: ${briefUrl}`, 'success');
+            }}
+            className="h-9 px-5 text-white rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all duration-300 hover:shadow-lg hover:opacity-95 active:scale-[0.98] cursor-pointer shrink-0 shadow-md flex-1 sm:flex-none"
+            style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+          >
+            <Share2 className="w-3.5 h-3.5" /> Отправить клиенту
+          </button>
+
+          <button
+            onClick={() => handleSaveProject(false)}
+            disabled={isSaving}
+            title={lastSavedTime ? `Последнее сохранение: ${lastSavedTime} (автосохранение каждые 5 мин)` : 'Автосохранение каждые 5 минут'}
+            className="h-9 px-4 border border-emerald-600 dark:border-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all duration-300 cursor-pointer disabled:opacity-70 shrink-0 flex-1 sm:flex-none"
+          >
+            <Save className={`w-3.5 h-3.5 ${isSaving ? 'animate-spin' : ''}`} />
+            {isSaving ? 'Сохранение...' : lastSavedTime ? `Сохранено (${lastSavedTime})` : 'Сохранить'}
+          </button>
+        </div>
+      </header>
+
+      {/* 2-COLUMN MAIN WORKSPACE */}
+      <div className="flex-1 flex flex-col lg:flex-row gap-4 sm:gap-5 min-w-0 w-full items-start overflow-hidden">
+        {/* LEFT SIDEBAR (STICKY FROM TOP ON DESKTOP, SIDE-BY-SIDE 2-COLUMN GRID ON MOBILE/TABLET) */}
+        <aside className="w-full lg:w-60 shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-col gap-3 sm:gap-4 lg:sticky lg:top-4 z-20 self-start min-w-0">
+          {/* SIDEBAR NAVIGATION CARD */}
+          <div className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-[var(--glass-edge)] rounded-3xl p-3.5 sm:p-4 shadow-sm w-full min-w-0 flex flex-col justify-center">
+            {/* MOBILE & TABLET LAYOUT (3 ROWS x 2 COLUMNS GRID, HORIZONTAL ITEM: ICON + TEXT + BADGE) */}
+            <nav className="grid grid-cols-2 lg:hidden gap-2 w-full">
+              {[
+                { id: 'all', label: 'Общий вид', icon: Layout, badge: '7', badgeColor: 'bg-stone-200/80 text-stone-700 dark:bg-zinc-800 dark:text-stone-300' },
+                { id: 'brief', label: 'Бриф', icon: Clipboard, badge: '4!', badgeColor: 'bg-rose-100/90 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300' },
+                { id: 'design', label: 'Дизайн', icon: Palette, badge: 'OK', badgeColor: 'bg-emerald-100/90 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300' },
+                { id: 'calc', label: 'Расчет & Смета', icon: SlidersHorizontal, badge: '2!', badgeColor: 'bg-purple-100/90 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300' },
+                { id: 'journal', label: 'Задачи & заметки', icon: CheckSquare, badge: taskNoteList.filter(t => t.type === 'task' && !t.completed).length.toString(), badgeColor: 'bg-purple-100/90 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300' },
+                { id: 'docs', label: 'Документы', icon: FolderOpen, badge: '4', badgeColor: 'bg-stone-200/80 text-stone-700 dark:bg-zinc-800 dark:text-stone-300' }
+              ].map(tab => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as any)}
+                    className={`flex items-center justify-between gap-1.5 px-3 py-2.5 rounded-2xl transition-all duration-200 cursor-pointer min-w-0 ${
+                      isActive
+                        ? 'border border-[#8C52D0] dark:border-purple-400 text-[#582F89] dark:text-purple-200 bg-purple-50/50 dark:bg-purple-950/30 shadow-[0_0_12px_rgba(140,82,208,0.25)]'
+                        : 'border border-stone-200/80 dark:border-zinc-800 text-[#1B0D22] dark:text-zinc-300 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100/70 dark:hover:bg-zinc-800/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 min-w-0 truncate">
+                      <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#8C52D0]' : 'text-stone-500 dark:text-stone-400'}`} />
+                      <span className="text-[14px] font-normal leading-tight truncate">
+                        {tab.label}
                       </span>
-                      <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold ${tab.badgeColor}`}>
-                        {tab.badge}
-                      </span>
-                    </button>
-                  );
-                })}
-              </nav>
-            </div>
+                    </div>
+                    <span className={`text-[14px] px-2 py-0.5 rounded-full font-bold shrink-0 ${
+                      isActive ? 'bg-purple-100 dark:bg-purple-950 text-[#582F89] dark:text-purple-200' : tab.badgeColor
+                    }`}>
+                      {tab.badge}
+                    </span>
+                  </button>
+                );
+              })}
+            </nav>
+
+            {/* DESKTOP LAYOUT (VERTICAL SIDEBAR MENU) */}
+            <nav className="hidden lg:flex lg:flex-col space-y-1">
+              {[
+                { id: 'all', label: 'Общий вид', icon: Layout, badge: '7', badgeColor: 'bg-stone-200/80 text-stone-700 dark:bg-zinc-800 dark:text-stone-300' },
+                { id: 'brief', label: 'Бриф', icon: Clipboard, badge: '4!', badgeColor: 'bg-rose-100/90 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300' },
+                { id: 'design', label: 'Дизайн', icon: Palette, badge: 'OK', badgeColor: 'bg-emerald-100/90 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300' },
+                { id: 'calc', label: 'Расчет & Смета', icon: SlidersHorizontal, badge: '2!', badgeColor: 'bg-purple-100/90 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300' },
+                { id: 'journal', label: 'Задачи и заметки', icon: CheckSquare, badge: taskNoteList.filter(t => t.type === 'task' && !t.completed).length.toString(), badgeColor: 'bg-purple-100/90 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300' },
+                { id: 'docs', label: 'Документы', icon: FolderOpen, badge: '4', badgeColor: 'bg-stone-200/80 text-stone-700 dark:bg-zinc-800 dark:text-stone-300' }
+              ].map(tab => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as any)}
+                    className={`w-full flex items-center justify-between gap-2 p-2.5 rounded-full text-[14px] transition-all duration-300 text-left cursor-pointer ${
+                      isActive
+                        ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-xs'
+                        : 'text-[#1B0D22] dark:text-zinc-300 hover:bg-stone-200/60 dark:hover:bg-zinc-800'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-[#582F89] dark:text-purple-400'}`} />
+                      <span className="font-normal">{tab.label}</span>
+                    </span>
+                    <span className={`text-[14px] px-2.5 py-0.5 rounded-full font-bold ${tab.badgeColor}`}>
+                      {tab.badge}
+                    </span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
 
             {/* FINANCIAL CHECKLIST CARD - SLEEK COMPACT STYLE */}
-            <div className="bg-white dark:bg-zinc-900 border border-stone-200/90 dark:border-zinc-800 rounded-3xl p-3.5 space-y-3 shadow-xs transition-all duration-300">
+            <div className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-[var(--glass-edge)] rounded-3xl p-4 space-y-3.5 shadow-sm transition-all duration-300">
               {/* Header */}
               <div className="flex items-center justify-between pb-2 border-b border-stone-100 dark:border-zinc-800/80 gap-2">
-                <span className="text-[11px] font-black uppercase tracking-wider text-[#582F89] dark:text-purple-300 flex items-center gap-1.5">
-                  <Receipt className="w-3.5 h-3.5 text-[#8C52D0]" />
+                <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#582F89] dark:text-purple-300 flex items-center gap-1.5">
+                  <Receipt className="w-4 h-4 text-[#8C52D0]" />
                   Чек-лист
                 </span>
-                <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300 bg-purple-100/70 dark:bg-purple-900/50 px-2 py-0.5 rounded-full">
+                <span className="text-[12px] font-medium text-purple-700 dark:text-purple-300 bg-purple-100/70 dark:bg-purple-900/50 px-2.5 py-0.5 rounded-full">
                   Инфо
                 </span>
               </div>
 
               {/* Clean Row Data without inner frames */}
-              <div className="space-y-2.5 text-xs">
+              <div className="space-y-3">
                 {/* 1. СТОИМОСТЬ */}
                 <div className="flex items-center justify-between">
-                  <span className="text-stone-500 dark:text-stone-400 font-medium flex items-center gap-1.5">
+                  <span className="text-stone-500 dark:text-stone-400 text-[12px] font-normal flex items-center gap-1.5">
                     <Wallet className="w-3.5 h-3.5 text-[#8C52D0]" /> Стоимость:
                   </span>
-                  <span className="font-mono font-black text-sm text-[#582F89] dark:text-purple-200">
+                  <span className="font-mono font-black text-base text-[#582F89] dark:text-purple-200">
                     {finalPrice.toLocaleString('ru')} ₽
                   </span>
                 </div>
 
                 {/* 2. ПРЕДОПЛАТА */}
                 <div className="flex items-center justify-between">
-                  <span className="text-stone-500 dark:text-stone-400 font-medium flex items-center gap-1.5">
+                  <span className="text-stone-500 dark:text-stone-400 text-[12px] font-normal flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Предоплата:
                   </span>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-md">
+                    <span className="text-[12px] font-mono font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md">
                       {finalPrice > 0 ? Math.round((prepayment / finalPrice) * 100) : 0}%
                     </span>
-                    <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                    <span className="font-mono font-black text-base text-emerald-600 dark:text-emerald-400">
                       {prepayment.toLocaleString('ru')} ₽
                     </span>
                   </div>
@@ -910,10 +1093,10 @@ export default function ProjectDetailModal({
 
                 {/* 3. ОСТАТОК */}
                 <div className="flex items-center justify-between pt-1 border-t border-stone-100 dark:border-zinc-800/80">
-                  <span className="text-stone-500 dark:text-stone-400 font-medium flex items-center gap-1.5">
+                  <span className="text-stone-500 dark:text-stone-400 text-[12px] font-normal flex items-center gap-1.5">
                     <CreditCard className="w-3.5 h-3.5 text-amber-500" /> Остаток:
                   </span>
-                  <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
+                  <span className="font-mono font-black text-base text-amber-600 dark:text-amber-400">
                     {Math.max(0, finalPrice - prepayment).toLocaleString('ru')} ₽
                   </span>
                 </div>
@@ -930,74 +1113,11 @@ export default function ProjectDetailModal({
           </aside>
 
           {/* MAIN CONTENT AREA */}
-          <main className="flex-1 min-w-0 space-y-6">
+          <main className="flex-1 min-w-0 max-w-full space-y-4 w-full">
             
-            {/* 1. TOP HEADER NAVIGATION BAR */}
-            <header className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 shrink-0 px-1">
-              <div className="flex-1 min-w-0 space-y-2.5">
-                {/* Title & Status / Progress Badges */}
-                <div className="flex flex-wrap items-center gap-3">
-                  <h1 className="text-xl sm:text-2xl font-black tracking-tight text-stone-900 dark:text-stone-50 truncate">
-                    {project.name}
-                  </h1>
-                  <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full bg-purple-100/90 dark:bg-purple-950/60 text-[#582F89] dark:text-purple-200 border border-purple-200/80 dark:border-purple-800/60 shadow-2xs shrink-0">
-                    <span className="w-2 h-2 rounded-full bg-[#8C52D0]" /> {steps[project.currentStep]?.toUpperCase()}
-                  </span>
-                </div>
-
-                {/* Client & Project Info */}
-                <div className="flex flex-wrap items-center gap-y-2 gap-x-3 text-xs text-stone-600 dark:text-stone-400">
-                  <span className="flex items-center gap-1.5 font-medium text-stone-800 dark:text-stone-200 shrink-0">
-                    <User className="w-3.5 h-3.5 text-[#8C52D0]" /> Клиент: <strong className="font-bold text-stone-900 dark:text-stone-100">{project.clientName}</strong>
-                  </span>
-                  <span className="text-stone-300 dark:text-stone-700 hidden sm:inline">•</span>
-                  <a href="tel:+79051234567" className="flex items-center gap-1.5 font-medium text-stone-700 dark:text-stone-300 hover:text-[#8C52D0] transition-colors shrink-0">
-                    <Phone className="w-3.5 h-3.5 text-[#8C52D0]" /> +7 905 123 45 67
-                  </a>
-                  <span className="text-stone-300 dark:text-stone-700 hidden sm:inline">•</span>
-                  <a href="mailto:socolova.design@mail.ru" className="flex items-center gap-1.5 font-medium text-stone-700 dark:text-stone-300 hover:text-[#8C52D0] transition-colors truncate max-w-[220px]">
-                    <Mail className="w-3.5 h-3.5 text-[#8C52D0] shrink-0" /> socolova.design@mail.ru
-                  </a>
-                  <span className="text-stone-300 dark:text-stone-700 hidden sm:inline">•</span>
-                  <span className="flex items-center gap-1.5 text-stone-700 dark:text-stone-300 shrink-0">
-                    <Calendar className="w-3.5 h-3.5 text-[#8C52D0]" /> {project.date}
-                  </span>
-                  <span className="text-stone-300 dark:text-stone-700 hidden sm:inline">•</span>
-                  <span className="flex items-center gap-1.5 text-stone-700 dark:text-stone-300 shrink-0">
-                    <MapPin className="w-3.5 h-3.5 text-[#8C52D0]" /> {project.venue}
-                  </span>
-                </div>
-              </div>
-
-              {/* Action Buttons Block */}
-              <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-start xl:self-center">
-                <button
-                  onClick={() => {
-                    const briefUrl = `${window.location.origin}/brief/${project.id}`;
-                    navigator.clipboard.writeText(briefUrl);
-                    showToast('Ссылка отправлена клиенту', `Ссылка для клиента ${project.clientName} скопирована в буфер обмена: ${briefUrl}`, 'success');
-                  }}
-                  className="h-9 px-5 text-white rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all duration-300 hover:shadow-lg hover:opacity-95 active:scale-[0.98] cursor-pointer shrink-0 shadow-md"
-                  style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
-                >
-                  <Share2 className="w-3.5 h-3.5" /> Отправить клиенту
-                </button>
-
-                <button
-                  onClick={() => handleSaveProject(false)}
-                  disabled={isSaving}
-                  title={lastSavedTime ? `Последнее сохранение: ${lastSavedTime} (автосохранение каждые 5 мин)` : 'Автосохранение каждые 5 минут'}
-                  className="h-9 px-4 border border-emerald-600 dark:border-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all duration-300 cursor-pointer disabled:opacity-70 shrink-0"
-                >
-                  <Save className={`w-3.5 h-3.5 ${isSaving ? 'animate-spin' : ''}`} />
-                  {isSaving ? 'Сохранение...' : lastSavedTime ? `Сохранено (${lastSavedTime})` : 'Сохранить'}
-                </button>
-              </div>
-            </header>
-
-            {/* STEPPER PROGRESS BAR (STANDALONE CARD) */}
-            <nav className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-[var(--glass-edge)] rounded-3xl p-4 sm:p-5 shadow-sm overflow-x-auto hide-scrollbar">
-              <div className="flex items-center justify-between min-w-[650px] px-2">
+            {/* STEPPER PROGRESS BAR (BACKGROUND STRIP ON DESKTOP) */}
+            <nav className="w-full min-w-0 p-3.5 sm:p-4 rounded-3xl lg:bg-white/70 dark:lg:bg-zinc-900/70 lg:backdrop-blur-md lg:border lg:border-[var(--glass-edge)] lg:shadow-sm transition-all">
+              <div className="flex items-center justify-between w-full min-w-0">
                 {steps.map((label, idx) => {
                   const isCompleted = idx < project.currentStep;
                   const isCurrent = idx === project.currentStep;
@@ -1006,32 +1126,39 @@ export default function ProjectDetailModal({
                     <React.Fragment key={idx}>
                       <button
                         onClick={() => handleStepClick(idx)}
-                        className="flex items-center gap-2 outline-none group cursor-pointer"
+                        className="flex-1 flex flex-col items-center text-center outline-none group cursor-pointer min-w-0"
                       >
+                        {/* 1. ВВЕРХУ ЭТАП */}
+                        <span className="block text-[10px] sm:text-[11px] uppercase tracking-wider font-extrabold text-stone-400 dark:text-zinc-500 truncate mb-1">
+                          {isCurrent ? 'Текущий' : `Этап ${idx + 1}`}
+                        </span>
+
+                        {/* 2. ДАЛЬШЕ КРУЖОЧЕК */}
                         <span
-                          className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                          className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-black transition-all shrink-0 ${
                             isCompleted
                               ? 'bg-emerald-600 text-white shadow-xs'
                               : isCurrent
-                              ? 'bg-stone-900 dark:bg-stone-100 text-stone-100 dark:text-stone-950 shadow-md'
+                              ? 'bg-[#582F89] text-white shadow-md ring-2 ring-purple-300 dark:ring-purple-900'
                               : 'bg-stone-200 dark:bg-zinc-800 text-stone-400 group-hover:text-stone-600'
                           }`}
                         >
                           {isCompleted ? '✓' : idx + 1}
                         </span>
-                        <div className="text-left leading-tight">
-                          <span className="block text-[9px] uppercase tracking-wider font-bold text-stone-400">
-                            {isCurrent ? 'Текущий' : isCompleted ? `Этап ${idx + 1}` : `Этап ${idx + 1}`}
-                          </span>
-                          <span className={`text-xs font-bold transition-colors ${
-                            isCurrent ? 'text-purple-800 dark:text-purple-300' : isCompleted ? 'text-stone-800 dark:text-stone-200' : 'text-stone-400 group-hover:text-stone-600'
-                          }`}>{label}</span>
-                        </div>
+
+                        {/* 3. СНИЗУ ПОДПИСЬ */}
+                        <span className={`block text-xs sm:text-sm font-bold transition-colors truncate w-full mt-1 ${
+                          isCurrent ? 'text-[#582F89] dark:text-purple-300' : isCompleted ? 'text-stone-800 dark:text-stone-200' : 'text-stone-400 group-hover:text-stone-600'
+                        }`}>
+                          {label}
+                        </span>
                       </button>
+
+                      {/* АККУРАТНАЯ ТОНКАЯ ЛИНИЯ (1.5px) НА ВСЕХ ЭКРАНАХ */}
                       {idx < steps.length - 1 && (
                         <div
-                          className={`h-0.5 flex-1 mx-3 rounded-full transition-all ${
-                            idx < project.currentStep ? 'bg-emerald-500' : 'bg-stone-200 dark:bg-zinc-800'
+                          className={`h-[1.5px] flex-1 min-w-[12px] max-w-[100px] mx-1 sm:mx-2 rounded-full transition-all shrink-0 ${
+                            idx < project.currentStep ? 'bg-emerald-500' : 'bg-stone-300 dark:bg-zinc-700'
                           }`}
                         />
                       )}
@@ -1043,13 +1170,13 @@ export default function ProjectDetailModal({
             
             {/* BRIEF GRID */}
             {(activeTab === 'all' || activeTab === 'brief') && (
-              <section className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-[var(--glass-edge)] rounded-3xl overflow-hidden shadow-sm">
-                <div className="bg-[#F0EBF9]/80 dark:bg-[#20152B]/80 backdrop-blur-md border-b border-[#D8C7F0] dark:border-[#3D2554] px-5 py-3.5 flex justify-between items-center flex-wrap gap-2">
-                  <div className="flex items-center gap-2">
-                    <Clipboard className="w-4 h-4 text-[#582F89]" />
-                    <div>
-                      <h2 className="font-bold text-sm text-stone-900 dark:text-stone-100">Анкета и Бриф проекта</h2>
-                      <p className="text-[10px] text-stone-400">
+              <section className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-[var(--glass-edge)] rounded-3xl overflow-hidden shadow-sm w-full min-w-0">
+                <div className="bg-[#F0EBF9]/80 dark:bg-[#20152B]/80 backdrop-blur-md border-b border-[#D8C7F0] dark:border-[#3D2554] px-4 sm:px-5 py-3.5 flex justify-between items-center flex-wrap gap-2.5 w-full min-w-0">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Clipboard className="w-4 h-4 text-[#582F89] shrink-0" />
+                    <div className="min-w-0">
+                      <h2 className="font-bold text-sm text-stone-900 dark:text-stone-100 truncate">Анкета и Бриф проекта</h2>
+                      <p className="text-[10px] text-stone-400 truncate">
                         Заполнено: <strong className="text-emerald-600 font-bold">{briefFilledPercentage}%</strong> {briefEmptyCount > 0 ? `(${briefEmptyCount} полей требует заполнения)` : '(Все поля заполнены)'}
                       </p>
                     </div>
@@ -1063,10 +1190,33 @@ export default function ProjectDetailModal({
                         navigator.clipboard.writeText(briefUrl);
                         showToast('Ссылка на бриф скопирована', `Ссылка для клиента ${project.clientName} скопирована в буфер обмена: ${briefUrl}`, 'success');
                       }}
-                      className="px-4 py-1.5 text-white rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all duration-300 hover:shadow-md hover:opacity-95 active:scale-[0.98] cursor-pointer shadow-xs"
-                      style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                      className="relative group px-4 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all duration-300 hover:opacity-85 active:scale-[0.98] cursor-pointer bg-transparent"
                     >
-                      <Send className="w-3.5 h-3.5 text-white" /> Отправить бриф
+                      {/* 1px Gradient Border Overlay */}
+                      <span
+                        className="absolute inset-0 rounded-full pointer-events-none p-[1px]"
+                        style={{
+                          background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)',
+                          WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                          WebkitMaskComposite: 'xor',
+                          maskComposite: 'exclude',
+                        }}
+                      />
+                      <Send className="w-3.5 h-3.5 stroke-[2.2] relative z-10 shrink-0" style={{ stroke: 'url(#purple-gradient-send-btn)' }} />
+                      <span
+                        className="bg-clip-text text-transparent relative z-10"
+                        style={{ backgroundImage: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                      >
+                        Отправить бриф
+                      </span>
+                      <svg width="0" height="0" className="absolute w-0 h-0 pointer-events-none">
+                        <defs>
+                          <linearGradient id="purple-gradient-send-btn" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stopColor="#8C52D0" />
+                            <stop offset="100%" stopColor="#582F89" />
+                          </linearGradient>
+                        </defs>
+                      </svg>
                     </button>
 
                     <button
@@ -1128,9 +1278,9 @@ export default function ProjectDetailModal({
                                 <textarea
                                   rows={2}
                                   value={val === "(требует заполнения)" ? "" : val}
-                                  onChange={(e) => setBriefValues(prev => ({ ...prev, [field.key]: e.target.value }))}
+                                  onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                                   placeholder="(требует заполнения)"
-                                  className={`w-full text-xs font-semibold rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] resize-none ${
+                                  className={`w-full text-[15px] font-semibold rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] resize-none ${
                                     isEmpty
                                       ? 'bg-rose-100/50 text-rose-600 placeholder-rose-500 italic font-medium border-rose-300 dark:bg-rose-950/40 dark:text-rose-400 dark:placeholder-rose-400'
                                       : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
@@ -1140,9 +1290,9 @@ export default function ProjectDetailModal({
                                 <input
                                   type="text"
                                   value={val === "(требует заполнения)" ? "" : val}
-                                  onChange={(e) => setBriefValues(prev => ({ ...prev, [field.key]: e.target.value }))}
+                                  onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                                   placeholder="(требует заполнения)"
-                                  className={`w-full text-xs font-semibold rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] ${
+                                  className={`w-full text-[15px] font-semibold rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] ${
                                     isEmpty
                                       ? 'bg-rose-100/50 text-rose-600 placeholder-rose-500 italic font-medium border-rose-300 dark:bg-rose-950/40 dark:text-rose-400 dark:placeholder-rose-400'
                                       : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
@@ -1214,9 +1364,9 @@ export default function ProjectDetailModal({
                                 <textarea
                                   rows={2}
                                   value={val === "(требует заполнения)" ? "" : val}
-                                  onChange={(e) => setBriefValues(prev => ({ ...prev, [field.key]: e.target.value }))}
+                                  onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                                   placeholder="(требует заполнения)"
-                                  className={`w-full text-xs font-semibold rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] resize-none ${
+                                  className={`w-full text-[15px] font-semibold rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] resize-none ${
                                     isEmpty
                                       ? 'bg-rose-100/50 text-rose-600 placeholder-rose-500 italic font-medium border-rose-300 dark:bg-rose-950/40 dark:text-rose-400 dark:placeholder-rose-400'
                                       : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
@@ -1226,9 +1376,9 @@ export default function ProjectDetailModal({
                                 <input
                                   type="text"
                                   value={val === "(требует заполнения)" ? "" : val}
-                                  onChange={(e) => setBriefValues(prev => ({ ...prev, [field.key]: e.target.value }))}
+                                  onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                                   placeholder="(требует заполнения)"
-                                  className={`w-full text-xs font-semibold rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] ${
+                                  className={`w-full text-[15px] font-semibold rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] ${
                                     isEmpty
                                       ? 'bg-rose-100/50 text-rose-600 placeholder-rose-500 italic font-medium border-rose-300 dark:bg-rose-950/40 dark:text-rose-400 dark:placeholder-rose-400'
                                       : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
@@ -1593,96 +1743,116 @@ export default function ProjectDetailModal({
                         </tr>
 
                         {/* VISUALIZATIONS SUMMARY ROWS */}
-                        {visualizationScenes.map((sc: any, idx: number) => {
-                          const isIncluded = !disabledSceneIds.includes(sc.id);
-                          const cost = getSceneCost(sc);
+                        {visualizationScenes.length > 0 ? (
+                          visualizationScenes.map((sc: any, idx: number) => {
+                            const isIncluded = !disabledSceneIds.includes(sc.id);
+                            const cost = getSceneCost(sc);
 
-                          return (
-                            <tr
-                              key={sc.id || idx}
-                              className={`group transition-colors ${
-                                isIncluded
-                                  ? 'hover:bg-purple-50/30 dark:hover:bg-purple-950/20'
-                                  : 'opacity-50 bg-stone-50/60 dark:bg-zinc-900/40'
-                              }`}
-                            >
-                              {/* PREVIEW ICON */}
-                              <td className="py-3 px-3">
-                                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shadow-2xs border ${
+                            return (
+                              <tr
+                                key={sc.id || idx}
+                                className={`group transition-colors ${
                                   isIncluded
-                                    ? 'bg-purple-100/80 dark:bg-purple-900/50 border-purple-200 dark:border-purple-800 text-[#8C52D0] dark:text-purple-300'
-                                    : 'bg-stone-200/60 dark:bg-zinc-800 border-stone-300 dark:border-zinc-700 text-stone-400'
-                                }`}>
-                                  <Palette className="w-4 h-4 stroke-[2]" />
-                                </div>
-                              </td>
-
-                              {/* SCENE NAME & SUBTITLE */}
-                              <td className="py-3 px-3">
-                                <div className="flex flex-col">
-                                  <span className={`font-bold text-xs ${
-                                    isIncluded ? 'text-stone-900 dark:text-stone-100' : 'line-through text-stone-400 dark:text-zinc-500'
-                                  }`}>
-                                    {sc.name || `Визуализация ${idx + 1}`}
-                                  </span>
-                                  <span className="text-[10px] text-stone-400 dark:text-stone-500 font-medium">
-                                    {sc.subtitle || (sc.elements ? `${sc.elements.length} элементов декора в составе` : 'Полный комплект оформления')}
-                                  </span>
-                                </div>
-                              </td>
-
-                              {/* TOGGLE BUTTON (ВКЛ / ВЫКЛ) */}
-                              <td className="py-3 px-3 text-center">
-                                <button
-                                  type="button"
-                                  onClick={() => handleToggleSceneInEstimate(sc.id)}
-                                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold inline-flex items-center gap-1.5 transition-all duration-300 cursor-pointer shadow-2xs ${
+                                    ? 'hover:bg-purple-50/30 dark:hover:bg-purple-950/20'
+                                    : 'opacity-50 bg-stone-50/60 dark:bg-zinc-900/40'
+                                }`}
+                              >
+                                {/* PREVIEW ICON */}
+                                <td className="py-3 px-3">
+                                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center shadow-2xs border ${
                                     isIncluded
-                                      ? 'bg-purple-50/40 hover:bg-purple-100/70 dark:bg-purple-950/30 dark:hover:bg-purple-900/50 text-[#8C52D0] dark:text-purple-300 border border-[#8C52D0] dark:border-purple-400 active:scale-[0.98]'
-                                      : 'bg-stone-200/70 hover:bg-stone-300 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-stone-500 dark:text-stone-400 border border-stone-300 dark:border-zinc-700'
-                                  }`}
-                                  title={isIncluded ? 'Нажмите, чтобы исключить из расчета сметы' : 'Нажмите, чтобы включить в расчет сметы'}
-                                >
-                                  {isIncluded ? (
-                                    <>
-                                      <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.5]" />
-                                      <span>Включено</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <X className="w-3.5 h-3.5 stroke-[2.5]" />
-                                      <span>Выключено</span>
-                                    </>
-                                  )}
-                                </button>
-                              </td>
+                                      ? 'bg-purple-100/80 dark:bg-purple-900/50 border-purple-200 dark:border-purple-800 text-[#8C52D0] dark:text-purple-300'
+                                      : 'bg-stone-200/60 dark:bg-zinc-800 border-stone-300 dark:border-zinc-700 text-stone-400'
+                                  }`}>
+                                    <Palette className="w-4 h-4 stroke-[2]" />
+                                  </div>
+                                </td>
 
-                              {/* TOTAL COST */}
-                              <td className="py-3 px-3 text-right">
-                                <div className="inline-flex items-center gap-1.5 justify-end">
-                                  {isIncluded ? (
+                                {/* SCENE NAME & SUBTITLE */}
+                                <td className="py-3 px-3">
+                                  <div className="flex flex-col">
                                     <input
-                                      type="number"
-                                      value={cost || ''}
-                                      onChange={(e) => handleUpdateScenePrice(sc.id, Number(e.target.value) || 0)}
-                                      className="w-28 bg-white dark:bg-zinc-800 border border-purple-200 dark:border-purple-800 px-2.5 py-1 rounded-xl text-right font-black text-xs text-[#582F89] dark:text-purple-200 focus:outline-none focus:ring-1 focus:ring-[#8C52D0] shadow-2xs"
+                                      type="text"
+                                      value={sc.name || `Декор ${idx + 1}`}
+                                      onChange={(e) => handleUpdateSceneName(sc.id, e.target.value)}
+                                      className={`font-bold text-xs bg-transparent border-b border-transparent hover:border-purple-300 focus:border-[#8C52D0] focus:outline-none transition-colors ${
+                                        isIncluded ? 'text-stone-900 dark:text-stone-100' : 'line-through text-stone-400 dark:text-zinc-500'
+                                      }`}
                                     />
-                                  ) : (
-                                    <span className="font-mono font-bold text-xs line-through text-stone-400 dark:text-zinc-600">
-                                      {cost.toLocaleString('ru')} ₽
+                                    <span className="text-[10px] text-stone-400 dark:text-stone-500 font-medium">
+                                      {sc.subtitle || (sc.elements && sc.elements.length > 0 ? `${sc.elements.length} элементов декора в составе` : 'Отдельный элемент декора')}
+                                    </span>
+                                  </div>
+                                </td>
+
+                                {/* TOGGLE BUTTON (ВКЛ / ВЫКЛ) */}
+                                <td className="py-3 px-3 text-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleSceneInEstimate(sc.id)}
+                                    className={`px-3.5 py-1.5 rounded-full text-xs font-bold inline-flex items-center gap-1.5 transition-all duration-300 cursor-pointer shadow-2xs ${
+                                      isIncluded
+                                        ? 'bg-purple-50/40 hover:bg-purple-100/70 dark:bg-purple-950/30 dark:hover:bg-purple-900/50 text-[#8C52D0] dark:text-purple-300 border border-[#8C52D0] dark:border-purple-400 active:scale-[0.98]'
+                                        : 'bg-stone-200/70 hover:bg-stone-300 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-stone-500 dark:text-stone-400 border border-stone-300 dark:border-zinc-700'
+                                    }`}
+                                    title={isIncluded ? 'Нажмите, чтобы исключить из расчета сметы' : 'Нажмите, чтобы включить в расчет сметы'}
+                                  >
+                                    {isIncluded ? (
+                                      <>
+                                        <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.5]" />
+                                        <span>Включено</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <X className="w-3.5 h-3.5 stroke-[2.5]" />
+                                        <span>Выключено</span>
+                                      </>
+                                    )}
+                                  </button>
+                                </td>
+
+                                {/* TOTAL COST & DELETE */}
+                                <td className="py-3 px-3 text-right">
+                                  <div className="inline-flex items-center gap-1.5 justify-end">
+                                    {isIncluded ? (
+                                      <input
+                                        type="number"
+                                        value={cost || ''}
+                                        placeholder="0"
+                                        onChange={(e) => handleUpdateScenePrice(sc.id, Number(e.target.value) || 0)}
+                                        className="w-28 bg-white dark:bg-zinc-800 border border-purple-200 dark:border-purple-800 px-2.5 py-1 rounded-xl text-right font-black text-xs text-[#582F89] dark:text-purple-200 focus:outline-none focus:ring-1 focus:ring-[#8C52D0] shadow-2xs"
+                                      />
+                                    ) : (
+                                      <span className="font-mono font-bold text-xs line-through text-stone-400 dark:text-zinc-600">
+                                        {cost.toLocaleString('ru')} ₽
+                                      </span>
+                                    )}
+                                    <span className={`font-medium text-xs ${isIncluded ? 'text-stone-500' : 'text-stone-400'}`}>₽</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteScene(sc.id)}
+                                      title="Удалить позицию декора"
+                                      className="text-stone-300 hover:text-rose-500 transition-colors p-1 cursor-pointer ml-1"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                  {!isIncluded && (
+                                    <span className="block text-[9px] text-rose-500 dark:text-rose-400 font-bold mt-0.5">
+                                      Не учитывается в смете
                                     </span>
                                   )}
-                                  <span className={`font-medium text-xs ${isIncluded ? 'text-stone-500' : 'text-stone-400'}`}>₽</span>
-                                </div>
-                                {!isIncluded && (
-                                  <span className="block text-[9px] text-rose-500 dark:text-rose-400 font-bold mt-0.5">
-                                    Не учитывается в смете
-                                  </span>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })}
+                                </td>
+                              </tr>
+                            );
+                          })
+                        ) : (
+                          <tr>
+                            <td colSpan={4} className="py-6 text-center text-xs text-stone-400 dark:text-zinc-500 italic">
+                              В смете пока нет позиций декора. Нажмите «+ Добавить декор», чтобы внести элемент.
+                            </td>
+                          </tr>
+                        )}
 
                         {/* SECTION TITLE: WORK & DELIVERY */}
                         <tr className="bg-stone-100/90 dark:bg-zinc-800/80 text-stone-700 dark:text-stone-300 font-bold">
@@ -1795,20 +1965,20 @@ export default function ProjectDetailModal({
                         const newNum = visualizationScenes.length + 1;
                         const newScene = {
                           id: `scene-${Date.now()}`,
-                          name: `Визуализация ${newNum}`,
-                          subtitle: `Сцена визуализации ${newNum}`,
-                          defaultPrice: 40000,
+                          name: `Декор ${newNum}`,
+                          subtitle: `Отдельный элемент декора`,
+                          defaultPrice: 0,
                           elements: []
                         };
                         const updatedScenes = [...visualizationScenes, newScene];
                         onUpdateProject({ ...project, scenesData: updatedScenes });
-                        showToast('Добавлена визуализация', `Создана новая запись: Визуализация ${newNum}`, 'success');
+                        showToast('Добавлен декор', `Создана новая позиция: Декор ${newNum}`, 'success');
                       }}
                       className="w-full py-3 px-5 rounded-full text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 hover:shadow-md hover:opacity-95 active:scale-[0.98]"
                       style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
                     >
                       <Plus className="w-4 h-4 stroke-[2.5]" />
-                      <span>+ Добавить визуализацию</span>
+                      <span>+ Добавить декор</span>
                     </button>
 
                     <button
@@ -1915,7 +2085,7 @@ export default function ProjectDetailModal({
                             onChange={(e) => {
                               const val = e.target.value === '' ? 0 : Number(e.target.value);
                               setFinalPrice(val);
-                              onUpdateProject({ ...project, budget: val });
+                              onUpdateProject({ ...project, clientPrice: val });
                             }}
                             className="w-full bg-white dark:bg-zinc-800 border border-[#8C52D0]/50 dark:border-purple-500/50 rounded-xl px-3 py-1.5 font-black font-mono text-xl sm:text-2xl text-[#582F89] dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-[#8C52D0] shadow-2xs transition-all"
                             placeholder="0"
@@ -2530,6 +2700,16 @@ export default function ProjectDetailModal({
           </div>
         )}
       </AnimatePresence>
+
+      {/* Delete confirm modal */}
+      <DeleteConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        title={deleteConfirm.title}
+        itemName={deleteConfirm.itemName}
+        description={deleteConfirm.description}
+        onClose={() => setDeleteConfirm(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={deleteConfirm.onConfirm}
+      />
     </div>
   );
 }

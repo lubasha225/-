@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Plus, Check, X, Layers, Percent, Package, ArrowUpRight, ArrowDownLeft, LayoutGrid, List, Pencil, Upload, Image as ImageIcon, Trash2, Sparkles, Sliders, RotateCcw, Loader2 } from 'lucide-react';
 import { WarehouseItem } from '../types';
+import DeleteConfirmModal from './DeleteConfirmModal';
 
 interface WarehouseTabProps {
   items: WarehouseItem[];
@@ -957,55 +958,17 @@ export default function WarehouseTab({
         </div>
       )}
 
-      {/* Custom Delete Confirmation Dialog */}
-      {deletingItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fadeIn">
-          <div
-            className="bg-white/70 dark:bg-zinc-900/75 backdrop-blur-2xl rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-white/80 dark:border-zinc-700/80 transform scale-100 transition-all text-left"
-            style={{
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-            }}
-          >
-            <div className="flex items-start justify-between gap-4 mb-4">
-              <div className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400">
-                <Trash2 className="w-6 h-6" />
-              </div>
-              <button
-                type="button"
-                onClick={() => setDeletingItem(null)}
-                className="p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
-            <h3 className="text-base font-semibold text-zinc-900 dark:text-white mb-2">
-              Удалить позицию со склада?
-            </h3>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed mb-6">
-              Вы собираетесь безвозвратно удалить товар <strong className="text-zinc-900 dark:text-zinc-200 font-semibold">"{deletingItem.name}"</strong> из базы складского инвентаря. Это действие нельзя отменить.
-            </p>
-
-            <div className="flex gap-3 justify-end">
-              <button
-                type="button"
-                onClick={() => setDeletingItem(null)}
-                className="px-4 py-2.5 text-xs font-medium text-zinc-500 hover:text-zinc-700 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-800/50 dark:hover:bg-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 rounded-full transition-colors cursor-pointer"
-              >
-                Отмена
-              </button>
-              <button
-                type="button"
-                onClick={confirmDeleteItem}
-                className="px-5 py-2.5 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-full shadow-sm transition-colors cursor-pointer"
-              >
-                Удалить позицию
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmModal
+        isOpen={!!deletingItem}
+        title="Удалить позицию со склада?"
+        itemName={deletingItem?.name}
+        description="Вы собираетесь безвозвратно удалить эту позицию из базы складского инвентаря. Это действие нельзя отменить."
+        confirmText="Удалить позицию"
+        isDangerous={true}
+        onClose={() => setDeletingItem(null)}
+        onConfirm={confirmDeleteItem}
+      />
     </div>
   );
 }

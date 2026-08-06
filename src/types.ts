@@ -20,14 +20,17 @@ export interface Project {
   id: string;
   name: string;
   clientName: string;
+  clientPhone?: string;
   clientEmail: string;
   venue: string;
   date: string;
   status: ProjectStatus;
   currentStep: number; // 0: Бриф, 1: Визуал, 2: Смета, 3: Согласование
   budget: number;
+  clientPrice?: number;
   estimate: EstimateItem[];
   brief: BriefData;
+  briefValues?: Record<string, string>;
   imageUrl?: string;
   updatedAt?: string;
   scenesData?: any[];

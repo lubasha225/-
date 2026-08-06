@@ -45,6 +45,7 @@ import { initialProjects, initialWarehouseItems, initialTasks, initialDocuments,
 
 // Subcomponents
 import Toast from './components/Toast';
+import DeleteConfirmModal from './components/DeleteConfirmModal';
 import NewProjectModal from './components/NewProjectModal';
 import ProjectDetailModal from './components/ProjectDetailModal';
 import MoodboardEditor from './components/MoodboardEditor';
@@ -190,8 +191,25 @@ export default function App() {
 
   // Premium collapsible layout and calendar states
   const [isProfileExpanded, setIsProfileExpanded] = useState(false);
-  const [isLeftSidebarExpanded, setIsLeftSidebarExpanded] = useState(true);
+  const [isLeftSidebarExpanded, setIsLeftSidebarExpanded] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 1280;
+    }
+    return false;
+  });
   const [isRightSidebarExpanded, setIsRightSidebarExpanded] = useState(true);
+
+  // Collapse left sidebar by default on tablet screens (< 1280px)
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1280) {
+        setIsLeftSidebarExpanded(false);
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const [calendarYear, setCalendarYear] = useState<number>(2026);
   const [calendarMonth, setCalendarMonth] = useState<number>(6); // 0 = Jan, 6 = July
   const [selectedCalendarDay, setSelectedCalendarDay] = useState<number>(18);
@@ -350,6 +368,24 @@ export default function App() {
       ...newProj,
       id: `proj_${Date.now()}`,
       estimate: [],
+      scenesData: [
+        {
+          id: 'scene-1',
+          name: 'Визуализация 1',
+          elements: [],
+          backdropImage: '',
+          backdropColor: '#F3F4F6',
+          backdropType: 'color'
+        }
+      ],
+      briefValues: {
+        "ИМЯ КЛИЕНТА": newProj.clientName && newProj.clientName !== 'Не указан' ? newProj.clientName : "",
+        "ТЕЛЕФОН": newProj.clientPhone || "",
+        "СОБЫТИЕ": newProj.name && !newProj.name.startsWith('proj_') ? newProj.name : "",
+        "ДАТА": newProj.date || "",
+        "ПЛОЩАДКА": newProj.venue && newProj.venue !== 'Площадка не указана' ? newProj.venue : "",
+        "ОРИЕНТИРОВОЧНЫЙ БЮДЖЕТ": newProj.budget ? `${newProj.budget.toLocaleString('ru')} ₽` : "",
+      },
       brief: {
         style: 'Не выбран',
         colors: ['#FFFFFF'],
@@ -399,13 +435,49 @@ export default function App() {
     }
   };
 
+  // Global Delete Confirmation state
+  const [deleteConfirmState, setDeleteConfirmState] = useState<{
+    isOpen: boolean;
+    title?: string;
+    itemName?: string;
+    description?: string;
+    confirmText?: string;
+    isDangerous?: boolean;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    onConfirm: () => {}
+  });
+
   const handleTrashClick = (p: Project) => {
     if (p.status === 'trash') {
-      setProjects(prev => prev.filter(item => item.id !== p.id));
-      showToast('Удалено навсегда', `Проект «${p.name}» удален окончательно.`, 'warn');
+      setDeleteConfirmState({
+        isOpen: true,
+        title: 'Удалить проект навсегда?',
+        itemName: p.name,
+        description: `Вы действительно хотите окончательно удалить проект «${p.name}»? Восстановить его будет невозможно.`,
+        confirmText: 'Удалить навсегда',
+        isDangerous: true,
+        onConfirm: () => {
+          setProjects(prev => prev.filter(item => item.id !== p.id));
+          showToast('Удалено навсегда', `Проект «${p.name}» удален окончательно.`, 'warn');
+          setDeleteConfirmState(prev => ({ ...prev, isOpen: false }));
+        }
+      });
     } else {
-      setProjects(prev => prev.map(item => item.id === p.id ? { ...item, status: 'trash' as const } : item));
-      showToast('Перемещено в корзину', `Проект «${p.name}» перемещен в корзину.`, 'info');
+      setDeleteConfirmState({
+        isOpen: true,
+        title: 'Переместить в корзину?',
+        itemName: p.name,
+        description: `Проект «${p.name}» будет перемещен в раздел «Корзина». Вы сможете восстановить его в любой момент.`,
+        confirmText: 'В корзину',
+        isDangerous: true,
+        onConfirm: () => {
+          setProjects(prev => prev.map(item => item.id === p.id ? { ...item, status: 'trash' as const } : item));
+          showToast('Перемещено в корзину', `Проект «${p.name}» перемещен в корзину.`, 'info');
+          setDeleteConfirmState(prev => ({ ...prev, isOpen: false }));
+        }
+      });
     }
   };
 
@@ -423,9 +495,6 @@ export default function App() {
         const updated = { ...p, imageUrl, updatedAt: new Date().toISOString() };
         if (estimateItems) {
           updated.estimate = estimateItems;
-        }
-        if (budget !== undefined) {
-          updated.budget = budget;
         }
         if (scenesData) {
           updated.scenesData = scenesData;
@@ -2591,8 +2660,19 @@ export default function App() {
             onSubmit={handleCreateProject}
           />
         )}
-        
       </AnimatePresence>
+
+      {/* Global Delete Confirmation Dialog */}
+      <DeleteConfirmModal
+        isOpen={deleteConfirmState.isOpen}
+        title={deleteConfirmState.title}
+        itemName={deleteConfirmState.itemName}
+        description={deleteConfirmState.description}
+        confirmText={deleteConfirmState.confirmText}
+        isDangerous={deleteConfirmState.isDangerous}
+        onClose={() => setDeleteConfirmState(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={deleteConfirmState.onConfirm}
+      />
 
     </div>
   );

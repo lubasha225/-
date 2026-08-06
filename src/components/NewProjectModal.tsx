@@ -65,10 +65,10 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
         animate={{ scale: 1, y: 0, opacity: 1 }}
         exit={{ scale: 0.95, y: 15, opacity: 0 }}
         transition={{ type: 'spring', duration: 0.5 }}
-        className="relative w-full max-w-lg bg-white/65 dark:bg-zinc-900/65 backdrop-blur-2xl border border-white/80 dark:border-zinc-700/80 rounded-3xl shadow-2xl shadow-purple-950/10 overflow-hidden z-10"
+        className="relative w-full max-w-lg bg-white/10 dark:bg-zinc-900/20 border border-white/60 dark:border-white/20 rounded-3xl shadow-2xl shadow-purple-950/20 overflow-hidden z-10"
         style={{
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
+          backdropFilter: 'blur(32px) saturate(200%)',
+          WebkitBackdropFilter: 'blur(32px) saturate(200%)',
         }}
       >
         {/* Header */}
