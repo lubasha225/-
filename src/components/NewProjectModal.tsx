@@ -56,7 +56,7 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="absolute inset-0 bg-zinc-950/40 backdrop-blur-md"
+        className="absolute inset-0 bg-black/45 backdrop-blur-sm"
       />
 
       {/* Modal Container */}
@@ -65,10 +65,10 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
         animate={{ scale: 1, y: 0, opacity: 1 }}
         exit={{ scale: 0.95, y: 15, opacity: 0 }}
         transition={{ type: 'spring', duration: 0.5 }}
-        className="relative w-full max-w-lg bg-white/10 dark:bg-zinc-900/20 border border-white/60 dark:border-white/20 rounded-3xl shadow-2xl shadow-purple-950/20 overflow-hidden z-10"
+        className="relative w-full max-w-lg bg-white/80 dark:bg-zinc-900/80 border border-white/80 dark:border-white/10 rounded-3xl shadow-2xl shadow-purple-950/20 overflow-hidden z-10"
         style={{
-          backdropFilter: 'blur(32px) saturate(200%)',
-          WebkitBackdropFilter: 'blur(32px) saturate(200%)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
         }}
       >
         {/* Header */}
@@ -86,21 +86,21 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
         <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
           {/* Project Name */}
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Название проекта *</label>
+            <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">Название проекта *</label>
             <input
               type="text"
               required
               placeholder="например, Свадьба в лесу или День Рождения"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-full bg-white/70 dark:bg-zinc-800/80 border border-stone-300/80 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-[#8C52D0] text-sm"
+              className="w-full px-4 py-2.5 rounded-full bg-zinc-50 dark:bg-zinc-800/90 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-[#8C52D0] text-sm"
             />
           </div>
 
           {/* Client Details */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Имя клиента</label>
+              <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">Имя клиента</label>
               <div className="relative">
                 <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                 <input
@@ -108,13 +108,13 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
                   placeholder="Анна К."
                   value={clientName}
                   onChange={(e) => setClientName(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 rounded-full bg-white/70 dark:bg-zinc-800/80 border border-stone-300/80 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-[#8C52D0] text-sm"
+                  className="w-full pl-9 pr-4 py-2.5 rounded-full bg-zinc-50 dark:bg-zinc-800/90 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-[#8C52D0] text-sm"
                 />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Email клиента</label>
+              <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">Email клиента</label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                 <input
@@ -122,7 +122,7 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
                   placeholder="anna@example.com"
                   value={clientEmail}
                   onChange={(e) => setClientEmail(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 rounded-full bg-white/70 dark:bg-zinc-800/80 border border-stone-300/80 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-[#8C52D0] text-sm"
+                  className="w-full pl-9 pr-4 py-2.5 rounded-full bg-zinc-50 dark:bg-zinc-800/90 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-[#8C52D0] text-sm"
                 />
               </div>
             </div>
@@ -131,7 +131,7 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
           {/* Venue & Date */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Площадка проведения</label>
+              <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">Площадка проведения</label>
               <div className="relative">
                 <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                 <input
@@ -139,20 +139,20 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
                   placeholder="Лофт «Верх», Краснодар"
                   value={venue}
                   onChange={(e) => setVenue(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 rounded-full bg-white/70 dark:bg-zinc-800/80 border border-stone-300/80 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-[#8C52D0] text-sm"
+                  className="w-full pl-9 pr-4 py-2.5 rounded-full bg-zinc-50 dark:bg-zinc-800/90 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-[#8C52D0] text-sm"
                 />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Дата мероприятия</label>
+              <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">Дата мероприятия</label>
               <div className="relative">
                 <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                 <input
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 rounded-full bg-white/70 dark:bg-zinc-800/80 border border-stone-300/80 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#8C52D0] text-sm"
+                  className="w-full pl-9 pr-4 py-2.5 rounded-full bg-zinc-50 dark:bg-zinc-800/90 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#8C52D0] text-sm"
                 />
               </div>
             </div>
@@ -161,7 +161,7 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
           {/* Budget & Initial Status */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Бюджет (₽)</label>
+              <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">Бюджет (₽)</label>
               <div className="relative">
                 <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                 <input
@@ -169,17 +169,17 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
                   min="0"
                   value={budget}
                   onChange={(e) => setBudget(Number(e.target.value))}
-                  className="w-full pl-9 pr-4 py-2.5 rounded-full bg-white/70 dark:bg-zinc-800/80 border border-stone-300/80 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#8C52D0] text-sm"
+                  className="w-full pl-9 pr-4 py-2.5 rounded-full bg-zinc-50 dark:bg-zinc-800/90 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#8C52D0] text-sm"
                 />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Начальный Статус</label>
+              <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">Начальный Статус</label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as ProjectStatus)}
-                className="w-full px-4 py-2.5 rounded-full bg-white/70 dark:bg-zinc-800/80 border border-stone-300/80 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#8C52D0] text-sm cursor-pointer"
+                className="w-full px-4 py-2.5 rounded-full bg-zinc-50 dark:bg-zinc-800/90 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#8C52D0] text-sm cursor-pointer"
               >
                 <option value="progress">В работе</option>
                 <option value="waiting">Ждёт клиента</option>

@@ -135,7 +135,7 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
         setHeaderActions(null);
       }
     };
-  }, [setHeaderActions, images, selectedCategory, customCategories]);
+  }, [setHeaderActions]);
 
   // Add new category
   const handleAddCategorySubmit = (e: React.FormEvent) => {

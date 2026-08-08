@@ -37,7 +37,8 @@ import {
   MapPin,
   Settings,
   Menu,
-  X
+  X,
+  FlaskConical
 } from 'lucide-react';
 
 import { Project, WarehouseItem, Task, DocumentItem, ImageItem, ProjectStatus, EstimateItem } from './types';
@@ -48,11 +49,14 @@ import Toast from './components/Toast';
 import DeleteConfirmModal from './components/DeleteConfirmModal';
 import NewProjectModal from './components/NewProjectModal';
 import ProjectDetailModal from './components/ProjectDetailModal';
+import TestProjectCardPage from './components/TestProjectCardPage';
 import MoodboardEditor from './components/MoodboardEditor';
 import WarehouseTab from './components/WarehouseTab';
 import ImagesTab from './components/ImagesTab';
 import DocumentsTab from './components/DocumentsTab';
 import ProfileTab from './components/ProfileTab';
+import SettingsTab from './components/SettingsTab';
+import BlankTestPage from './components/BlankTestPage';
 
 export default function App() {
   // Theme state
@@ -62,8 +66,14 @@ export default function App() {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
 
+  // Background style state (Subly Aurora vs Classic)
+  const [bgTheme, setBgTheme] = useState<'aurora' | 'default'>(() => {
+    const saved = localStorage.getItem('bg_theme');
+    return (saved as 'aurora' | 'default') || 'aurora';
+  });
+
   // Main active tab state
-  const [activeTab, setActiveTab] = useState<'projects' | 'projectCard' | 'warehouse' | 'images' | 'documents' | 'profile' | 'moodboard' | 'calendar'>('projects');
+  const [activeTab, setActiveTab] = useState<'projects' | 'projectCard' | 'testCard' | 'testPage' | 'warehouse' | 'images' | 'documents' | 'profile' | 'moodboard' | 'calendar' | 'settings'>('projects');
 
   // Core database states with local persistence
   const [projects, setProjects] = useState<Project[]>(() => {
@@ -197,7 +207,7 @@ export default function App() {
     }
     return false;
   });
-  const [isRightSidebarExpanded, setIsRightSidebarExpanded] = useState(true);
+  const [isRightSidebarExpanded, setIsRightSidebarExpanded] = useState(false);
 
   // Collapse left menu sidebar and right calendar sidebar automatically when entering moodboard editor
   useEffect(() => {
@@ -324,21 +334,22 @@ export default function App() {
 
   // Toggle tasks and notes from the right sidebar
   const handleToggleGlobalTaskNote = (id: string) => {
+    let completedTitle = '';
     setGlobalProjectTasksNotes(prev => {
-      const updated = prev.map(item => {
+      return prev.map(item => {
         if (item.id === id && item.type === 'task') {
           const nextVal = !item.completed;
           if (nextVal) {
-            showToast('Задача выполнена', `Отмечено как выполнено: "${item.title}"`, 'success');
+            completedTitle = item.title;
           }
           return { ...item, completed: nextVal };
         }
         return item;
       });
-      localStorage.setItem('pop_project_tasks_v2', JSON.stringify(updated));
-      window.dispatchEvent(new Event('project_tasks_updated'));
-      return updated;
     });
+    if (completedTitle) {
+      showToast('Задача выполнена', `Отмечено как выполнено: "${completedTitle}"`, 'success');
+    }
   };
 
   useEffect(() => {
@@ -352,6 +363,17 @@ export default function App() {
       document.body.classList.remove('dark-theme');
     }
   }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem('bg_theme', bgTheme);
+    if (bgTheme === 'aurora') {
+      document.body.classList.add('bg-aurora');
+      document.body.classList.remove('bg-default');
+    } else {
+      document.body.classList.add('bg-default');
+      document.body.classList.remove('bg-aurora');
+    }
+  }, [bgTheme]);
 
   // Toast triggering utility
   const showToast = useCallback((title: string, message: string, type: 'success' | 'info' | 'warn' = 'success') => {
@@ -758,12 +780,14 @@ export default function App() {
               {[
                 { value: 'projects', label: 'Мои проекты', icon: <FolderKanban className="w-4 h-4" /> },
                 { value: 'projectCard', label: 'Карточка проекта', icon: <FolderOpen className="w-4 h-4" /> },
+                { value: 'testPage', label: 'Тестовая страница 📄', icon: <Sparkles className="w-4 h-4 text-[#8C52D0]" /> },
                 { value: 'moodboard', label: 'Редактор', icon: <Layout className="w-4 h-4" /> },
                 { value: 'calendar', label: 'Календарь', icon: <Calendar className="w-4 h-4" /> },
                 { value: 'warehouse', label: 'Мой склад', icon: <Warehouse className="w-4 h-4" /> },
                 { value: 'images', label: 'Мои изображения', icon: <ImageIcon className="w-4 h-4" /> },
                 { value: 'documents', label: 'Мои документы', icon: <FileText className="w-4 h-4" /> },
-                { value: 'profile', label: 'Профиль бренда', icon: <User className="w-4 h-4" /> }
+                { value: 'profile', label: 'Профиль бренда', icon: <User className="w-4 h-4" /> },
+                { value: 'settings', label: 'Настройки', icon: <Settings className="w-4 h-4" /> }
               ].map((item) => {
                 const isSelected = activeTab === item.value;
                 return (
@@ -869,11 +893,13 @@ export default function App() {
         <nav className={`flex flex-col gap-0.5 w-full ${!isLeftSidebarExpanded ? 'items-center' : ''}`}>
           {[
             { key: 'projects', label: 'Мои проекты', icon: <FolderKanban className="w-[17px] h-[17px] shrink-0" /> },
+            { key: 'testPage', label: 'Тестовая страница 📄', icon: <Sparkles className="w-[17px] h-[17px] shrink-0 text-[#8C52D0]" /> },
             { key: 'moodboard', label: 'Редактор', icon: <Layout className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'warehouse', label: 'Мой склад', icon: <Warehouse className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'images', label: 'Мои изображения', icon: <ImageIcon className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'documents', label: 'Мои документы', icon: <FileText className="w-[17px] h-[17px] shrink-0" /> },
-            { key: 'profile', label: 'Профиль бренда', icon: <User className="w-[17px] h-[17px] shrink-0" /> }
+            { key: 'profile', label: 'Профиль бренда', icon: <User className="w-[17px] h-[17px] shrink-0" /> },
+            { key: 'settings', label: 'Настройки', icon: <Settings className="w-[17px] h-[17px] shrink-0" /> }
           ].map((tab) => (
             <button
               key={tab.key}
@@ -996,8 +1022,8 @@ export default function App() {
             </div>
           )}
 
-          {/* MAIN PANEL TOP NAVBAR Header (Shown on tabs except Moodboard Editor and Project Card) */}
-          {activeTab !== 'moodboard' && activeTab !== 'projectCard' && !selectedProject && (
+          {/* MAIN PANEL TOP NAVBAR Header (Shown on tabs except Moodboard Editor, Project Card, and Test Page) */}
+          {activeTab !== 'moodboard' && activeTab !== 'projectCard' && activeTab !== 'testPage' && !selectedProject && (
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 shrink-0">
               <div>
                 <div className="flex items-center gap-3">
@@ -1008,6 +1034,8 @@ export default function App() {
                     {activeTab === 'images' && 'Галерея'}
                     {activeTab === 'documents' && 'Мои документы'}
                     {activeTab === 'profile' && 'Профиль бренда'}
+                    {activeTab === 'settings' && 'Настройки'}
+                    {activeTab === 'testPage' && 'Тестовая страница'}
                   </h1>
                   
                   {/* Notification Badge Bell */}
@@ -1147,14 +1175,6 @@ export default function App() {
                       )}
                     </AnimatePresence>
                   </div>
-
-                  {/* Theme Toggle Button */}
-                  <button
-                    onClick={toggleTheme}
-                    className="w-9 h-9 rounded-full glass-panel flex items-center justify-center text-[var(--soft)] hover:text-[var(--lavenderAccent)] transition-colors shadow-sm cursor-pointer"
-                  >
-                    {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-                  </button>
                 </div>
                 
                 <p className="text-[var(--soft)] mt-1 text-[13px] leading-relaxed">
@@ -1164,6 +1184,7 @@ export default function App() {
                   {activeTab === 'images' && 'Ваша галерея загруженных референсов, сгенерированных ИИ фонов, элементов флористики и декора для оформления.'}
                   {activeTab === 'documents' && 'Реквизиты, на кого оформляется договор, шаблоны договора и акта. Только автоматическая генерация и печать, оплата не принимается в сервисе.'}
                   {activeTab === 'profile' && 'Настройки реквизитов и контактов студии для формирования коммерческих предложений.'}
+                  {activeTab === 'settings' && 'Управление параметрами оформления и цветовой темой интерфейса.'}
                 </p>
               </div>
 
@@ -1548,11 +1569,11 @@ export default function App() {
                                         setSelectedProject(p);
                                         setActiveTab('moodboard');
                                       }}
-                                      style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
-                                      className="flex-1 text-white rounded-full py-1.5 sm:py-2 text-xs font-semibold shadow-xs hover:shadow-md hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 cursor-pointer flex items-center justify-center gap-1"
+                                      style={{ border: '1px solid #8C52D0' }}
+                                      className="flex-1 bg-transparent text-[#8C52D0] rounded-full py-1.5 sm:py-2 text-xs font-semibold hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 cursor-pointer flex items-center justify-center gap-1 hover:bg-[#8C52D0]/10"
                                     >
-                                      <Palette className="w-3.5 h-3.5 shrink-0" />
-                                      <span>Редактор</span>
+                                      <Palette className="w-3.5 h-3.5 shrink-0 text-[#8C52D0]" />
+                                      <span className="bg-gradient-to-r from-[#8C52D0] to-[#582F89] bg-clip-text text-transparent font-semibold">Редактор</span>
                                     </button>
                                   </>
                                 )}
@@ -2037,11 +2058,11 @@ export default function App() {
                                            setSelectedProject(p);
                                            setActiveTab('moodboard');
                                          }}
-                                         style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
-                                         className="text-white rounded-full font-semibold text-[12px] py-2 px-3.5 shadow-sm transition-all duration-300 hover:shadow-md hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0 flex items-center gap-1.5"
+                                         style={{ border: '1px solid #8C52D0' }}
+                                         className="bg-transparent text-[#8C52D0] rounded-full font-semibold text-[12px] py-2 px-3.5 shadow-xs transition-all duration-300 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0 flex items-center gap-1.5 hover:bg-[#8C52D0]/10"
                                        >
-                                         <Palette className="w-3.5 h-3.5 shrink-0" />
-                                         <span>Редактор</span>
+                                         <Palette className="w-3.5 h-3.5 shrink-0 text-[#8C52D0]" />
+                                         <span className="bg-gradient-to-r from-[#8C52D0] to-[#582F89] bg-clip-text text-transparent font-semibold">Редактор</span>
                                        </button>
                                      </div>
                                    )}
@@ -2077,6 +2098,42 @@ export default function App() {
                     showToast={showToast}
                     onOpenEditor={() => setActiveTab('moodboard')}
                   />
+                </motion.div>
+              )}
+
+              {/* TEST PROJECT CARD TAB */}
+              {activeTab === 'testCard' && (
+                <motion.div
+                  key="test-card-tab"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-6"
+                >
+                  <TestProjectCardPage
+                    project={selectedProject || projects[0]}
+                    onClose={() => {
+                      setSelectedProject(null);
+                      setActiveTab('projects');
+                    }}
+                    onUpdateProject={handleUpdateProject}
+                    showToast={showToast}
+                    onOpenEditor={() => setActiveTab('moodboard')}
+                  />
+                </motion.div>
+              )}
+
+              {/* BLANK TEST PAGE TAB */}
+              {activeTab === 'testPage' && (
+                <motion.div
+                  key="blank-test-page-tab"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <BlankTestPage showToast={showToast} />
                 </motion.div>
               )}
 
@@ -2315,6 +2372,25 @@ export default function App() {
                   transition={{ duration: 0.3 }}
                 >
                   <ProfileTab
+                    showToast={showToast}
+                  />
+                </motion.div>
+              )}
+
+              {/* SETTINGS TAB */}
+              {activeTab === 'settings' && (
+                <motion.div
+                  key="settings-tab"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <SettingsTab
+                    theme={theme}
+                    toggleTheme={toggleTheme}
+                    bgTheme={bgTheme}
+                    setBgTheme={setBgTheme}
                     showToast={showToast}
                   />
                 </motion.div>

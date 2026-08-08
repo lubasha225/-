@@ -11,7 +11,8 @@ interface DeleteConfirmModalProps {
   cancelText?: string;
   isDangerous?: boolean;
   onConfirm: () => void;
-  onCancel: () => void;
+  onCancel?: () => void;
+  onClose?: () => void;
 }
 
 export default function DeleteConfirmModal({
@@ -23,9 +24,11 @@ export default function DeleteConfirmModal({
   cancelText = 'Отмена',
   isDangerous = true,
   onConfirm,
-  onCancel
+  onCancel,
+  onClose
 }: DeleteConfirmModalProps) {
   if (!isOpen) return null;
+  const handleClose = onCancel || onClose || (() => {});
 
   return (
     <AnimatePresence>
@@ -48,7 +51,7 @@ export default function DeleteConfirmModal({
             </div>
             <button
               type="button"
-              onClick={onCancel}
+              onClick={handleClose}
               className="p-1.5 rounded-full hover:bg-white/30 dark:hover:bg-zinc-800/50 text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
@@ -75,7 +78,7 @@ export default function DeleteConfirmModal({
           <div className="flex items-center gap-3 justify-end pt-2 border-t border-stone-100 dark:border-zinc-800/80">
             <button
               type="button"
-              onClick={onCancel}
+              onClick={handleClose}
               className="px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold text-stone-600 dark:text-stone-300 border border-stone-200 dark:border-zinc-700 hover:bg-stone-100 dark:hover:bg-zinc-800 transition-all cursor-pointer"
             >
               {cancelText}

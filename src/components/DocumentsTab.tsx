@@ -169,13 +169,13 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
             
             <div className="flex items-start justify-between pb-4 border-b border-zinc-100 dark:border-zinc-800/50">
               <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="p-1.5 bg-[var(--lavenderSoft)] rounded-lg text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] shrink-0">
-                    <ShieldCheck className="w-4 h-4" />
-                  </span>
-                  <h3 className="font-medium text-base text-zinc-900 dark:text-zinc-50 tracking-tight">Профиль исполнителя</h3>
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 bg-[var(--lavenderSoft)] rounded-xl text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] shrink-0">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-semibold text-base sm:text-lg text-zinc-900 dark:text-zinc-100 tracking-tight">Профиль исполнителя</h3>
                 </div>
-                <p className="text-xs text-zinc-400 dark:text-zinc-500 leading-normal">
+                <p className="text-xs sm:text-sm font-normal text-zinc-700 dark:text-zinc-300 leading-relaxed">
                   Юридические реквизиты, используемые при генерации договоров и актов выполненных услуг.
                 </p>
               </div>
@@ -183,7 +183,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
 
             {/* Entity Selector (Premium Pill Design) */}
             <div className="space-y-2">
-              <label className="text-[10px] font-normal text-[#6B6B6B] dark:text-[#6B6B6B]/90 uppercase tracking-wider block">Организационно-правовая форма</label>
+              <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal block">Организационно-правовая форма</label>
               <div className="grid grid-cols-4 gap-1 p-1 bg-zinc-100/50 dark:bg-zinc-950/30 rounded-full border border-zinc-200/30 dark:border-zinc-800/20">
                 {(['IP', 'OOO', 'Self', 'Individual'] as EntityType[]).map((type) => {
                   const labels: Record<EntityType, string> = {
@@ -200,8 +200,8 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                       onClick={() => handleEntityTypeChange(type)}
                       className={`py-2 px-1 rounded-full text-xs font-medium tracking-wide transition-all cursor-pointer text-center ${
                         isActive
-                          ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 shadow-xs'
-                          : 'text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+                          ? 'bg-[linear-gradient(135deg,#8C52D0_0%,#582F89_100%)] text-white font-semibold shadow-xs'
+                          : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium'
                       }`}
                     >
                       {labels[type]}
@@ -217,8 +217,8 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
               {/* Full Legal Name */}
               <div className="space-y-1.5">
                 <div className="flex justify-between items-center">
-                  <label className="text-[10px] font-normal text-[#6B6B6B] dark:text-[#6B6B6B]/90 uppercase tracking-wider">Официальное наименование</label>
-                  <span className="text-xs text-zinc-400 italic">Для первого абзаца договора</span>
+                  <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal">Официальное наименование</label>
+                  <span className="text-xs text-zinc-600 dark:text-zinc-300 font-normal italic">Для первого абзаца договора</span>
                 </div>
                 <div className="relative">
                   <input
@@ -237,7 +237,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
               {/* Triple Row: INN, OGRN, Phone */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-normal text-[#6B6B6B] dark:text-[#6B6B6B]/90 uppercase tracking-wider">ИНН</label>
+                  <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal">ИНН</label>
                   <input
                     type="text"
                     value={requisites.inn}
@@ -247,7 +247,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-normal text-[#6B6B6B] dark:text-[#6B6B6B]/90 uppercase tracking-wider">
+                  <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal">
                     {requisites.entityType === 'OOO' ? 'ОГРН' : 'ОГРНИП'}
                   </label>
                   <input
@@ -259,7 +259,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-normal text-[#6B6B6B] dark:text-[#6B6B6B]/90 uppercase tracking-wider">Телефон контакта</label>
+                  <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal">Телефон контакта</label>
                   <input
                     type="text"
                     value={requisites.phone}
@@ -272,7 +272,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
 
               {/* Legal Address */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-normal text-[#6B6B6B] dark:text-[#6B6B6B]/90 uppercase tracking-wider">Юридический адрес регистрации</label>
+                <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal">Юридический адрес регистрации</label>
                 <input
                   type="text"
                   value={requisites.address}
@@ -284,10 +284,10 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
 
               {/* Banking details block */}
               <div className="p-4 bg-zinc-50/50 dark:bg-zinc-950/10 rounded-2xl border border-zinc-100 dark:border-zinc-800/40 space-y-3">
-                <span className="text-[10px] font-normal text-[#6B6B6B] dark:text-[#6B6B6B]/90 uppercase tracking-wider block">Банковские реквизиты</span>
+                <span className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal block">Банковские реквизиты</span>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div className="space-y-1">
-                    <label className="text-xs text-zinc-400">Расчётный счёт</label>
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal">Расчётный счёт</label>
                     <input
                       type="text"
                       value={requisites.account}
@@ -297,7 +297,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs text-zinc-400">Название банка</label>
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal">Название банка</label>
                     <input
                       type="text"
                       value={requisites.bank}
@@ -307,7 +307,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs text-zinc-400">БИК банка</label>
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal">БИК банка</label>
                     <input
                       type="text"
                       value={requisites.bik}
@@ -324,11 +324,11 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
             {/* Dynamic Taxation Section inside the same panel */}
             <div className="pt-6 border-t border-zinc-100 dark:border-zinc-800/50 space-y-4">
               <div className="space-y-1">
-                <h4 className="font-medium text-base text-zinc-900 dark:text-zinc-50 tracking-tight flex items-center gap-2">
+                <h4 className="font-semibold text-base sm:text-lg text-zinc-900 dark:text-zinc-100 tracking-tight flex items-center gap-2">
                   <Coins className="w-4.5 h-4.5 text-[var(--sage)]" />
                   <span>Налоговый режим</span>
                 </h4>
-                <p className="text-xs text-zinc-400 leading-normal">
+                <p className="text-xs sm:text-sm font-normal text-zinc-700 dark:text-zinc-300 leading-relaxed">
                   Параметры налогообложения для автоматического вычета при расчетах рентабельности смет.
                 </p>
               </div>
@@ -336,7 +336,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* VAT */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-normal text-[#6B6B6B] dark:text-[#6B6B6B]/90 uppercase tracking-wider">Налог на добавленную стоимость (НДС)</label>
+                  <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal">Налог на добавленную стоимость (НДС)</label>
                   <select
                     value={requisites.vat}
                     onChange={(e) => handleFieldChange('vat', e.target.value)}
@@ -348,14 +348,14 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                     <option value="10%">10%</option>
                     <option value="20%">20%</option>
                   </select>
-                  <p className="text-xs text-zinc-400 leading-normal">
+                  <p className="text-xs font-normal text-zinc-600 dark:text-zinc-300 leading-relaxed">
                     Если вы плательщик НДС — выберите вашу ставку.
                   </p>
                 </div>
 
                 {/* USN */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-normal text-[#6B6B6B] dark:text-[#6B6B6B]/90 uppercase tracking-wider">Упрощенная система (УСН)</label>
+                  <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal">Упрощенная система (УСН)</label>
                   <select
                     value={requisites.usn}
                     onChange={(e) => handleFieldChange('usn', e.target.value)}
@@ -365,13 +365,13 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                     <option value="6% (Доходы)">6% (Доходы)</option>
                     <option value="15% (Доходы минус расходы)">15% (Доходы минус расходы)</option>
                   </select>
-                  <p className="text-xs text-zinc-400 leading-normal">
+                  <p className="text-xs font-normal text-zinc-600 dark:text-zinc-300 leading-relaxed">
                     Применяется совместно или отдельно от НДС.
                   </p>
                 </div>
               </div>
 
-              <div className="p-3.5 bg-[var(--sageSoft)] rounded-2xl border border-[var(--sage)]/10 text-xs text-[var(--metricGreenText)] dark:text-[var(--sage)] leading-relaxed">
+              <div className="p-3.5 bg-emerald-500/10 dark:bg-emerald-950/30 rounded-2xl border border-emerald-500/20 text-xs text-emerald-900 dark:text-emerald-200 font-normal leading-relaxed">
                 На патентной системе (ПСН) и для самозанятых (НПД) поля НДС и УСН оставьте пустыми — эти режимы не выставляют НДС, а налог не считается процентом с проекта.
               </div>
             </div>
@@ -386,13 +386,13 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
           {/* Card 1: Contract Template */}
           <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[28px] p-5 sm:p-6 border border-zinc-200/50 dark:border-zinc-800/40 space-y-3.5 shadow-xs w-full">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-[var(--lavenderSoft)] rounded-xl text-[var(--lavDeep)] shrink-0">
+              <div className="p-2 bg-[var(--lavenderSoft)] rounded-xl text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] shrink-0">
                 <FileText className="w-5 h-5" />
               </div>
               <h4 className="font-semibold text-base sm:text-lg text-zinc-900 dark:text-zinc-100 truncate">Шаблон Договора</h4>
             </div>
 
-            <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
+            <p className="text-xs sm:text-sm font-normal text-zinc-700 dark:text-zinc-300">
               Формат шаблона .docx для автозаполнения
             </p>
 
@@ -423,17 +423,31 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
 
             {contractType === 'standard' ? (
               <div className="space-y-3 pt-1.5 border-t border-zinc-100 dark:border-zinc-800/40">
-                <p className="text-xs sm:text-sm text-zinc-500 leading-relaxed">
+                <p className="text-xs sm:text-sm text-zinc-700 dark:text-zinc-200 leading-relaxed font-normal">
                   Базовый договор на оказание декораторских услуг. Содержит все необходимые пункты, форс-мажоры и порядок расчетов.
                 </p>
                 <div className="flex items-center justify-between pt-1 text-xs">
-                  <span className="text-zinc-400 font-medium">Готов к генерации</span>
+                  <span className="text-xs text-zinc-600 dark:text-zinc-300 font-normal">Готов к генерации</span>
                   <button 
                     onClick={() => showToast('Образец загружен', 'Типовой договор отправлен на скачивание.', 'success')}
-                    className="text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:opacity-85 font-medium inline-flex items-center gap-1 cursor-pointer"
+                    className="relative group px-3.5 py-1.5 rounded-full text-xs font-semibold inline-flex items-center gap-1.5 transition-all duration-300 hover:opacity-85 active:scale-[0.98] cursor-pointer bg-transparent"
                   >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Скачать образец</span>
+                    <span
+                      className="absolute inset-0 rounded-full pointer-events-none p-[1px]"
+                      style={{
+                        background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)',
+                        WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                        WebkitMaskComposite: 'xor',
+                        maskComposite: 'exclude',
+                      }}
+                    />
+                    <Download className="w-3.5 h-3.5 text-[#8C52D0] dark:text-[#985DE0] relative z-10 shrink-0" />
+                    <span
+                      className="bg-clip-text text-transparent relative z-10"
+                      style={{ backgroundImage: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                    >
+                      Скачать образец
+                    </span>
                   </button>
                 </div>
               </div>
@@ -460,13 +474,13 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
           {/* Card 2: Act Template */}
           <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[28px] p-5 sm:p-6 border border-zinc-200/50 dark:border-zinc-800/40 space-y-3.5 shadow-xs w-full">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-[var(--lavenderSoft)] rounded-xl text-[var(--lavDeep)] shrink-0">
+              <div className="p-2 bg-[var(--lavenderSoft)] rounded-xl text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] shrink-0">
                 <FileSpreadsheet className="w-5 h-5" />
               </div>
               <h4 className="font-semibold text-base sm:text-lg text-zinc-900 dark:text-zinc-100 truncate">Шаблон Акта выполненных работ</h4>
             </div>
 
-            <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
+            <p className="text-xs sm:text-sm font-normal text-zinc-700 dark:text-zinc-300">
               Формат шаблона .docx для автозаполнения
             </p>
 
@@ -497,17 +511,31 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
 
             {actType === 'standard' ? (
               <div className="space-y-3 pt-1.5 border-t border-zinc-100 dark:border-zinc-800/40">
-                <p className="text-xs sm:text-sm text-zinc-500 leading-relaxed">
+                <p className="text-xs sm:text-sm text-zinc-700 dark:text-zinc-200 leading-relaxed font-normal">
                   Стандартный одностраничный акт сдачи-приемки оказанных услуг. Подтверждает выполнение всех обязательств по проекту.
                 </p>
                 <div className="flex items-center justify-between pt-1 text-xs">
-                  <span className="text-zinc-400 font-medium">Готов к генерации</span>
+                  <span className="text-xs text-zinc-600 dark:text-zinc-300 font-normal">Готов к генерации</span>
                   <button 
                     onClick={() => showToast('Образец загружен', 'Типовой акт отправлен на скачивание.', 'success')}
-                    className="text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:opacity-85 font-medium inline-flex items-center gap-1 cursor-pointer"
+                    className="relative group px-3.5 py-1.5 rounded-full text-xs font-semibold inline-flex items-center gap-1.5 transition-all duration-300 hover:opacity-85 active:scale-[0.98] cursor-pointer bg-transparent"
                   >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Скачать образец</span>
+                    <span
+                      className="absolute inset-0 rounded-full pointer-events-none p-[1px]"
+                      style={{
+                        background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)',
+                        WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                        WebkitMaskComposite: 'xor',
+                        maskComposite: 'exclude',
+                      }}
+                    />
+                    <Download className="w-3.5 h-3.5 text-[#8C52D0] dark:text-[#985DE0] relative z-10 shrink-0" />
+                    <span
+                      className="bg-clip-text text-transparent relative z-10"
+                      style={{ backgroundImage: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                    >
+                      Скачать образец
+                    </span>
                   </button>
                 </div>
               </div>
@@ -534,13 +562,13 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
           {/* Card 3: Consent Template */}
           <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[28px] p-5 sm:p-6 border border-zinc-200/50 dark:border-zinc-800/40 space-y-3.5 shadow-xs w-full">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-[var(--lavenderSoft)] rounded-xl text-[var(--lavDeep)] shrink-0">
+              <div className="p-2 bg-[var(--lavenderSoft)] rounded-xl text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] shrink-0">
                 <UserCheck className="w-5 h-5" />
               </div>
               <h4 className="font-semibold text-base sm:text-lg text-zinc-900 dark:text-zinc-100 truncate">Согласие на обработку ПД</h4>
             </div>
 
-            <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
+            <p className="text-xs sm:text-sm font-normal text-zinc-700 dark:text-zinc-300">
               Формат шаблона .docx для автозаполнения
             </p>
 
@@ -571,17 +599,31 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
 
             {consentType === 'standard' ? (
               <div className="space-y-3 pt-1.5 border-t border-zinc-100 dark:border-zinc-800/40">
-                <p className="text-xs sm:text-sm text-zinc-500 leading-relaxed">
+                <p className="text-xs sm:text-sm text-zinc-700 dark:text-zinc-200 leading-relaxed font-normal">
                   Официальное согласие клиента на хранение и обработку персональных данных (152-ФЗ) и разрешение на фотосъемку объектов декора.
                 </p>
                 <div className="flex items-center justify-between pt-1 text-xs">
-                  <span className="text-zinc-400 font-medium">Готов к генерации</span>
+                  <span className="text-xs text-zinc-600 dark:text-zinc-300 font-normal">Готов к генерации</span>
                   <button 
                     onClick={() => showToast('Образец загружен', 'Типовое согласие на обработку ПД отправлено на скачивание.', 'success')}
-                    className="text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:opacity-85 font-medium inline-flex items-center gap-1 cursor-pointer"
+                    className="relative group px-3.5 py-1.5 rounded-full text-xs font-semibold inline-flex items-center gap-1.5 transition-all duration-300 hover:opacity-85 active:scale-[0.98] cursor-pointer bg-transparent"
                   >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Скачать образец</span>
+                    <span
+                      className="absolute inset-0 rounded-full pointer-events-none p-[1px]"
+                      style={{
+                        background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)',
+                        WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                        WebkitMaskComposite: 'xor',
+                        maskComposite: 'exclude',
+                      }}
+                    />
+                    <Download className="w-3.5 h-3.5 text-[#8C52D0] dark:text-[#985DE0] relative z-10 shrink-0" />
+                    <span
+                      className="bg-clip-text text-transparent relative z-10"
+                      style={{ backgroundImage: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                    >
+                      Скачать образец
+                    </span>
                   </button>
                 </div>
               </div>
@@ -608,13 +650,13 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
           {/* Card 4: Deposit Agreement Template */}
           <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[28px] p-5 sm:p-6 border border-zinc-200/50 dark:border-zinc-800/40 space-y-3.5 shadow-xs w-full">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-[var(--lavenderSoft)] rounded-xl text-[var(--lavDeep)] shrink-0">
+              <div className="p-2 bg-[var(--lavenderSoft)] rounded-xl text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] shrink-0">
                 <Receipt className="w-5 h-5" />
               </div>
               <h4 className="font-semibold text-base sm:text-lg text-zinc-900 dark:text-zinc-100 truncate">Соглашение о задатке</h4>
             </div>
 
-            <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
+            <p className="text-xs sm:text-sm font-normal text-zinc-700 dark:text-zinc-300">
               Формат шаблона .docx для автозаполнения
             </p>
 
@@ -645,17 +687,31 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
 
             {depositType === 'standard' ? (
               <div className="space-y-3 pt-1.5 border-t border-zinc-100 dark:border-zinc-800/40">
-                <p className="text-xs sm:text-sm text-zinc-500 leading-relaxed">
+                <p className="text-xs sm:text-sm text-zinc-700 dark:text-zinc-200 leading-relaxed font-normal">
                   Юридическое соглашение о внесении задатка для гарантийного бронирования даты мероприятия и обеспечения обязательств сторон.
                 </p>
                 <div className="flex items-center justify-between pt-1 text-xs">
-                  <span className="text-zinc-400 font-medium">Готов к генерации</span>
+                  <span className="text-xs text-zinc-600 dark:text-zinc-300 font-normal">Готов к генерации</span>
                   <button 
                     onClick={() => showToast('Образец загружен', 'Типовое соглашение о задатке отправлено на скачивание.', 'success')}
-                    className="text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:opacity-85 font-medium inline-flex items-center gap-1 cursor-pointer"
+                    className="relative group px-3.5 py-1.5 rounded-full text-xs font-semibold inline-flex items-center gap-1.5 transition-all duration-300 hover:opacity-85 active:scale-[0.98] cursor-pointer bg-transparent"
                   >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Скачать образец</span>
+                    <span
+                      className="absolute inset-0 rounded-full pointer-events-none p-[1px]"
+                      style={{
+                        background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)',
+                        WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                        WebkitMaskComposite: 'xor',
+                        maskComposite: 'exclude',
+                      }}
+                    />
+                    <Download className="w-3.5 h-3.5 text-[#8C52D0] dark:text-[#985DE0] relative z-10 shrink-0" />
+                    <span
+                      className="bg-clip-text text-transparent relative z-10"
+                      style={{ backgroundImage: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                    >
+                      Скачать образец
+                    </span>
                   </button>
                 </div>
               </div>
@@ -679,11 +735,11 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
             )}
           </div>
 
-          {/* Card 3: Auto-completion Card (Now placed below the Act card in Right Column, with super compact spacing) */}
+          {/* Card 3: Auto-completion Card */}
           <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[24px] p-4.5 border border-zinc-200/50 dark:border-zinc-800/40 space-y-3.5 shadow-xs w-full">
             <div className="space-y-1">
-              <span className="text-base font-medium text-zinc-900 dark:text-zinc-100 block">Переменная автозаполнения</span>
-              <p className="text-xs text-zinc-400 leading-normal">
+              <span className="font-semibold text-base sm:text-lg text-zinc-900 dark:text-zinc-100 tracking-tight block">Переменная автозаполнения</span>
+              <p className="text-xs sm:text-sm font-normal text-zinc-700 dark:text-zinc-300 leading-relaxed">
                 Вставьте эту метку в ваш шаблон для автоматической подстановки данных.
               </p>
             </div>
@@ -691,27 +747,27 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
             {/* Tag Copy Block */}
             <div 
               onClick={() => handleCopyTag('{{Реквизиты заказчика}}')}
-              className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-50/50 dark:bg-zinc-950/15 border border-zinc-100/40 dark:border-zinc-800/30 hover:border-[var(--lavenderAccent)]/40 hover:bg-[var(--lavenderSoft)]/20 dark:hover:bg-[var(--lavenderSoft)]/10 transition-all cursor-pointer group"
+              className="flex items-center justify-between p-3 rounded-2xl bg-zinc-50/80 dark:bg-zinc-900/60 border border-zinc-200/60 dark:border-zinc-800/60 hover:border-[#8C52D0]/50 hover:bg-[#8C52D0]/5 transition-all cursor-pointer group"
             >
-              <div className="space-y-0.5 min-w-0">
-                <code className="text-xs font-mono text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] font-medium bg-[var(--lavenderSoft)]/50 dark:bg-[var(--lavenderSoft)]/30 px-1.5 py-0.5 rounded block truncate">
+              <div className="space-y-1 min-w-0">
+                <code className="text-xs font-mono font-semibold text-[#8C52D0] dark:text-[#985DE0] bg-[#8C52D0]/10 dark:bg-[#8C52D0]/20 px-2 py-1 rounded-md inline-block truncate">
                   {"{{Реквизиты заказчика}}"}
                 </code>
-                <p className="text-xs text-zinc-400 mt-0.5">
+                <p className="text-xs font-normal text-zinc-600 dark:text-zinc-300">
                   Кликните, чтобы скопировать
                 </p>
               </div>
-              <span className="text-zinc-400 group-hover:text-[var(--lavDeep)] transition-colors shrink-0 ml-2">
+              <span className="text-zinc-500 group-hover:text-[#8C52D0] transition-colors shrink-0 ml-2">
                 {copiedTag === '{{Реквизиты заказчика}}' ? (
-                  <Check className="w-3.5 h-3.5 text-[var(--sage)]" />
+                  <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 ) : (
-                  <Copy className="w-3.5 h-3.5 opacity-40 group-hover:opacity-100" />
+                  <Copy className="w-4 h-4 opacity-60 group-hover:opacity-100" />
                 )}
               </span>
             </div>
 
             {/* How it works guidance */}
-            <div className="p-3 rounded-xl bg-[var(--sageSoft)]/30 border border-[var(--sage)]/5 space-y-1.5 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+            <div className="p-3.5 bg-emerald-500/10 dark:bg-emerald-950/30 rounded-2xl border border-emerald-500/20 text-xs text-emerald-900 dark:text-emerald-200 font-normal leading-relaxed">
               <p>
                 Реквизиты заказчика подставятся из брифа целиком, а исполнителя — из формы слева.
               </p>

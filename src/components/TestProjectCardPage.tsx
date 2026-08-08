@@ -59,15 +59,16 @@ import {
   FileSignature,
   Wallet,
   Receipt,
-  CreditCard
+  CreditCard,
+  FlaskConical
 } from 'lucide-react';
 import { Project, EstimateItem } from '../types';
 import DeleteConfirmModal from './DeleteConfirmModal';
 
-interface ProjectDetailModalProps {
+interface TestProjectCardPageProps {
   project: Project | null;
   isOpen?: boolean;
-  onClose: () => void;
+  onClose?: () => void;
   onUpdateProject: (updated: Project) => void;
   showToast: (title: string, message: string, type?: 'success' | 'info' | 'warn') => void;
   onOpenEditor?: () => void;
@@ -81,13 +82,13 @@ interface JournalEntry {
   linkedItemId: string | null;
 }
 
-export default function ProjectDetailModal({
+export default function TestProjectCardPage({
   project,
   onClose,
   onUpdateProject,
   showToast,
   onOpenEditor
-}: ProjectDetailModalProps) {
+}: TestProjectCardPageProps) {
   if (!project) return null;
 
   // Tabs for Variant 1: 'all' | 'brief' | 'design' | 'calc' | 'journal' | 'docs' | 'calendar'
@@ -104,6 +105,7 @@ export default function ProjectDetailModal({
   const [isSpecModalOpen, setIsSpecModalOpen] = useState<boolean>(false);
   const [briefCollapsed, setBriefCollapsed] = useState<boolean>(false);
   const [journalCollapsed, setJournalCollapsed] = useState<boolean>(false);
+  const [isStepMenuOpen, setIsStepMenuOpen] = useState<boolean>(false);
 
   // Delete confirmation modal state
   const [deleteConfirm, setDeleteConfirm] = useState<{
@@ -155,6 +157,26 @@ export default function ProjectDetailModal({
       "ДОПОЛНИТЕЛЬНАЯ ИНФОРМАЦИЯ": project.brief?.specialRequests && project.brief.specialRequests !== 'Нет примечаний.' ? project.brief.specialRequests : (saved["ДОПОЛНИТЕЛЬНАЯ ИНФОРМАЦИЯ"] || ""),
     };
   });
+
+  // Interactive project title editing
+  const [isEditingTitle, setIsEditingTitle] = useState<boolean>(false);
+  const [titleInput, setTitleInput] = useState<string>(project.name);
+
+  useEffect(() => {
+    setTitleInput(project.name);
+  }, [project.name]);
+
+  const daysUntilEvent = React.useMemo(() => {
+    const targetDateStr = project.date || briefValues["ДАТА"];
+    if (!targetDateStr) return null;
+    const eventDate = new Date(targetDateStr);
+    if (isNaN(eventDate.getTime())) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    eventDate.setHours(0, 0, 0, 0);
+    const diffMs = eventDate.getTime() - today.getTime();
+    return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  }, [project.date, briefValues]);
 
   const handleUpdateBriefField = (key: string, value: string) => {
     setBriefValues(prev => {
@@ -929,39 +951,144 @@ export default function ProjectDetailModal({
   const briefEmptyCount = totalBriefCount - filledBriefCount;
 
   return (
-    <div className="w-full max-w-full min-w-0 overflow-hidden space-y-6 transition-all">
-      {/* 1. TOP HEADER NAVIGATION BAR (Full Width at Top) */}
-      <header className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 shrink-0 px-1 w-full min-w-0">
-        <div className="flex-1 min-w-0 w-full space-y-2.5">
-          {/* Title & Status / Progress Badges */}
+    <div className="relative w-full max-w-full min-w-0 space-y-6 transition-all p-3 sm:p-5 lg:p-7 rounded-[36px] bg-white/30 dark:bg-zinc-950/30 backdrop-blur-2xl border border-white/80 dark:border-white/10 shadow-[0_20px_50px_rgba(140,82,208,0.12)] overflow-hidden">
+      
+      {/* 🌸 AMBIENT BACKGROUND GLOW BLOBS (GLASSMORPHISM ATMOSPHERE FROM REFERENCED SCREENSHOTS) */}
+      <div className="absolute top-0 -left-10 w-96 h-96 bg-purple-300/30 dark:bg-purple-900/20 rounded-full blur-3xl pointer-events-none -z-10" />
+      <div className="absolute top-32 right-0 w-96 h-96 bg-teal-200/30 dark:bg-teal-900/20 rounded-full blur-3xl pointer-events-none -z-10" />
+      <div className="absolute bottom-10 left-1/3 w-[30rem] h-[30rem] bg-amber-200/30 dark:bg-amber-900/20 rounded-full blur-3xl pointer-events-none -z-10" />
+
+      {/* 1. TOP HEADER NAVIGATION BAR (Full Width Glass Header) */}
+      <header className="p-5 sm:p-6 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl border border-white/80 dark:border-white/10 rounded-[32px] shadow-xs flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 shrink-0 w-full min-w-0 relative z-30">
+        <div className="flex-1 min-w-0 w-full space-y-3">
+          {/* Title & Compact Popover Stepper */}
           <div className="flex flex-wrap items-center gap-3 w-full min-w-0">
-            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-stone-900 dark:text-stone-50 truncate max-w-full">
-              {project.name}
-            </h1>
-            <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full bg-purple-100/90 dark:bg-purple-950/60 text-[#582F89] dark:text-purple-200 border border-purple-200/80 dark:border-purple-800/60 shadow-2xs shrink-0">
-              <span className="w-2 h-2 rounded-full bg-[#8C52D0]" /> {steps[project.currentStep]?.toUpperCase()}
-            </span>
+            {isEditingTitle ? (
+              <div className="flex items-center gap-2 max-w-full">
+                <input
+                  type="text"
+                  value={titleInput}
+                  onChange={(e) => setTitleInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      project.name = titleInput || 'Без названия';
+                      setIsEditingTitle(false);
+                      showToast('Название обновлено', `Новое название проекта: ${titleInput}`, 'success');
+                    } else if (e.key === 'Escape') {
+                      setTitleInput(project.name);
+                      setIsEditingTitle(false);
+                    }
+                  }}
+                  autoFocus
+                  className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 border-2 border-[#8C52D0] rounded-xl px-3 py-1 shadow-2xs focus:outline-none"
+                />
+                <button
+                  onClick={() => {
+                    project.name = titleInput || 'Без названия';
+                    setIsEditingTitle(false);
+                    showToast('Название обновлено', `Новое название проекта: ${titleInput}`, 'success');
+                  }}
+                  className="p-2 bg-[#8C52D0] text-white rounded-full hover:bg-[#582F89] transition-colors cursor-pointer shadow-2xs"
+                  title="Сохранить название"
+                >
+                  <Check className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 max-w-full min-w-0 group">
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 truncate">
+                  {titleInput || project.name}
+                </h1>
+                <button
+                  onClick={() => setIsEditingTitle(true)}
+                  className="p-1.5 rounded-full hover:bg-purple-100 dark:hover:bg-purple-950/80 text-zinc-400 group-hover:text-[#8C52D0] transition-colors cursor-pointer shrink-0"
+                  title="Редактировать название проекта"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {/* COMPACT STEP POPOVER SELECTOR (HIGH-VISIBILITY BADGE) */}
+            <div className="relative shrink-0 z-30">
+              <button
+                onClick={() => setIsStepMenuOpen(!isStepMenuOpen)}
+                className="inline-flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-full bg-purple-100/90 dark:bg-purple-950/90 text-[#582F89] dark:text-purple-200 border border-purple-300 dark:border-purple-700/60 shadow-xs hover:bg-purple-200/80 transition-all cursor-pointer"
+              >
+                <span className="w-2.5 h-2.5 rounded-full bg-[#8C52D0] animate-pulse shrink-0" />
+                <span>Этап {project.currentStep + 1} из {steps.length}: <strong className="text-[#582F89] dark:text-purple-100">{steps[project.currentStep]}</strong></span>
+                <ChevronDown className={`w-4 h-4 transition-transform duration-200 text-[#8C52D0] shrink-0 ${isStepMenuOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              <AnimatePresence>
+                {isStepMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setIsStepMenuOpen(false)} />
+                    <motion.div
+                      initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                      className="absolute left-0 top-full mt-2 z-50 w-64 p-2 rounded-2xl bg-white dark:bg-zinc-900 border border-purple-300 dark:border-purple-800 shadow-2xl space-y-1"
+                    >
+                      <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider font-extrabold text-zinc-400 dark:text-zinc-500 border-b border-zinc-100 dark:border-zinc-800 mb-1">
+                        Выберите этап проекта
+                      </div>
+                      {steps.map((label, idx) => {
+                        const isCompleted = idx < project.currentStep;
+                        const isCurrent = idx === project.currentStep;
+                        return (
+                          <button
+                            key={idx}
+                            onClick={() => {
+                              handleStepClick(idx);
+                              setIsStepMenuOpen(false);
+                            }}
+                            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
+                              isCurrent
+                                ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-xs'
+                                : isCompleted
+                                ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
+                                : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
+                            }`}
+                          >
+                            <span className="flex items-center gap-2 truncate">
+                              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${
+                                isCurrent ? 'bg-white text-[#582F89]' : isCompleted ? 'bg-emerald-500 text-white' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500'
+                              }`}>
+                                {isCompleted ? '✓' : idx + 1}
+                              </span>
+                              <span className="truncate">{label}</span>
+                            </span>
+                            {isCurrent && <span className="text-[10px] opacity-80 font-bold shrink-0 ml-1">Текущий</span>}
+                          </button>
+                        );
+                      })}
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
 
-          {/* Client & Project Info */}
-          <div className="flex flex-wrap items-center gap-y-2 gap-x-3 text-xs text-stone-600 dark:text-stone-400 w-full min-w-0">
-            <span className="flex items-center gap-1.5 font-medium text-stone-800 dark:text-stone-200 shrink-0">
-              <User className="w-3.5 h-3.5 text-[#8C52D0]" /> Клиент: <strong className="font-bold text-stone-900 dark:text-stone-100">{project.clientName}</strong>
+          {/* Client & Project Info (White Floating Pill Caps) */}
+          <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-700 dark:text-zinc-300 w-full min-w-0">
+            <span className="flex items-center gap-1.5 font-medium bg-white/80 dark:bg-zinc-800/80 px-3 py-1 rounded-full border border-white/90 dark:border-zinc-700/60 shadow-2xs shrink-0">
+              <User className="w-3.5 h-3.5 text-[#8C52D0]" /> Клиент: <strong className="font-bold text-zinc-900 dark:text-zinc-100">{project.clientName}</strong>
             </span>
-            <span className="text-stone-300 dark:text-stone-700 hidden sm:inline">•</span>
-            <a href={`tel:${project.clientPhone || briefValues["ТЕЛЕФОН"] || '+7 905 123 45 67'}`} className="flex items-center gap-1.5 font-medium text-stone-700 dark:text-stone-300 hover:text-[#8C52D0] transition-colors shrink-0">
+
+            <a href={`tel:${project.clientPhone || briefValues["ТЕЛЕФОН"] || '+7 905 123 45 67'}`} className="flex items-center gap-1.5 font-medium bg-white/80 dark:bg-zinc-800/80 px-3 py-1 rounded-full border border-white/90 dark:border-zinc-700/60 shadow-2xs hover:border-[#8C52D0] hover:text-[#8C52D0] transition-colors shrink-0">
               <Phone className="w-3.5 h-3.5 text-[#8C52D0]" /> {project.clientPhone || briefValues["ТЕЛЕФОН"] || '+7 905 123 45 67'}
             </a>
-            <span className="text-stone-300 dark:text-stone-700 hidden sm:inline">•</span>
-            <a href={`mailto:${project.clientEmail || 'socolova.design@mail.ru'}`} className="flex items-center gap-1.5 font-medium text-stone-700 dark:text-stone-300 hover:text-[#8C52D0] transition-colors truncate max-w-[220px]">
+
+            <a href={`mailto:${project.clientEmail || 'socolova.design@mail.ru'}`} className="flex items-center gap-1.5 font-medium bg-white/80 dark:bg-zinc-800/80 px-3 py-1 rounded-full border border-white/90 dark:border-zinc-700/60 shadow-2xs hover:border-[#8C52D0] hover:text-[#8C52D0] transition-colors truncate max-w-[220px]">
               <Mail className="w-3.5 h-3.5 text-[#8C52D0] shrink-0" /> {project.clientEmail || 'socolova.design@mail.ru'}
             </a>
-            <span className="text-stone-300 dark:text-stone-700 hidden sm:inline">•</span>
-            <span className="flex items-center gap-1.5 text-stone-700 dark:text-stone-300 shrink-0">
+
+            <span className="flex items-center gap-1.5 font-medium bg-white/80 dark:bg-zinc-800/80 px-3 py-1 rounded-full border border-white/90 dark:border-zinc-700/60 shadow-2xs shrink-0">
               <Calendar className="w-3.5 h-3.5 text-[#8C52D0]" /> {project.date}
             </span>
-            <span className="text-stone-300 dark:text-stone-700 hidden sm:inline">•</span>
-            <span className="flex items-center gap-1.5 text-stone-700 dark:text-stone-300 shrink-0">
+
+            <span className="flex items-center gap-1.5 font-medium bg-white/80 dark:bg-zinc-800/80 px-3 py-1 rounded-full border border-white/90 dark:border-zinc-700/60 shadow-2xs shrink-0">
               <MapPin className="w-3.5 h-3.5 text-[#8C52D0]" /> {project.venue}
             </span>
           </div>
@@ -975,17 +1102,17 @@ export default function ProjectDetailModal({
               navigator.clipboard.writeText(briefUrl);
               showToast('Ссылка отправлена клиенту', `Ссылка для клиента ${project.clientName} скопирована в буфер обмена: ${briefUrl}`, 'success');
             }}
-            className="h-9 px-5 text-white rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all duration-300 hover:shadow-lg hover:opacity-95 active:scale-[0.98] cursor-pointer shrink-0 shadow-md flex-1 sm:flex-none"
+            className="h-10 px-6 text-white rounded-full text-xs font-bold flex items-center justify-center gap-2 transition-all duration-300 hover:shadow-lg hover:opacity-95 active:scale-[0.98] cursor-pointer shrink-0 shadow-md flex-1 sm:flex-none"
             style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
           >
-            <Share2 className="w-3.5 h-3.5" /> Отправить клиенту
+            <Share2 className="w-4 h-4" /> Отправить клиенту
           </button>
 
           <button
             onClick={() => handleSaveProject(false)}
             disabled={isSaving}
             title={lastSavedTime ? `Последнее сохранение: ${lastSavedTime} (автосохранение каждые 5 мин)` : 'Автосохранение каждые 5 минут'}
-            className="h-9 px-4 border border-emerald-600 dark:border-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all duration-300 cursor-pointer disabled:opacity-70 shrink-0 flex-1 sm:flex-none"
+            className="h-10 px-5 border border-emerald-500/80 bg-white/80 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/50 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all duration-300 cursor-pointer disabled:opacity-70 shrink-0 shadow-2xs flex-1 sm:flex-none"
           >
             <Save className={`w-3.5 h-3.5 ${isSaving ? 'animate-spin' : ''}`} />
             {isSaving ? 'Сохранение...' : lastSavedTime ? `Сохранено (${lastSavedTime})` : 'Сохранить'}
@@ -993,219 +1120,177 @@ export default function ProjectDetailModal({
         </div>
       </header>
 
-      {/* 2-COLUMN MAIN WORKSPACE */}
-      <div className="flex-1 flex flex-col lg:flex-row gap-4 sm:gap-5 min-w-0 w-full items-start overflow-hidden">
-        {/* LEFT SIDEBAR (STICKY FROM TOP ON DESKTOP, SIDE-BY-SIDE 2-COLUMN GRID ON MOBILE/TABLET) */}
-        <aside className="w-full lg:w-60 shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-col gap-3 sm:gap-4 lg:sticky lg:top-4 z-20 self-start min-w-0">
-          {/* SIDEBAR NAVIGATION CARD */}
-          <div className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-[var(--glass-edge)] rounded-3xl p-3.5 sm:p-4 shadow-sm w-full min-w-0 flex flex-col justify-center">
-            {/* MOBILE & TABLET LAYOUT (3 ROWS x 2 COLUMNS GRID, HORIZONTAL ITEM: ICON + TEXT + BADGE) */}
-            <nav className="grid grid-cols-2 lg:hidden gap-2 w-full">
-              {[
-                { id: 'all', label: 'Обзор', icon: Layout, badge: '7', badgeColor: 'bg-stone-200/80 text-stone-700 dark:bg-zinc-800 dark:text-stone-300' },
-                { id: 'brief', label: 'Бриф', icon: Clipboard, badge: '4!', badgeColor: 'bg-rose-100/90 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300' },
-                { id: 'design', label: 'Дизайн', icon: Palette, badge: 'OK', badgeColor: 'bg-emerald-100/90 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300' },
-                { id: 'calc', label: 'Смета', icon: SlidersHorizontal, badge: '2!', badgeColor: 'bg-purple-100/90 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300' },
-                { id: 'journal', label: 'Заметки', icon: CheckSquare, badge: taskNoteList.filter(t => t.type === 'task' && !t.completed).length.toString(), badgeColor: 'bg-purple-100/90 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300' },
-                { id: 'docs', label: 'Документы', icon: FolderOpen, badge: '4', badgeColor: 'bg-stone-200/80 text-stone-700 dark:bg-zinc-800 dark:text-stone-300' }
-              ].map(tab => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.id;
-
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id as any)}
-                    className={`flex items-center justify-between gap-1.5 px-3 py-2.5 rounded-2xl transition-all duration-200 cursor-pointer min-w-0 ${
-                      isActive
-                        ? 'border border-[#8C52D0] dark:border-purple-400 text-[#582F89] dark:text-purple-200 bg-purple-50/50 dark:bg-purple-950/30 shadow-[0_0_12px_rgba(140,82,208,0.25)]'
-                        : 'border border-stone-200/80 dark:border-zinc-800 text-[#1B0D22] dark:text-zinc-300 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100/70 dark:hover:bg-zinc-800/50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 min-w-0 truncate">
-                      <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#8C52D0]' : 'text-stone-500 dark:text-stone-400'}`} />
-                      <span className="text-[14px] font-normal leading-tight truncate">
-                        {tab.label}
-                      </span>
-                    </div>
-                    <span className={`text-[14px] px-2 py-0.5 rounded-full font-bold shrink-0 ${
-                      isActive ? 'bg-purple-100 dark:bg-purple-950 text-[#582F89] dark:text-purple-200' : tab.badgeColor
-                    }`}>
-                      {tab.badge}
-                    </span>
-                  </button>
-                );
-              })}
-            </nav>
-
-            {/* DESKTOP LAYOUT (VERTICAL SIDEBAR MENU) */}
-            <nav className="hidden lg:flex lg:flex-col space-y-1">
-              {[
-                { id: 'all', label: 'Обзор', icon: Layout, badge: '7', badgeColor: 'bg-stone-200/80 text-stone-700 dark:bg-zinc-800 dark:text-stone-300' },
-                { id: 'brief', label: 'Бриф', icon: Clipboard, badge: '4!', badgeColor: 'bg-rose-100/90 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300' },
-                { id: 'design', label: 'Дизайн', icon: Palette, badge: 'OK', badgeColor: 'bg-emerald-100/90 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300' },
-                { id: 'calc', label: 'Смета', icon: SlidersHorizontal, badge: '2!', badgeColor: 'bg-purple-100/90 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300' },
-                { id: 'journal', label: 'Заметки', icon: CheckSquare, badge: taskNoteList.filter(t => t.type === 'task' && !t.completed).length.toString(), badgeColor: 'bg-purple-100/90 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300' },
-                { id: 'docs', label: 'Документы', icon: FolderOpen, badge: '4', badgeColor: 'bg-stone-200/80 text-stone-700 dark:bg-zinc-800 dark:text-stone-300' }
-              ].map(tab => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.id;
-
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id as any)}
-                    className={`w-full flex items-center justify-between gap-2 p-2.5 rounded-full text-[14px] transition-all duration-300 text-left cursor-pointer ${
-                      isActive
-                        ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-xs'
-                        : 'text-[#1B0D22] dark:text-zinc-300 hover:bg-stone-200/60 dark:hover:bg-zinc-800'
-                    }`}
-                  >
-                    <span className="flex items-center gap-2">
-                      <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-[#582F89] dark:text-purple-400'}`} />
-                      <span className="font-normal">{tab.label}</span>
-                    </span>
-                    <span className={`text-[14px] px-2.5 py-0.5 rounded-full font-bold ${tab.badgeColor}`}>
-                      {tab.badge}
-                    </span>
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
-
-            {/* FINANCIAL CHECKLIST CARD - SLEEK COMPACT STYLE */}
-            <div className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-[var(--glass-edge)] rounded-3xl p-4 space-y-3.5 shadow-sm transition-all duration-300">
-              {/* Header */}
-              <div className="flex items-center justify-between pb-2 border-b border-stone-100 dark:border-zinc-800/80 gap-2">
-                <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#582F89] dark:text-purple-300 flex items-center gap-1.5">
-                  <Receipt className="w-4 h-4 text-[#8C52D0]" />
-                  Чек-лист
-                </span>
-                <span className="text-[12px] font-medium text-purple-700 dark:text-purple-300 bg-purple-100/70 dark:bg-purple-900/50 px-2.5 py-0.5 rounded-full">
-                  Инфо
-                </span>
+      {/* 2. 3 COMPACT FINANCIAL METRIC CARDS (HIGH CONTRAST & RESTORED DETAILS) */}
+      {(activeTab === 'all' || activeTab === 'calc') && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full relative z-10">
+          {/* CARD 1: СТОИМОСТЬ */}
+          <div className="bg-gradient-to-br from-purple-100/90 via-white/80 to-indigo-50/70 dark:from-purple-950/40 dark:via-zinc-900/60 dark:to-zinc-900/60 backdrop-blur-xl border border-purple-200/80 dark:border-purple-900/50 rounded-[24px] p-4 shadow-2xs flex flex-col justify-between gap-3 relative overflow-hidden">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] uppercase font-normal text-zinc-600 dark:text-zinc-400 tracking-normal truncate">
+                Общая сметная стоимость
+              </span>
+              <span className="px-2.5 py-0.5 rounded-full bg-white/90 dark:bg-zinc-800/90 text-[10px] font-semibold text-[#582F89] dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/40 shadow-2xs shrink-0">
+                Стоимость
+              </span>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 bg-purple-200/90 dark:bg-purple-900/70 text-[#8C52D0] rounded-xl shrink-0">
+                <Wallet className="w-4 h-4 stroke-[2.2]" />
               </div>
-
-              {/* Clean Row Data without inner frames */}
-              <div className="space-y-3">
-                {/* 1. СТОИМОСТЬ */}
-                <div className="flex items-center justify-between">
-                  <span className="text-stone-500 dark:text-stone-400 text-[12px] font-normal flex items-center gap-1.5">
-                    <Wallet className="w-3.5 h-3.5 text-[#8C52D0]" /> Стоимость:
-                  </span>
-                  <span className="font-mono font-black text-base text-[#582F89] dark:text-purple-200">
-                    {finalPrice.toLocaleString('ru')} ₽
-                  </span>
-                </div>
-
-                {/* 2. ПРЕДОПЛАТА */}
-                <div className="flex items-center justify-between">
-                  <span className="text-stone-500 dark:text-stone-400 text-[12px] font-normal flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Предоплата:
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[12px] font-mono font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md">
-                      {finalPrice > 0 ? Math.round((prepayment / finalPrice) * 100) : 0}%
-                    </span>
-                    <span className="font-mono font-black text-base text-emerald-600 dark:text-emerald-400">
-                      {prepayment.toLocaleString('ru')} ₽
-                    </span>
-                  </div>
-                </div>
-
-                {/* 3. ОСТАТОК */}
-                <div className="flex items-center justify-between pt-1 border-t border-stone-100 dark:border-zinc-800/80">
-                  <span className="text-stone-500 dark:text-stone-400 text-[12px] font-normal flex items-center gap-1.5">
-                    <CreditCard className="w-3.5 h-3.5 text-amber-500" /> Остаток:
-                  </span>
-                  <span className="font-mono font-black text-base text-amber-600 dark:text-amber-400">
-                    {Math.max(0, finalPrice - prepayment).toLocaleString('ru')} ₽
-                  </span>
-                </div>
-              </div>
-
-              {/* Single smooth progress bar */}
-              <div className="w-full h-1.5 bg-amber-100 dark:bg-amber-950/40 rounded-full overflow-hidden flex">
-                <div
-                  className="h-full bg-emerald-500 transition-all duration-300"
-                  style={{ width: `${finalPrice > 0 ? Math.min(100, Math.round((prepayment / finalPrice) * 100)) : 0}%` }}
-                />
+              <div className="text-xl sm:text-2xl font-black font-mono text-[#582F89] dark:text-purple-200 tracking-tight truncate">
+                {finalPrice.toLocaleString('ru')} ₽
               </div>
             </div>
-          </aside>
+            <div className="pt-2 border-t border-purple-200/60 dark:border-purple-900/40 flex items-center justify-between text-xs text-zinc-800 dark:text-zinc-200">
+              <span className="font-medium text-zinc-700 dark:text-zinc-300">Фиксированный бюджет</span>
+              <span className="font-extrabold text-[#582F89] dark:text-purple-300">100% сметы</span>
+            </div>
+          </div>
 
-          {/* MAIN CONTENT AREA */}
-          <main className="flex-1 min-w-0 max-w-full space-y-4 w-full">
-            
-            {/* STEPPER PROGRESS BAR (BACKGROUND STRIP ON DESKTOP) */}
-            <nav className="w-full min-w-0 p-3.5 sm:p-4 rounded-3xl lg:bg-white/70 dark:lg:bg-zinc-900/70 lg:backdrop-blur-md lg:border lg:border-[var(--glass-edge)] lg:shadow-sm transition-all">
-              <div className="flex items-center justify-between w-full min-w-0">
-                {steps.map((label, idx) => {
-                  const isCompleted = idx < project.currentStep;
-                  const isCurrent = idx === project.currentStep;
-
-                  return (
-                    <React.Fragment key={idx}>
-                      <button
-                        onClick={() => handleStepClick(idx)}
-                        className="flex-1 flex flex-col items-center text-center outline-none group cursor-pointer min-w-0"
-                      >
-                        {/* 1. ВВЕРХУ ЭТАП */}
-                        <span className="block text-[10px] sm:text-[11px] uppercase tracking-wider font-extrabold text-stone-400 dark:text-zinc-500 truncate mb-1">
-                          {isCurrent ? 'Текущий' : `Этап ${idx + 1}`}
-                        </span>
-
-                        {/* 2. ДАЛЬШЕ КРУЖОЧЕК */}
-                        <span
-                          className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-black transition-all shrink-0 ${
-                            isCompleted
-                              ? 'bg-emerald-600 text-white shadow-xs'
-                              : isCurrent
-                              ? 'bg-[#582F89] text-white shadow-md ring-2 ring-purple-300 dark:ring-purple-900'
-                              : 'bg-stone-200 dark:bg-zinc-800 text-stone-400 group-hover:text-stone-600'
-                          }`}
-                        >
-                          {isCompleted ? '✓' : idx + 1}
-                        </span>
-
-                        {/* 3. СНИЗУ ПОДПИСЬ */}
-                        <span className={`block text-xs sm:text-sm font-bold transition-colors truncate w-full mt-1 ${
-                          isCurrent ? 'text-[#582F89] dark:text-purple-300' : isCompleted ? 'text-stone-800 dark:text-stone-200' : 'text-stone-400 group-hover:text-stone-600'
-                        }`}>
-                          {label}
-                        </span>
-                      </button>
-
-                      {/* АККУРАТНАЯ ТОНКАЯ ЛИНИЯ (1.5px) НА ВСЕХ ЭКРАНАХ */}
-                      {idx < steps.length - 1 && (
-                        <div
-                          className={`h-[1.5px] flex-1 min-w-[12px] max-w-[100px] mx-1 sm:mx-2 rounded-full transition-all shrink-0 ${
-                            idx < project.currentStep ? 'bg-emerald-500' : 'bg-stone-300 dark:bg-zinc-700'
-                          }`}
-                        />
-                      )}
-                    </React.Fragment>
-                  );
-                })}
+          {/* CARD 2: ПРЕДОПЛАТА */}
+          <div className="bg-gradient-to-br from-emerald-100/90 via-white/80 to-teal-50/70 dark:from-emerald-950/40 dark:via-zinc-900/60 dark:to-zinc-900/60 backdrop-blur-xl border border-emerald-200/80 dark:border-emerald-900/50 rounded-[24px] p-4 shadow-2xs flex flex-col justify-between gap-3 relative overflow-hidden">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] uppercase font-normal text-zinc-600 dark:text-zinc-400 tracking-normal truncate">
+                Полученная предоплата
+              </span>
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-100/90 dark:bg-emerald-900/80 text-[10px] font-semibold text-emerald-800 dark:text-emerald-200 border border-emerald-300/60 dark:border-emerald-700/40 shadow-2xs shrink-0">
+                {finalPrice > 0 ? Math.round((prepayment / finalPrice) * 100) : 0}% внесено
+              </span>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 bg-emerald-200/90 dark:bg-emerald-900/70 text-emerald-600 rounded-xl shrink-0">
+                <CheckCircle2 className="w-4 h-4 stroke-[2.2]" />
               </div>
-            </nav>
+              <div className="text-xl sm:text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400 tracking-tight truncate">
+                {prepayment.toLocaleString('ru')} ₽
+              </div>
+            </div>
+            <div className="pt-2 border-t border-emerald-200/60 dark:border-emerald-900/40 flex items-center justify-between text-xs text-zinc-800 dark:text-zinc-200">
+              <span className="font-medium text-zinc-700 dark:text-zinc-300">Аванс забронирован</span>
+              <span className="font-extrabold text-emerald-600 dark:text-emerald-400">Подтверждено ✓</span>
+            </div>
+          </div>
+
+          {/* CARD 3: ОСТАТОК И ДНИ ДО МОНТАЖА */}
+          <div className="bg-gradient-to-br from-amber-100/90 via-white/80 to-orange-50/70 dark:from-amber-950/40 dark:via-zinc-900/60 dark:to-zinc-900/60 backdrop-blur-xl border border-amber-200/80 dark:border-amber-900/50 rounded-[24px] p-4 shadow-2xs flex flex-col justify-between gap-3 relative overflow-hidden">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] uppercase font-normal text-zinc-600 dark:text-zinc-400 tracking-normal truncate">
+                Остаток на день монтажа
+              </span>
+              <span className="px-2.5 py-0.5 rounded-full bg-amber-100/90 dark:bg-amber-900/80 text-[10px] font-semibold text-amber-800 dark:text-amber-200 border border-amber-300/60 dark:border-amber-700/40 shadow-2xs shrink-0">
+                К оплате
+              </span>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 bg-amber-200/90 dark:bg-amber-900/70 text-amber-600 rounded-xl shrink-0">
+                <CreditCard className="w-4 h-4 stroke-[2.2]" />
+              </div>
+              <div className="text-xl sm:text-2xl font-black font-mono text-amber-600 dark:text-amber-400 tracking-tight truncate">
+                {Math.max(0, finalPrice - prepayment).toLocaleString('ru')} ₽
+              </div>
+            </div>
+            <div className="pt-2 border-t border-amber-200/60 dark:border-amber-900/40 flex items-center justify-between text-xs text-zinc-800 dark:text-zinc-200">
+              <span className="font-medium text-zinc-700 dark:text-zinc-300 flex items-center gap-1">
+                До монтажа: <strong className="font-extrabold text-amber-800 dark:text-amber-200">
+                  {daysUntilEvent !== null
+                    ? (daysUntilEvent > 0 ? `${daysUntilEvent} дн.` : daysUntilEvent === 0 ? 'Сегодня!' : 'Завершено')
+                    : 'В день монтажа'}
+                </strong>
+              </span>
+              <span className="font-bold text-amber-700 dark:text-amber-300 truncate max-w-[110px]">
+                {project.date || 'Дата не указана'}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. BROWSER-STYLE SEAMLESS CONNECTED TABS NAVIGATION */}
+      <div className="w-full min-w-0 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden pt-2 px-3 sm:px-6 flex items-end gap-1.5 sm:gap-2 relative z-20 shrink-0">
+        {[
+          {
+            id: 'all',
+            label: 'Обзор',
+            icon: Layout,
+            activeStyle: 'bg-white dark:bg-zinc-900 text-[#582F89] dark:text-purple-200 border-t border-x border-purple-300/80 dark:border-purple-800/60 rounded-t-2xl shadow-2xs z-30 relative -mb-[1px] pb-3 pt-2.5 px-4 sm:px-5',
+            inactiveStyle: 'bg-white/40 dark:bg-zinc-900/40 text-zinc-600 dark:text-zinc-400 hover:bg-white/70 hover:text-zinc-900 dark:hover:bg-zinc-800/60 border-t border-x border-purple-100/60 dark:border-zinc-800/60 z-10 rounded-t-xl pb-2 pt-2 px-3.5 sm:px-4'
+          },
+          {
+            id: 'brief',
+            label: 'Бриф',
+            icon: Clipboard,
+            activeStyle: 'bg-white dark:bg-zinc-900 text-rose-700 dark:text-rose-200 border-t border-x border-rose-300/80 dark:border-rose-800/60 rounded-t-2xl shadow-2xs z-30 relative -mb-[1px] pb-3 pt-2.5 px-4 sm:px-5',
+            inactiveStyle: 'bg-white/40 dark:bg-zinc-900/40 text-zinc-600 dark:text-zinc-400 hover:bg-rose-50/50 hover:text-rose-700 dark:hover:bg-rose-950/30 border-t border-x border-rose-100/60 dark:border-zinc-800/60 z-10 rounded-t-xl pb-2 pt-2 px-3.5 sm:px-4'
+          },
+          {
+            id: 'design',
+            label: 'Дизайн',
+            icon: Palette,
+            activeStyle: 'bg-white dark:bg-zinc-900 text-indigo-700 dark:text-indigo-200 border-t border-x border-indigo-300/80 dark:border-indigo-800/60 rounded-t-2xl shadow-2xs z-30 relative -mb-[1px] pb-3 pt-2.5 px-4 sm:px-5',
+            inactiveStyle: 'bg-white/40 dark:bg-zinc-900/40 text-zinc-600 dark:text-zinc-400 hover:bg-indigo-50/50 hover:text-indigo-700 dark:hover:bg-indigo-950/30 border-t border-x border-indigo-100/60 dark:border-zinc-800/60 z-10 rounded-t-xl pb-2 pt-2 px-3.5 sm:px-4'
+          },
+          {
+            id: 'calc',
+            label: 'Смета',
+            icon: SlidersHorizontal,
+            activeStyle: 'bg-white dark:bg-zinc-900 text-emerald-700 dark:text-emerald-200 border-t border-x border-emerald-300/80 dark:border-emerald-800/60 rounded-t-2xl shadow-2xs z-30 relative -mb-[1px] pb-3 pt-2.5 px-4 sm:px-5',
+            inactiveStyle: 'bg-white/40 dark:bg-zinc-900/40 text-zinc-600 dark:text-zinc-400 hover:bg-emerald-50/50 hover:text-emerald-700 dark:hover:bg-emerald-950/30 border-t border-x border-emerald-100/60 dark:border-zinc-800/60 z-10 rounded-t-xl pb-2 pt-2 px-3.5 sm:px-4'
+          },
+          {
+            id: 'journal',
+            label: 'Заметки',
+            icon: CheckSquare,
+            activeStyle: 'bg-white dark:bg-zinc-900 text-amber-700 dark:text-amber-200 border-t border-x border-amber-300/80 dark:border-amber-800/60 rounded-t-2xl shadow-2xs z-30 relative -mb-[1px] pb-3 pt-2.5 px-4 sm:px-5',
+            inactiveStyle: 'bg-white/40 dark:bg-zinc-900/40 text-zinc-600 dark:text-zinc-400 hover:bg-amber-50/50 hover:text-amber-700 dark:hover:bg-amber-950/30 border-t border-x border-amber-100/60 dark:border-zinc-800/60 z-10 rounded-t-xl pb-2 pt-2 px-3.5 sm:px-4'
+          },
+          {
+            id: 'docs',
+            label: 'Документы',
+            icon: FolderOpen,
+            activeStyle: 'bg-white dark:bg-zinc-900 text-blue-700 dark:text-blue-200 border-t border-x border-blue-300/80 dark:border-blue-800/60 rounded-t-2xl shadow-2xs z-30 relative -mb-[1px] pb-3 pt-2.5 px-4 sm:px-5',
+            inactiveStyle: 'bg-white/40 dark:bg-zinc-900/40 text-zinc-600 dark:text-zinc-400 hover:bg-blue-50/50 hover:text-blue-700 dark:hover:bg-blue-950/30 border-t border-x border-blue-100/60 dark:border-zinc-800/60 z-10 rounded-t-xl pb-2 pt-2 px-3.5 sm:px-4'
+          }
+        ].map(tab => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`font-semibold text-xs sm:text-sm flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap shrink-0 relative ${
+                isActive ? tab.activeStyle : tab.inactiveStyle
+              }`}
+            >
+              <Icon className="w-4 h-4 shrink-0" />
+              <span>{tab.label}</span>
+              {isActive && (
+                <span className="absolute -bottom-[2px] left-0 right-0 h-[3px] bg-white dark:bg-zinc-900 z-40 pointer-events-none" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 4. MAIN WORKSPACE CONTENT */}
+      <main className="flex-1 min-w-0 max-w-full space-y-5 w-full relative z-10">
             
-            {/* BRIEF GRID */}
+            {/* BRIEF GRID (SUBTLE ROSE CORNER HIGHLIGHT WITH CLEAN GLASS CARDS) */}
             {(activeTab === 'all' || activeTab === 'brief') && (
-              <section className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-[var(--glass-edge)] rounded-3xl overflow-hidden shadow-sm w-full min-w-0">
-                <div className="bg-[#F0EBF9]/80 dark:bg-[#20152B]/80 backdrop-blur-md border-b border-[#D8C7F0] dark:border-[#3D2554] px-4 sm:px-5 py-3.5 flex justify-between items-center flex-wrap gap-2.5 w-full min-w-0">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Clipboard className="w-4 h-4 text-[#582F89] shrink-0" />
+              <section className="bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-rose-100/50 via-white/40 to-white/40 dark:from-rose-950/30 dark:via-zinc-900/30 dark:to-zinc-900/30 backdrop-blur-md border border-zinc-200/50 dark:border-zinc-800/40 rounded-[28px] overflow-hidden shadow-xs w-full min-w-0">
+                <div className="bg-white/40 dark:bg-zinc-900/30 border-b border-zinc-200/50 dark:border-zinc-800/40 px-4 sm:px-6 py-4 flex justify-between items-center flex-wrap gap-2.5 w-full min-w-0">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="p-2 bg-[#F3E8FF] dark:bg-purple-950/60 text-[#8C52D0] dark:text-[#985DE0] rounded-xl shrink-0">
+                      <Clipboard className="w-5 h-5 stroke-[2.2]" />
+                    </div>
                     <div className="min-w-0">
-                      <h2 className="font-bold text-sm text-stone-900 dark:text-stone-100 truncate">Анкета и Бриф проекта</h2>
-                      <p className="text-[10px] text-stone-400 truncate">
-                        Заполнено: <strong className="text-emerald-600 font-bold">{briefFilledPercentage}%</strong> {briefEmptyCount > 0 ? `(${briefEmptyCount} полей требует заполнения)` : '(Все поля заполнены)'}
+                      <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100 truncate">Анкета и Бриф проекта</h2>
+                      <p className="text-xs text-zinc-700 dark:text-zinc-300 font-normal leading-relaxed truncate mt-0.5">
+                        Заполнено: <strong className="text-emerald-600 font-semibold">{briefFilledPercentage}%</strong> {briefEmptyCount > 0 ? `(${briefEmptyCount} полей требует заполнения)` : '(Все поля заполнены)'}
                       </p>
                     </div>
                   </div>
 
-                  {/* Header Actions: Send Brief button directly before Collapse button */}
+                  {/* Header Actions */}
                   <div className="flex items-center gap-2 flex-wrap">
                     <button
                       onClick={() => {
@@ -1213,7 +1298,7 @@ export default function ProjectDetailModal({
                         navigator.clipboard.writeText(briefUrl);
                         showToast('Ссылка на бриф скопирована', `Ссылка для клиента ${project.clientName} скопирована в буфер обмена: ${briefUrl}`, 'success');
                       }}
-                      className="relative group px-4 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all duration-300 hover:opacity-85 active:scale-[0.98] cursor-pointer bg-transparent"
+                      className="relative group px-4 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all duration-300 hover:opacity-85 active:scale-[0.98] cursor-pointer bg-white/80 dark:bg-zinc-800/80 shadow-2xs"
                     >
                       {/* 1px Gradient Border Overlay */}
                       <span
@@ -1225,26 +1310,18 @@ export default function ProjectDetailModal({
                           maskComposite: 'exclude',
                         }}
                       />
-                      <Send className="w-3.5 h-3.5 stroke-[2.2] relative z-10 shrink-0" style={{ stroke: 'url(#purple-gradient-send-btn)' }} />
+                      <Send className="w-3.5 h-3.5 stroke-[2.2] relative z-10 shrink-0 text-[#8C52D0]" />
                       <span
                         className="bg-clip-text text-transparent relative z-10"
                         style={{ backgroundImage: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
                       >
                         Отправить бриф
                       </span>
-                      <svg width="0" height="0" className="absolute w-0 h-0 pointer-events-none">
-                        <defs>
-                          <linearGradient id="purple-gradient-send-btn" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stopColor="#8C52D0" />
-                            <stop offset="100%" stopColor="#582F89" />
-                          </linearGradient>
-                        </defs>
-                      </svg>
                     </button>
 
                     <button
                       onClick={() => setBriefCollapsed(!briefCollapsed)}
-                      className="px-3.5 py-1.5 border border-stone-300 dark:border-zinc-700 hover:border-stone-400 dark:hover:border-zinc-600 bg-white/50 dark:bg-zinc-800/50 text-stone-700 dark:text-stone-300 rounded-full text-xs font-semibold flex items-center gap-1 cursor-pointer transition-all duration-300 hover:bg-stone-100 dark:hover:bg-zinc-800"
+                      className="px-3.5 py-1.5 border border-white/80 dark:border-zinc-700 bg-white/80 dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-300 rounded-full text-xs font-semibold flex items-center gap-1 cursor-pointer transition-all duration-300 hover:bg-white shadow-2xs"
                     >
                       {briefCollapsed ? (
                         <>
@@ -1265,7 +1342,7 @@ export default function ProjectDetailModal({
                     <div className="space-y-3">
                       <div className="flex items-center gap-2 border-b border-purple-100 dark:border-purple-950/60 pb-2">
                         <span className="w-2.5 h-2.5 rounded-full bg-[#8C52D0] shrink-0" />
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-[#582F89] dark:text-purple-300">
+                        <h3 className="text-xs font-normal uppercase tracking-normal text-zinc-600 dark:text-zinc-400">
                           Поля клиента
                         </h3>
                         <span className="text-[10px] font-semibold text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-950/80 px-2 py-0.5 rounded-full">
@@ -1283,12 +1360,12 @@ export default function ProjectDetailModal({
                               key={field.key}
                               className={`p-2.5 rounded-xl border border-l-2 text-left transition-all flex flex-col justify-between shadow-2xs ${
                                 isEmpty
-                                  ? 'border-dashed border-rose-400/90 border-l-rose-500 dark:border-rose-800 bg-rose-50/60 dark:bg-rose-950/30'
+                                  ? 'border-dashed border-purple-300 border-l-[#8C52D0] dark:border-purple-800 bg-purple-50/40 dark:bg-purple-950/20'
                                   : 'border-purple-200/80 border-l-[#8C52D0] dark:border-purple-900/50 bg-purple-50/20 dark:bg-purple-950/10'
                               }`}
                             >
                               <div className="flex items-center justify-between gap-1 mb-1.5">
-                                <span className="text-[9px] uppercase tracking-wider font-bold text-stone-500 dark:text-stone-400 truncate">
+                                <span className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal truncate">
                                   {field.key}
                                 </span>
                               </div>
@@ -1299,9 +1376,9 @@ export default function ProjectDetailModal({
                                   value={val === "(требует заполнения)" ? "" : val}
                                   onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                                   placeholder=""
-                                  className={`w-full text-[15px] font-semibold rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] resize-none ${
+                                  className={`w-full text-sm font-semibold rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] resize-none ${
                                     isEmpty
-                                      ? 'bg-rose-100/50 text-rose-600 italic font-medium border-rose-300 dark:bg-rose-950/40 dark:text-rose-400'
+                                      ? 'bg-purple-50/60 text-[#582F89] italic font-medium border-purple-200 dark:bg-purple-950/40 dark:text-purple-300'
                                       : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
                                   }`}
                                 />
@@ -1311,9 +1388,9 @@ export default function ProjectDetailModal({
                                   value={val === "(требует заполнения)" ? "" : val}
                                   onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                                   placeholder=""
-                                  className={`w-full text-[15px] font-semibold rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] ${
+                                  className={`w-full text-sm font-semibold rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] ${
                                     isEmpty
-                                      ? 'bg-rose-100/50 text-rose-600 italic font-medium border-rose-300 dark:bg-rose-950/40 dark:text-rose-400'
+                                      ? 'bg-purple-50/60 text-[#582F89] italic font-medium border-purple-200 dark:bg-purple-950/40 dark:text-purple-300'
                                       : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
                                   }`}
                                 />
@@ -1352,7 +1429,7 @@ export default function ProjectDetailModal({
                               }`}
                             >
                               <div className="flex items-center justify-between gap-1 mb-1.5">
-                                <span className="text-[9px] uppercase tracking-wider font-bold text-stone-500 dark:text-stone-400 truncate">
+                                <span className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal truncate">
                                   {field.key}
                                 </span>
                                 {isCustom && (
@@ -1379,7 +1456,7 @@ export default function ProjectDetailModal({
                                   value={val === "(требует заполнения)" ? "" : val}
                                   onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                                   placeholder=""
-                                  className={`w-full text-[15px] font-semibold rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] resize-none ${
+                                  className={`w-full text-sm font-semibold rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] resize-none ${
                                     isEmpty
                                       ? 'bg-rose-100/50 text-rose-600 italic font-medium border-rose-300 dark:bg-rose-950/40 dark:text-rose-400'
                                       : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
@@ -1391,7 +1468,7 @@ export default function ProjectDetailModal({
                                   value={val === "(требует заполнения)" ? "" : val}
                                   onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                                   placeholder=""
-                                  className={`w-full text-[15px] font-semibold rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] ${
+                                  className={`w-full text-sm font-semibold rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] ${
                                     isEmpty
                                       ? 'bg-rose-100/50 text-rose-600 italic font-medium border-rose-300 dark:bg-rose-950/40 dark:text-rose-400'
                                       : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
@@ -1489,24 +1566,26 @@ export default function ProjectDetailModal({
               </section>
             )}
 
-            {/* DESIGN & VISUALIZATION */}
+            {/* DESIGN & VISUALIZATION (PASTEL PURPLE/LAVENDER GLASS CARD) */}
             {(activeTab === 'all' || activeTab === 'design') && (
-              <section className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-[var(--glass-edge)] rounded-3xl overflow-hidden shadow-sm">
-                <div className="bg-[#F0EBF9]/80 dark:bg-[#20152B]/80 backdrop-blur-md border-b border-[#D8C7F0] dark:border-[#3D2554] px-5 py-3.5 flex justify-between items-center flex-wrap gap-2">
-                  <div className="flex items-center gap-2">
-                    <Palette className="w-4 h-4 text-[#582F89]" />
-                    <h2 className="font-bold text-sm text-stone-900 dark:text-stone-100">Дизайн & Визуализация</h2>
+              <section className="bg-gradient-to-br from-purple-50/70 via-white/60 to-indigo-50/50 dark:from-purple-950/30 dark:via-zinc-900/60 dark:to-zinc-900/60 backdrop-blur-xl border border-indigo-200/60 dark:border-indigo-900/40 rounded-[28px] overflow-hidden shadow-xs">
+                <div className="bg-white dark:bg-zinc-900 border-b border-indigo-200/60 dark:border-indigo-900/40 px-5 py-4 flex justify-between items-center flex-wrap gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 bg-purple-100 dark:bg-purple-900/50 text-[#8C52D0] rounded-2xl shrink-0">
+                      <Palette className="w-4 h-4 stroke-[2.2]" />
+                    </div>
+                    <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">Дизайн & Визуализация</h2>
                   </div>
                   <button
                     onClick={() => {
                       showToast('Редактор дизайна', 'Переход в встроенный графический редактор...', 'info');
                       if (onOpenEditor) onOpenEditor();
                     }}
-                    style={{ border: '1px solid #8C52D0' }}
-                    className="bg-transparent px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all duration-300 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] hover:bg-[#8C52D0]/10"
+                    style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                    className="px-4 py-1.5 rounded-full text-xs font-semibold text-white flex items-center gap-1.5 cursor-pointer transition-all duration-300 hover:shadow-md hover:opacity-95 active:scale-[0.98] shadow-2xs"
                   >
-                    <SlidersHorizontal className="w-3 h-3 text-[#8C52D0]" />
-                    <span className="bg-gradient-to-r from-[#8C52D0] to-[#582F89] bg-clip-text text-transparent font-semibold">Редактор</span>
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-white" />
+                    <span>Редактор</span>
                   </button>
                 </div>
 
@@ -1744,16 +1823,18 @@ export default function ProjectDetailModal({
               </section>
             )}
 
-            {/* ESTIMATE SHEET */}
+            {/* ESTIMATE SHEET (PASTEL EMERALD GLASS CARD) */}
             {(activeTab === 'all' || activeTab === 'calc') && (
-              <section className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-[var(--glass-edge)] rounded-3xl overflow-hidden shadow-sm">
-                <div className="bg-[#F0EBF9]/80 dark:bg-[#20152B]/80 backdrop-blur-md border-b border-[#D8C7F0] dark:border-[#3D2554] px-5 py-3.5 flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-[#582F89]" />
-                    <h2 className="font-bold text-sm text-stone-900 dark:text-stone-100">Смета декора и монтажа</h2>
+              <section className="bg-gradient-to-br from-emerald-50/70 via-white/60 to-teal-50/50 dark:from-emerald-950/30 dark:via-zinc-900/60 dark:to-zinc-900/60 backdrop-blur-xl border border-emerald-200/60 dark:border-emerald-900/40 rounded-[28px] overflow-hidden shadow-xs">
+                <div className="bg-white dark:bg-zinc-900 border-b border-emerald-200/60 dark:border-emerald-900/40 px-5 py-4 flex justify-between items-center">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 rounded-2xl shrink-0">
+                      <DollarSign className="w-4 h-4 stroke-[2.2]" />
+                    </div>
+                    <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">Смета декора и монтажа</h2>
                   </div>
-                  <button onClick={handleResetCalculator} className="text-xs text-stone-400 hover:text-rose-500 cursor-pointer flex items-center gap-1">
-                    <RotateCcw className="w-3 h-3" /> Сбросить
+                  <button onClick={handleResetCalculator} className="px-3 py-1.5 rounded-full bg-white/80 dark:bg-zinc-800/80 text-xs font-bold text-zinc-500 hover:text-rose-500 cursor-pointer flex items-center gap-1 shadow-2xs transition-colors">
+                    <RotateCcw className="w-3.5 h-3.5" /> Сбросить
                   </button>
                 </div>
 
@@ -1761,18 +1842,25 @@ export default function ProjectDetailModal({
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
-                        <tr className="border-b border-stone-200/80 dark:border-zinc-800 text-stone-400 font-medium">
-                          <th className="pb-3 pt-1 px-3 w-12 text-stone-400 font-normal">Превью</th>
-                          <th className="pb-3 pt-1 px-3 text-stone-400 font-normal">Визуализация / Позиция</th>
-                          <th className="pb-3 pt-1 px-3 text-center text-stone-400 font-normal">Включение в смету</th>
-                          <th className="pb-3 pt-1 px-3 text-right text-stone-400 font-normal">Общая стоимость (₽)</th>
+                        <tr className="border-b border-zinc-200/80 dark:border-zinc-800">
+                          <th className="pb-3 pt-1 px-3 w-12 text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal">Превью</th>
+                          <th className="pb-3 pt-1 px-3 text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal">Визуализация / Позиция</th>
+                          <th className="pb-3 pt-1 px-3 text-center text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal">Включение в смету</th>
+                          <th className="pb-3 pt-1 px-3 text-right text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal">Общая стоимость (₽)</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-stone-100 dark:divide-zinc-800/80">
                         {/* SECTION TITLE: VISUALIZATIONS */}
-                        <tr className="bg-purple-50/60 dark:bg-purple-950/40 text-[#582F89] dark:text-purple-300 font-bold">
-                          <td colSpan={4} className="py-2 px-3 text-[11px] uppercase tracking-wider font-extrabold">
-                            ✨ Визуализации декора (общая стоимость по объектам)
+                        <tr className="bg-purple-50/60 dark:bg-purple-950/40 border-y border-purple-200/50 dark:border-purple-900/50">
+                          <td colSpan={4} className="py-2.5 px-3">
+                            <div className="flex items-center gap-2">
+                              <div className="p-1.5 bg-[#F3E8FF] dark:bg-purple-900/50 rounded-lg text-[#8C52D0] dark:text-purple-300">
+                                <Sparkles className="w-4 h-4 stroke-[2]" />
+                              </div>
+                              <span className="text-xs font-semibold uppercase tracking-normal text-zinc-800 dark:text-zinc-200">
+                                Визуализации декора (общая стоимость по объектам)
+                              </span>
+                            </div>
                           </td>
                         </tr>
 
@@ -1809,39 +1897,29 @@ export default function ProjectDetailModal({
                                       type="text"
                                       value={sc.name || `Декор ${idx + 1}`}
                                       onChange={(e) => handleUpdateSceneName(sc.id, e.target.value)}
-                                      className={`font-bold text-xs bg-transparent border-b border-transparent hover:border-purple-300 focus:border-[#8C52D0] focus:outline-none transition-colors ${
+                                      className={`font-semibold text-sm bg-transparent border-b border-transparent hover:border-purple-300 focus:border-[#8C52D0] focus:outline-none transition-colors ${
                                         isIncluded ? 'text-stone-900 dark:text-stone-100' : 'line-through text-stone-400 dark:text-zinc-500'
                                       }`}
                                     />
-                                    <span className="text-[10px] text-stone-400 dark:text-stone-500 font-medium">
+                                    <span className="text-[10px] text-zinc-600 dark:text-zinc-300 font-normal leading-normal">
                                       {sc.subtitle || (sc.elements && sc.elements.length > 0 ? `${sc.elements.length} элементов декора в составе` : 'Отдельный элемент декора')}
                                     </span>
                                   </div>
                                 </td>
 
-                                {/* TOGGLE BUTTON (ВКЛ / ВЫКЛ) */}
+                                {/* TOGGLE BUTTON (CIRCLE WITH CHECKMARK) */}
                                 <td className="py-3 px-3 text-center">
                                   <button
                                     type="button"
                                     onClick={() => handleToggleSceneInEstimate(sc.id)}
-                                    className={`px-3.5 py-1.5 rounded-full text-xs font-bold inline-flex items-center gap-1.5 transition-all duration-300 cursor-pointer shadow-2xs ${
+                                    className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer shadow-xs active:scale-95 mx-auto ${
                                       isIncluded
-                                        ? 'bg-purple-50/40 hover:bg-purple-100/70 dark:bg-purple-950/30 dark:hover:bg-purple-900/50 text-[#8C52D0] dark:text-purple-300 border border-[#8C52D0] dark:border-purple-400 active:scale-[0.98]'
-                                        : 'bg-stone-200/70 hover:bg-stone-300 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-stone-500 dark:text-stone-400 border border-stone-300 dark:border-zinc-700'
+                                        ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                                        : 'bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-400 dark:text-zinc-500'
                                     }`}
-                                    title={isIncluded ? 'Нажмите, чтобы исключить из расчета сметы' : 'Нажмите, чтобы включить в расчет сметы'}
+                                    title={isIncluded ? 'Включено в смету (нажмите, чтобы исключить)' : 'Исключено из сметы (нажмите, чтобы включить)'}
                                   >
-                                    {isIncluded ? (
-                                      <>
-                                        <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.5]" />
-                                        <span>Включено</span>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <X className="w-3.5 h-3.5 stroke-[2.5]" />
-                                        <span>Выключено</span>
-                                      </>
-                                    )}
+                                    <Check className="w-4 h-4 stroke-[2.5]" />
                                   </button>
                                 </td>
 
@@ -1854,14 +1932,14 @@ export default function ProjectDetailModal({
                                         value={cost || ''}
                                         placeholder="0"
                                         onChange={(e) => handleUpdateScenePrice(sc.id, Number(e.target.value) || 0)}
-                                        className="w-28 bg-white dark:bg-zinc-800 border border-purple-200 dark:border-purple-800 px-2.5 py-1 rounded-xl text-right font-black text-xs text-[#582F89] dark:text-purple-200 focus:outline-none focus:ring-1 focus:ring-[#8C52D0] shadow-2xs"
+                                        className="w-28 bg-white dark:bg-zinc-800 border border-purple-200 dark:border-purple-800 px-2.5 py-1 rounded-xl text-right font-bold text-sm text-[#582F89] dark:text-purple-200 focus:outline-none focus:ring-1 focus:ring-[#8C52D0] shadow-2xs"
                                       />
                                     ) : (
-                                      <span className="font-mono font-bold text-xs line-through text-stone-400 dark:text-zinc-600">
+                                      <span className="font-mono font-bold text-sm line-through text-stone-400 dark:text-zinc-600">
                                         {cost.toLocaleString('ru')} ₽
                                       </span>
                                     )}
-                                    <span className={`font-medium text-xs ${isIncluded ? 'text-stone-500' : 'text-stone-400'}`}>₽</span>
+                                    <span className={`font-semibold text-sm ${isIncluded ? 'text-stone-700 dark:text-stone-300' : 'text-stone-400'}`}>₽</span>
                                     <button
                                       type="button"
                                       onClick={() => handleDeleteScene(sc.id)}
@@ -1889,9 +1967,16 @@ export default function ProjectDetailModal({
                         )}
 
                         {/* SECTION TITLE: WORK & DELIVERY */}
-                        <tr className="bg-stone-100/90 dark:bg-zinc-800/80 text-stone-700 dark:text-stone-300 font-bold">
-                          <td colSpan={4} className="py-2 px-3 text-[11px] uppercase tracking-wider font-extrabold">
-                            🚚 Монтаж, логистика и сервисные работы
+                        <tr className="bg-stone-100/90 dark:bg-zinc-800/80 border-y border-zinc-200/60 dark:border-zinc-700/60">
+                          <td colSpan={4} className="py-2.5 px-3">
+                            <div className="flex items-center gap-2">
+                              <div className="p-1.5 bg-zinc-200/80 dark:bg-zinc-700/60 rounded-lg text-zinc-700 dark:text-zinc-300">
+                                <Truck className="w-4 h-4 stroke-[2]" />
+                              </div>
+                              <span className="text-xs font-semibold uppercase tracking-normal text-zinc-800 dark:text-zinc-200">
+                                Монтаж, логистика и сервисные работы
+                              </span>
+                            </div>
                           </td>
                         </tr>
 
@@ -1903,13 +1988,18 @@ export default function ProjectDetailModal({
                                 <Truck className="w-4 h-4 stroke-[2]" />
                               </div>
                             </td>
-                            <td className="py-2.5 px-3 font-bold text-stone-800 dark:text-stone-100">
-                              <input
-                                type="text"
-                                value={item.name}
-                                onChange={(e) => handleUpdateEstimateItemName(item.id, e.target.value)}
-                                className="bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-stone-400 rounded px-1 py-0.5 w-full font-bold text-stone-800 dark:text-stone-100 text-xs"
-                              />
+                            <td className="py-2.5 px-3">
+                              <div className="flex flex-col">
+                                <input
+                                  type="text"
+                                  value={item.name}
+                                  onChange={(e) => handleUpdateEstimateItemName(item.id, e.target.value)}
+                                  className="font-semibold text-sm bg-transparent border-b border-transparent hover:border-purple-300 focus:border-[#8C52D0] focus:outline-none transition-colors text-stone-900 dark:text-stone-100"
+                                />
+                                <span className="text-[10px] text-zinc-600 dark:text-zinc-300 font-normal leading-normal">
+                                  Сервисная позиция / услуга
+                                </span>
+                              </div>
                             </td>
                             <td className="py-2.5 px-3 text-center">
                               <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-stone-100 dark:bg-zinc-800 text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-zinc-700">
@@ -1922,13 +2012,13 @@ export default function ProjectDetailModal({
                                   type="number"
                                   value={item.price || ''}
                                   onChange={(e) => handleUpdateEstimateItemPrice(item.id, Number(e.target.value) || 0)}
-                                  className="w-28 bg-white dark:bg-zinc-800 border border-stone-200/90 dark:border-zinc-700 px-2.5 py-1 rounded-xl text-right font-bold text-xs text-stone-800 dark:text-stone-100 focus:outline-none focus:border-stone-400 shadow-2xs"
+                                  className="w-28 bg-white dark:bg-zinc-800 border border-stone-200/90 dark:border-zinc-700 px-2.5 py-1 rounded-xl text-right font-bold text-sm text-stone-800 dark:text-stone-100 focus:outline-none focus:border-stone-400 shadow-2xs"
                                 />
-                                <span className="font-medium text-stone-500 dark:text-stone-400 text-xs">₽</span>
+                                <span className="font-semibold text-stone-700 dark:text-stone-300 text-sm">₽</span>
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteEstimateItem(item.id)}
-                                  className="p-1 text-stone-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  className="p-1 text-stone-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                                   title="Удалить"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -1947,17 +2037,22 @@ export default function ProjectDetailModal({
                               </div>
                             </td>
                             <td className="py-2.5 px-3">
-                              <input
-                                type="text"
-                                autoFocus
-                                placeholder="Введите название работ..."
-                                value={newWorkName}
-                                onChange={(e) => setNewWorkName(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') handleAddWorkPosition();
-                                }}
-                                className="w-full bg-transparent border-none focus:outline-none placeholder:text-stone-400 text-xs font-bold text-stone-800 dark:text-stone-100"
-                              />
+                              <div className="flex flex-col">
+                                <input
+                                  type="text"
+                                  autoFocus
+                                  placeholder="Введите название работ..."
+                                  value={newWorkName}
+                                  onChange={(e) => setNewWorkName(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleAddWorkPosition();
+                                  }}
+                                  className="font-semibold text-sm bg-transparent border-b border-transparent hover:border-purple-300 focus:border-[#8C52D0] focus:outline-none transition-colors text-stone-900 dark:text-stone-100 placeholder:text-stone-400"
+                                />
+                                <span className="text-[10px] text-zinc-600 dark:text-zinc-300 font-normal leading-normal">
+                                  Новая позиция работ
+                                </span>
+                              </div>
                             </td>
                             <td className="py-2.5 px-3 text-center">
                               <span className="text-[10px] text-stone-400">Новая запись</span>
@@ -1972,13 +2067,13 @@ export default function ProjectDetailModal({
                                   onKeyDown={(e) => {
                                     if (e.key === 'Enter') handleAddWorkPosition();
                                   }}
-                                  className="w-28 border border-stone-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-stone-800 dark:text-stone-100 placeholder:text-stone-400 px-2.5 py-1 rounded-xl text-right font-bold text-xs focus:outline-none shadow-2xs"
+                                  className="w-28 border border-stone-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-stone-800 dark:text-stone-100 placeholder:text-stone-400 px-2.5 py-1 rounded-xl text-right font-bold text-sm focus:outline-none shadow-2xs"
                                 />
-                                <span className="font-medium text-stone-500 dark:text-stone-400 text-xs">₽</span>
+                                <span className="font-semibold text-stone-700 dark:text-stone-300 text-sm">₽</span>
                                 <button
                                   type="button"
                                   onClick={() => setShowAddWorkRow(false)}
-                                  className="p-1 text-stone-300 hover:text-rose-500 transition-colors"
+                                  className="p-1 text-stone-300 hover:text-rose-500 transition-colors cursor-pointer"
                                   title="Отмена"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -2008,19 +2103,20 @@ export default function ProjectDetailModal({
                         onUpdateProject({ ...project, scenesData: updatedScenes });
                         showToast('Добавлен декор', `Создана новая позиция: Декор ${newNum}`, 'success');
                       }}
-                      className="w-full py-3 px-5 rounded-full text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 hover:shadow-md hover:opacity-95 active:scale-[0.98]"
-                      style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                      className="w-full py-3 px-5 rounded-full bg-[#F3E8FF] dark:bg-purple-950/40 hover:bg-[#E9D5FF] dark:hover:bg-purple-900/50 border border-[#8C52D0]/50 dark:border-purple-600/50 flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 active:scale-[0.98] shadow-xs"
                     >
-                      <Plus className="w-4 h-4 stroke-[2.5]" />
-                      <span>+ Добавить декор</span>
+                      <Palette className="w-4 h-4 stroke-[2.2] text-[#8C52D0] dark:text-purple-300" />
+                      <span className="bg-gradient-to-r from-[#8C52D0] to-[#582F89] dark:from-purple-300 dark:to-purple-200 bg-clip-text text-transparent font-semibold text-xs sm:text-sm">
+                        + Добавить декор
+                      </span>
                     </button>
 
                     <button
                       type="button"
                       onClick={handleAddWorkPosition}
-                      className="w-full py-3 px-5 rounded-full text-stone-700 dark:text-stone-200 bg-stone-100 hover:bg-stone-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 border border-stone-300 dark:border-zinc-600 font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 hover:shadow-md active:scale-[0.98]"
+                      className="w-full py-3 px-5 rounded-full text-stone-700 dark:text-stone-200 bg-stone-100 hover:bg-stone-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 border border-stone-300 dark:border-zinc-600 font-semibold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 hover:shadow-md active:scale-[0.98]"
                     >
-                      <Truck className="w-4 h-4 stroke-[2.5] text-stone-700 dark:text-stone-300" />
+                      <Truck className="w-4 h-4 stroke-[2.2] text-stone-700 dark:text-stone-300" />
                       <span>+ Работа / Доставка</span>
                     </button>
                   </div>
@@ -2137,22 +2233,22 @@ export default function ProjectDetailModal({
 
 
 
-            {/* JOURNAL OF TASKS AND NOTES CARD */}
+            {/* JOURNAL OF TASKS AND NOTES CARD (PASTEL AMBER GLASS CARD) */}
             {(activeTab === 'all' || activeTab === 'journal') && (
-              <section className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-[var(--glass-edge)] rounded-3xl overflow-hidden shadow-sm">
-                <div className="bg-[#F0EBF9]/80 dark:bg-[#20152B]/80 backdrop-blur-md border-b border-[#D8C7F0] dark:border-[#3D2554] px-5 py-3.5 flex justify-between items-center flex-wrap gap-2">
+              <section className="bg-gradient-to-br from-amber-50/70 via-white/60 to-orange-50/50 dark:from-amber-950/30 dark:via-zinc-900/60 dark:to-zinc-900/60 backdrop-blur-xl border border-amber-200/60 dark:border-amber-900/40 rounded-[28px] overflow-hidden shadow-xs">
+                <div className="bg-white dark:bg-zinc-900 border-b border-amber-200/60 dark:border-amber-900/40 px-5 py-4 flex justify-between items-center flex-wrap gap-2">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-[#582F89]/10 dark:bg-purple-900/40 text-[#582F89] dark:text-purple-300 flex items-center justify-center">
-                      <CheckSquare className="w-4 h-4" />
+                    <div className="p-2 bg-amber-100 dark:bg-amber-900/50 text-amber-600 rounded-2xl shrink-0">
+                      <CheckSquare className="w-4 h-4 stroke-[2.2]" />
                     </div>
                     <div>
-                      <h2 className="font-bold text-sm text-stone-900 dark:text-stone-100">Журнал задач и заметок</h2>
-                      <p className="text-[10px] text-stone-500 dark:text-stone-400">Оперативные задачи и заметки декоратора с привязкой к датам</p>
+                      <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">Журнал заметок и задач</h2>
+                      <p className="text-xs text-zinc-700 dark:text-zinc-300 font-normal leading-relaxed mt-0.5">Оперативные задачи и заметки декоратора с привязкой к датам</p>
                     </div>
                   </div>
                   <button
                     onClick={() => setJournalCollapsed(!journalCollapsed)}
-                    className="px-3.5 py-1.5 border border-stone-300 dark:border-zinc-700 hover:border-stone-400 dark:hover:border-zinc-600 bg-white/50 dark:bg-zinc-800/50 text-stone-700 dark:text-stone-300 rounded-full text-xs font-semibold flex items-center gap-1 cursor-pointer transition-all duration-300 hover:bg-stone-100 dark:hover:bg-zinc-800"
+                    className="px-3.5 py-1.5 border border-white/80 dark:border-zinc-700 bg-white/80 dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-300 rounded-full text-xs font-bold flex items-center gap-1 cursor-pointer transition-all duration-300 hover:bg-white shadow-2xs"
                   >
                     {journalCollapsed ? (
                       <>
@@ -2175,17 +2271,18 @@ export default function ProjectDetailModal({
                       <div className="lg:col-span-5 bg-white/60 dark:bg-zinc-950/40 p-4 sm:p-5 rounded-2xl border border-stone-200/80 dark:border-zinc-800 backdrop-blur-xs space-y-4 flex flex-col justify-between">
                         <div className="space-y-3.5">
                           <div className="flex items-center justify-between pb-2 border-b border-stone-200/60 dark:border-zinc-800">
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-[#582F89] dark:text-purple-300 flex items-center gap-1.5">
-                              <Plus className="w-3.5 h-3.5" /> Создать запись для проекта
+                            <span className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal flex items-center gap-1.5">
+                              <Plus className="w-3.5 h-3.5 text-[#8C52D0]" /> Создать запись
                             </span>
                             {/* Type toggle */}
                             <div className="flex bg-stone-100 dark:bg-zinc-800 p-0.5 rounded-full border border-stone-200 dark:border-zinc-700">
                               <button
                                 type="button"
                                 onClick={() => setNewType('task')}
-                                className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                                style={newType === 'task' ? { background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' } : {}}
+                                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                                   newType === 'task'
-                                    ? 'bg-[#582F89] text-white shadow-2xs'
+                                    ? 'text-white shadow-2xs'
                                     : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
                                 }`}
                               >
@@ -2194,9 +2291,10 @@ export default function ProjectDetailModal({
                               <button
                                 type="button"
                                 onClick={() => setNewType('note')}
-                                className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                                style={newType === 'note' ? { background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' } : {}}
+                                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                                   newType === 'note'
-                                    ? 'bg-[#582F89] text-white shadow-2xs'
+                                    ? 'text-white shadow-2xs'
                                     : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
                                 }`}
                               >
@@ -2207,7 +2305,7 @@ export default function ProjectDetailModal({
 
                           {/* Title input */}
                           <div>
-                            <label className="block text-[10px] font-bold uppercase text-stone-500 mb-1">
+                            <label className="block text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal mb-1">
                               {newType === 'task' ? 'Текст задачи' : 'Содержание заметки'}
                             </label>
                             <textarea
@@ -2222,7 +2320,7 @@ export default function ProjectDetailModal({
                           {/* Date and Category row */}
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
-                              <label className="block text-[10px] font-bold uppercase text-stone-500 mb-1">Дата выполнения</label>
+                              <label className="block text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal mb-1">Дата выполнения</label>
                               <input
                                 type="date"
                                 value={newDueDate}
@@ -2232,7 +2330,7 @@ export default function ProjectDetailModal({
                             </div>
 
                             <div>
-                              <label className="block text-[10px] font-bold uppercase text-stone-500 mb-1">Категория</label>
+                              <label className="block text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal mb-1">Категория</label>
                               <select
                                 value={newCategory}
                                 onChange={(e) => setNewCategory(e.target.value as any)}
@@ -2254,7 +2352,7 @@ export default function ProjectDetailModal({
                         <button
                           type="button"
                           onClick={handleAddTaskNote}
-                          className="w-full mt-3 py-2.5 text-white rounded-full text-xs font-bold transition-all duration-300 hover:shadow-md hover:opacity-95 active:scale-[0.99] cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
+                          className="w-full mt-3 py-2.5 text-white rounded-full text-xs font-semibold transition-all duration-300 hover:shadow-md hover:opacity-95 active:scale-[0.99] cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
                           style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
                         >
                           <Plus className="w-3.5 h-3.5" />
@@ -2271,9 +2369,10 @@ export default function ProjectDetailModal({
                             <button
                               type="button"
                               onClick={() => setJournalFilterType('all')}
-                              className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                              style={journalFilterType === 'all' ? { background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' } : {}}
+                              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                                 journalFilterType === 'all'
-                                  ? 'bg-[#582F89] text-white shadow-2xs'
+                                  ? 'text-white shadow-2xs'
                                   : 'bg-stone-100 dark:bg-zinc-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200'
                               }`}
                             >
@@ -2282,9 +2381,10 @@ export default function ProjectDetailModal({
                             <button
                               type="button"
                               onClick={() => setJournalFilterType('task')}
-                              className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                              style={journalFilterType === 'task' ? { background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' } : {}}
+                              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                                 journalFilterType === 'task'
-                                  ? 'bg-[#582F89] text-white shadow-2xs'
+                                  ? 'text-white shadow-2xs'
                                   : 'bg-stone-100 dark:bg-zinc-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200'
                               }`}
                             >
@@ -2293,9 +2393,10 @@ export default function ProjectDetailModal({
                             <button
                               type="button"
                               onClick={() => setJournalFilterType('note')}
-                              className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                              style={journalFilterType === 'note' ? { background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' } : {}}
+                              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                                 journalFilterType === 'note'
-                                  ? 'bg-[#582F89] text-white shadow-2xs'
+                                  ? 'text-white shadow-2xs'
                                   : 'bg-stone-100 dark:bg-zinc-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200'
                               }`}
                             >
@@ -2439,20 +2540,22 @@ export default function ProjectDetailModal({
               </section>
             )}
 
-            {/* DOCUMENTS WORKFLOW CARD */}
+            {/* DOCUMENTS WORKFLOW CARD (PASTEL BLUE GLASS CARD) */}
             {(activeTab === 'all' || activeTab === 'docs') && (
-              <section className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-[var(--glass-edge)] rounded-3xl overflow-hidden shadow-sm">
-                <div className="bg-[#F0EBF9]/80 dark:bg-[#20152B]/80 backdrop-blur-md border-b border-[#D8C7F0] dark:border-[#3D2554] px-5 py-3.5 flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <FolderOpen className="w-4 h-4 text-[#582F89]" />
+              <section className="bg-gradient-to-br from-blue-50/70 via-white/60 to-cyan-50/50 dark:from-blue-950/30 dark:via-zinc-900/60 dark:to-zinc-900/60 backdrop-blur-xl border border-blue-200/60 dark:border-blue-900/40 rounded-[28px] overflow-hidden shadow-xs">
+                <div className="bg-white dark:bg-zinc-900 border-b border-blue-200/60 dark:border-blue-900/40 px-5 py-4 flex justify-between items-center">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900/50 text-blue-600 rounded-2xl shrink-0">
+                      <FolderOpen className="w-4 h-4 stroke-[2.2]" />
+                    </div>
                     <div>
-                      <h2 className="font-bold text-sm text-stone-900 dark:text-stone-100">Документооборот по проекту</h2>
-                      <p className="text-[10px] text-stone-400">Связанные юридические документы для работы</p>
+                      <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">Документооборот по проекту</h2>
+                      <p className="text-xs text-zinc-700 dark:text-zinc-300 font-normal leading-relaxed mt-0.5">Связанные юридические документы для работы</p>
                     </div>
                   </div>
                   <button
                     onClick={() => showToast('Генерация пакета', 'Создается комплект документов в PDF...', 'success')}
-                    className="px-3.5 py-1.5 text-white rounded-full text-xs font-semibold flex items-center gap-1 cursor-pointer transition-all duration-300 hover:shadow-md hover:opacity-95 active:scale-[0.98] shadow-xs"
+                    className="px-4 py-1.5 text-white rounded-full text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all duration-300 hover:shadow-md hover:opacity-95 active:scale-[0.98] shadow-xs"
                     style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
                   >
                     <Sparkles className="w-3.5 h-3.5" /> Сгенерировать
@@ -2467,8 +2570,6 @@ export default function ProjectDetailModal({
                       code: '№ ДК-2026/08',
                       date: '01.08.2026',
                       size: '2.4 МБ',
-                      status: 'Подписан',
-                      statusBadge: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
                       desc: 'Договор оказания услуг по оформлению и декорированию площадки',
                       icon: FileText,
                       iconBg: 'bg-purple-100 dark:bg-purple-950/80 text-[#8C52D0] dark:text-purple-300 border-purple-200 dark:border-purple-800',
@@ -2480,8 +2581,6 @@ export default function ProjectDetailModal({
                       code: '№ СЗ-2026/08',
                       date: '01.08.2026',
                       size: '1.1 МБ',
-                      status: 'Подтвержден',
-                      statusBadge: 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border-amber-200 dark:border-amber-800',
                       desc: 'Гарантийная сумма бронирования даты (30 000 ₽)',
                       icon: ShieldCheck,
                       iconBg: 'bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800',
@@ -2493,8 +2592,6 @@ export default function ProjectDetailModal({
                       code: '№ АКТ-2026/15',
                       date: 'В процессе',
                       size: '850 КБ',
-                      status: 'Черновик',
-                      statusBadge: 'bg-stone-100 text-stone-700 dark:bg-zinc-800 dark:text-stone-300 border-stone-200 dark:border-zinc-700',
                       desc: 'Акт приемки выполненных декораторских работ',
                       icon: FileCheck,
                       iconBg: 'bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800',
@@ -2506,8 +2603,6 @@ export default function ProjectDetailModal({
                       code: '№ ОПД-2026/01',
                       date: '01.08.2026',
                       size: '420 КБ',
-                      status: 'Активен',
-                      statusBadge: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
                       desc: 'Согласие 152-ФЗ и разрешение на фотосъемку декора',
                       icon: FileSignature,
                       iconBg: 'bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800',
@@ -2524,26 +2619,23 @@ export default function ProjectDetailModal({
                         <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${doc.accentColor} rounded-bl-full pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity`} />
 
                         <div className="space-y-2.5 relative z-10">
-                          {/* TOP HEADER: ICON + STATUS */}
-                          <div className="flex items-start justify-between gap-2">
-                            <div className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 shadow-2xs ${doc.iconBg}`}>
-                              <DocIcon className="w-4 h-4 stroke-[2.2]" />
+                          {/* TOP HEADER: ICON + TITLE & CODE */}
+                          <div className="flex items-start gap-3">
+                            <div className={`w-10 h-10 rounded-2xl border flex items-center justify-center shrink-0 shadow-2xs ${doc.iconBg}`}>
+                              <DocIcon className="w-5 h-5 stroke-[2.2]" />
                             </div>
-                            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border shadow-2xs ${doc.statusBadge}`}>
-                              {doc.status}
-                            </span>
-                          </div>
-
-                          {/* TITLE & CODE */}
-                          <div>
-                            <span className="text-[10px] font-mono text-stone-400 dark:text-stone-500 font-semibold block">{doc.code}</span>
-                            <h4 className="font-bold text-xs text-stone-900 dark:text-stone-100 group-hover:text-[#582F89] dark:group-hover:text-purple-300 transition-colors">
-                              {doc.title}
-                            </h4>
+                            <div className="min-w-0 flex-1">
+                              <span className="text-[10px] font-mono text-zinc-600 dark:text-zinc-400 font-normal uppercase tracking-normal block leading-tight mb-0.5">
+                                {doc.code}
+                              </span>
+                              <h4 className="font-semibold text-sm text-stone-900 dark:text-stone-100 group-hover:text-[#8C52D0] dark:group-hover:text-purple-300 transition-colors leading-snug">
+                                {doc.title}
+                              </h4>
+                            </div>
                           </div>
 
                           {/* DESCRIPTION */}
-                          <p className="text-[11px] text-stone-500 dark:text-stone-400 line-clamp-2 leading-relaxed">
+                          <p className="text-xs text-zinc-700 dark:text-zinc-300 line-clamp-2 leading-relaxed">
                             {doc.desc}
                           </p>
                         </div>
@@ -2695,7 +2787,6 @@ export default function ProjectDetailModal({
               </div>
             </div>
           </main>
-        </div>
 
       {/* SPECIFICATION HOTSPOT MODAL */}
       <AnimatePresence>

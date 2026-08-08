@@ -1703,7 +1703,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
         setHeaderActions(null);
       }
     };
-  }, [setHeaderActions, activeProjectId, projects, showToast, onBackToProjectCard]);
+  }, [setHeaderActions, isSaving, lastSavedTime, activeProjectId]);
 
   const selectedElem = activeScene.elements.find(el => el.id === selectedId);
 
