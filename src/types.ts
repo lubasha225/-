@@ -37,6 +37,7 @@ export interface Project {
   floorPlanData?: any[];
   disabledSceneIds?: string[];
   customScenePrices?: Record<string, number>;
+  photos?: string[];
 }
 
 export interface WarehouseItem {

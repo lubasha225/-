@@ -1,6 +1,7 @@
-import React, { useState, useRef, useLayoutEffect, useMemo } from 'react';
+import React, { useState, useRef, useLayoutEffect, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { BriefBlock, DesignBlock, CalcBlock, JournalBlock, DocsBlock } from './BlankTestTabBlocks';
+import { Project } from '../types';
 import { 
   Sparkles, 
   Layout, 
@@ -50,7 +51,11 @@ import {
 } from 'lucide-react';
 
 interface BlankTestPageProps {
+  project?: Project;
+  onClose?: () => void;
+  onUpdateProject?: (updatedProject: Project) => void;
   showToast?: (title: string, message: string, type?: 'success' | 'info' | 'warn') => void;
+  onOpenEditor?: () => void;
 }
 
 const baseBriefFieldDefinitions: { key: string; filledBy: 'client' | 'designer'; multiline?: boolean }[] = [
@@ -86,8 +91,8 @@ const baseBriefFieldDefinitions: { key: string; filledBy: 'client' | 'designer';
   { key: "КОНСТРУКЦИИ ДЕКОРА", filledBy: 'designer', multiline: true },
 ];
 
-export default function BlankTestPage({ showToast }: BlankTestPageProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'brief' | 'design' | 'calc' | 'journal' | 'docs'>('brief');
+export default function BlankTestPage({ project, onClose, onUpdateProject, showToast, onOpenEditor }: BlankTestPageProps) {
+  const [activeTab, setActiveTab] = useState<'overview' | 'brief' | 'design' | 'calc' | 'journal' | 'docs'>('overview');
 
   // Interactive project header state
   const [projectName, setProjectName] = useState<string>("Свадьба «Свет и Грация»");
@@ -129,6 +134,50 @@ export default function BlankTestPage({ showToast }: BlankTestPageProps) {
     "ОКНО МОНТАЖА": "6 часов (с 07:00 до 13:00)",
     "КОНСТРУКЦИИ ДЕКОРА": "Металлическая арка 2.5м, стойки под композиции, текстиль",
   });
+
+  // Synchronize state if project prop is passed
+  useEffect(() => {
+    if (project) {
+      setProjectName(project.name || "Свадьба «Свет и Грация»");
+      setTitleInput(project.name || "Свадьба «Свет и Грация»");
+      if (project.currentStep !== undefined) {
+        setCurrentStep(project.currentStep);
+      }
+      if (project.status === 'trash' || project.status === 'progress' || project.status === 'approved') {
+        setProjectStatus(project.status === 'approved' ? 'completed' : 'in_progress');
+      }
+
+      const formattedDate = project.date
+        ? (project.date.includes('T') ? new Date(project.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }) : project.date)
+        : "15 сентября 2026";
+
+      const formattedBudget = project.budget
+        ? `${project.budget.toLocaleString('ru')} ₽`
+        : "450 000 ₽";
+
+      setBriefValues(prev => ({
+        ...prev,
+        "ИМЯ КЛИЕНТА": project.clientName && project.clientName !== 'Не указан' ? project.clientName : (prev["ИМЯ КЛИЕНТА"] || "Анна Соколова"),
+        "ТЕЛЕФОН": project.clientPhone || prev["ТЕЛЕФОН"] || "+7 (905) 123-45-67",
+        "СОБЫТИЕ": project.name || prev["СОБЫТИЕ"] || "Свадьба Артёма и Анны",
+        "ДАТА": formattedDate,
+        "ПЛОЩАДКА": project.venue || prev["ПЛОЩАДКА"] || "Ресторан «Royal Hall»",
+        "ОРИЕНТИРОВОЧНЫЙ БЮДЖЕТ": formattedBudget,
+        "СТИЛЬ ОФОРМЛЕНИЯ": project.brief?.style || prev["СТИЛЬ ОФОРМЛЕНИЯ"] || "Современный органический шик",
+        "ГОСТЕЙ": project.brief?.guestsCount ? `${project.brief.guestsCount} человек` : (prev["ГОСТЕЙ"] || "85 человек"),
+        "ДОПОЛНИТЕЛЬНАЯ ИНФОРМАЦИЯ": project.brief?.specialRequests || prev["ДОПОЛНИТЕЛЬНАЯ ИНФОРМАЦИЯ"] || "",
+        ...(project.briefData || {})
+      }));
+
+      if (project.budget) setFinalPrice(project.budget);
+      if (project.advance !== undefined) setAdvanceAmount(project.advance);
+      if (project.scenesData && project.scenesData.length > 0) setVisualizationScenes(project.scenesData);
+      if (project.estimate && project.estimate.length > 0) setServiceEstimate(project.estimate);
+      if (project.disabledSceneIds) setDisabledSceneIds(project.disabledSceneIds);
+      if (project.customScenePrices) setCustomScenePrices(project.customScenePrices);
+      if (project.photos && project.photos.length > 0) setVenuePhotos(project.photos);
+    }
+  }, [project]);
 
   const [customDecoratorFields, setCustomDecoratorFields] = useState<{ id: string; key: string }[]>([]);
   const [isAddingCustomField, setIsAddingCustomField] = useState<boolean>(false);
@@ -783,6 +832,16 @@ export default function BlankTestPage({ showToast }: BlankTestPageProps) {
         {/* LEFT SIDE: TITLE + EDIT PENCIL + NOTIFICATION BELL + INFO PILLS */}
         <div className="space-y-2.5 min-w-0 flex-1">
           <div className="flex items-center gap-2.5 flex-wrap">
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-2 rounded-full bg-white/80 dark:bg-zinc-800/80 border border-zinc-200/60 dark:border-zinc-700/60 hover:bg-purple-50 dark:hover:bg-purple-950/50 hover:border-[#8C52D0] text-zinc-600 dark:text-zinc-300 hover:text-[#8C52D0] transition-all cursor-pointer shadow-2xs shrink-0"
+                title="Назад к списку проектов"
+              >
+                <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
+              </button>
+            )}
             {/* INTERACTIVE PROJECT NAME */}
             {isEditingTitle ? (
               <div className="flex items-center gap-2 max-w-full">

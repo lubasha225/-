@@ -424,6 +424,8 @@ export default function App() {
     };
 
     setProjects([created, ...projects]);
+    setSelectedProject(created);
+    setActiveTab('projectCard');
 
     // Automatically focus calendar on newly created project date
     if (created.date) {
@@ -780,7 +782,6 @@ export default function App() {
               {[
                 { value: 'projects', label: 'Мои проекты', icon: <FolderKanban className="w-4 h-4" /> },
                 { value: 'projectCard', label: 'Карточка проекта', icon: <FolderOpen className="w-4 h-4" /> },
-                { value: 'testPage', label: 'Тестовая страница 📄', icon: <Sparkles className="w-4 h-4 text-[#8C52D0]" /> },
                 { value: 'moodboard', label: 'Редактор', icon: <Layout className="w-4 h-4" /> },
                 { value: 'calendar', label: 'Календарь', icon: <Calendar className="w-4 h-4" /> },
                 { value: 'warehouse', label: 'Мой склад', icon: <Warehouse className="w-4 h-4" /> },
@@ -893,7 +894,6 @@ export default function App() {
         <nav className={`flex flex-col gap-0.5 w-full ${!isLeftSidebarExpanded ? 'items-center' : ''}`}>
           {[
             { key: 'projects', label: 'Мои проекты', icon: <FolderKanban className="w-[17px] h-[17px] shrink-0" /> },
-            { key: 'testPage', label: 'Тестовая страница 📄', icon: <Sparkles className="w-[17px] h-[17px] shrink-0 text-[#8C52D0]" /> },
             { key: 'moodboard', label: 'Редактор', icon: <Layout className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'warehouse', label: 'Мой склад', icon: <Warehouse className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'images', label: 'Мои изображения', icon: <ImageIcon className="w-[17px] h-[17px] shrink-0" /> },
@@ -1023,7 +1023,7 @@ export default function App() {
           )}
 
           {/* MAIN PANEL TOP NAVBAR Header (Shown on tabs except Moodboard Editor, Project Card, and Test Page) */}
-          {activeTab !== 'moodboard' && activeTab !== 'projectCard' && activeTab !== 'testPage' && !selectedProject && (
+          {activeTab !== 'moodboard' && activeTab !== 'projectCard' && activeTab !== 'testPage' && (
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 shrink-0">
               <div>
                 <div className="flex items-center gap-3">
@@ -2088,7 +2088,7 @@ export default function App() {
                   transition={{ duration: 0.3 }}
                   className="space-y-6"
                 >
-                  <ProjectDetailModal
+                  <BlankTestPage
                     project={selectedProject || projects[0]}
                     onClose={() => {
                       setSelectedProject(null);
@@ -2111,7 +2111,7 @@ export default function App() {
                   transition={{ duration: 0.3 }}
                   className="space-y-6"
                 >
-                  <TestProjectCardPage
+                  <BlankTestPage
                     project={selectedProject || projects[0]}
                     onClose={() => {
                       setSelectedProject(null);
@@ -2133,7 +2133,13 @@ export default function App() {
                   exit={{ opacity: 0, y: -15 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <BlankTestPage showToast={showToast} />
+                  <BlankTestPage
+                    project={selectedProject || projects[0]}
+                    onClose={() => setActiveTab('projects')}
+                    onUpdateProject={handleUpdateProject}
+                    showToast={showToast}
+                    onOpenEditor={() => setActiveTab('moodboard')}
+                  />
                 </motion.div>
               )}
 

@@ -377,30 +377,43 @@ export default function TestProjectCardPage({
 
   // Carousel state for Visualizations
   const [vizIndex, setVizIndex] = useState<number>(0);
-  const visualizations = [
-    {
-      id: 1,
-      title: 'ВИЗУАЛИЗАЦИЯ 1 (АРКА И ЦВЕТОЧНАЯ ЗОНА)',
-      subtitle: 'Концепция декор-арки и зоны церемонии',
-      image: project?.imageUrl || 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=800&q=80'
-    },
-    {
-      id: 2,
-      title: 'ВИЗУАЛИЗАЦИЯ 2 (ПРЕЗИДИУМ & СТОЛ)',
-      subtitle: '3D Эскиз оформления центрального стола',
-      image: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=800&q=80'
-    },
-    {
-      id: 3,
-      title: 'ВИЗУАЛИЗАЦИЯ 3 (WELCOME-ЗОНА)',
-      subtitle: 'Приветственный стенд и композиции у входа',
-      image: 'https://images.unsplash.com/photo-1478146896981-b80fe463b330?auto=format&fit=crop&w=800&q=80'
-    }
-  ];
+  // Dynamic Visualizations
+  const visualizations = (project.scenesData && project.scenesData.length > 0)
+    ? project.scenesData.map((sc: any, i: number) => ({
+        id: sc.id || i + 1,
+        title: sc.name ? sc.name.toUpperCase() : `ВИЗУАЛИЗАЦИЯ ${i + 1}`,
+        subtitle: sc.subtitle || 'Эскиз оформления',
+        image: sc.backdropImage || project.imageUrl || ''
+      })).filter(v => !!v.image)
+    : (project.imageUrl ? [{
+        id: 1,
+        title: 'ВИЗУАЛИЗАЦИЯ 1',
+        subtitle: 'Концепция декора',
+        image: project.imageUrl
+      }] : (project.id === 'p1' || project.id === 'p2' ? [
+        {
+          id: 1,
+          title: 'ВИЗУАЛИЗАЦИЯ 1 (АРКА И ЦВЕТОЧНАЯ ЗОНА)',
+          subtitle: 'Концепция декор-арки и зоны церемонии',
+          image: 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=800&q=80'
+        },
+        {
+          id: 2,
+          title: 'ВИЗУАЛИЗАЦИЯ 2 (ПРЕЗИДИУМ & СТОЛ)',
+          subtitle: '3D Эскиз оформления центрального стола',
+          image: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=800&q=80'
+        },
+        {
+          id: 3,
+          title: 'ВИЗУАЛИЗАЦИЯ 3 (WELCOME-ЗОНА)',
+          subtitle: 'Приветственный стенд и композиции у входа',
+          image: 'https://images.unsplash.com/photo-1478146896981-b80fe463b330?auto=format&fit=crop&w=800&q=80'
+        }
+      ] : []));
 
   // Carousel state for AI Visualizations
   const [aiVizIndex, setAiVizIndex] = useState<number>(0);
-  const aiVisualizations = [
+  const aiVisualizations = (project.id === 'p1' || project.id === 'p2') ? [
     {
       id: 1,
       title: 'ИИ ВИЗУАЛИЗАЦИЯ 1 (ЗОНА ЦЕРЕМОНИИ)',
@@ -419,17 +432,114 @@ export default function TestProjectCardPage({
       subtitle: 'Генерация ИИ: Сервировка стола и драпировка ткани',
       image: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80'
     }
-  ];
+  ] : [];
 
-  // Venue photos array with default venue photos + uploaded photos support
-  const [venuePhotos, setVenuePhotos] = useState<string[]>([
-    'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1478146896981-b80fe463b330?auto=format&fit=crop&w=600&q=80'
-  ]);
+  // Venue photos array with project photos or sample photos for mock p1/p2
+  const [venuePhotos, setVenuePhotos] = useState<string[]>(() => {
+    if (project.photos && project.photos.length > 0) {
+      return project.photos;
+    }
+    if (project.id === 'p1' || project.id === 'p2') {
+      return [
+        'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=600&q=80',
+        'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=600&q=80',
+        'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=600&q=80',
+        'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=600&q=80',
+        'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=600&q=80',
+        'https://images.unsplash.com/photo-1478146896981-b80fe463b330?auto=format&fit=crop&w=600&q=80'
+      ];
+    }
+    return [];
+  });
+
+  // Sync state if project props change
+  useEffect(() => {
+    if (!project) return;
+
+    setTitleInput(project.name);
+
+    const saved = project.briefValues || {};
+    setBriefValues({
+      "ИМЯ КЛИЕНТА": project.clientName && project.clientName !== 'Не указан' ? project.clientName : (saved["ИМЯ КЛИЕНТА"] || ""),
+      "ТЕЛЕФОН": project.clientPhone || saved["ТЕЛЕФОН"] || "",
+      "РЕКВИЗИТЫ ПЛАТЕЛЬЩИКА": saved["РЕКВИЗИТЫ ПЛАТЕЛЬЩИКА"] || "",
+      "СОБЫТИЕ": project.name && !project.name.startsWith('proj_') ? project.name : (saved["СОБЫТИЕ"] || ""),
+      "ДАТА": project.date || saved["ДАТА"] || "",
+      "ГОСТЕЙ": (project.brief?.guestsCount && project.brief.guestsCount > 0) ? String(project.brief.guestsCount) : (saved["ГОСТЕЙ"] || ""),
+      "ФОРМАТ СОБЫТИЯ": saved["ФОРМАТ СОБЫТИЯ"] || "",
+      "ПЛОЩАДКА": project.venue && project.venue !== 'Площадка не указана' ? project.venue : (saved["ПЛОЩАДКА"] || ""),
+      "АДРЕС": saved["АДРЕС"] || "",
+      "КОНТАКТ ПЛОЩАДКИ": saved["КОНТАКТ ПЛОЩАДКИ"] || "",
+      "РАЗМЕР ЗОНЫ МОНТАЖА": saved["РАЗМЕР ЗОНЫ МОНТАЖА"] || "",
+      "КРЕПЕЖ К СТЕНАМ": saved["КРЕПЕЖ К СТЕНАМ"] || "",
+      "КРЕПЕЖ К ПОТОЛКУ": saved["КРЕПЕЖ К ПОТОЛКУ"] || "",
+      "СОГЛАСОВАНИЕ ОФОРМЛЕНИЯ": saved["СОГЛАСОВАНИЕ ОФОРМЛЕНИЯ"] || "",
+      "ЭЛЕКТРИЧЕСТВО У СЦЕНЫ": saved["ЭЛЕКТРИЧЕСТВО У СЦЕНЫ"] || "",
+      "ПОДЪЕЗД / ГРУЗОВОЙ ЛИФТ": saved["ПОДЪЕЗД / ГРУЗОВОЙ ЛИФТ"] || "",
+      "ПРАЗДНИК НА УЛИЦЕ": saved["ПРАЗДНИК НА УЛИЦЕ"] || "",
+      "ДОСТУП НА МОНТАЖ": saved["ДОСТУП НА МОНТАЖ"] || "",
+      "ОКНО МОНТАЖА": saved["ОКНО МОНТАЖА"] || "",
+      "ХРАНЕНИЕ НА ПЛОЩАДКЕ": saved["ХРАНЕНИЕ НА ПЛОЩАДКЕ"] || "",
+      "ДЕМОНТАЖ / ВЫВОЗ": saved["ДЕМОНТАЖ / ВЫВОЗ"] || "",
+      "КТО ПРИНИМАЕТ РАБОТЫ": saved["КТО ПРИНИМАЕТ РАБОТЫ"] || "",
+      "ПАЛИТРА ОФОРМЛЕНИЯ": (project.brief?.colors && project.brief.colors.length > 0 && project.brief.colors[0] !== '#FFFFFF') ? project.brief.colors.join(', ') : (saved["ПАЛИТРА ОФОРМЛЕНИЯ"] || ""),
+      "СТИЛЬ ОФОРМЛЕНИЯ": (project.brief?.style && project.brief.style !== 'Не выбран') ? project.brief.style : (saved["СТИЛЬ ОФОРМЛЕНИЯ"] || ""),
+      "КОНСТРУКЦИИ ДЕКОРА": saved["КОНСТРУКЦИИ ДЕКОРА"] || "",
+      "ОРИЕНТИРОВОЧНЫЙ БЮДЖЕТ": project.budget ? `${project.budget.toLocaleString('ru')} ₽` : (saved["ОРИЕНТИРОВОЧНЫЙ БЮДЖЕТ"] || ""),
+      "ДОПОЛНИТЕЛЬНАЯ ИНФОРМАЦИЯ": (project.brief?.specialRequests && project.brief.specialRequests !== 'Нет примечаний.') ? project.brief.specialRequests : (saved["ДОПОЛНИТЕЛЬНАЯ ИНФОРМАЦИЯ"] || ""),
+    });
+
+    if (project.photos && project.photos.length > 0) {
+      setVenuePhotos(project.photos);
+    } else if (project.id === 'p1' || project.id === 'p2') {
+      setVenuePhotos([
+        'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=600&q=80',
+        'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=600&q=80',
+        'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=600&q=80',
+        'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=600&q=80',
+        'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=600&q=80',
+        'https://images.unsplash.com/photo-1478146896981-b80fe463b330?auto=format&fit=crop&w=600&q=80'
+      ]);
+    } else {
+      setVenuePhotos([]);
+    }
+
+    const savedTasks = localStorage.getItem('pop_project_tasks_v2');
+    let loaded = false;
+    if (savedTasks) {
+      try {
+        const parsed = JSON.parse(savedTasks);
+        if (Array.isArray(parsed)) {
+          const matched = parsed.filter((item: any) => item.projectId === project.id || item.projectName === project.name);
+          if (matched.length > 0) {
+            setTaskNoteList(matched);
+            loaded = true;
+          }
+        }
+      } catch (e) {}
+    }
+
+    if (!loaded) {
+      if (project.id === 'p1' || project.id === 'p2') {
+        const defaultDate = project.date?.split('T')[0] || '2026-08-15';
+        setTaskNoteList([
+          { id: `tn_${project.id}_1`, projectId: project.id, projectName: project.name, type: 'task', title: 'Заехать к флористу и подтвердить поставку пионовидных роз', dueDate: defaultDate, completed: true, category: 'Закупка', createdAt: '12.08.2026' },
+          { id: `tn_${project.id}_2`, projectId: project.id, projectName: project.name, type: 'task', title: 'Согласовать схему расстановки столов и арки с менеджером площадки', dueDate: defaultDate, completed: false, category: 'Монтаж', createdAt: '13.08.2026' },
+          { id: `tn_${project.id}_3`, projectId: project.id, projectName: project.name, type: 'task', title: 'Проверить состояние текстиля и чехлов перед погрузкой в автомобиль', dueDate: defaultDate, completed: false, category: 'Логистика', createdAt: '14.08.2026' },
+          { id: `tn_${project.id}_4`, projectId: project.id, projectName: project.name, type: 'note', title: 'Заказчик просила использовать золотые подсвечники вместо серебряных', dueDate: defaultDate, category: 'Клиент', createdAt: '14.08.2026' },
+          { id: `tn_${project.id}_5`, projectId: project.id, projectName: project.name, type: 'note', title: 'Везд на площадку через КПП №2 только с 14:00, при себе иметь паспорт', dueDate: defaultDate, category: 'Важное', createdAt: '15.08.2026' }
+        ]);
+      } else {
+        setTaskNoteList([]);
+      }
+    }
+
+    setFinalPrice(project.clientPrice !== undefined ? project.clientPrice : (project.budget || 0));
+    setDisabledSceneIds(project.disabledSceneIds || []);
+    setCustomScenePrices(project.customScenePrices || {});
+    setVizIndex(0);
+    setAiVizIndex(0);
+  }, [project.id]);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -591,9 +701,9 @@ export default function TestProjectCardPage({
     }
   ];
 
-  const visualizationScenes = (project.scenesData && Array.isArray(project.scenesData))
+  const visualizationScenes = (project.scenesData && Array.isArray(project.scenesData) && project.scenesData.length > 0)
     ? project.scenesData
-    : (project.id && project.id.startsWith('p') ? defaultVisualizationScenes : []);
+    : (project.id === 'p1' || project.id === 'p2' ? defaultVisualizationScenes : []);
 
   // Helper function to calculate total cost for a scene
   const getSceneCost = (sc: any) => {
@@ -610,7 +720,7 @@ export default function TestProjectCardPage({
   const rawServiceEstimate = project.estimate ? project.estimate.filter(item => item.category === 'Работа' || item.category === 'Доставка') : [];
   const serviceEstimate = (project.estimate && project.estimate.length > 0)
     ? rawServiceEstimate
-    : (project.id && project.id.startsWith('p') ? [
+    : (project.id === 'p1' || project.id === 'p2' ? [
         { id: 'def_work_1', name: 'Монтаж и демонтаж конструкций', category: 'Работа', quantity: 1, price: 12000 },
         { id: 'def_work_2', name: 'Транспортная доставка (Грузовой авто)', category: 'Доставка', quantity: 1, price: 5000 }
       ] : []);
@@ -1591,127 +1701,192 @@ export default function TestProjectCardPage({
 
                 <div className="p-4 sm:p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
                   {/* LEFT CAROUSEL VISUALIZATION CARD (EDITOR) */}
-                  <div className="bg-white/40 dark:bg-zinc-950/30 rounded-2xl p-4 border border-stone-200/80 dark:border-zinc-800 flex flex-col justify-between items-center relative min-h-[260px] backdrop-blur-xs select-none">
-                    
-                    {/* LEFT & RIGHT NAVIGATION ARROWS */}
-                    <button
-                      type="button"
-                      onClick={() => setVizIndex((prev) => (prev === 0 ? visualizations.length - 1 : prev - 1))}
-                      className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full border border-[#8C52D0] bg-white/90 dark:bg-zinc-900/90 text-[#582F89] dark:text-purple-300 shadow-md flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-[#F0EBF9] dark:hover:bg-[#20152B] active:scale-95 cursor-pointer"
-                      title="Предыдущая визуализация"
-                    >
-                      <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
-                    </button>
+                  {visualizations.length > 0 ? (
+                    <div className="bg-white/40 dark:bg-zinc-950/30 rounded-2xl p-4 border border-stone-200/80 dark:border-zinc-800 flex flex-col justify-between items-center relative min-h-[260px] backdrop-blur-xs select-none">
+                      
+                      {/* LEFT & RIGHT NAVIGATION ARROWS */}
+                      {visualizations.length > 1 && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setVizIndex((prev) => (prev === 0 ? visualizations.length - 1 : prev - 1))}
+                            className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full border border-[#8C52D0] bg-white/90 dark:bg-zinc-900/90 text-[#582F89] dark:text-purple-300 shadow-md flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-[#F0EBF9] dark:hover:bg-[#20152B] active:scale-95 cursor-pointer"
+                            title="Предыдущая визуализация"
+                          >
+                            <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
+                          </button>
 
-                    <button
-                      type="button"
-                      onClick={() => setVizIndex((prev) => (prev === visualizations.length - 1 ? 0 : prev + 1))}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full border border-[#8C52D0] bg-white/90 dark:bg-zinc-900/90 text-[#582F89] dark:text-purple-300 shadow-md flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-[#F0EBF9] dark:hover:bg-[#20152B] active:scale-95 cursor-pointer"
-                      title="Следующая визуализация"
-                    >
-                      <ChevronRight className="w-5 h-5 stroke-[2.5]" />
-                    </button>
+                          <button
+                            type="button"
+                            onClick={() => setVizIndex((prev) => (prev === visualizations.length - 1 ? 0 : prev + 1))}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full border border-[#8C52D0] bg-white/90 dark:bg-zinc-900/90 text-[#582F89] dark:text-purple-300 shadow-md flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-[#F0EBF9] dark:hover:bg-[#20152B] active:scale-95 cursor-pointer"
+                            title="Следующая визуализация"
+                          >
+                            <ChevronRight className="w-5 h-5 stroke-[2.5]" />
+                          </button>
+                        </>
+                      )}
 
-                    {/* CARD TITLE */}
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-purple-800 dark:text-purple-300 truncate max-w-[200px]">
-                        {visualizations[vizIndex].title}
-                      </span>
-                      <span className="text-[9px] bg-purple-100 dark:bg-purple-900/60 text-purple-800 dark:text-purple-300 px-2 py-0.5 rounded-full font-bold shrink-0">
-                        {vizIndex + 1} / {visualizations.length}
-                      </span>
-                    </div>
-
-                    {/* VISUALIZATION CONTENT AREA (CLICKABLE -> OPENS EDITOR) */}
-                    <div
-                      onClick={() => {
-                        showToast('Редактор визуализации', `Переход в редактор: ${visualizations[vizIndex].title}`, 'info');
-                        if (onOpenEditor) onOpenEditor();
-                      }}
-                      className="w-full flex-1 flex items-center justify-center my-1 px-1 cursor-pointer group"
-                      title="Нажмите, чтобы открыть визуализацию в редакторе"
-                    >
-                      <div className="aspect-square w-full max-w-[280px] sm:max-w-[300px] overflow-hidden rounded-2xl border border-stone-200/80 dark:border-zinc-800 shadow-xs relative transition-all duration-300 group-hover:shadow-md group-hover:border-[#8C52D0]">
-                        <img
-                          src={visualizations[vizIndex].image}
-                          alt={visualizations[vizIndex].title}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex flex-col justify-end p-3 transition-opacity">
-                          <span className="text-[11px] text-white font-bold leading-tight drop-shadow-xs">
-                            {visualizations[vizIndex].subtitle}
-                          </span>
-                        </div>
-                        {/* HOVER BADGE */}
-                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/60 dark:bg-black/75 backdrop-blur-md text-white text-[9px] font-bold px-2.5 py-1 rounded-full shadow-md flex items-center gap-1 border border-white/20">
-                          <Edit2 className="w-2.5 h-2.5" /> Редактировать
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* RIGHT CAROUSEL VISUALIZATION CARD (AI VISUALIZATION) */}
-                  <div className="bg-white/40 dark:bg-zinc-950/30 rounded-2xl p-4 border border-stone-200/80 dark:border-zinc-800 flex flex-col justify-between items-center relative min-h-[260px] backdrop-blur-xs select-none">
-                    
-                    {/* LEFT & RIGHT NAVIGATION ARROWS */}
-                    <button
-                      type="button"
-                      onClick={() => setAiVizIndex((prev) => (prev === 0 ? aiVisualizations.length - 1 : prev - 1))}
-                      className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full border border-[#8C52D0] bg-white/90 dark:bg-zinc-900/90 text-[#582F89] dark:text-purple-300 shadow-md flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-[#F0EBF9] dark:hover:bg-[#20152B] active:scale-95 cursor-pointer"
-                      title="Предыдущая ИИ визуализация"
-                    >
-                      <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setAiVizIndex((prev) => (prev === aiVisualizations.length - 1 ? 0 : prev + 1))}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full border border-[#8C52D0] bg-white/90 dark:bg-zinc-900/90 text-[#582F89] dark:text-purple-300 shadow-md flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-[#F0EBF9] dark:hover:bg-[#20152B] active:scale-95 cursor-pointer"
-                      title="Следующая ИИ визуализация"
-                    >
-                      <ChevronRight className="w-5 h-5 stroke-[2.5]" />
-                    </button>
-
-                    {/* CARD TITLE */}
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="flex items-center gap-1.5 truncate max-w-[200px]">
-                        <Sparkles className="w-3.5 h-3.5 text-[#8C52D0] shrink-0" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-purple-800 dark:text-purple-300 truncate">
-                          {aiVisualizations[aiVizIndex].title}
+                      {/* CARD TITLE */}
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-purple-800 dark:text-purple-300 truncate max-w-[200px]">
+                          {visualizations[vizIndex % visualizations.length]?.title || 'ВИЗУАЛИЗАЦИЯ'}
+                        </span>
+                        <span className="text-[9px] bg-purple-100 dark:bg-purple-900/60 text-purple-800 dark:text-purple-300 px-2 py-0.5 rounded-full font-bold shrink-0">
+                          {(vizIndex % visualizations.length) + 1} / {visualizations.length}
                         </span>
                       </div>
-                      <span className="text-[9px] bg-purple-100 dark:bg-purple-900/60 text-purple-800 dark:text-purple-300 px-2 py-0.5 rounded-full font-bold shrink-0">
-                        {aiVizIndex + 1} / {aiVisualizations.length}
-                      </span>
-                    </div>
 
-                    {/* AI VISUALIZATION CONTENT AREA */}
-                    <div
-                      onClick={() => {
-                        showToast('ИИ Визуализация', `Просмотр генерации ИИ: ${aiVisualizations[aiVizIndex].title}`, 'info');
-                      }}
-                      className="w-full flex-1 flex items-center justify-center my-1 px-1 cursor-pointer group"
-                      title="ИИ Визуализация проекта"
-                    >
-                      <div className="aspect-square w-full max-w-[280px] sm:max-w-[300px] overflow-hidden rounded-2xl border border-stone-200/80 dark:border-zinc-800 shadow-xs relative transition-all duration-300 group-hover:shadow-md group-hover:border-[#8C52D0]">
-                        <img
-                          src={aiVisualizations[aiVizIndex].image}
-                          alt={aiVisualizations[aiVizIndex].title}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex flex-col justify-end p-3 transition-opacity">
-                          <span className="text-[11px] text-white font-bold leading-tight drop-shadow-xs flex items-center gap-1">
-                            <Sparkles className="w-3 h-3 text-amber-300 shrink-0" />
-                            {aiVisualizations[aiVizIndex].subtitle}
-                          </span>
-                        </div>
-                        {/* BADGE TOP RIGHT */}
-                        <div className="absolute top-2 right-2 bg-black/60 dark:bg-black/75 backdrop-blur-md text-white text-[9px] font-bold px-2.5 py-1 rounded-full shadow-md flex items-center gap-1 border border-white/20">
-                          <Sparkles className="w-2.5 h-2.5 text-amber-300" /> ИИ Визуализация
+                      {/* VISUALIZATION CONTENT AREA (CLICKABLE -> OPENS EDITOR) */}
+                      <div
+                        onClick={() => {
+                          const item = visualizations[vizIndex % visualizations.length];
+                          if (item) {
+                            showToast('Редактор визуализации', `Переход в редактор: ${item.title}`, 'info');
+                          }
+                          if (onOpenEditor) onOpenEditor();
+                        }}
+                        className="w-full flex-1 flex items-center justify-center my-1 px-1 cursor-pointer group"
+                        title="Нажмите, чтобы открыть визуализацию в редакторе"
+                      >
+                        <div className="aspect-square w-full max-w-[280px] sm:max-w-[300px] overflow-hidden rounded-2xl border border-stone-200/80 dark:border-zinc-800 shadow-xs relative transition-all duration-300 group-hover:shadow-md group-hover:border-[#8C52D0]">
+                          <img
+                            src={visualizations[vizIndex % visualizations.length]?.image}
+                            alt={visualizations[vizIndex % visualizations.length]?.title || 'Визуализация'}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex flex-col justify-end p-3 transition-opacity">
+                            <span className="text-[11px] text-white font-bold leading-tight drop-shadow-xs">
+                              {visualizations[vizIndex % visualizations.length]?.subtitle}
+                            </span>
+                          </div>
+                          {/* HOVER BADGE */}
+                          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/60 dark:bg-black/75 backdrop-blur-md text-white text-[9px] font-bold px-2.5 py-1 rounded-full shadow-md flex items-center gap-1 border border-white/20">
+                            <Edit2 className="w-2.5 h-2.5" /> Редактировать
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="bg-white/40 dark:bg-zinc-950/30 rounded-2xl p-6 border border-stone-200/80 dark:border-zinc-800 flex flex-col items-center justify-center text-center space-y-3 min-h-[260px] backdrop-blur-xs">
+                      <div className="w-12 h-12 rounded-2xl bg-purple-100/80 dark:bg-purple-950/60 text-[#8C52D0] dark:text-purple-300 flex items-center justify-center">
+                        <Palette className="w-6 h-6 stroke-[2]" />
+                      </div>
+                      <div className="space-y-1">
+                        <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Визуализация еще не создана</h3>
+                        <p className="text-xs text-zinc-600 dark:text-zinc-400 max-w-xs leading-relaxed">
+                          Нажмите «Редактор», чтобы составить 3D концепт, задрапировать арку и собрать эскиз.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          showToast('Редактор дизайна', 'Переход в графический редактор...', 'info');
+                          if (onOpenEditor) onOpenEditor();
+                        }}
+                        style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                        className="px-4 py-2 rounded-full text-xs font-semibold text-white flex items-center gap-1.5 cursor-pointer shadow-sm hover:opacity-90 transition-all active:scale-[0.98]"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Создать визуализацию</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* RIGHT CAROUSEL VISUALIZATION CARD (AI VISUALIZATION) */}
+                  {aiVisualizations.length > 0 ? (
+                    <div className="bg-white/40 dark:bg-zinc-950/30 rounded-2xl p-4 border border-stone-200/80 dark:border-zinc-800 flex flex-col justify-between items-center relative min-h-[260px] backdrop-blur-xs select-none">
+                      
+                      {/* LEFT & RIGHT NAVIGATION ARROWS */}
+                      {aiVisualizations.length > 1 && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setAiVizIndex((prev) => (prev === 0 ? aiVisualizations.length - 1 : prev - 1))}
+                            className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full border border-[#8C52D0] bg-white/90 dark:bg-zinc-900/90 text-[#582F89] dark:text-purple-300 shadow-md flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-[#F0EBF9] dark:hover:bg-[#20152B] active:scale-95 cursor-pointer"
+                            title="Предыдущая ИИ визуализация"
+                          >
+                            <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setAiVizIndex((prev) => (prev === aiVisualizations.length - 1 ? 0 : prev + 1))}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full border border-[#8C52D0] bg-white/90 dark:bg-zinc-900/90 text-[#582F89] dark:text-purple-300 shadow-md flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-[#F0EBF9] dark:hover:bg-[#20152B] active:scale-95 cursor-pointer"
+                            title="Следующая ИИ визуализация"
+                          >
+                            <ChevronRight className="w-5 h-5 stroke-[2.5]" />
+                          </button>
+                        </>
+                      )}
+
+                      {/* CARD TITLE */}
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-1.5 truncate max-w-[200px]">
+                          <Sparkles className="w-3.5 h-3.5 text-[#8C52D0] shrink-0" />
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-purple-800 dark:text-purple-300 truncate">
+                            {aiVisualizations[aiVizIndex % aiVisualizations.length]?.title || 'ИИ ВИЗУАЛИЗАЦИЯ'}
+                          </span>
+                        </div>
+                        <span className="text-[9px] bg-purple-100 dark:bg-purple-900/60 text-purple-800 dark:text-purple-300 px-2 py-0.5 rounded-full font-bold shrink-0">
+                          {(aiVizIndex % aiVisualizations.length) + 1} / {aiVisualizations.length}
+                        </span>
+                      </div>
+
+                      {/* AI VISUALIZATION CONTENT AREA */}
+                      <div
+                        onClick={() => {
+                          const item = aiVisualizations[aiVizIndex % aiVisualizations.length];
+                          if (item) {
+                            showToast('ИИ Визуализация', `Просмотр генерации ИИ: ${item.title}`, 'info');
+                          }
+                        }}
+                        className="w-full flex-1 flex items-center justify-center my-1 px-1 cursor-pointer group"
+                        title="ИИ Визуализация проекта"
+                      >
+                        <div className="aspect-square w-full max-w-[280px] sm:max-w-[300px] overflow-hidden rounded-2xl border border-stone-200/80 dark:border-zinc-800 shadow-xs relative transition-all duration-300 group-hover:shadow-md group-hover:border-[#8C52D0]">
+                          <img
+                            src={aiVisualizations[aiVizIndex % aiVisualizations.length]?.image}
+                            alt={aiVisualizations[aiVizIndex % aiVisualizations.length]?.title || 'ИИ Визуализация'}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex flex-col justify-end p-3 transition-opacity">
+                            <span className="text-[11px] text-white font-bold leading-tight drop-shadow-xs flex items-center gap-1">
+                              <Sparkles className="w-3 h-3 text-amber-300 shrink-0" />
+                              {aiVisualizations[aiVizIndex % aiVisualizations.length]?.subtitle}
+                            </span>
+                          </div>
+                          {/* BADGE TOP RIGHT */}
+                          <div className="absolute top-2 right-2 bg-black/60 dark:bg-black/75 backdrop-blur-md text-white text-[9px] font-bold px-2.5 py-1 rounded-full shadow-md flex items-center gap-1 border border-white/20">
+                            <Sparkles className="w-2.5 h-2.5 text-amber-300" /> ИИ Визуализация
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-white/40 dark:bg-zinc-950/30 rounded-2xl p-6 border border-stone-200/80 dark:border-zinc-800 flex flex-col items-center justify-center text-center space-y-3 min-h-[260px] backdrop-blur-xs">
+                      <div className="w-12 h-12 rounded-2xl bg-amber-100/80 dark:bg-amber-950/60 text-amber-600 dark:text-amber-300 flex items-center justify-center">
+                        <Sparkles className="w-6 h-6 stroke-[2]" />
+                      </div>
+                      <div className="space-y-1">
+                        <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">ИИ Генерации отсутствуют</h3>
+                        <p className="text-xs text-zinc-600 dark:text-zinc-400 max-w-xs leading-relaxed">
+                          Сгенерируйте реалистичный 3D рендер площадки с помощью ИИ стилиста.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          showToast('ИИ Генератор', 'Открытие генератора вариантов ИИ...', 'info');
+                          if (onOpenEditor) onOpenEditor();
+                        }}
+                        className="px-4 py-2 rounded-full text-xs font-semibold text-[#582F89] dark:text-purple-300 bg-purple-100/80 hover:bg-purple-200 dark:bg-purple-950/60 dark:hover:bg-purple-900/80 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-[0.98]"
+                      >
+                        <Sparkles className="w-4 h-4 text-[#8C52D0]" />
+                        <span>Сгенерировать в ИИ</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* HORIZONTAL PHOTO GALLERY STRIP FOR ALL PROJECT PHOTOS */}
