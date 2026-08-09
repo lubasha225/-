@@ -98,10 +98,11 @@ export const BriefBlock: React.FC<BriefBlockProps> = ({
                 showToast?.('Бриф отправлен', 'Ссылка на бриф скопирована и отправлена клиенту', 'success');
               }}
               style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
-              className="w-8 h-8 rounded-full text-white flex items-center justify-center cursor-pointer transition-all duration-300 hover:shadow-md hover:scale-105 active:scale-95 shadow-xs shrink-0"
+              className="w-8 h-8 sm:w-auto sm:h-8 sm:px-3.5 rounded-full text-white flex items-center justify-center gap-1.5 cursor-pointer transition-all duration-300 hover:shadow-md hover:scale-105 active:scale-95 shadow-xs shrink-0"
               title="Отправить бриф клиенту"
             >
               <Send className="w-3.5 h-3.5 text-white" />
+              <span className="hidden sm:inline text-xs font-semibold">Отправить бриф</span>
             </button>
           )}
 

@@ -966,29 +966,31 @@ export default function BlankTestPage({ showToast }: BlankTestPageProps) {
             </AnimatePresence>
           </div>
 
-          {/* SHARE / SEND TO CLIENT ICON-ONLY BUTTON */}
+          {/* SHARE / SEND TO CLIENT BUTTON */}
           <button
             onClick={() => {
               const briefUrl = `${window.location.origin}/brief/test-project`;
               navigator.clipboard.writeText(briefUrl);
               showToast?.('Ссылка скопирована', `Ссылка для клиента скопирована в буфер обмена: ${briefUrl}`, 'success');
             }}
-            className="w-8 h-8 rounded-full text-white flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer shrink-0 shadow-md"
+            className="w-8 h-8 sm:w-auto sm:h-8 sm:px-3.5 rounded-full text-white flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer shrink-0 shadow-md"
             style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
             title="Отправить клиенту (Поделиться)"
           >
             <Share2 className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline text-xs font-semibold">Поделиться</span>
           </button>
 
-          {/* SAVE ICON-ONLY BUTTON */}
+          {/* SAVE BUTTON */}
           <button
             onClick={() => {
               showToast?.('Сохранено', 'Все изменения проекта успешно сохранены.', 'success');
             }}
-            className="w-8 h-8 border border-emerald-500/80 bg-white/80 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/50 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer shrink-0 shadow-2xs hover:scale-105 active:scale-95"
+            className="w-8 h-8 sm:w-auto sm:h-8 sm:px-3.5 border border-emerald-500/80 bg-white/80 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/50 rounded-full flex items-center justify-center gap-1.5 transition-all duration-300 cursor-pointer shrink-0 shadow-2xs hover:scale-105 active:scale-95"
             title="Сохранить изменения"
           >
-            <Save className="w-3.5 h-3.5" />
+            <Save className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span className="hidden sm:inline text-xs font-semibold">Сохранено</span>
           </button>
 
         </div>
@@ -997,13 +999,11 @@ export default function BlankTestPage({ showToast }: BlankTestPageProps) {
 
       {/* 2. FOLDER TABS & CONTENT CONTAINER WITH DYNAMIC SVG FRAME */}
       <div ref={containerRef} className="relative w-full">
-        {/* SOFT ACCENT HALO SPOT UNDER ACTIVE TAB (LOCKED TO TOP PORTION) */}
+        {/* SOFT ACCENT HALO SPOT UNDER ACTIVE TAB (LOCKED STRICTLY TO TOP HALF OF CARD) */}
         <div
-          className="absolute -top-3 w-52 h-20 rounded-full blur-xl pointer-events-none transition-all duration-500 opacity-50 dark:opacity-25 z-0 overflow-hidden"
+          className="absolute top-0 left-0 right-0 h-1/2 rounded-t-[28px] pointer-events-none transition-all duration-500 opacity-60 dark:opacity-30 z-0 overflow-hidden"
           style={{
-            left: `${activeTabCXPercent}%`,
-            transform: 'translateX(-50%)',
-            background: `radial-gradient(ellipse at top center, ${currentTabStyle.lightGlow} 0%, rgba(255, 255, 255, 0) 60%)`,
+            background: `radial-gradient(ellipse 80% 100% at ${activeTabCXPercent}% 0%, ${currentTabStyle.lightGlow} 0%, rgba(255, 255, 255, 0) 100%)`,
           }}
         />
 
@@ -1016,20 +1016,20 @@ export default function BlankTestPage({ showToast }: BlankTestPageProps) {
           <path
             d={svgPathD}
             style={{
-              filter: `drop-shadow(0 4px 10px rgba(0, 0, 0, 0.03)) drop-shadow(0 2px 6px ${currentTabStyle.lightGlow})`,
+              filter: `drop-shadow(0 2px 4px rgba(0, 0, 0, 0.03))`,
               fill: 'rgba(255, 255, 255, 0.50)',
             }}
             className={`dark:hidden transition-all duration-300 ${currentTabStyle.strokeClass}`}
-            strokeWidth="1.5"
+            strokeWidth="1"
           />
           <path
             d={svgPathD}
             style={{
-              filter: `drop-shadow(0 4px 10px rgba(0, 0, 0, 0.20)) drop-shadow(0 2px 6px ${currentTabStyle.darkGlow})`,
+              filter: `drop-shadow(0 2px 6px rgba(0, 0, 0, 0.20))`,
               fill: 'rgba(24, 24, 27, 0.40)',
             }}
             className={`hidden dark:block transition-all duration-300 ${currentTabStyle.strokeClass}`}
-            strokeWidth="1.5"
+            strokeWidth="1"
           />
         </svg>
 
