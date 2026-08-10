@@ -1173,7 +1173,7 @@ export default function App() {
                     </button>
                   )}
 
-                  <h1 className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight text-[var(--ink)] truncate">
+                  <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--ink)] truncate">
                     {activeTab === 'projects' && (selectedProject ? selectedProject.name : 'Мои проекты')}
                     {activeTab === 'calendar' && 'Календарь мероприятий'}
                     {activeTab === 'warehouse' && 'Складской инвентарь'}
@@ -1230,7 +1230,7 @@ export default function App() {
               {/* Subtitle / Description & Mobile Primary Action Buttons */}
               {activeTab !== 'projectCard' && activeTab !== 'testPage' && (
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <p className="text-[var(--soft)] text-xs sm:text-sm font-normal leading-relaxed">
+                  <p className="text-[var(--soft)] text-sm font-normal leading-relaxed">
                     {activeTab === 'projects' && !selectedProject && 'Создавайте макеты, открывайте сметный калькулятор и возвращайтесь к ним в любой момент.'}
                     {activeTab === 'calendar' && 'График монтажей, сдачи проектов, выездов команды и встреч с клиентами.'}
                     {activeTab === 'warehouse' && 'Каталог вашего декора, флористики и оборудования. Учет остатков и задействованных в проектах позиций.'}

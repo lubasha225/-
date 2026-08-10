@@ -149,6 +149,7 @@ interface EditorScene {
 
 const NEW_CATALOG_CATEGORIES = [
   { id: 'favorites', title: 'Избранное', icon: 'Heart' },
+  { id: 'text', title: 'Текст', icon: 'Type' },
   { id: 'warehouse', title: 'Склад', icon: 'Box' },
   { id: 'arches', title: 'Арки', icon: 'Layers' },
   { id: 'stands', title: 'Стойки', icon: 'Columns' },
@@ -158,12 +159,12 @@ const NEW_CATALOG_CATEGORIES = [
   { id: 'compositions', title: 'Композиции', icon: 'Sparkles' },
   { id: 'vases', title: 'Вазы', icon: 'Tag' },
   { id: 'details', title: 'Детали', icon: 'Compass' },
-  { id: 'textiles', title: 'Текстиль', icon: 'Layers' },
+  { id: 'textiles', title: 'Текстиль', icon: 'AlignLeft' },
   { id: 'light', title: 'Свет', icon: 'Lightbulb' },
   { id: 'podiums', title: 'Подиумы', icon: 'Columns' },
   { id: 'furniture', title: 'Мебель', icon: 'Bookmark' },
   { id: 'balloons', title: 'Шары', icon: 'CircleDot' },
-  { id: 'themes', title: 'Тематика', icon: 'Tag' }
+  { id: 'themes', title: 'Тематика', icon: 'Palette' }
 ];
 
 const CategoryIcon: React.FC<{
@@ -196,30 +197,31 @@ const CategoryIcon: React.FC<{
         src={iconSrc}
         alt={cat.title}
         onError={() => setImgError(true)}
-        className="w-4 h-4 object-contain transition-transform group-hover:scale-110"
+        className="w-5 h-5 object-contain transition-transform group-hover:scale-110"
       />
     );
   }
 
   // Fallback to default Lucide icons
   switch (cat.id) {
-    case 'favorites': return <Heart className={`w-4 h-4 ${isSelected ? 'fill-[#5B3E88] text-[#5B3E88]' : 'text-rose-500 fill-rose-500'}`} />;
-    case 'warehouse': return <Box className="w-4 h-4 text-amber-500" />;
-    case 'arches': return <Layers className="w-4 h-4 text-indigo-500" />;
-    case 'stands': return <Columns className="w-4 h-4 text-cyan-500" />;
-    case 'tables': return <TableIcon className="w-4 h-4 text-emerald-500" />;
-    case 'screens': return <GridIcon className="w-4 h-4 text-blue-500" />;
-    case 'flowers': return <Flower2 className="w-4 h-4 text-pink-500" />;
-    case 'compositions': return <Sparkles className="w-4 h-4 text-amber-400" />;
-    case 'vases': return <Tag className="w-4 h-4 text-purple-500" />;
-    case 'details': return <Compass className="w-4 h-4 text-teal-500" />;
-    case 'textiles': return <AlignLeft className="w-4 h-4 text-sky-500" />;
-    case 'light': return <Lightbulb className="w-4 h-4 text-yellow-500" />;
-    case 'podiums': return <Columns className="w-4 h-4 text-orange-500" />;
-    case 'furniture': return <Bookmark className="w-4 h-4 text-violet-500" />;
-    case 'balloons': return <CircleDot className="w-4 h-4 text-rose-400" />;
-    case 'themes': return <Sparkles className="w-4 h-4 text-emerald-600" />;
-    default: return <Tag className="w-4 h-4 text-purple-500" />;
+    case 'favorites': return <Heart className={`w-5 h-5 ${isSelected ? 'fill-[#8C52D0] text-[#8C52D0]' : 'text-[#8C52D0] fill-[#8C52D0]'}`} />;
+    case 'text': return <Type className="w-5 h-5 text-[#8C52D0]" />;
+    case 'warehouse': return <Box className="w-5 h-5 text-[#8C52D0]" />;
+    case 'arches': return <Layers className="w-5 h-5 text-[#8C52D0]" />;
+    case 'stands': return <Columns className="w-5 h-5 text-[#8C52D0]" />;
+    case 'tables': return <TableIcon className="w-5 h-5 text-[#8C52D0]" />;
+    case 'screens': return <GridIcon className="w-5 h-5 text-[#8C52D0]" />;
+    case 'flowers': return <Flower2 className="w-5 h-5 text-[#8C52D0]" />;
+    case 'compositions': return <Sparkles className="w-5 h-5 text-[#8C52D0]" />;
+    case 'vases': return <Tag className="w-5 h-5 text-[#8C52D0]" />;
+    case 'details': return <Compass className="w-5 h-5 text-[#8C52D0]" />;
+    case 'textiles': return <AlignLeft className="w-5 h-5 text-[#8C52D0]" />;
+    case 'light': return <Lightbulb className="w-5 h-5 text-[#8C52D0]" />;
+    case 'podiums': return <Columns className="w-5 h-5 text-[#8C52D0]" />;
+    case 'furniture': return <Bookmark className="w-5 h-5 text-[#8C52D0]" />;
+    case 'balloons': return <CircleDot className="w-5 h-5 text-[#8C52D0]" />;
+    case 'themes': return <Palette className="w-5 h-5 text-[#8C52D0]" />;
+    default: return <Tag className="w-5 h-5 text-[#8C52D0]" />;
   }
 };
 
@@ -604,6 +606,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
   // Collapsible toolbars states (Right library panel stays open by default)
   const [isLeftToolbarCollapsed, setIsLeftToolbarCollapsed] = useState<boolean>(true);
   const [isRightToolbarCollapsed, setIsRightToolbarCollapsed] = useState<boolean>(false);
+  const [isColorZoomToolbarCollapsed, setIsColorZoomToolbarCollapsed] = useState<boolean>(false);
 
   // Undo/Redo Stacking
   const [history, setHistory] = useState<EditorScene[][]>([JSON.parse(JSON.stringify(scenes))]);
@@ -1730,46 +1733,45 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
             <div className="flex gap-2.5 flex-1 min-h-0 items-start overflow-hidden min-w-0">
               
               {/* VERTICAL CATEGORY BAR */}
-              <div className="flex flex-col gap-1.5 p-1 bg-zinc-100/90 dark:bg-zinc-900/80 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 shrink-0 overflow-y-auto overflow-x-hidden max-h-full scrollbar-none shadow-2xs">
+              <div className="flex flex-col gap-1 p-1.5 bg-zinc-100/90 dark:bg-zinc-900/80 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 shrink-0 overflow-y-auto overflow-x-hidden max-h-full scrollbar-none shadow-2xs items-center w-[72px] sm:w-[76px]">
                 {NEW_CATALOG_CATEGORIES.map((cat) => {
                   const isSelected = selectedCategory === cat.id;
                   return (
-                    <div key={cat.id} className="relative group">
-                      <button
-                        onClick={() => {
-                          setSelectedCategory(cat.id);
-                          setLibSearch('');
-                        }}
-                        className={`w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer border ${
-                          isSelected
-                            ? 'bg-[#EAE4F8] text-[#5B3E88] border-[#D4C5ED] dark:bg-purple-950 dark:text-purple-200 dark:border-purple-800 shadow-xs scale-105'
-                            : 'bg-white/80 dark:bg-zinc-800/80 border-transparent text-zinc-600 dark:text-zinc-400 hover:bg-white dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 hover:shadow-2xs'
-                        }`}
-                        title={cat.title}
-                      >
+                    <button
+                      key={cat.id}
+                      onClick={() => {
+                        setSelectedCategory(cat.id);
+                        setLibSearch('');
+                      }}
+                      className={`w-full py-2 px-1 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer border group ${
+                        isSelected
+                          ? 'bg-[#EAE4F8] text-[#5B3E88] border-[#D4C5ED] dark:bg-purple-950 dark:text-purple-200 dark:border-purple-800 shadow-xs'
+                          : 'bg-transparent hover:bg-white/70 dark:hover:bg-zinc-800/70 border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
+                      }`}
+                      title={cat.title}
+                    >
+                      <div className="flex items-center justify-center mb-1 transition-transform group-hover:scale-110">
                         <CategoryIcon cat={cat} isSelected={isSelected} />
-                      </button>
-
-                      {/* Hover Tooltip showing category name */}
-                      <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity bg-zinc-900 dark:bg-zinc-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg shadow-lg whitespace-nowrap border border-zinc-700/50">
-                        {cat.title}
                       </div>
-                    </div>
+                      <span className={`text-[10px] leading-tight text-center truncate max-w-full px-0.5 tracking-tight ${
+                        isSelected ? 'font-bold text-[#5B3E88] dark:text-purple-200' : 'font-medium text-zinc-600 dark:text-zinc-400'
+                      }`}>
+                        {cat.title}
+                      </span>
+                    </button>
                   );
                 })}
 
                 {/* Button to manage category icons */}
-                <div className="relative group pt-1 border-t border-zinc-200/60 dark:border-zinc-800 mt-1">
+                <div className="pt-1 border-t border-zinc-200/60 dark:border-zinc-800 mt-0.5 w-full flex justify-center">
                   <button
                     onClick={() => setShowCategoryIconManager(true)}
-                    className="w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer bg-white/60 dark:bg-zinc-800/60 text-zinc-400 hover:text-[#5B3E88] dark:hover:text-purple-300 hover:bg-white dark:hover:bg-zinc-800 border border-transparent hover:border-purple-200/50"
+                    className="w-full py-1.5 px-0.5 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer bg-white/60 dark:bg-zinc-800/60 text-zinc-400 hover:text-[#5B3E88] dark:hover:text-purple-300 hover:bg-white dark:hover:bg-zinc-800 border border-transparent hover:border-purple-200/50"
                     title="Управление иконками категорий (папка /public/category-icons/)"
                   >
-                    <Sliders className="w-4 h-4" />
+                    <Sliders className="w-4 h-4 mb-0.5" />
+                    <span className="text-[9px] font-medium text-center text-zinc-400">Иконки</span>
                   </button>
-                  <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity bg-zinc-900 dark:bg-zinc-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg shadow-lg whitespace-nowrap border border-zinc-700/50">
-                    Управление иконками
-                  </div>
                 </div>
               </div>
 
@@ -2344,12 +2346,12 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                   {isRightToolbarCollapsed && (
                     <button
                       onClick={() => setIsRightToolbarCollapsed(false)}
-                      className="px-3 py-1.5 sm:py-2 rounded-full bg-white/80 dark:bg-zinc-900/80 text-[#5B3E88] dark:text-purple-300 backdrop-blur-md shadow-md border border-white/80 dark:border-zinc-700/60 hover:bg-white dark:hover:bg-zinc-800 flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer active:scale-95 animate-fadeIn"
+                      className="px-3.5 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-md hover:opacity-90 flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer active:scale-95 animate-fadeIn"
                       title="Развернуть боковую панель (Библиотека и элементы)"
                     >
-                      <BookOpen className="w-3.5 h-3.5 text-[#5B3E88] dark:text-purple-300 shrink-0" />
+                      <BookOpen className="w-3.5 h-3.5 text-white shrink-0" />
                       <span className="hidden sm:inline">Библиотека</span>
-                      <ChevronLeft className="w-3.5 h-3.5 text-[#5B3E88] dark:text-purple-300 shrink-0" />
+                      <ChevronLeft className="w-3.5 h-3.5 text-white shrink-0" />
                     </button>
                   )}
 
@@ -2382,7 +2384,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                     <div className="p-1 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md shadow-lg border border-white/80 dark:border-zinc-700/60 flex flex-col items-center pointer-events-auto animate-fadeIn">
                       <button
                         onClick={() => setIsLeftToolbarCollapsed(false)}
-                        className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-[var(--lavDeep)] text-white hover:bg-[#4a3271] flex items-center justify-center shadow-md cursor-pointer transition-all active:scale-95"
+                        className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white hover:opacity-90 flex items-center justify-center shadow-md cursor-pointer transition-all active:scale-95"
                         title="Развернуть инструменты редактирования"
                       >
                         <Sliders className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
@@ -2757,12 +2759,12 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                 {/* BOTTOM RIGHT GROUP: Color Correction Tools & Zoom Button */}
                 <div className="absolute bottom-1.5 right-1.5 z-[60] flex flex-col items-end pointer-events-none pr-0.5 pb-0.5">
                   <div className="flex flex-col items-center gap-1.5 pointer-events-auto">
-                    {isRightToolbarCollapsed ? (
+                    {isColorZoomToolbarCollapsed ? (
                       /* COLLAPSED SINGLE BUTTON */
                       <div className="p-1 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md shadow-lg border border-white/80 dark:border-zinc-700/60 flex flex-col items-center pointer-events-auto animate-fadeIn">
                         <button
-                          onClick={() => setIsRightToolbarCollapsed(false)}
-                          className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-[var(--lavDeep)] text-white hover:bg-[#4a3271] flex items-center justify-center shadow-md cursor-pointer transition-all active:scale-95"
+                          onClick={() => setIsColorZoomToolbarCollapsed(false)}
+                          className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white hover:opacity-90 flex items-center justify-center shadow-md cursor-pointer transition-all active:scale-95"
                           title="Развернуть настройки цвета и масштаба"
                         >
                           <Palette className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
@@ -2775,7 +2777,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         {/* 0. Свернуть панель */}
                         <button
                           onClick={() => {
-                            setIsRightToolbarCollapsed(true);
+                            setIsColorZoomToolbarCollapsed(true);
                             setActiveFilterTool(null);
                           }}
                           className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95 border-b border-zinc-200/60 dark:border-zinc-700/60 pb-0.5"
@@ -4174,11 +4176,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                     <div className="relative">
                       <button
                         onClick={() => setIsBackdropPopoverOpen(!isBackdropPopoverOpen)}
-                        className={`px-2.5 sm:px-3 py-1.5 rounded-full font-bold text-xs flex items-center gap-1.5 border shadow-xs cursor-pointer transition-all ${
-                          activeScene.backdropImage || (activeScene.backdropColor && activeScene.backdropColor !== '#F3F4F6')
-                            ? 'bg-[#5B3E88] text-white border-[#5B3E88]'
-                            : 'bg-white dark:bg-zinc-800 hover:bg-purple-50 dark:hover:bg-purple-950/50 text-zinc-700 dark:text-zinc-200 border-zinc-200/80 dark:border-zinc-700/80'
-                        }`}
+                        className="px-3 py-1.5 rounded-full font-bold text-xs flex items-center gap-1.5 bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white border-transparent hover:opacity-95 shadow-md cursor-pointer transition-all active:scale-95"
                         title="Настройки фона (Цвет, картинка, масштаб, сброс)"
                       >
                         <Upload className="w-3.5 h-3.5 shrink-0" />
@@ -4206,7 +4204,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                             >
                               <div className="flex items-center justify-between pb-1 border-b border-zinc-200/60 dark:border-zinc-800">
                                 <span className="text-xs font-bold text-zinc-800 dark:text-zinc-100 flex items-center gap-1.5">
-                                  <Palette className="w-3.5 h-3.5 text-[#5B3E88] dark:text-purple-400" />
+                                  <Palette className="w-3.5 h-3.5 text-[#8C52D0] dark:text-purple-400" />
                                   Настройка фона
                                 </span>
                                 <button
@@ -4223,7 +4221,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                   fileInputRef.current?.click();
                                   setIsBackdropPopoverOpen(false);
                                 }}
-                                className="w-full py-1.5 px-2.5 rounded-xl bg-purple-50/80 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/80 text-[#5B3E88] dark:text-purple-200 text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer border border-purple-200/50 dark:border-purple-800/40"
+                                className="w-full py-1.5 px-2.5 rounded-xl bg-purple-50/80 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/80 text-[#8C52D0] dark:text-purple-200 text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer border border-purple-200/50 dark:border-purple-800/40"
                               >
                                 <Upload className="w-3.5 h-3.5" />
                                 <span>Загрузить изображение</span>
@@ -4257,7 +4255,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                       setScenes(updated);
                                       recordHistory(updated);
                                     }}
-                                    className="w-16 px-1.5 py-0.5 rounded-md bg-zinc-100/80 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-[10px] font-mono font-bold text-zinc-800 dark:text-zinc-200 uppercase focus:outline-none focus:border-[#5B3E88]"
+                                    className="w-16 px-1.5 py-0.5 rounded-md bg-zinc-100/80 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-[10px] font-mono font-bold text-zinc-800 dark:text-zinc-200 uppercase focus:outline-none focus:border-[#8C52D0]"
                                   />
                                 </div>
                               </div>
@@ -4267,10 +4265,10 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                 <div className="space-y-2 pt-2 border-t border-zinc-200/60 dark:border-zinc-800">
                                   <div className="flex items-center justify-between text-[11px] font-bold text-zinc-600 dark:text-zinc-300">
                                     <span className="flex items-center gap-1">
-                                      <ZoomIn className="w-3.5 h-3.5 text-[#5B3E88] dark:text-purple-400" />
+                                      <ZoomIn className="w-3.5 h-3.5 text-[#8C52D0] dark:text-purple-400" />
                                       Масштаб картинки
                                     </span>
-                                    <span className="text-[#5B3E88] dark:text-purple-300 font-mono font-extrabold">
+                                    <span className="text-[#8C52D0] dark:text-purple-300 font-mono font-extrabold">
                                       {Math.round((activeScene.backdropScale || 1) * 100)}%
                                     </span>
                                   </div>
@@ -4289,7 +4287,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                       step="5"
                                       value={Math.round((activeScene.backdropScale || 1) * 100)}
                                       onChange={(e) => updateActiveSceneBackdropScale(parseFloat(e.target.value) / 100)}
-                                      className="w-full accent-[#5B3E88] dark:accent-purple-400 h-2 rounded-lg bg-zinc-200 dark:bg-zinc-700 cursor-pointer"
+                                      className="w-full accent-[#8C52D0] dark:accent-purple-400 h-2 rounded-lg bg-zinc-200 dark:bg-zinc-700 cursor-pointer"
                                     />
                                     <button
                                       onClick={() => updateActiveSceneBackdropScale((activeScene.backdropScale || 1) + 0.1)}
@@ -4301,7 +4299,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                     {(activeScene.backdropScale && activeScene.backdropScale !== 1) && (
                                       <button
                                         onClick={() => updateActiveSceneBackdropScale(1)}
-                                        className="text-[10px] font-bold text-zinc-400 hover:text-[#5B3E88] dark:hover:text-purple-300 cursor-pointer underline shrink-0 ml-0.5"
+                                        className="text-[10px] font-bold text-zinc-400 hover:text-[#8C52D0] dark:hover:text-purple-300 cursor-pointer underline shrink-0 ml-0.5"
                                         title="Сбросить на 100%"
                                       >
                                         100%
@@ -4335,10 +4333,10 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
                     <button
                       onClick={() => setGridVisible(!gridVisible)}
-                      className={`px-3 py-1.5 rounded-full font-bold text-xs flex items-center gap-1.5 border shadow-xs transition-all cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-full font-bold text-xs flex items-center gap-1.5 shadow-md transition-all cursor-pointer active:scale-95 ${
                         gridVisible
-                          ? 'bg-[#5B3E88] text-white border-[#5B3E88]'
-                          : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border-zinc-200/80 dark:border-zinc-700/80'
+                          ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white border-transparent'
+                          : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border border-[#8C52D0]/40 hover:bg-purple-50/50'
                       }`}
                       title="Показать / скрыть сетку"
                     >
@@ -4348,10 +4346,10 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
                     <button
                       onClick={() => setHumanVisible(!humanVisible)}
-                      className={`px-3 py-1.5 rounded-full font-bold text-xs flex items-center gap-1.5 border shadow-xs transition-all cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-full font-bold text-xs flex items-center gap-1.5 shadow-md transition-all cursor-pointer active:scale-95 ${
                         humanVisible
-                          ? 'bg-[#5B3E88] text-white border-[#5B3E88]'
-                          : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border-zinc-200/80 dark:border-zinc-700/80'
+                          ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white border-transparent'
+                          : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border border-[#8C52D0]/40 hover:bg-purple-50/50'
                       }`}
                       title="Показать / скрыть силуэт человека"
                     >

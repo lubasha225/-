@@ -16,8 +16,8 @@
 ## 2. Шрифты и заголовки
 
 ### 2.1 Главная шапка раздела
-- **Заголовок (Page Title):** `text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100` (размер ~20–24px, полужирный)
-- **Описание под заголовком:** `text-xs sm:text-sm font-normal text-zinc-700 dark:text-zinc-300 leading-relaxed` (размер ~13–15px, обычное начертание, плотный межстрочный интервал)
+- **Заголовок (Page Title):** `text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100` (24px в мобильной версии, 32px в десктопной)
+- **Описание под заголовком:** `text-sm font-normal text-zinc-700 dark:text-zinc-300 leading-relaxed` (14px в мобильной версии, 14px в десктопной)
 
 ### 2.2 Заголовки карточек (Card Header)
 - **Название карточки (Card Title):** `text-base sm:text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100` (размер ~16–18px, SemiBold)
