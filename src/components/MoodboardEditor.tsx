@@ -85,7 +85,8 @@ import {
   AlignJustify,
   Shapes,
   DoorOpen,
-  Ruler
+  Ruler,
+  Move
 } from 'lucide-react';
 import { Project, EstimateItem } from '../types';
 import { CATALOG_ASSETS, LibraryItem } from './editor/EditorLibraryData';
@@ -129,6 +130,8 @@ export interface CanvasElement {
   code?: string;
   sourceType?: string;
   caption?: string;
+  captionOffsetX?: number;
+  captionOffsetY?: number;
   measurementValue?: string;
   isLocked: boolean;
   isVisible: boolean;
@@ -1285,7 +1288,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
         if (distancePx > 10) {
           const valCm = Math.round(distancePx);
           const valStr = activeUnit === 'm' ? `${(valCm / 100).toFixed(1)} м` : `${valCm} см`;
-          const len = Math.max(60, Math.round(distancePx));
+          const len = Math.max(20, Math.round(distancePx));
           const angle = Math.round((Math.atan2(dy, dx) * 180) / Math.PI);
 
           const newElem: CanvasElement = {
@@ -1934,11 +1937,48 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
   };
 
   // Drag, Resize and Rotate implementation
-  const [activeAction, setActiveAction] = useState<'move' | 'resize' | 'rotate' | 'move-group' | null>(null);
+  interface AlignmentLine {
+    type: 'v' | 'h';
+    pos: number;
+    label?: string;
+  }
+  const [alignmentLines, setAlignmentLines] = useState<AlignmentLine[]>([]);
+  const [activeAction, setActiveAction] = useState<'move' | 'resize' | 'rotate' | 'move-group' | 'move-caption' | null>(null);
   const [activeHandle, setActiveHandle] = useState<string | null>(null);
   const [rotationInputId, setRotationInputId] = useState<string | null>(null);
 
   const rotateClickStartRef = useRef({ x: 0, y: 0, time: 0 });
+
+  const dragCaptionStartRef = useRef<{
+    mouseX: number;
+    mouseY: number;
+    initialOffsetX: number;
+    initialOffsetY: number;
+    elementId: string;
+    elementRotation: number;
+  }>({
+    mouseX: 0,
+    mouseY: 0,
+    initialOffsetX: 0,
+    initialOffsetY: 0,
+    elementId: '',
+    elementRotation: 0
+  });
+
+  const handleCaptionMouseDown = (e: React.MouseEvent, el: CanvasElement) => {
+    e.stopPropagation();
+    handleSelectElement(el.id);
+    setActiveAction('move-caption');
+    setActiveHandle(null);
+    dragCaptionStartRef.current = {
+      mouseX: e.clientX,
+      mouseY: e.clientY,
+      initialOffsetX: el.captionOffsetX || 0,
+      initialOffsetY: el.captionOffsetY || 0,
+      elementId: el.id,
+      elementRotation: el.rotation
+    };
+  };
   
   const dragStartRef = useRef({
     x: 0,
@@ -2038,9 +2078,154 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
   const handleCanvasMouseMove = (e: React.MouseEvent) => {
     if (!activeAction) return;
 
+    if (activeAction === 'move-caption') {
+      const currentScale = canvasScale * zoomScale;
+      const rawDx = (e.clientX - dragCaptionStartRef.current.mouseX) / currentScale;
+      const rawDy = (e.clientY - dragCaptionStartRef.current.mouseY) / currentScale;
+
+      const rotRad = (dragCaptionStartRef.current.elementRotation * Math.PI) / 180;
+      const localDx = rawDx * Math.cos(rotRad) + rawDy * Math.sin(rotRad);
+      const localDy = -rawDx * Math.sin(rotRad) + rawDy * Math.cos(rotRad);
+
+      const newOffsetX = Math.round(dragCaptionStartRef.current.initialOffsetX + localDx);
+      const newOffsetY = Math.round(dragCaptionStartRef.current.initialOffsetY + localDy);
+
+      setScenes(prev => prev.map(s => {
+        if (s.id === activeScene.id) {
+          return {
+            ...s,
+            elements: s.elements.map(item => {
+              if (item.id === dragCaptionStartRef.current.elementId) {
+                return {
+                  ...item,
+                  captionOffsetX: newOffsetX,
+                  captionOffsetY: newOffsetY
+                };
+              }
+              return item;
+            })
+          };
+        }
+        return s;
+      }));
+      return;
+    }
+
     if (activeAction === 'move-group') {
       const dx = (e.clientX - dragGroupStartRef.current.mouseX) / canvasScale;
       const dy = (e.clientY - dragGroupStartRef.current.mouseY) / canvasScale;
+
+      const groupItems = dragGroupStartRef.current.items;
+      const canvasW = canvasWidthMm / 10;
+      const canvasH = canvasHeightMm / 10;
+      const SNAP_THRESHOLD = 7;
+
+      let shiftDx = dx;
+      let shiftDy = dy;
+      const newLines: AlignmentLine[] = [];
+
+      if (groupItems.length > 0) {
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        groupItems.forEach(gi => {
+          const itemEl = activeScene.elements.find(i => i.id === gi.id);
+          const w = itemEl ? itemEl.w : 50;
+          const h = itemEl ? itemEl.h : 50;
+          const currX = gi.x + dx;
+          const currY = gi.y + dy;
+          minX = Math.min(minX, currX);
+          minY = Math.min(minY, currY);
+          maxX = Math.max(maxX, currX + w);
+          maxY = Math.max(maxY, currY + h);
+        });
+
+        const groupW = maxX - minX;
+        const groupH = maxY - minY;
+
+        // Targets: Canvas edges and center
+        const vTargets: { pos: number; label?: string }[] = [
+          { pos: 0, label: 'Край' },
+          { pos: canvasW / 2, label: 'Центр' },
+          { pos: canvasW, label: 'Край' }
+        ];
+        const hTargets: { pos: number; label?: string }[] = [
+          { pos: 0, label: 'Край' },
+          { pos: canvasH / 2, label: 'Центр' },
+          { pos: canvasH, label: 'Край' }
+        ];
+
+        // Grid targets if grid is active
+        if (gridVisible) {
+          for (let gx = 50; gx < canvasW; gx += 50) {
+            if (Math.abs(gx - canvasW / 2) > 2) vTargets.push({ pos: gx });
+          }
+          for (let gy = 50; gy < canvasH; gy += 50) {
+            if (Math.abs(gy - canvasH / 2) > 2) hTargets.push({ pos: gy });
+          }
+        }
+
+        // Other elements not in group
+        const groupIds = new Set(groupItems.map(g => g.id));
+        const otherElements = activeScene.elements.filter(el => !groupIds.has(el.id) && el.isVisible);
+
+        otherElements.forEach(other => {
+          vTargets.push({ pos: other.x }, { pos: other.x + other.w / 2, label: 'Центр' }, { pos: other.x + other.w });
+          hTargets.push({ pos: other.y }, { pos: other.y + other.h / 2, label: 'Центр' }, { pos: other.y + other.h });
+        });
+
+        // Group points along X and Y
+        const gXPoints = [
+          { val: minX, offset: 0 },
+          { val: minX + groupW / 2, offset: groupW / 2 },
+          { val: maxX, offset: groupW }
+        ];
+        const gYPoints = [
+          { val: minY, offset: 0 },
+          { val: minY + groupH / 2, offset: groupH / 2 },
+          { val: maxY, offset: groupH }
+        ];
+
+        let minVDiff = SNAP_THRESHOLD + 1;
+        let snapVLine: AlignmentLine | null = null;
+        let snapXOffset: number | null = null;
+
+        for (const xp of gXPoints) {
+          for (const vt of vTargets) {
+            const diff = Math.abs(xp.val - vt.pos);
+            if (diff < minVDiff) {
+              minVDiff = diff;
+              snapXOffset = vt.pos - xp.val;
+              snapVLine = { type: 'v', pos: Math.round(vt.pos), label: vt.label };
+            }
+          }
+        }
+
+        if (snapXOffset !== null && snapVLine) {
+          shiftDx += snapXOffset;
+          newLines.push(snapVLine);
+        }
+
+        let minHDiff = SNAP_THRESHOLD + 1;
+        let snapHLine: AlignmentLine | null = null;
+        let snapYOffset: number | null = null;
+
+        for (const yp of gYPoints) {
+          for (const ht of hTargets) {
+            const diff = Math.abs(yp.val - ht.pos);
+            if (diff < minHDiff) {
+              minHDiff = diff;
+              snapYOffset = ht.pos - yp.val;
+              snapHLine = { type: 'h', pos: Math.round(ht.pos), label: ht.label };
+            }
+          }
+        }
+
+        if (snapYOffset !== null && snapHLine) {
+          shiftDy += snapYOffset;
+          newLines.push(snapHLine);
+        }
+      }
+
+      setAlignmentLines(newLines);
 
       setScenes(prev => prev.map(s => {
         if (s.id === activeScene.id) {
@@ -2051,8 +2236,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
               if (initial) {
                 return {
                   ...el,
-                  x: Math.max(0, Math.min(canvasWidthMm / 10 - el.w, initial.x + dx)),
-                  y: Math.max(0, Math.min(canvasHeightMm / 10 - el.h, initial.y + dy))
+                  x: Math.max(0, Math.min(canvasW - el.w, Math.round(initial.x + shiftDx))),
+                  y: Math.max(0, Math.min(canvasH - el.h, Math.round(initial.y + shiftDy)))
                 };
               }
               return el;
@@ -2070,6 +2255,123 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
       const dx = (e.clientX - dragStartRef.current.x) / canvasScale;
       const dy = (e.clientY - dragStartRef.current.y) / canvasScale;
       
+      const rawX = dragStartRef.current.elX + dx;
+      const rawY = dragStartRef.current.elY + dy;
+      const elW = dragStartRef.current.elW;
+      const elH = dragStartRef.current.elH;
+
+      const canvasW = canvasWidthMm / 10;
+      const canvasH = canvasHeightMm / 10;
+
+      const clampedX = Math.max(0, Math.min(canvasW - elW, rawX));
+      const clampedY = Math.max(0, Math.min(canvasH - elH, rawY));
+
+      const SNAP_THRESHOLD = 7;
+
+      // Targets: Canvas edges and center
+      const vTargets: { pos: number; label?: string }[] = [
+        { pos: 0, label: '0' },
+        { pos: canvasW / 2, label: 'Центр' },
+        { pos: canvasW, label: `${canvasW}` }
+      ];
+      const hTargets: { pos: number; label?: string }[] = [
+        { pos: 0, label: '0' },
+        { pos: canvasH / 2, label: 'Центр' },
+        { pos: canvasH, label: `${canvasH}` }
+      ];
+
+      // Grid targets if grid is enabled
+      if (gridVisible) {
+        for (let gx = 50; gx < canvasW; gx += 50) {
+          if (Math.abs(gx - canvasW / 2) > 2) vTargets.push({ pos: gx });
+        }
+        for (let gy = 50; gy < canvasH; gy += 50) {
+          if (Math.abs(gy - canvasH / 2) > 2) hTargets.push({ pos: gy });
+        }
+      }
+
+      // Other visible elements on canvas
+      const otherElements = activeScene.elements.filter(
+        item => item.id !== selectedId && item.isVisible
+      );
+
+      otherElements.forEach(other => {
+        vTargets.push(
+          { pos: other.x },
+          { pos: other.x + other.w / 2, label: 'Центр' },
+          { pos: other.x + other.w }
+        );
+        hTargets.push(
+          { pos: other.y },
+          { pos: other.y + other.h / 2, label: 'Центр' },
+          { pos: other.y + other.h }
+        );
+      });
+
+      // Dragged element's points along X and Y
+      const xPoints = [
+        { val: clampedX, offset: 0 },
+        { val: clampedX + elW / 2, offset: elW / 2 },
+        { val: clampedX + elW, offset: elW }
+      ];
+
+      const yPoints = [
+        { val: clampedY, offset: 0 },
+        { val: clampedY + elH / 2, offset: elH / 2 },
+        { val: clampedY + elH, offset: elH }
+      ];
+
+      let bestX = clampedX;
+      let bestY = clampedY;
+      const newLines: AlignmentLine[] = [];
+
+      // Check V alignment
+      let minVDiff = SNAP_THRESHOLD + 1;
+      let snapVLine: AlignmentLine | null = null;
+      let snapXVal: number | null = null;
+
+      for (const xp of xPoints) {
+        for (const vt of vTargets) {
+          const diff = Math.abs(xp.val - vt.pos);
+          if (diff < minVDiff) {
+            minVDiff = diff;
+            snapXVal = vt.pos - xp.offset;
+            snapVLine = { type: 'v', pos: Math.round(vt.pos), label: vt.label };
+          }
+        }
+      }
+
+      if (snapXVal !== null && snapVLine) {
+        bestX = snapXVal;
+        newLines.push(snapVLine);
+      }
+
+      // Check H alignment
+      let minHDiff = SNAP_THRESHOLD + 1;
+      let snapHLine: AlignmentLine | null = null;
+      let snapYVal: number | null = null;
+
+      for (const yp of yPoints) {
+        for (const ht of hTargets) {
+          const diff = Math.abs(yp.val - ht.pos);
+          if (diff < minHDiff) {
+            minHDiff = diff;
+            snapYVal = ht.pos - yp.offset;
+            snapHLine = { type: 'h', pos: Math.round(ht.pos), label: ht.label };
+          }
+        }
+      }
+
+      if (snapYVal !== null && snapHLine) {
+        bestY = snapYVal;
+        newLines.push(snapHLine);
+      }
+
+      const finalX = Math.max(0, Math.min(canvasW - elW, Math.round(bestX)));
+      const finalY = Math.max(0, Math.min(canvasH - elH, Math.round(bestY)));
+
+      setAlignmentLines(newLines);
+
       setScenes(prev => prev.map(s => {
         if (s.id === activeScene.id) {
           return {
@@ -2078,8 +2380,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
               if (el.id === selectedId) {
                 return {
                   ...el,
-                  x: Math.max(0, Math.min(canvasWidthMm / 10 - el.w, dragStartRef.current.elX + dx)),
-                  y: Math.max(0, Math.min(canvasHeightMm / 10 - el.h, dragStartRef.current.elY + dy))
+                  x: finalX,
+                  y: finalY
                 };
               }
               return el;
@@ -2178,12 +2480,26 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
             ...s,
             elements: s.elements.map(item => {
               if (item.id === selectedId) {
+                const roundedW = Math.round(finalW);
+                const roundedH = Math.round(finalH);
+                let updatedMeasurementVal = item.measurementValue;
+                let updatedCaption = item.caption;
+
+                if (item.type === 'measurement') {
+                  const valCm = roundedW;
+                  const autoValStr = activeUnit === 'm' ? `${(valCm / 100).toFixed(1)} м` : `${valCm} см`;
+                  updatedMeasurementVal = autoValStr;
+                  updatedCaption = autoValStr;
+                }
+
                 return {
                   ...item,
-                  w: Math.round(finalW),
-                  h: Math.round(finalH),
+                  w: roundedW,
+                  h: roundedH,
                   x: Math.round(nextX),
-                  y: Math.round(nextY)
+                  y: Math.round(nextY),
+                  measurementValue: updatedMeasurementVal,
+                  caption: updatedCaption
                 };
               }
               return item;
@@ -2234,6 +2550,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
     if (activeAction) {
       setActiveAction(null);
       setActiveHandle(null);
+      setAlignmentLines([]);
       recordHistory(scenes);
     }
   };
@@ -2647,9 +2964,11 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
                         {/* Price badge, Lock toggle, and Visibility */}
                         <div className="flex items-center gap-1.5 shrink-0 pl-2">
-                          <span className="text-xs font-extrabold text-zinc-900 dark:text-zinc-100 mr-0.5">
-                            {el.price > 0 ? `${el.price.toLocaleString('ru')} ₽` : '0 ₽'}
-                          </span>
+                          {activeWorkspaceTab !== 'floorplan' && (
+                            <span className="text-xs font-extrabold text-zinc-900 dark:text-zinc-100 mr-0.5">
+                              {el.price > 0 ? `${el.price.toLocaleString('ru')} ₽` : '0 ₽'}
+                            </span>
+                          )}
 
                           {/* Lock / Unlock Toggle Button */}
                           <button
@@ -2708,16 +3027,18 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                           </div>
 
                           {/* Price input field */}
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-zinc-500">Сумма (₽)</label>
-                            <input
-                              type="number"
-                              value={draftPrice}
-                              onChange={(e) => setDraftPrice(e.target.value)}
-                              placeholder="Введите стоимость..."
-                              className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-bold text-zinc-800 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavDeep)]"
-                            />
-                          </div>
+                          {activeWorkspaceTab !== 'floorplan' && (
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-zinc-500">Сумма (₽)</label>
+                              <input
+                                type="number"
+                                value={draftPrice}
+                                onChange={(e) => setDraftPrice(e.target.value)}
+                                placeholder="Введите стоимость..."
+                                className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-bold text-zinc-800 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavDeep)]"
+                              />
+                            </div>
+                          )}
 
                           {/* Note comment field */}
                           <div className="space-y-1">
@@ -2787,21 +3108,23 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
             </div>
 
             {/* Total Cost Summary Card in bottom of Layers tab */}
-            <div className="pt-2 border-t border-zinc-200/80 dark:border-zinc-800 shrink-0 mt-auto">
-              <div className="p-3 rounded-2xl bg-[#EAE4F8]/80 dark:bg-purple-950/60 border border-[#D4C5ED]/80 dark:border-purple-800/60 flex items-center justify-between shadow-2xs">
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                    Итого элементов ({activeScene.elements.length})
-                  </span>
-                  <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
-                    Общая стоимость
+            {activeWorkspaceTab !== 'floorplan' && (
+              <div className="pt-2 border-t border-zinc-200/80 dark:border-zinc-800 shrink-0 mt-auto">
+                <div className="p-3 rounded-2xl bg-[#EAE4F8]/80 dark:bg-purple-950/60 border border-[#D4C5ED]/80 dark:border-purple-800/60 flex items-center justify-between shadow-2xs">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                      Итого элементов ({activeScene.elements.length})
+                    </span>
+                    <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                      Общая стоимость
+                    </span>
+                  </div>
+                  <span className="text-sm font-black text-[#5B3E88] dark:text-purple-300 font-mono">
+                    {activeScene.elements.reduce((sum, item) => sum + (item.price || 0), 0).toLocaleString('ru')} ₽
                   </span>
                 </div>
-                <span className="text-sm font-black text-[#5B3E88] dark:text-purple-300 font-mono">
-                  {activeScene.elements.reduce((sum, item) => sum + (item.price || 0), 0).toLocaleString('ru')} ₽
-                </span>
               </div>
-            </div>
+            )}
           </div>
         )}
       </>
@@ -3429,7 +3752,11 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                       {/* Popover options for Measurement */}
                       {isDrawingMeasurement && (
                         <div
-                          className="absolute left-10 sm:left-11 top-0 z-50 bg-white/90 dark:bg-zinc-900/90 text-zinc-900 dark:text-zinc-100 border border-purple-200/80 dark:border-zinc-700/80 p-2.5 rounded-2xl shadow-xl shadow-purple-950/10 flex flex-col gap-1.5 min-w-[195px] animate-fadeIn select-none backdrop-blur-md"
+                          className="absolute left-10 sm:left-11 top-0 z-50 bg-white/45 dark:bg-zinc-900/60 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 p-2.5 rounded-2xl shadow-xl shadow-purple-950/10 flex flex-col gap-1.5 min-w-[195px] animate-fadeIn select-none"
+                          style={{
+                            backdropFilter: 'blur(16px)',
+                            WebkitBackdropFilter: 'blur(16px)',
+                          }}
                         >
                           <div className="flex items-center justify-between px-1 pb-1 border-b border-purple-200/50 dark:border-zinc-800 text-[11px] font-bold text-[#5B3E88] dark:text-purple-300">
                             <span className="flex items-center gap-1">
@@ -4119,6 +4446,81 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                   );
                 })()}
 
+                {/* Dynamic Smart Alignment Guides Overlay */}
+                {alignmentLines.length > 0 && (
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none z-35 overflow-visible">
+                    {alignmentLines.map((line, i) => {
+                      const canvasW = canvasWidthMm / 10;
+                      const canvasH = canvasHeightMm / 10;
+                      if (line.type === 'v') {
+                        return (
+                          <g key={`v-${i}-${line.pos}`}>
+                            <line
+                              x1={line.pos}
+                              y1={0}
+                              x2={line.pos}
+                              y2={canvasH}
+                              stroke="#2563EB"
+                              strokeWidth="1.2"
+                              strokeDasharray="3,3"
+                              strokeOpacity="0.95"
+                            />
+                            <circle cx={line.pos} cy="0" r="2.5" fill="#2563EB" />
+                            <circle cx={line.pos} cy={canvasH} r="2.5" fill="#2563EB" />
+                            {line.label && (
+                              <foreignObject
+                                x={line.pos - 35}
+                                y={8}
+                                width="70"
+                                height="20"
+                                className="overflow-visible"
+                              >
+                                <div className="flex justify-center">
+                                  <span className="px-1.5 py-0.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[9px] font-bold shadow-xs whitespace-nowrap">
+                                    {line.label}
+                                  </span>
+                                </div>
+                              </foreignObject>
+                            )}
+                          </g>
+                        );
+                      } else {
+                        return (
+                          <g key={`h-${i}-${line.pos}`}>
+                            <line
+                              x1={0}
+                              y1={line.pos}
+                              x2={canvasW}
+                              y2={line.pos}
+                              stroke="#2563EB"
+                              strokeWidth="1.2"
+                              strokeDasharray="3,3"
+                              strokeOpacity="0.95"
+                            />
+                            <circle cx="0" cy={line.pos} r="2.5" fill="#2563EB" />
+                            <circle cx={canvasW} cy={line.pos} r="2.5" fill="#2563EB" />
+                            {line.label && (
+                              <foreignObject
+                                x={8}
+                                y={line.pos - 10}
+                                width="70"
+                                height="20"
+                                className="overflow-visible"
+                              >
+                                <div className="flex items-center">
+                                  <span className="px-1.5 py-0.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[9px] font-bold shadow-xs whitespace-nowrap">
+                                    {line.label}
+                                  </span>
+                                </div>
+                              </foreignObject>
+                            )}
+                          </g>
+                        );
+                      }
+                    })}
+                  </svg>
+                )}
+
                 {/* Draggable human metric silhouette scale reference (without transform controls) */}
                 {humanVisible && (() => {
                   const canvasW = canvasWidthMm / 10;
@@ -4359,58 +4761,108 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                           <div
                             className="w-full h-full flex items-center justify-center pointer-events-none select-none [&_svg]:w-full [&_svg]:h-full [&_svg]:block"
                             dangerouslySetInnerHTML={{
-                              __html: el.svgMarkup ? el.svgMarkup.replace(/<svg\b([^>]*)>/i, (match, p1) => {
-                                const cleanP1 = p1.replace(/\b(width|height)=["'][^"']*["']/gi, '').replace(/\bpreserveAspectRatio=["'][^"']*["']/gi, '');
-                                return `<svg ${cleanP1} preserveAspectRatio="none" style="width:100%;height:100%;">`;
-                              }) : ''
+                              __html: el.svgMarkup ? el.svgMarkup
+                                .replace(/<svg\b([^>]*)>/i, (match, p1) => {
+                                  const cleanP1 = p1.replace(/\b(width|height)=["'][^"']*["']/gi, '').replace(/\bpreserveAspectRatio=["'][^"']*["']/gi, '');
+                                  return `<svg ${cleanP1} preserveAspectRatio="none" style="width:100%;height:100%;">`;
+                                })
+                                .replace(/<(rect|circle|ellipse|line|polyline|polygon|path)\b/g, '<$1 vector-effect="non-scaling-stroke" ')
+                                : ''
                             }}
                           />
                         )}
                       </div>
 
-                      {/* Editable Caption Label under element */}
-                      {el.type !== 'measurement' && (el.caption !== undefined && el.caption !== null) && (
-                        <div
-                          className="absolute top-[calc(100%+6px)] left-1/2 -translate-x-1/2 z-30 pointer-events-auto select-none group/caption cursor-text"
-                          style={{
-                            transform: `translateX(-50%) rotate(${-el.rotation}deg) scaleX(${el.isFlippedH ? -1 : 1}) scaleY(${el.isFlippedV ? -1 : 1})`
-                          }}
-                          onMouseDown={(e) => e.stopPropagation()}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {editingCaptionId === el.id ? (
-                            <input
-                              type="text"
-                              autoFocus
-                              value={editingCaptionText}
-                              onChange={(e) => setEditingCaptionText(e.target.value)}
-                              onBlur={() => {
-                                updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, caption: editingCaptionText } : item));
-                                setEditingCaptionId(null);
+                      {/* Editable & Draggable Caption Label with Leader Line */}
+                      {el.type !== 'measurement' && (el.caption !== undefined && el.caption !== null) && (() => {
+                        const offX = el.captionOffsetX || 0;
+                        const offY = el.captionOffsetY || 0;
+                        const hasOffset = Math.hypot(offX, offY) > 3;
+
+                        const startX = el.w / 2;
+                        const startY = el.h / 2;
+                        const endX = el.w / 2 + offX;
+                        const endY = el.h + 8 + offY;
+
+                        return (
+                          <>
+                            {hasOffset && (
+                              <svg className="absolute inset-0 w-full h-full overflow-visible pointer-events-none z-20">
+                                <line
+                                  x1={startX}
+                                  y1={startY}
+                                  x2={endX}
+                                  y2={endY}
+                                  stroke="#8C52D0"
+                                  strokeWidth="1.5"
+                                  strokeDasharray="3,3"
+                                />
+                                <circle cx={startX} cy={startY} r="3" fill="#8C52D0" />
+                              </svg>
+                            )}
+
+                            <div
+                              className="absolute z-30 pointer-events-auto select-none group/caption cursor-grab active:cursor-grabbing"
+                              style={{
+                                left: `${endX}px`,
+                                top: `${endY}px`,
+                                transform: `translate(-50%, -50%) rotate(${-el.rotation}deg) scaleX(${el.isFlippedH ? -1 : 1}) scaleY(${el.isFlippedV ? -1 : 1})`
                               }}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, caption: editingCaptionText } : item));
-                                  setEditingCaptionId(null);
-                                }
-                              }}
-                              className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border border-[#8C52D0] rounded-lg px-2 py-0.5 text-[11px] font-bold text-center outline-none shadow-md min-w-[70px]"
-                            />
-                          ) : (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingCaptionId(el.id);
-                                setEditingCaptionText(el.caption || '');
-                              }}
-                              className="px-2.5 py-0.5 rounded-full bg-white/90 dark:bg-zinc-900/90 hover:bg-white dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 hover:border-[#8C52D0] dark:hover:border-purple-400 shadow-xs text-[11px] font-bold transition-all flex items-center gap-1 group-hover/caption:scale-105"
-                              title="Кликните для редактирования подписи"
+                              onMouseDown={(e) => handleCaptionMouseDown(e, el)}
+                              onClick={(e) => e.stopPropagation()}
                             >
-                              <span>{el.caption || 'Подпись...'}</span>
-                            </button>
-                          )}
-                        </div>
-                      )}
+                              {editingCaptionId === el.id ? (
+                                <input
+                                  type="text"
+                                  autoFocus
+                                  value={editingCaptionText}
+                                  onChange={(e) => setEditingCaptionText(e.target.value)}
+                                  onBlur={() => {
+                                    updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, caption: editingCaptionText } : item));
+                                    setEditingCaptionId(null);
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, caption: editingCaptionText } : item));
+                                      setEditingCaptionId(null);
+                                    }
+                                  }}
+                                  onMouseDown={(e) => e.stopPropagation()}
+                                  className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border-2 border-[#8C52D0] rounded-lg px-2 py-0.5 text-[11px] font-bold text-center outline-none shadow-md min-w-[70px]"
+                                />
+                              ) : (
+                                <div className="relative group/badge flex items-center">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditingCaptionId(el.id);
+                                      setEditingCaptionText(el.caption || '');
+                                    }}
+                                    className="px-2.5 py-1 rounded-full bg-white/95 dark:bg-zinc-900/95 hover:bg-white dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-purple-300 dark:border-purple-700 hover:border-[#8C52D0] dark:hover:border-purple-400 shadow-md text-[11px] font-bold transition-all flex items-center gap-1.5 whitespace-nowrap active:scale-95 cursor-pointer"
+                                    title="Зажмите и перетащите для перемещения подписи. Кликните для редактирования."
+                                  >
+                                    <Move className="w-2.5 h-2.5 text-[#8C52D0] opacity-70 group-hover/caption:opacity-100 shrink-0" />
+                                    <span>{el.caption || 'Подпись...'}</span>
+                                  </button>
+
+                                  {hasOffset && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, captionOffsetX: 0, captionOffsetY: 0 } : item));
+                                      }}
+                                      className="ml-1 p-1 rounded-full bg-white/90 dark:bg-zinc-800/90 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 border border-zinc-200 dark:border-zinc-700 transition-colors shadow-xs"
+                                      title="Сбросить положение подписи"
+                                    >
+                                      <X className="w-2.5 h-2.5" />
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        );
+                      })()}
 
                       {/* Dashed Outline for Group Member */}
                       {selectedIds.length > 1 && selectedIds.includes(el.id) && (
@@ -5583,18 +6035,20 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
               {/* Specifications/Details */}
               <div className="grid grid-cols-2 gap-2 text-xs bg-purple-50/60 dark:bg-purple-950/20 p-3.5 rounded-2xl border border-purple-200/40 dark:border-purple-800/30">
-                <div>
+                <div className={activeWorkspaceTab === 'floorplan' ? 'col-span-2' : ''}>
                   <span className="text-zinc-400 text-[11px] block font-medium">Габариты (Ш × В):</span>
                   <span className="font-bold text-zinc-800 dark:text-zinc-200">
                     {itemToPreview.width * 10} × {itemToPreview.height * 10} мм ({toDisplayValue(itemToPreview.width * 10)} × {toDisplayValue(itemToPreview.height * 10)} {activeUnit})
                   </span>
                 </div>
-                <div>
-                  <span className="text-zinc-400 text-[11px] block font-medium">Стоимость:</span>
-                  <span className="font-bold text-[#5B3E88] dark:text-purple-300">
-                    {itemToPreview.price.toLocaleString('ru')} ₽
-                  </span>
-                </div>
+                {activeWorkspaceTab !== 'floorplan' && (
+                  <div>
+                    <span className="text-zinc-400 text-[11px] block font-medium">Стоимость:</span>
+                    <span className="font-bold text-[#5B3E88] dark:text-purple-300">
+                      {itemToPreview.price.toLocaleString('ru')} ₽
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Modal Buttons: Primary (Gradient) and Secondary (Outline 1px) */}
