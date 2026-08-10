@@ -7,6 +7,7 @@ export interface LibraryItem {
   width: number;
   height: number;
   svgMarkup: string;
+  caption?: string;
 }
 
 export const CATALOG_CATEGORIES = [

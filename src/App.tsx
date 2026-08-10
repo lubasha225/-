@@ -22,6 +22,7 @@ import {
   CheckSquare,
   Square,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,

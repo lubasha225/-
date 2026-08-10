@@ -80,7 +80,12 @@ import {
   Ungroup,
   BoxSelect,
   FlipVertical,
-  Thermometer
+  Thermometer,
+  Zap,
+  AlignJustify,
+  Shapes,
+  DoorOpen,
+  Ruler
 } from 'lucide-react';
 import { Project, EstimateItem } from '../types';
 import { CATALOG_ASSETS, LibraryItem } from './editor/EditorLibraryData';
@@ -123,6 +128,8 @@ export interface CanvasElement {
   comment: string;
   code?: string;
   sourceType?: string;
+  caption?: string;
+  measurementValue?: string;
   isLocked: boolean;
   isVisible: boolean;
   isFlippedH: boolean;
@@ -165,6 +172,22 @@ const NEW_CATALOG_CATEGORIES = [
   { id: 'furniture', title: 'Мебель', icon: 'Bookmark' },
   { id: 'balloons', title: 'Шары', icon: 'CircleDot' },
   { id: 'themes', title: 'Тематика', icon: 'Palette' }
+];
+
+const SCHEMA_CATALOG_CATEGORIES = [
+  { id: 'favorites', title: 'Избранное', icon: 'Heart' },
+  { id: 'schema_furniture', title: 'Мебель', icon: 'Bookmark' },
+  { id: 'schema_podiums', title: 'Подиумы', icon: 'Columns' },
+  { id: 'schema_compositions', title: 'Композиции', icon: 'Grid' },
+  { id: 'schema_balloons', title: 'Шары', icon: 'CircleDot' },
+  { id: 'schema_flowers', title: 'Цветы', icon: 'Flower2' },
+  { id: 'schema_textiles', title: 'Текстиль', icon: 'AlignLeft' },
+  { id: 'schema_neon', title: 'Неон и надписи', icon: 'Type' },
+  { id: 'schema_light', title: 'Свет', icon: 'Lightbulb' },
+  { id: 'schema_electricity', title: 'Электрика', icon: 'Zap' },
+  { id: 'schema_pathways', title: 'Дорожки', icon: 'AlignJustify' },
+  { id: 'schema_shapes', title: 'Фигуры', icon: 'Shapes' },
+  { id: 'schema_entrance_exit', title: 'Вход/Выход', icon: 'DoorOpen' }
 ];
 
 const CategoryIcon: React.FC<{
@@ -221,9 +244,533 @@ const CategoryIcon: React.FC<{
     case 'furniture': return <Bookmark className="w-5 h-5 text-[#8C52D0]" />;
     case 'balloons': return <CircleDot className="w-5 h-5 text-[#8C52D0]" />;
     case 'themes': return <Palette className="w-5 h-5 text-[#8C52D0]" />;
+    // Schema categories
+    case 'schema_furniture': return <Bookmark className="w-5 h-5 text-[#8C52D0]" />;
+    case 'schema_podiums': return <Columns className="w-5 h-5 text-[#8C52D0]" />;
+    case 'schema_compositions': return <GridIcon className="w-5 h-5 text-[#8C52D0]" />;
+    case 'schema_balloons': return <CircleDot className="w-5 h-5 text-[#8C52D0]" />;
+    case 'schema_flowers': return <Flower2 className="w-5 h-5 text-[#8C52D0]" />;
+    case 'schema_textiles': return <AlignLeft className="w-5 h-5 text-[#8C52D0]" />;
+    case 'schema_neon': return <Type className="w-5 h-5 text-[#8C52D0]" />;
+    case 'schema_light': return <Lightbulb className="w-5 h-5 text-[#8C52D0]" />;
+    case 'schema_electricity': return <Zap className="w-5 h-5 text-[#8C52D0]" />;
+    case 'schema_pathways': return <AlignJustify className="w-5 h-5 text-[#8C52D0]" />;
+    case 'schema_shapes': return <Shapes className="w-5 h-5 text-[#8C52D0]" />;
+    case 'schema_entrance_exit': return <DoorOpen className="w-5 h-5 text-[#8C52D0]" />;
     default: return <Tag className="w-5 h-5 text-[#8C52D0]" />;
   }
 };
+
+// Specialized Schema library elements for the Floorplan / Schema tab
+const SCHEMA_LIBRARY_ITEMS: LibraryItem[] = [
+  // 1. Мебель (Furniture)
+  {
+    id: "schema-table-rect",
+    name: "Стол (Прямоугольный)",
+    code: "ST-01",
+    category: "schema_furniture",
+    price: 3000,
+    width: 100,
+    height: 55,
+    caption: "Стол",
+    svgMarkup: `<svg viewBox="0 0 100 55" class="w-full h-full"><rect x="4" y="4" width="92" height="47" rx="8" ry="8" fill="#F8FAFC" stroke="#475569" stroke-width="2"/></svg>`
+  },
+  {
+    id: "schema-table-oval",
+    name: "Стол (Овальный)",
+    code: "ST-02",
+    category: "schema_furniture",
+    price: 3500,
+    width: 100,
+    height: 55,
+    caption: "Стол",
+    svgMarkup: `<svg viewBox="0 0 100 55" class="w-full h-full"><rect x="4" y="4" width="92" height="47" rx="23.5" ry="23.5" fill="#F8FAFC" stroke="#475569" stroke-width="2"/></svg>`
+  },
+  {
+    id: "schema-table-round",
+    name: "Стол (Круглый)",
+    code: "ST-03",
+    category: "schema_furniture",
+    price: 2500,
+    width: 70,
+    height: 70,
+    caption: "Стол",
+    svgMarkup: `<svg viewBox="0 0 70 70" class="w-full h-full"><circle cx="35" cy="35" r="30" fill="#F8FAFC" stroke="#475569" stroke-width="2"/></svg>`
+  },
+  {
+    id: "schema-sofa-curved",
+    name: "Диван (Изогнутый)",
+    code: "ST-04",
+    category: "schema_furniture",
+    price: 4000,
+    width: 80,
+    height: 80,
+    caption: "Диван",
+    svgMarkup: `<svg viewBox="0 0 80 80" class="w-full h-full"><path d="M 10 70 A 60 60 0 0 1 70 10 L 55 10 A 45 45 0 0 0 10 55 Z" fill="#F8FAFC" stroke="#475569" stroke-width="2"/></svg>`
+  },
+  {
+    id: "schema-chair",
+    name: "Стул",
+    code: "ST-05",
+    category: "schema_furniture",
+    price: 800,
+    width: 45,
+    height: 45,
+    caption: "Стул",
+    svgMarkup: `<svg viewBox="0 0 50 50" class="w-full h-full"><circle cx="25" cy="25" r="20" fill="#F8FAFC" stroke="#475569" stroke-width="2"/><path d="M 12 25 A 13 13 0 0 1 38 25" fill="none" stroke="#475569" stroke-width="1.5"/></svg>`
+  },
+
+  // 2. Подиумы (Podiums)
+  {
+    id: "schema-podium-semicircle",
+    name: "Подиум (Полукруглый)",
+    code: "POD-01",
+    category: "schema_podiums",
+    price: 8000,
+    width: 100,
+    height: 55,
+    caption: "Подиум",
+    svgMarkup: `<svg viewBox="0 0 100 55" class="w-full h-full"><path d="M 5 50 A 45 45 0 0 1 95 50 Z" fill="#F8FAFC" stroke="#475569" stroke-width="2"/><path d="M 20 50 A 30 30 0 0 1 80 50" fill="none" stroke="#475569" stroke-width="1.5" stroke-dasharray="3,3"/></svg>`
+  },
+  {
+    id: "schema-podium-rect",
+    name: "Подиум (Прямоугольный)",
+    code: "POD-02",
+    category: "schema_podiums",
+    price: 10000,
+    width: 100,
+    height: 55,
+    caption: "Подиум",
+    svgMarkup: `<svg viewBox="0 0 100 55" class="w-full h-full"><rect x="4" y="4" width="92" height="47" rx="4" fill="#F8FAFC" stroke="#475569" stroke-width="2"/><rect x="16" y="14" width="68" height="27" rx="2" fill="none" stroke="#475569" stroke-width="1.5"/></svg>`
+  },
+  {
+    id: "schema-stairs",
+    name: "Лестница",
+    code: "POD-03",
+    category: "schema_podiums",
+    price: 4000,
+    width: 90,
+    height: 50,
+    caption: "Лестница",
+    svgMarkup: `<svg viewBox="0 0 90 50" class="w-full h-full"><rect x="4" y="4" width="82" height="42" rx="2" fill="#F8FAFC" stroke="#475569" stroke-width="2"/><line x1="4" y1="14" x2="86" y2="14" stroke="#475569" stroke-width="1.5"/><line x1="4" y1="24" x2="86" y2="24" stroke="#475569" stroke-width="1.5"/><line x1="4" y1="34" x2="86" y2="34" stroke="#475569" stroke-width="1.5"/></svg>`
+  },
+
+  // 3. Композиции (Compositions)
+  {
+    id: "schema-screen-zigzag",
+    name: "Ширма",
+    code: "KOMP-01",
+    category: "schema_compositions",
+    price: 5000,
+    width: 100,
+    height: 35,
+    caption: "Ширма",
+    svgMarkup: `<svg viewBox="0 0 100 35" class="w-full h-full"><path d="M 5 22 L 23 8 L 41 22 L 59 8 L 77 22 L 95 8" fill="none" stroke="#475569" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+  },
+  {
+    id: "schema-arch-arc",
+    name: "Арка",
+    code: "KOMP-02",
+    category: "schema_compositions",
+    price: 6000,
+    width: 100,
+    height: 40,
+    caption: "Арка",
+    svgMarkup: `<svg viewBox="0 0 100 40" class="w-full h-full"><path d="M 8 32 Q 50 2 92 32" fill="none" stroke="#475569" stroke-width="3" stroke-linecap="round"/></svg>`
+  },
+  {
+    id: "schema-stand-bar",
+    name: "Стойка",
+    code: "KOMP-03",
+    category: "schema_compositions",
+    price: 3500,
+    width: 100,
+    height: 35,
+    caption: "Стойка",
+    svgMarkup: `<svg viewBox="0 0 100 35" class="w-full h-full"><line x1="15" y1="15" x2="85" y2="15" stroke="#475569" stroke-width="2.5"/><line x1="15" y1="5" x2="15" y2="25" stroke="#475569" stroke-width="2.5"/><line x1="85" y1="5" x2="85" y2="25" stroke="#475569" stroke-width="2.5"/></svg>`
+  },
+  {
+    id: "schema-frame-rect",
+    name: "Каркас (Прямоугольный)",
+    code: "KOMP-04",
+    category: "schema_compositions",
+    price: 4000,
+    width: 90,
+    height: 50,
+    caption: "Каркас",
+    svgMarkup: `<svg viewBox="0 0 90 50" class="w-full h-full"><rect x="4" y="4" width="82" height="42" rx="3" fill="none" stroke="#475569" stroke-width="2.5" stroke-dasharray="6,3"/><rect x="8" y="8" width="74" height="34" rx="2" fill="none" stroke="#94A3B8" stroke-width="1.5"/></svg>`
+  },
+  {
+    id: "schema-frame-circle",
+    name: "Каркас (Круглый)",
+    code: "KOMP-05",
+    category: "schema_compositions",
+    price: 4000,
+    width: 70,
+    height: 70,
+    caption: "Каркас",
+    svgMarkup: `<svg viewBox="0 0 70 70" class="w-full h-full"><circle cx="35" cy="35" r="28" fill="none" stroke="#475569" stroke-width="2.5" stroke-dasharray="6,3"/><circle cx="35" cy="35" r="23" fill="none" stroke="#94A3B8" stroke-width="1.5"/></svg>`
+  },
+  {
+    id: "schema-sequin-wall",
+    name: "Панели пайетки",
+    code: "KOMP-06",
+    category: "schema_compositions",
+    price: 8000,
+    width: 90,
+    height: 50,
+    caption: "Пайетки",
+    svgMarkup: `<svg viewBox="0 0 90 50" class="w-full h-full"><rect x="4" y="4" width="82" height="42" rx="4" fill="#FEF3C7" stroke="#F59E0B" stroke-width="2"/><g fill="#FBBF24" opacity="0.8"><circle cx="15" cy="14" r="3"/><circle cx="27" cy="14" r="3"/><circle cx="39" cy="14" r="3"/><circle cx="51" cy="14" r="3"/><circle cx="63" cy="14" r="3"/><circle cx="75" cy="14" r="3"/><circle cx="21" cy="25" r="3"/><circle cx="33" cy="25" r="3"/><circle cx="45" cy="25" r="3"/><circle cx="57" cy="25" r="3"/><circle cx="69" cy="25" r="3"/><circle cx="15" cy="36" r="3"/><circle cx="27" cy="36" r="3"/><circle cx="39" cy="36" r="3"/><circle cx="51" cy="36" r="3"/><circle cx="63" cy="36" r="3"/><circle cx="75" cy="36" r="3"/></g></svg>`
+  },
+
+  // 4. Текстиль (Textiles)
+  {
+    id: "schema-textile-curtains",
+    name: "Шторы / Портьеры",
+    code: "TXT-01",
+    category: "schema_textiles",
+    price: 4500,
+    width: 90,
+    height: 40,
+    caption: "Шторы",
+    svgMarkup: `<svg viewBox="0 0 90 40" class="w-full h-full"><path d="M 5 8 Q 15 28 25 8 Q 35 28 45 8 Q 55 28 65 8 Q 75 28 85 8" fill="none" stroke="#A855F7" stroke-width="3" stroke-linecap="round"/><line x1="5" y1="8" x2="85" y2="8" stroke="#7E22CE" stroke-width="2.5"/></svg>`
+  },
+  {
+    id: "schema-textile-drape",
+    name: "Драпировка фона",
+    code: "TXT-02",
+    category: "schema_textiles",
+    price: 6000,
+    width: 100,
+    height: 45,
+    caption: "Драпировка",
+    svgMarkup: `<svg viewBox="0 0 100 45" class="w-full h-full"><rect x="5" y="5" width="90" height="35" rx="4" fill="#F3E8FF" stroke="#C084FC" stroke-width="2"/><path d="M 10 5 Q 25 35 40 5 Q 55 35 70 5 Q 85 35 95 5" fill="none" stroke="#A855F7" stroke-width="1.5" stroke-dasharray="4,2"/></svg>`
+  },
+  {
+    id: "schema-textile-tablecloth",
+    name: "Скатерть / Юбка стола",
+    code: "TXT-03",
+    category: "schema_textiles",
+    price: 3000,
+    width: 95,
+    height: 45,
+    caption: "Скатерть",
+    svgMarkup: `<svg viewBox="0 0 95 45" class="w-full h-full"><rect x="5" y="8" width="85" height="30" rx="6" fill="#FCE7F3" stroke="#EC4899" stroke-width="2"/><path d="M 10 38 Q 17 28 24 38 Q 31 28 38 38 Q 45 28 52 38 Q 59 28 66 38 Q 73 28 80 38 Q 87 28 90 38" fill="none" stroke="#DB2777" stroke-width="1.5"/></svg>`
+  },
+
+  // 5. Неон и надписи (Neon & Lettering)
+  {
+    id: "schema-neon-happy",
+    name: "Неоновая надпись",
+    code: "NEON-01",
+    category: "schema_neon",
+    price: 5000,
+    width: 90,
+    height: 45,
+    caption: "Неон",
+    svgMarkup: `<svg viewBox="0 0 90 45" class="w-full h-full"><rect x="4" y="4" width="82" height="37" rx="6" fill="#18181B" stroke="#F43F5E" stroke-width="2"/><path d="M 15 23 Q 22 13 30 23 T 45 23 T 60 23 T 75 23" fill="none" stroke="#FB7185" stroke-width="2.5" stroke-linecap="round"/></svg>`
+  },
+  {
+    id: "schema-neon-initials",
+    name: "Объемные буквы",
+    code: "NEON-02",
+    category: "schema_neon",
+    price: 6000,
+    width: 85,
+    height: 45,
+    caption: "Буквы",
+    svgMarkup: `<svg viewBox="0 0 85 45" class="w-full h-full"><rect x="4" y="4" width="77" height="37" rx="5" fill="#F8FAFC" stroke="#8C52D0" stroke-width="2"/><text x="42.5" y="28" font-family="sans-serif" font-size="16" font-weight="800" fill="#8C52D0" text-anchor="middle" letter-spacing="3">A &amp; B</text></svg>`
+  },
+  {
+    id: "schema-neon-flex",
+    name: "Гибкий неон",
+    code: "NEON-03",
+    category: "schema_neon",
+    price: 3500,
+    width: 90,
+    height: 40,
+    caption: "Неон",
+    svgMarkup: `<svg viewBox="0 0 90 40" class="w-full h-full"><path d="M 8 20 C 25 5, 35 35, 50 20 C 65 5, 75 35, 82 20" fill="none" stroke="#38BDF8" stroke-width="3.5" stroke-linecap="round"/></svg>`
+  },
+
+  // 6. Шары (Balloons)
+  {
+    id: "schema-balloons-cluster",
+    name: "Шары (Кластер)",
+    code: "SHAR-01",
+    category: "schema_balloons",
+    price: 3000,
+    width: 75,
+    height: 65,
+    caption: "Шары",
+    svgMarkup: `<svg viewBox="0 0 75 65" class="w-full h-full"><circle cx="24" cy="22" r="16" fill="#F3E8FF" stroke="#A855F7" stroke-width="2"/><circle cx="20" cy="18" r="4" fill="#FFFFFF" opacity="0.6"/><circle cx="51" cy="22" r="17" fill="#FAE8FF" stroke="#D946EF" stroke-width="2"/><circle cx="47" cy="18" r="4.5" fill="#FFFFFF" opacity="0.6"/><circle cx="37.5" cy="38" r="18" fill="#EDE9FE" stroke="#8B5CF6" stroke-width="2"/><circle cx="33" cy="33" r="5" fill="#FFFFFF" opacity="0.7"/></svg>`
+  },
+  {
+    id: "schema-balloons-row",
+    name: "Шары (Ряд)",
+    code: "SHAR-02",
+    category: "schema_balloons",
+    price: 3500,
+    width: 95,
+    height: 50,
+    caption: "Шары",
+    svgMarkup: `<svg viewBox="0 0 95 50" class="w-full h-full"><circle cx="20" cy="25" r="15" fill="#F3E8FF" stroke="#A855F7" stroke-width="2"/><circle cx="16" cy="21" r="3.5" fill="#FFFFFF" opacity="0.6"/><circle cx="47.5" cy="25" r="16" fill="#FAE8FF" stroke="#EC4899" stroke-width="2"/><circle cx="43" cy="20" r="4" fill="#FFFFFF" opacity="0.6"/><circle cx="75" cy="25" r="15" fill="#E0E7FF" stroke="#6366F1" stroke-width="2"/><circle cx="71" cy="21" r="3.5" fill="#FFFFFF" opacity="0.6"/></svg>`
+  },
+
+  // 5. Цветы (Flowers)
+  {
+    id: "schema-flower-rosette",
+    name: "Цветы",
+    code: "FL-01",
+    category: "schema_flowers",
+    price: 4000,
+    width: 70,
+    height: 70,
+    caption: "Цветы",
+    svgMarkup: `<svg viewBox="0 0 70 70" class="w-full h-full"><path d="M 22 22 Q 10 35 22 48 Q 35 60 48 48 Q 60 35 48 22 Q 35 10 22 22 Z" fill="#DCFCE7" stroke="#22C55E" stroke-width="1.5"/><g stroke="#E879F9" stroke-width="1.8" fill="#FDF4FF"><circle cx="35" cy="20" r="9"/><circle cx="21" cy="30" r="9"/><circle cx="49" cy="30" r="9"/><circle cx="26" cy="45" r="9"/><circle cx="44" cy="45" r="9"/></g><circle cx="35" cy="34" r="8" fill="#FACC15" stroke="#EAB308" stroke-width="1.8"/></svg>`
+  },
+  {
+    id: "schema-garland",
+    name: "Гирлянда",
+    code: "FL-02",
+    category: "schema_flowers",
+    price: 7000,
+    width: 110,
+    height: 55,
+    caption: "Гирлянда",
+    svgMarkup: `<svg viewBox="0 0 110 55" class="w-full h-full"><path d="M 10 28 Q 55 45 100 28" fill="none" stroke="#16A34A" stroke-width="3" stroke-linecap="round"/><path d="M 15 24 Q 20 12 28 24 Q 20 36 15 24 Z" fill="#86EFAC" stroke="#16A34A" stroke-width="1"/><path d="M 82 24 Q 90 12 95 24 Q 90 36 82 24 Z" fill="#86EFAC" stroke="#16A34A" stroke-width="1"/><g fill="#FDF4FF" stroke="#C084FC" stroke-width="1.5"><circle cx="20" cy="28" r="6"/><circle cx="35" cy="32" r="7"/><circle cx="55" cy="35" r="9"/><circle cx="75" cy="32" r="7"/><circle cx="90" cy="28" r="6"/></g><g fill="#FACC15"><circle cx="20" cy="28" r="2.5"/><circle cx="35" cy="32" r="3"/><circle cx="55" cy="35" r="3.5"/><circle cx="75" cy="32" r="3"/><circle cx="90" cy="28" r="2.5"/></g></svg>`
+  },
+
+  // 6. Свет (Light)
+  {
+    id: "schema-diodes",
+    name: "Диоды",
+    code: "LGT-01",
+    category: "schema_light",
+    price: 2000,
+    width: 100,
+    height: 40,
+    caption: "Диоды",
+    svgMarkup: `<svg viewBox="0 0 100 40" class="w-full h-full"><rect x="5" y="8" width="90" height="14" rx="3" fill="#FFF7ED" stroke="#FB923C" stroke-width="2"/><circle cx="15" cy="15" r="2" fill="#EA580C"/><circle cx="27" cy="15" r="2" fill="#EA580C"/><circle cx="39" cy="15" r="2" fill="#EA580C"/><circle cx="50" cy="15" r="2" fill="#EA580C"/><circle cx="61" cy="15" r="2" fill="#EA580C"/><circle cx="73" cy="15" r="2" fill="#EA580C"/><circle cx="85" cy="15" r="2" fill="#EA580C"/></svg>`
+  },
+  {
+    id: "schema-spotlight-sun",
+    name: "Свет (Солнце)",
+    code: "LGT-02",
+    category: "schema_light",
+    price: 3000,
+    width: 65,
+    height: 65,
+    caption: "Свет",
+    svgMarkup: `<svg viewBox="0 0 65 65" class="w-full h-full"><circle cx="32.5" cy="26" r="11" fill="#FFF7ED" stroke="#FB923C" stroke-width="2.5"/><line x1="32.5" y1="8" x2="32.5" y2="12" stroke="#FB923C" stroke-width="2" stroke-linecap="round"/><line x1="32.5" y1="40" x2="32.5" y2="44" stroke="#FB923C" stroke-width="2" stroke-linecap="round"/><line x1="14.5" y1="26" x2="18.5" y2="26" stroke="#FB923C" stroke-width="2" stroke-linecap="round"/><line x1="46.5" y1="26" x2="50.5" y2="26" stroke="#FB923C" stroke-width="2" stroke-linecap="round"/><line x1="19.5" y1="13" x2="22.5" y2="16" stroke="#FB923C" stroke-width="2" stroke-linecap="round"/><line x1="42.5" y1="36" x2="45.5" y2="39" stroke="#FB923C" stroke-width="2" stroke-linecap="round"/><line x1="19.5" y1="39" x2="22.5" y2="36" stroke="#FB923C" stroke-width="2" stroke-linecap="round"/><line x1="42.5" y1="16" x2="45.5" y2="13" stroke="#FB923C" stroke-width="2" stroke-linecap="round"/></svg>`
+  },
+  {
+    id: "schema-light-rays",
+    name: "Свет (Лучи)",
+    code: "LGT-03",
+    category: "schema_light",
+    price: 3500,
+    width: 70,
+    height: 65,
+    caption: "Свет",
+    svgMarkup: `<svg viewBox="0 0 70 65" class="w-full h-full"><line x1="22" y1="42" x2="30" y2="10" stroke="#FB923C" stroke-width="2.5" stroke-linecap="round"/><line x1="48" y1="42" x2="40" y2="10" stroke="#FB923C" stroke-width="2.5" stroke-linecap="round"/></svg>`
+  },
+  {
+    id: "schema-light-truss",
+    name: "Ферма (Трасс)",
+    code: "LGT-04",
+    category: "schema_light",
+    price: 5000,
+    width: 100,
+    height: 35,
+    caption: "Ферма",
+    svgMarkup: `<svg viewBox="0 0 100 35" class="w-full h-full"><line x1="5" y1="8" x2="95" y2="8" stroke="#475569" stroke-width="2.5"/><line x1="5" y1="22" x2="95" y2="22" stroke="#475569" stroke-width="2.5"/><path d="M 5 8 L 20 22 L 35 8 L 50 22 L 65 8 L 80 22 L 95 8" fill="none" stroke="#64748B" stroke-width="1.5"/></svg>`
+  },
+  {
+    id: "schema-light-sofit",
+    name: "Софит / Прожектор",
+    code: "LGT-05",
+    category: "schema_light",
+    price: 4000,
+    width: 60,
+    height: 60,
+    caption: "Софит",
+    svgMarkup: `<svg viewBox="0 0 60 60" class="w-full h-full"><polygon points="20,12 40,12 48,32 12,32" fill="#FFF7ED" stroke="#F97316" stroke-width="2.5"/><polygon points="12,32 48,32 55,50 5,50" fill="#FFEDD5" opacity="0.6" stroke="#FB923C" stroke-width="1.5" stroke-dasharray="3,2"/><circle cx="30" cy="12" r="4" fill="#C2410C"/></svg>`
+  },
+  {
+    id: "schema-light-smoke",
+    name: "Генератор дыма",
+    code: "LGT-06",
+    category: "schema_light",
+    price: 7000,
+    width: 65,
+    height: 65,
+    caption: "Дым-машина",
+    svgMarkup: `<svg viewBox="0 0 65 65" class="w-full h-full"><rect x="10" y="24" width="45" height="30" rx="4" fill="#F1F5F9" stroke="#475569" stroke-width="2"/><circle cx="20" cy="39" r="5" fill="#94A3B8"/><path d="M 40 22 C 38 14, 48 10, 44 4 C 52 8, 56 16, 50 22 Z" fill="#E2E8F0" stroke="#64748B" stroke-width="1.5"/></svg>`
+  },
+
+  // 7. Электрика (Electricity)
+  {
+    id: "schema-socket",
+    name: "Розетка",
+    code: "EL-01",
+    category: "schema_electricity",
+    price: 500,
+    width: 55,
+    height: 55,
+    caption: "Розетка",
+    svgMarkup: `<svg viewBox="0 0 55 55" class="w-full h-full"><circle cx="27.5" cy="27.5" r="18" fill="#FEF2F2" stroke="#EF4444" stroke-width="2.5"/><circle cx="21" cy="27.5" r="3" fill="#EF4444"/><circle cx="34" cy="27.5" r="3" fill="#EF4444"/></svg>`
+  },
+  {
+    id: "schema-split",
+    name: "Сплит",
+    code: "EL-02",
+    category: "schema_electricity",
+    price: 15000,
+    width: 55,
+    height: 55,
+    caption: "Сплит",
+    svgMarkup: `<svg viewBox="0 0 55 55" class="w-full h-full"><g stroke="#2563EB" stroke-width="2" stroke-linecap="round"><line x1="27.5" y1="6" x2="27.5" y2="48"/><line x1="6.5" y1="27.5" x2="48.5" y2="27.5"/><line x1="12.5" y1="12.5" x2="42.5" y2="42.5"/><line x1="12.5" y1="42.5" x2="42.5" y2="12.5"/></g></svg>`
+  },
+
+  // 8. Дорожки (Pathways)
+  {
+    id: "schema-pathway-straight",
+    name: "Дорожка (Прямая)",
+    code: "PATH-01",
+    category: "schema_pathways",
+    price: 2000,
+    width: 100,
+    height: 40,
+    caption: "Дорожка",
+    svgMarkup: `<svg viewBox="0 0 100 40" class="w-full h-full"><line x1="5" y1="12" x2="95" y2="12" stroke="#475569" stroke-width="2.5"/><line x1="5" y1="28" x2="95" y2="28" stroke="#475569" stroke-width="2.5"/></svg>`
+  },
+  {
+    id: "schema-pathway-curved",
+    name: "Дорожка (Изогнутая)",
+    code: "PATH-02",
+    category: "schema_pathways",
+    price: 2500,
+    width: 80,
+    height: 75,
+    caption: "Дорожка",
+    svgMarkup: `<svg viewBox="0 0 80 75" class="w-full h-full"><path d="M 10 60 Q 10 15 65 15" fill="none" stroke="#475569" stroke-width="2.5"/><path d="M 22 60 Q 22 27 65 27" fill="none" stroke="#475569" stroke-width="2.5"/></svg>`
+  },
+
+  // 9. Фигуры (Shapes)
+  {
+    id: "schema-shape-star",
+    name: "Звезда",
+    code: "SHP-01",
+    category: "schema_shapes",
+    price: 1000,
+    width: 60,
+    height: 60,
+    caption: "",
+    svgMarkup: `<svg viewBox="0 0 60 60" class="w-full h-full"><polygon points="30,5 37.5,20 54,22.5 42,34.5 45,51 30,43 15,51 18,34.5 6,22.5 22.5,20" fill="#F8FAFC" stroke="#475569" stroke-width="2.5" stroke-linejoin="round"/></svg>`
+  },
+  {
+    id: "schema-shape-hexagon",
+    name: "Шестиугольник",
+    code: "SHP-02",
+    category: "schema_shapes",
+    price: 1000,
+    width: 60,
+    height: 60,
+    caption: "",
+    svgMarkup: `<svg viewBox="0 0 60 60" class="w-full h-full"><polygon points="30,6 52,18 52,42 30,54 8,42 8,18" fill="#F8FAFC" stroke="#475569" stroke-width="2.5" stroke-linejoin="round"/></svg>`
+  },
+  {
+    id: "schema-shape-circle",
+    name: "Круг",
+    code: "SHP-03",
+    category: "schema_shapes",
+    price: 1000,
+    width: 60,
+    height: 60,
+    caption: "",
+    svgMarkup: `<svg viewBox="0 0 60 60" class="w-full h-full"><circle cx="30" cy="30" r="24" fill="#F8FAFC" stroke="#475569" stroke-width="2.5"/></svg>`
+  },
+  {
+    id: "schema-shape-square",
+    name: "Квадрат",
+    code: "SHP-04",
+    category: "schema_shapes",
+    price: 1000,
+    width: 60,
+    height: 60,
+    caption: "",
+    svgMarkup: `<svg viewBox="0 0 60 60" class="w-full h-full"><rect x="8" y="8" width="44" height="44" rx="2" fill="#F8FAFC" stroke="#475569" stroke-width="2.5"/></svg>`
+  },
+  {
+    id: "schema-shape-triangle",
+    name: "Треугольник",
+    code: "SHP-05",
+    category: "schema_shapes",
+    price: 1000,
+    width: 60,
+    height: 60,
+    caption: "",
+    svgMarkup: `<svg viewBox="0 0 60 60" class="w-full h-full"><polygon points="30,8 52,50 8,50" fill="#F8FAFC" stroke="#475569" stroke-width="2.5" stroke-linejoin="round"/></svg>`
+  },
+  {
+    id: "schema-shape-arrow",
+    name: "Стрелка",
+    code: "SHP-06",
+    category: "schema_shapes",
+    price: 500,
+    width: 80,
+    height: 40,
+    caption: "",
+    svgMarkup: `<svg viewBox="0 0 80 40" class="w-full h-full"><line x1="8" y1="20" x2="68" y2="20" stroke="#475569" stroke-width="3" stroke-linecap="round"/><polygon points="68,20 54,12 56,20 54,28" fill="#475569"/></svg>`
+  },
+  {
+    id: "schema-shape-line",
+    name: "Прямая линия",
+    code: "SHP-07",
+    category: "schema_shapes",
+    price: 500,
+    width: 80,
+    height: 30,
+    caption: "",
+    svgMarkup: `<svg viewBox="0 0 80 30" class="w-full h-full"><line x1="6" y1="15" x2="74" y2="15" stroke="#475569" stroke-width="3" stroke-linecap="round"/></svg>`
+  },
+  {
+    id: "schema-shape-measurement",
+    name: "Размерный замер",
+    code: "MEAS-01",
+    category: "schema_shapes",
+    price: 0,
+    width: 160,
+    height: 30,
+    caption: "250 см",
+    svgMarkup: `<svg viewBox="0 0 160 30" class="w-full h-full"><line x1="4" y1="4" x2="4" y2="26" stroke="#8C52D0" stroke-width="2.5" stroke-linecap="round"/><line x1="156" y1="4" x2="156" y2="26" stroke="#8C52D0" stroke-width="2.5" stroke-linecap="round"/><line x1="4" y1="15" x2="156" y2="15" stroke="#8C52D0" stroke-width="2.5"/><polygon points="4,15 14,10 14,20" fill="#8C52D0"/><polygon points="156,15 146,10 146,20" fill="#8C52D0"/><rect x="55" y="5" width="50" height="20" rx="10" fill="#FFFFFF" stroke="#8C52D0" stroke-width="1.5"/><text x="80" y="19" font-size="10" font-weight="bold" fill="#8C52D0" text-anchor="middle">250 см</text></svg>`
+  },
+
+  // 10. Вход/Выход (Entrance/Exit)
+  {
+    id: "schema-entrance",
+    name: "Вход",
+    code: "INOUT-01",
+    category: "schema_entrance_exit",
+    price: 500,
+    width: 90,
+    height: 45,
+    caption: "Вход",
+    svgMarkup: `<svg viewBox="0 0 90 45" class="w-full h-full"><rect x="4" y="4" width="82" height="37" rx="4" fill="#F8FAFC" stroke="#475569" stroke-width="2"/><rect x="60" y="12" width="20" height="20" rx="3" fill="none" stroke="#475569" stroke-width="1.5"/><path d="M 77 15 L 67 25 M 67 25 H 73 M 67 25 V 19" fill="none" stroke="#475569" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+  },
+  {
+    id: "schema-exit",
+    name: "Выход",
+    code: "INOUT-02",
+    category: "schema_entrance_exit",
+    price: 500,
+    width: 90,
+    height: 45,
+    caption: "Выход",
+    svgMarkup: `<svg viewBox="0 0 90 45" class="w-full h-full"><rect x="4" y="4" width="82" height="37" rx="4" fill="#F8FAFC" stroke="#475569" stroke-width="2"/><rect x="60" y="12" width="20" height="20" rx="3" fill="none" stroke="#475569" stroke-width="1.5"/><path d="M 67 25 L 77 15 M 77 15 H 71 M 77 15 V 21" fill="none" stroke="#475569" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+  }
+];
 
 // Simple customized items for categories not extensively in EditorLibraryData
 const CUSTOM_LIBRARY_ITEMS: LibraryItem[] = [
@@ -498,26 +1045,37 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
   // Core Scenes for the 2D collage workspace
   const [scenes, setScenes] = useState<EditorScene[]>(() => {
     const proj = projects.find(p => p.id === (initialProjectId || projects[0]?.id || ''));
-    if (proj?.scenesData && proj.scenesData.length > 0) {
-      return proj.scenesData;
-    }
-    return [
-      {
-        id: 'scene-1',
-        name: 'Визуализация 1',
+    let baseScenes = (proj?.scenesData && proj.scenesData.length > 0)
+      ? [...proj.scenesData]
+      : [
+          {
+            id: 'scene-1',
+            name: 'Визуализация 1',
+            elements: [],
+            backdropImage: '',
+            backdropColor: '#F3F4F6',
+            backdropType: 'color'
+          }
+        ];
+    if (!baseScenes.some(s => s.id === 'floorplan')) {
+      baseScenes.push({
+        id: 'floorplan',
+        name: 'Схема расстановки',
         elements: [],
         backdropImage: '',
         backdropColor: '#F3F4F6',
         backdropType: 'color'
-      }
-    ];
+      });
+    }
+    return baseScenes;
   });
 
   const activeSceneIndex = scenes.findIndex(s => s.id === activeWorkspaceTab);
-  const activeScene = activeSceneIndex !== -1 ? scenes[activeSceneIndex] : (scenes[0] || { id: 'scene-1', name: 'Визуализация 1', elements: [], backdropImage: '', backdropColor: '#F3F4F6', backdropType: 'color' });
+  const activeScene = activeSceneIndex !== -1 ? scenes[activeSceneIndex] : (scenes.find(s => s.id === 'floorplan') || scenes[0] || { id: 'scene-1', name: 'Визуализация 1', elements: [], backdropImage: '', backdropColor: '#F3F4F6', backdropType: 'color' });
 
   const handleAddNewScene = () => {
-    const newSceneNum = scenes.length + 1;
+    const vizScenes = scenes.filter(s => s.id !== 'floorplan');
+    const newSceneNum = vizScenes.length + 1;
     const newSceneId = `scene-${Date.now()}`;
     const newScene: EditorScene = {
       id: newSceneId,
@@ -527,7 +1085,13 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
       backdropColor: '#F3F4F6',
       backdropType: 'color'
     };
-    setScenes(prev => [...prev, newScene]);
+    setScenes(prev => {
+      const floorplanScene = prev.find(s => s.id === 'floorplan');
+      const otherScenes = prev.filter(s => s.id !== 'floorplan');
+      return floorplanScene
+        ? [...otherScenes, newScene, floorplanScene]
+        : [...otherScenes, newScene];
+    });
     setActiveWorkspaceTab(newSceneId);
     setIsVisualizationsDropdownOpen(false);
     showToast('Новая визуализация', `Создана Виз. ${newSceneNum}`, 'info');
@@ -550,22 +1114,30 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
       setIsRightToolbarCollapsed(false);
       const proj = projects.find(p => p.id === activeProjectId);
       if (proj) {
-        if (proj.scenesData && proj.scenesData.length > 0) {
-          setScenes(proj.scenesData);
-          setActiveWorkspaceTab(prev => (proj.scenesData && proj.scenesData.some(s => s.id === prev)) ? prev : proj.scenesData[0].id);
-        } else {
-          setScenes([
-            {
-              id: 'scene-1',
-              name: 'Визуализация 1',
-              elements: [],
-              backdropImage: '',
-              backdropColor: '#F3F4F6',
-              backdropType: 'color'
-            }
-          ]);
-          setActiveWorkspaceTab('scene-1');
+        let loadedScenes = (proj.scenesData && proj.scenesData.length > 0)
+          ? [...proj.scenesData]
+          : [
+              {
+                id: 'scene-1',
+                name: 'Визуализация 1',
+                elements: [],
+                backdropImage: '',
+                backdropColor: '#F3F4F6',
+                backdropType: 'color'
+              }
+            ];
+        if (!loadedScenes.some(s => s.id === 'floorplan')) {
+          loadedScenes.push({
+            id: 'floorplan',
+            name: 'Схема расстановки',
+            elements: [],
+            backdropImage: '',
+            backdropColor: '#F3F4F6',
+            backdropType: 'color'
+          });
         }
+        setScenes(loadedScenes);
+        setActiveWorkspaceTab(prev => (loadedScenes.some(s => s.id === prev)) ? prev : loadedScenes[0].id);
 
         if (proj.floorPlanData) {
           setFloorPlanElements(proj.floorPlanData);
@@ -614,11 +1186,26 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
   // Library Category filtering
   const [selectedCategory, setSelectedCategory] = useState<string>('arches');
+  const [editingCaptionId, setEditingCaptionId] = useState<string | null>(null);
+  const [editingCaptionText, setEditingCaptionText] = useState<string>('');
   const [libSearch, setLibSearch] = useState<string>('');
   const [favoritesList, setFavoritesList] = useState<string[]>(['text-1', 'arch-1']);
   const [showCategoryIconManager, setShowCategoryIconManager] = useState<boolean>(false);
   const [itemToPreview, setItemToPreview] = useState<LibraryItem | null>(null);
   const categoryScrollRef = useRef<HTMLDivElement>(null);
+
+  // Auto-sync selected category when switching between visualization and schema tabs
+  useEffect(() => {
+    if (activeWorkspaceTab === 'floorplan') {
+      if (!SCHEMA_CATALOG_CATEGORIES.some(c => c.id === selectedCategory) && selectedCategory !== 'favorites') {
+        setSelectedCategory(SCHEMA_CATALOG_CATEGORIES[0]?.id || 'schema_arch');
+      }
+    } else {
+      if (SCHEMA_CATALOG_CATEGORIES.some(c => c.id === selectedCategory)) {
+        setSelectedCategory('arches');
+      }
+    }
+  }, [activeWorkspaceTab]);
 
   // Canvas Dimension Configurations
   const [canvasWidthMm, setCanvasWidthMm] = useState<number>(6500);
@@ -628,6 +1215,17 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
   const [humanPos, setHumanPos] = useState<{ x: number; y: number } | null>(null);
   const [isDraggingHuman, setIsDraggingHuman] = useState<boolean>(false);
   const [activeUnit, setActiveUnit] = useState<'mm' | 'cm' | 'm'>('cm');
+
+  // Measurement Tool States
+  const [isDrawingMeasurement, setIsDrawingMeasurement] = useState<boolean>(false);
+  const [measureStartPos, setMeasureStartPos] = useState<{ x: number; y: number } | null>(null);
+  const [measureCurrentPos, setMeasureCurrentPos] = useState<{ x: number; y: number } | null>(null);
+  const [isMeasuring, setIsMeasuring] = useState<boolean>(false);
+  const [editingMeasurementId, setEditingMeasurementId] = useState<string | null>(null);
+  const [editingMeasurementValue, setEditingMeasurementValue] = useState<string>('');
+
+  // Dynamic scaling state for canvas auto-fit
+  const [canvasScale, setCanvasScale] = useState<number>(1);
 
   // Zooming & Panning states
   const [zoomScale, setZoomScale] = useState<number>(1);
@@ -659,8 +1257,81 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
   const viewportRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Dynamic scaling state for canvas auto-fit
-  const [canvasScale, setCanvasScale] = useState<number>(1);
+  // Point-to-point drawing listener for measurement tool
+  useEffect(() => {
+    if (!isMeasuring) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (canvasContainerRef.current) {
+        const rect = canvasContainerRef.current.getBoundingClientRect();
+        const currentScale = canvasScale * zoomScale;
+        const currentX = (e.clientX - rect.left) / currentScale;
+        const currentY = (e.clientY - rect.top) / currentScale;
+        setMeasureCurrentPos({ x: currentX, y: currentY });
+      }
+    };
+
+    const handleMouseUp = (e: MouseEvent) => {
+      if (measureStartPos && canvasContainerRef.current) {
+        const rect = canvasContainerRef.current.getBoundingClientRect();
+        const currentScale = canvasScale * zoomScale;
+        const endX = (e.clientX - rect.left) / currentScale;
+        const endY = (e.clientY - rect.top) / currentScale;
+
+        const dx = endX - measureStartPos.x;
+        const dy = endY - measureStartPos.y;
+        const distancePx = Math.hypot(dx, dy);
+
+        if (distancePx > 10) {
+          const valCm = Math.round(distancePx);
+          const valStr = activeUnit === 'm' ? `${(valCm / 100).toFixed(1)} м` : `${valCm} см`;
+          const len = Math.max(60, Math.round(distancePx));
+          const angle = Math.round((Math.atan2(dy, dx) * 180) / Math.PI);
+
+          const newElem: CanvasElement = {
+            id: `measurement-${Date.now()}`,
+            name: `Замер (${valStr})`,
+            type: 'measurement',
+            x: Math.round(measureStartPos.x),
+            y: Math.round(measureStartPos.y - 15),
+            w: Math.round(len),
+            h: 30,
+            rotation: angle,
+            exposure: 0,
+            hue: 0,
+            temp: 0,
+            saturate: 100,
+            opacity: 100,
+            price: 0,
+            comment: '',
+            code: 'MEAS-01',
+            caption: valStr,
+            measurementValue: valStr,
+            isLocked: false,
+            isVisible: true,
+            isFlippedH: false,
+            isFlippedV: false,
+            svgMarkup: ''
+          };
+
+          updateActiveSceneElements(prev => [...prev, newElem]);
+          setSelectedId(newElem.id);
+          showToast('Замер нанесен', `Длина: ${valStr}. Кликните в центр для изменения.`, 'success');
+        }
+      }
+      setIsMeasuring(false);
+      setMeasureStartPos(null);
+      setMeasureCurrentPos(null);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isMeasuring, measureStartPos, canvasScale, zoomScale, activeUnit]);
 
   useEffect(() => {
     let rafId: number;
@@ -833,8 +1504,14 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
   // Library listing helper
   const getCategoryItems = (): LibraryItem[] => {
     let baseList: LibraryItem[] = [];
-    
-    if (selectedCategory === 'favorites') {
+
+    if (activeWorkspaceTab === 'floorplan') {
+      if (selectedCategory === 'favorites') {
+        baseList = SCHEMA_LIBRARY_ITEMS.filter(item => favoritesList.includes(item.id));
+      } else {
+        baseList = SCHEMA_LIBRARY_ITEMS.filter(i => i.category === selectedCategory);
+      }
+    } else if (selectedCategory === 'favorites') {
       baseList = [
         ...CUSTOM_LIBRARY_ITEMS,
         ...(CATALOG_ASSETS.arches || []),
@@ -914,12 +1591,15 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
   const handleAddElementToScene = (item: LibraryItem) => {
     const defaultW = item.width;
     const defaultH = item.height;
+    const isMeasurementItem = item.id === 'schema-shape-measurement' || item.code === 'MEAS-01';
     
     // Spawn in Center of Canvas Workspace
     const newEl: CanvasElement = {
       id: `${item.id}-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       name: item.name,
-      type: item.category,
+      type: isMeasurementItem ? 'measurement' : item.category,
+      caption: item.caption,
+      measurementValue: isMeasurementItem ? (item.caption || '250 см') : undefined,
       x: 180,
       y: 100,
       w: defaultW,
@@ -948,11 +1628,14 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
   const handleAddElementAtPosition = (item: LibraryItem, posX: number, posY: number) => {
     const defaultW = item.width;
     const defaultH = item.height;
+    const isMeasurementItem = item.id === 'schema-shape-measurement' || item.code === 'MEAS-01';
     
     const newEl: CanvasElement = {
       id: `${item.id}-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       name: item.name,
-      type: item.category,
+      type: isMeasurementItem ? 'measurement' : item.category,
+      caption: item.caption,
+      measurementValue: isMeasurementItem ? (item.caption || '250 см') : undefined,
       x: posX,
       y: posY,
       w: defaultW,
@@ -1734,7 +2417,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
               
               {/* VERTICAL CATEGORY BAR */}
               <div className="flex flex-col gap-1 p-1.5 bg-zinc-100/90 dark:bg-zinc-900/80 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 shrink-0 overflow-y-auto overflow-x-hidden max-h-full scrollbar-none shadow-2xs items-center w-[72px] sm:w-[76px]">
-                {NEW_CATALOG_CATEGORIES.map((cat) => {
+                {(activeWorkspaceTab === 'floorplan' ? SCHEMA_CATALOG_CATEGORIES : NEW_CATALOG_CATEGORIES).map((cat) => {
                   const isSelected = selectedCategory === cat.id;
                   return (
                     <button
@@ -2227,118 +2910,109 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
           {/* MAIN CANVAS AREA / SEATING ARRANGEMENT VIEW */}
           <div className="flex-1 min-h-0 min-w-0 relative h-full flex flex-col">
-            {activeWorkspaceTab === 'floorplan' ? (
-              <div className="glass-panel rounded-3xl overflow-hidden h-full min-h-0 min-w-0">
-                <FloorPlanSchema
-                  initialElements={floorPlanElements}
-                  onSave={setFloorPlanElements}
-                  showToast={showToast}
-                />
-              </div>
-            ) : (
-              // COLLAGE CONSTRUCTOR STAGE WITH AUTO-SCALING VIEWPORT
-              <div
-                ref={viewportRef}
-                onMouseDown={handleViewportMouseDown}
-                className={`relative bg-zinc-950/60 dark:bg-black/40 rounded-3xl overflow-hidden flex items-center justify-center flex-1 h-[380px] sm:h-full min-h-[380px] sm:min-h-0 min-w-0 w-full border border-zinc-200/20 dark:border-zinc-800/20 select-none ${isPanning ? 'cursor-grabbing' : 'cursor-grab'}`}
-              >
-                {/* Floating Top-Left Scene Tabs Overlay (Matches Reference Screenshot 2 - Touch Friendly) */}
-                <div className="absolute top-1.5 left-1.5 z-20 flex items-center gap-1 bg-white/80 dark:bg-black/50 backdrop-blur-md p-1 rounded-full border border-white/90 dark:border-zinc-800 shadow-md">
+            {/* COLLAGE CONSTRUCTOR STAGE WITH AUTO-SCALING VIEWPORT */}
+            <div
+              ref={viewportRef}
+              onMouseDown={handleViewportMouseDown}
+              className={`relative bg-zinc-950/60 dark:bg-black/40 rounded-3xl overflow-hidden flex items-center justify-center flex-1 h-[380px] sm:h-full min-h-[380px] sm:min-h-0 min-w-0 w-full border border-zinc-200/20 dark:border-zinc-800/20 select-none ${isPanning ? 'cursor-grabbing' : 'cursor-grab'}`}
+            >
+              {/* Floating Top-Left Scene Tabs Overlay (Matches Reference Screenshot 2 - Touch Friendly) */}
+              <div className="absolute top-1.5 left-1.5 z-20 flex items-center gap-1 bg-white/80 dark:bg-black/50 backdrop-blur-md p-1 rounded-full border border-white/90 dark:border-zinc-800 shadow-md">
+                <button
+                  onClick={handleAddNewScene}
+                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white dark:bg-zinc-800 hover:bg-zinc-100 flex items-center justify-center text-zinc-700 dark:text-zinc-200 transition-all cursor-pointer shadow-xs active:scale-95"
+                  title="Добавить визуализацию"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+
+                <div className="relative">
                   <button
-                    onClick={handleAddNewScene}
-                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white dark:bg-zinc-800 hover:bg-zinc-100 flex items-center justify-center text-zinc-700 dark:text-zinc-200 transition-all cursor-pointer shadow-xs active:scale-95"
-                    title="Добавить визуализацию"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                  </button>
-
-                  <div className="relative">
-                    <button
-                      onClick={() => setIsVisualizationsDropdownOpen(!isVisualizationsDropdownOpen)}
-                      className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                        activeWorkspaceTab !== 'floorplan'
-                          ? 'bg-white text-zinc-900 shadow-xs border border-zinc-200/80'
-                          : 'text-zinc-600 dark:text-zinc-300 hover:text-zinc-900'
-                      }`}
-                    >
-                      <span>
-                        {activeWorkspaceTab === 'floorplan'
-                          ? 'Визуализация'
-                          : (activeScene?.name.startsWith('Визуализация')
-                              ? activeScene.name.replace('Визуализация', 'Виз.')
-                              : (activeScene?.name || 'Виз. 1'))}
-                      </span>
-                      <ChevronDown className={`w-3.5 h-3.5 text-zinc-500 transition-transform duration-200 ${isVisualizationsDropdownOpen ? 'rotate-180' : ''}`} />
-                    </button>
-
-                    <AnimatePresence>
-                      {isVisualizationsDropdownOpen && (
-                        <>
-                          <div className="fixed inset-0 z-[80]" onClick={() => setIsVisualizationsDropdownOpen(false)} />
-                          <motion.div
-                            initial={{ opacity: 0, y: 4, scale: 0.95 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: 4, scale: 0.95 }}
-                            transition={{ duration: 0.15 }}
-                            className="absolute left-0 top-full mt-1.5 w-52 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl border border-zinc-200/80 dark:border-zinc-700/80 rounded-2xl shadow-xl p-1.5 z-[90] overflow-hidden"
-                          >
-                            <div className="text-[10px] uppercase font-extrabold tracking-wider text-zinc-400 px-2.5 py-1">
-                              Созданные визуализации
-                            </div>
-                            {scenes.map((scene) => {
-                              const isSelected = activeWorkspaceTab === scene.id;
-                              const displayName = scene.name.startsWith('Визуализация') ? scene.name.replace('Визуализация', 'Виз.') : scene.name;
-                              return (
-                                <button
-                                  key={scene.id}
-                                  onClick={() => {
-                                    setActiveWorkspaceTab(scene.id);
-                                    setIsVisualizationsDropdownOpen(false);
-                                  }}
-                                  className={`w-full text-left px-2.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center justify-between cursor-pointer ${
-                                    isSelected
-                                      ? 'bg-[var(--lavDeep)] text-white shadow-xs'
-                                      : 'text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <Layout className="w-3.5 h-3.5 opacity-70" />
-                                    <span>{displayName}</span>
-                                  </div>
-                                  {isSelected && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
-                                </button>
-                              );
-                            })}
-
-                            <div className="h-px bg-zinc-200/80 dark:bg-zinc-800 my-1" />
-
-                            <button
-                              onClick={handleAddNewScene}
-                              className="w-full text-left px-2.5 py-2 rounded-xl text-xs font-semibold text-[var(--lavDeep)] dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 transition-all flex items-center gap-2 cursor-pointer"
-                            >
-                              <Plus className="w-3.5 h-3.5" />
-                              <span>Новая визуализация</span>
-                            </button>
-                          </motion.div>
-                        </>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      setActiveWorkspaceTab('floorplan');
-                      setSelectedId(null);
-                    }}
-                    className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                      activeWorkspaceTab === 'floorplan'
-                        ? 'bg-[var(--lavDeep)] text-white shadow-xs'
-                        : 'bg-[#A888DB]/80 text-white hover:bg-[#A888DB]'
+                    onClick={() => setIsVisualizationsDropdownOpen(!isVisualizationsDropdownOpen)}
+                    className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      activeWorkspaceTab !== 'floorplan'
+                        ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-md'
+                        : 'bg-white/80 dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-200 hover:bg-white dark:hover:bg-zinc-700'
                     }`}
                   >
-                    <span>Схема</span>
+                    <span>
+                      {activeWorkspaceTab === 'floorplan'
+                        ? 'Визуализации'
+                        : (activeScene?.name.startsWith('Визуализация')
+                            ? activeScene.name.replace('Визуализация', 'Виз.')
+                            : (activeScene?.name || 'Виз. 1'))}
+                    </span>
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isVisualizationsDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
+
+                  <AnimatePresence>
+                    {isVisualizationsDropdownOpen && (
+                      <>
+                        <div className="fixed inset-0 z-[80]" onClick={() => setIsVisualizationsDropdownOpen(false)} />
+                        <motion.div
+                          initial={{ opacity: 0, y: 4, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 4, scale: 0.95 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute left-0 top-full mt-1.5 w-52 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl border border-zinc-200/80 dark:border-zinc-700/80 rounded-2xl shadow-xl p-1.5 z-[90] overflow-hidden"
+                        >
+                          <div className="text-[10px] uppercase font-extrabold tracking-wider text-zinc-400 px-2.5 py-1">
+                            Созданные визуализации
+                          </div>
+                          {scenes.filter(s => s.id !== 'floorplan').map((scene) => {
+                            const isSelected = activeWorkspaceTab === scene.id;
+                            const displayName = scene.name.startsWith('Визуализация') ? scene.name.replace('Визуализация', 'Виз.') : scene.name;
+                            return (
+                              <button
+                                key={scene.id}
+                                onClick={() => {
+                                  setActiveWorkspaceTab(scene.id);
+                                  setIsVisualizationsDropdownOpen(false);
+                                }}
+                                className={`w-full text-left px-2.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center justify-between cursor-pointer ${
+                                  isSelected
+                                    ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-xs'
+                                    : 'text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <Layout className="w-3.5 h-3.5 opacity-70" />
+                                  <span>{displayName}</span>
+                                </div>
+                                {isSelected && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
+                              </button>
+                            );
+                          })}
+
+                          <div className="h-px bg-zinc-200/80 dark:bg-zinc-800 my-1" />
+
+                          <button
+                            onClick={handleAddNewScene}
+                            className="w-full text-left px-2.5 py-2 rounded-xl text-xs font-semibold text-[#8C52D0] dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 transition-all flex items-center gap-2 cursor-pointer"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Новая визуализация</span>
+                          </button>
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>
                 </div>
+
+                <button
+                  onClick={() => {
+                    setActiveWorkspaceTab('floorplan');
+                    setSelectedId(null);
+                  }}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    activeWorkspaceTab === 'floorplan'
+                      ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-md'
+                      : 'bg-white/80 dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-200 hover:bg-white dark:hover:bg-zinc-700 shadow-xs'
+                  }`}
+                >
+                  <span>Схема</span>
+                </button>
+              </div>
 
                 {/* FLOATING TOP UNDO/REDO PILL & RIGHT SIDEBAR TOGGLE */}
                 <div className="absolute top-1.5 right-1.5 sm:right-2 z-30 pointer-events-auto flex items-center gap-1.5">
@@ -2731,7 +3405,91 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                       )}
                     </div>
 
-                    {/* 6. Корзина (Удалить) */}
+                    {/* 6. Замеры (Измерительные стрелки) */}
+                    <div className="relative">
+                      <button
+                        onClick={() => {
+                          setIsDrawingMeasurement(prev => !prev);
+                          setActiveToolPopover(null);
+                          setActiveFilterTool(null);
+                          if (!isDrawingMeasurement) {
+                            showToast('Инструмент Замеры', 'Зажмите мышью на холсте и потяните от точки к точке', 'info');
+                          }
+                        }}
+                        className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
+                          isDrawingMeasurement
+                            ? 'bg-[var(--lavDeep)] text-white shadow-md ring-2 ring-purple-300'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                        }`}
+                        title="Замеры (Нанесение размерной стрелки от точки к точке)"
+                      >
+                        <Ruler className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
+                      </button>
+
+                      {/* Popover options for Measurement */}
+                      {isDrawingMeasurement && (
+                        <div
+                          className="absolute left-10 sm:left-11 top-0 z-50 bg-white/90 dark:bg-zinc-900/90 text-zinc-900 dark:text-zinc-100 border border-purple-200/80 dark:border-zinc-700/80 p-2.5 rounded-2xl shadow-xl shadow-purple-950/10 flex flex-col gap-1.5 min-w-[195px] animate-fadeIn select-none backdrop-blur-md"
+                        >
+                          <div className="flex items-center justify-between px-1 pb-1 border-b border-purple-200/50 dark:border-zinc-800 text-[11px] font-bold text-[#5B3E88] dark:text-purple-300">
+                            <span className="flex items-center gap-1">
+                              <Ruler className="w-3.5 h-3.5" />
+                              Замеры
+                            </span>
+                            <button
+                              onClick={() => setIsDrawingMeasurement(false)}
+                              className="p-1 rounded-full hover:bg-purple-500/20 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
+                              title="Закрыть"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+
+                          <p className="text-[10px] text-zinc-600 dark:text-zinc-300 px-1 leading-snug">
+                            Зажмите мышью на холсте и потяните. Автоматически нарисуются стрелочки и редактируемый размер в центре.
+                          </p>
+
+                          <button
+                            onClick={() => {
+                              const newElem: CanvasElement = {
+                                id: `measurement-${Date.now()}`,
+                                name: `Замер (250 см)`,
+                                type: 'measurement',
+                                x: Math.round(canvasWidthMm / 20 - 100),
+                                y: Math.round(canvasHeightMm / 20 - 15),
+                                w: 200,
+                                h: 30,
+                                rotation: 0,
+                                exposure: 0,
+                                hue: 0,
+                                temp: 0,
+                                saturate: 100,
+                                opacity: 100,
+                                price: 0,
+                                comment: '',
+                                code: 'MEAS-01',
+                                caption: '250 см',
+                                measurementValue: '250 см',
+                                isLocked: false,
+                                isVisible: true,
+                                isFlippedH: false,
+                                isFlippedV: false,
+                                svgMarkup: ''
+                              };
+                              updateActiveSceneElements(prev => [...prev, newElem]);
+                              setSelectedId(newElem.id);
+                              showToast('Замер создан', 'Кликните в центр замера для изменения значения', 'success');
+                            }}
+                            className="w-full px-2 py-1.5 rounded-xl text-xs font-semibold bg-purple-50 dark:bg-purple-900/40 text-[var(--lavDeep)] dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/60 flex items-center gap-1.5 cursor-pointer transition-colors"
+                          >
+                            <Plus className="w-3.5 h-3.5 shrink-0" />
+                            <span>Быстрый замер (250 см)</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 7. Корзина (Удалить) */}
                     <button
                       onClick={() => {
                         if (selectedIds.length > 0) {
@@ -3229,11 +3987,28 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                 <div className="absolute inset-0 flex items-center justify-center overflow-hidden pointer-events-none p-4">
                   <div
                     ref={canvasContainerRef}
-                    className={`relative bg-white shadow-2xl rounded-2xl overflow-hidden shrink-0 select-none pointer-events-auto ${isPanning ? '' : 'transition-transform duration-200'}`}
+                    className={`relative bg-white shadow-2xl rounded-2xl overflow-hidden shrink-0 select-none pointer-events-auto ${
+                      isDrawingMeasurement ? 'cursor-crosshair' : ''
+                    } ${isPanning ? '' : 'transition-transform duration-200'}`}
                     style={{
                       width: `${canvasWidthMm / 10}px`,
                       height: `${canvasHeightMm / 10}px`,
                       transform: `translate(${panX}px, ${panY}px) scale(${canvasScale * zoomScale})`,
+                    }}
+                    onMouseDown={(e) => {
+                      if (isDrawingMeasurement) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        if (canvasContainerRef.current) {
+                          const rect = canvasContainerRef.current.getBoundingClientRect();
+                          const currentScale = canvasScale * zoomScale;
+                          const startX = (e.clientX - rect.left) / currentScale;
+                          const startY = (e.clientY - rect.top) / currentScale;
+                          setMeasureStartPos({ x: startX, y: startY });
+                          setMeasureCurrentPos({ x: startX, y: startY });
+                          setIsMeasuring(true);
+                        }
+                      }
                     }}
                     onDragOver={(e) => {
                       e.preventDefault();
@@ -3303,6 +4078,46 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                     />
                   )}
                 </div>
+
+                {/* Live Drawing Measurement Overlay */}
+                {isMeasuring && measureStartPos && measureCurrentPos && (() => {
+                  const dx = measureCurrentPos.x - measureStartPos.x;
+                  const dy = measureCurrentPos.y - measureStartPos.y;
+                  const dist = Math.round(Math.hypot(dx, dy));
+                  const distStr = activeUnit === 'm' ? `${(dist / 100).toFixed(1)} м` : `${dist} см`;
+                  const midX = (measureStartPos.x + measureCurrentPos.x) / 2;
+                  const midY = (measureStartPos.y + measureCurrentPos.y) / 2;
+
+                  return (
+                    <svg className="absolute inset-0 w-full h-full pointer-events-none z-40 overflow-visible">
+                      <line
+                        x1={measureStartPos.x}
+                        y1={measureStartPos.y}
+                        x2={measureCurrentPos.x}
+                        y2={measureCurrentPos.y}
+                        stroke="#8C52D0"
+                        strokeWidth="3"
+                        strokeDasharray="4,2"
+                      />
+                      <circle cx={measureStartPos.x} cy={measureStartPos.y} r="5" fill="#8C52D0" />
+                      <circle cx={measureCurrentPos.x} cy={measureCurrentPos.y} r="5" fill="#8C52D0" />
+                      
+                      <foreignObject
+                        x={midX - 50}
+                        y={midY - 15}
+                        width="100"
+                        height="30"
+                        className="overflow-visible"
+                      >
+                        <div className="flex items-center justify-center w-full h-full">
+                          <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white text-xs font-bold shadow-lg whitespace-nowrap animate-pulse">
+                            {distStr}
+                          </span>
+                        </div>
+                      </foreignObject>
+                    </svg>
+                  );
+                })()}
 
                 {/* Draggable human metric silhouette scale reference (without transform controls) */}
                 {humanVisible && (() => {
@@ -3467,14 +4282,73 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         </svg>
                       )}
 
-                      {/* Image / SVG Graphics (Filters applied strictly to element graphic, preserving transparent background & UI controls) */}
+                      {/* Image / SVG Graphics */}
                       <div
                         className="w-full h-full relative pointer-events-none select-none"
                         style={{
                           filter: `brightness(${100 + el.exposure}%) saturate(${el.saturate}%) hue-rotate(${el.hue}deg) sepia(${el.temp > 0 ? el.temp * 0.4 : 0}%)${el.tintColor ? ` url(#element-tint-${el.id})` : ''}`
                         }}
                       >
-                        {el.customImage ? (
+                        {el.type === 'measurement' ? (
+                          <div className="w-full h-full relative flex items-center justify-center select-none pointer-events-auto">
+                            {/* SVG Dimension Line with Double-Ended Arrows and End Ticks */}
+                            <svg viewBox={`0 0 ${Math.max(40, el.w)} ${Math.max(20, el.h)}`} className="w-full h-full overflow-visible pointer-events-none">
+                              {/* End Ticks */}
+                              <line x1="3" y1="4" x2="3" y2="26" stroke="#8C52D0" strokeWidth="2.5" strokeLinecap="round" />
+                              <line x1={Math.max(30, el.w - 3)} y1="4" x2={Math.max(30, el.w - 3)} y2="26" stroke="#8C52D0" strokeWidth="2.5" strokeLinecap="round" />
+                              
+                              {/* Main Dimension Line */}
+                              <line x1="3" y1="15" x2={Math.max(30, el.w - 3)} y2="15" stroke="#8C52D0" strokeWidth="2.5" />
+                              
+                              {/* Left Arrow Head */}
+                              <polygon points="3,15 14,9 14,21" fill="#8C52D0" />
+                              
+                              {/* Right Arrow Head */}
+                              <polygon points={`${Math.max(30, el.w - 3)},15 ${Math.max(30, el.w - 14)},9 ${Math.max(30, el.w - 14)},21`} fill="#8C52D0" />
+                            </svg>
+
+                            {/* Centered Editable Value Badge */}
+                            <div
+                              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-auto cursor-text"
+                              onMouseDown={(e) => e.stopPropagation()}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {editingMeasurementId === el.id ? (
+                                <input
+                                  type="text"
+                                  autoFocus
+                                  value={editingMeasurementValue}
+                                  onChange={(e) => setEditingMeasurementValue(e.target.value)}
+                                  onBlur={() => {
+                                    const val = editingMeasurementValue.trim() || '0 см';
+                                    updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, measurementValue: val, caption: val } : item));
+                                    setEditingMeasurementId(null);
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      const val = editingMeasurementValue.trim() || '0 см';
+                                      updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, measurementValue: val, caption: val } : item));
+                                      setEditingMeasurementId(null);
+                                    }
+                                  }}
+                                  className="bg-white dark:bg-zinc-900 text-[#8C52D0] dark:text-purple-300 border-2 border-[#8C52D0] rounded-full px-2.5 py-0.5 text-xs font-extrabold text-center outline-none shadow-xl min-w-[75px]"
+                                />
+                              ) : (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingMeasurementId(el.id);
+                                    setEditingMeasurementValue(el.measurementValue || el.caption || `${el.w} см`);
+                                  }}
+                                  className="px-2.5 py-0.5 rounded-full bg-white dark:bg-zinc-900 text-[#8C52D0] dark:text-purple-300 border-2 border-[#8C52D0] shadow-md hover:bg-purple-50 dark:hover:bg-zinc-800 text-xs font-extrabold transition-all flex items-center gap-1 active:scale-95 whitespace-nowrap cursor-pointer"
+                                  title="Кликните для ввода нужного замера"
+                                >
+                                  <span>{el.measurementValue || el.caption || `${el.w} см`}</span>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ) : el.customImage ? (
                           <img
                             src={el.customImage}
                             alt={el.name}
@@ -3493,6 +4367,50 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                           />
                         )}
                       </div>
+
+                      {/* Editable Caption Label under element */}
+                      {el.type !== 'measurement' && (el.caption !== undefined && el.caption !== null) && (
+                        <div
+                          className="absolute top-[calc(100%+6px)] left-1/2 -translate-x-1/2 z-30 pointer-events-auto select-none group/caption cursor-text"
+                          style={{
+                            transform: `translateX(-50%) rotate(${-el.rotation}deg) scaleX(${el.isFlippedH ? -1 : 1}) scaleY(${el.isFlippedV ? -1 : 1})`
+                          }}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {editingCaptionId === el.id ? (
+                            <input
+                              type="text"
+                              autoFocus
+                              value={editingCaptionText}
+                              onChange={(e) => setEditingCaptionText(e.target.value)}
+                              onBlur={() => {
+                                updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, caption: editingCaptionText } : item));
+                                setEditingCaptionId(null);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, caption: editingCaptionText } : item));
+                                  setEditingCaptionId(null);
+                                }
+                              }}
+                              className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border border-[#8C52D0] rounded-lg px-2 py-0.5 text-[11px] font-bold text-center outline-none shadow-md min-w-[70px]"
+                            />
+                          ) : (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingCaptionId(el.id);
+                                setEditingCaptionText(el.caption || '');
+                              }}
+                              className="px-2.5 py-0.5 rounded-full bg-white/90 dark:bg-zinc-900/90 hover:bg-white dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 hover:border-[#8C52D0] dark:hover:border-purple-400 shadow-xs text-[11px] font-bold transition-all flex items-center gap-1 group-hover/caption:scale-105"
+                              title="Кликните для редактирования подписи"
+                            >
+                              <span>{el.caption || 'Подпись...'}</span>
+                            </button>
+                          )}
+                        </div>
+                      )}
 
                       {/* Dashed Outline for Group Member */}
                       {selectedIds.length > 1 && selectedIds.includes(el.id) && (
@@ -3985,9 +4903,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                 </div>
 
                 {/* FLOATING BOTTOM 2-TAB BUTTONS BAR & ANCHORED DRAWER */}
-                {activeWorkspaceTab !== 'floorplan' && (
-                  <>
-                    {/* SLIDE-UP DRAWER ANCHORED DIRECTLY TO BOTTOM CANVAS EDGE */}
+                <>
+                  {/* SLIDE-UP DRAWER ANCHORED DIRECTLY TO BOTTOM CANVAS EDGE */}
                     <AnimatePresence>
                       {mobileDrawerTab && (
                         <motion.div
@@ -4082,13 +4999,11 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                       </div>
                     )}
                   </>
-                )}
               </div>
-            )}
           </div>
 
           {/* BOTTOM PANELS IN LEFT COLUMN: DIMENSIONS/CONTROLS PANEL */}
-          {activeWorkspaceTab !== 'floorplan' && (() => {
+          {(() => {
             const selectedElem = activeScene.elements.find(el => el.id === selectedId);
             return (
               <div className="shrink-0 relative z-30 pt-0.5">
@@ -4132,6 +5047,23 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                             className="w-11 sm:w-14 text-center font-bold text-xs bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full px-1 py-0.5 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#5B3E88] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                           />
                         </div>
+                        {selectedElem && (
+                          <div className="flex items-center gap-1 pl-1.5 border-l border-zinc-200 dark:border-zinc-700">
+                            <span className="hidden sm:inline-block text-[11px] font-extrabold text-zinc-600 dark:text-zinc-300 whitespace-nowrap">
+                              Подпись:
+                            </span>
+                            <input
+                              type="text"
+                              placeholder="Подпись..."
+                              value={selectedElem.caption ?? ''}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, caption: val } : item));
+                              }}
+                              className="w-20 sm:w-28 text-center font-bold text-xs bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full px-2 py-0.5 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#8C52D0]"
+                            />
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <div className="flex items-center gap-1">
