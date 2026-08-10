@@ -759,12 +759,12 @@ export default function App() {
         }}
         aria-label="Навигация"
         title="Открыть меню навигации"
-        className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md hover:bg-white dark:hover:bg-zinc-700 border border-white/80 dark:border-zinc-700/80 text-[var(--ink)] transition-all cursor-pointer shadow-md"
+        className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-gradient-to-br from-[#8C52D0] to-[#582F89] hover:opacity-95 text-white transition-all cursor-pointer shadow-md border border-white/20 shrink-0"
       >
         {isMobileNavOpen ? (
-          <X className="w-4 h-4 text-[var(--lavDeep)] dark:text-purple-300 shrink-0" />
+          <X className="w-4.5 h-4.5 text-white stroke-[2.5] shrink-0" />
         ) : (
-          <Menu className="w-4 h-4 text-[var(--ink)] shrink-0" />
+          <Menu className="w-4.5 h-4.5 text-white stroke-[2.5] shrink-0" />
         )}
       </button>
 
@@ -813,6 +813,145 @@ export default function App() {
                   </button>
                 );
               })}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+
+  const renderNotificationsButton = () => (
+    <div className="relative">
+      <button
+        onClick={() => {
+          setIsNotificationsOpen(!isNotificationsOpen);
+          setIsHeaderCalendarOpen(false);
+        }}
+        aria-label="Уведомления"
+        title="Уведомления"
+        className="w-9 h-9 sm:w-10 sm:h-10 rounded-full glass-panel flex items-center justify-center text-[var(--ink)] hover:text-[var(--lavDeep)] hover:bg-white/90 dark:hover:bg-zinc-800 transition-all shadow-xs cursor-pointer relative"
+      >
+        <Bell className="w-4 h-4 text-[var(--ink)] dark:text-zinc-200" />
+        {unreadNotificationsCount > 0 && (
+          <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[var(--warn)] shadow-xs ring-2 ring-white dark:ring-zinc-900" />
+        )}
+      </button>
+
+      <AnimatePresence>
+        {isNotificationsOpen && (
+          <>
+            <div className="fixed inset-0 z-30" onClick={() => setIsNotificationsOpen(false)} />
+            <motion.div
+              initial={{ opacity: 0, y: 8, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.95 }}
+              className="absolute right-0 top-full mt-2 w-80 bg-white/90 dark:bg-zinc-900/95 backdrop-blur-2xl border border-white/80 dark:border-zinc-700/80 rounded-2xl shadow-2xl p-4 z-40 space-y-3"
+            >
+              <div className="flex justify-between items-center pb-2 border-b border-[var(--glass-edge)]">
+                <span className="text-xs font-semibold text-[var(--ink)]">События клиентов</span>
+                {unreadNotificationsCount > 0 && (
+                  <button
+                    onClick={handleMarkAllNotificationsAsRead}
+                    className="text-xs text-[var(--lavenderAccent)] font-medium hover:underline cursor-pointer"
+                  >
+                    Прочитать все
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-2.5 max-h-60 overflow-y-auto">
+                {notifications.map(notif => (
+                  <div
+                    key={notif.id}
+                    onClick={() => handleNotificationClick(notif.projectId, notif.id)}
+                    className={`p-2.5 rounded-xl text-left transition-colors cursor-pointer text-xs ${
+                      notif.read ? 'bg-zinc-50/55 dark:bg-zinc-950/20' : 'bg-[var(--lavenderSoft)] border-l-2 border-[var(--lavDeep)]'
+                    }`}
+                  >
+                    <div className="flex justify-between font-medium text-[var(--ink)]">
+                      <span>{notif.title}</span>
+                      <span className="text-xs text-[var(--faint)] font-normal">{notif.time}</span>
+                    </div>
+                    <p className="text-[var(--soft)] text-xs mt-0.5 leading-snug">{notif.msg}</p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+
+  const renderHeaderCalendarButton = () => (
+    <div className="relative">
+      <button
+        onClick={() => {
+          setIsHeaderCalendarOpen(!isHeaderCalendarOpen);
+          setIsNotificationsOpen(false);
+        }}
+        aria-label="Календарь"
+        title="Календарь событий декоратора"
+        className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full glass-panel flex items-center justify-center transition-all shadow-xs cursor-pointer ${
+          activeTab === 'calendar' || isHeaderCalendarOpen
+            ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white'
+            : 'text-[var(--ink)] hover:text-[var(--lavDeep)] hover:bg-white/90 dark:hover:bg-zinc-800'
+        }`}
+      >
+        <Calendar className={`w-4 h-4 shrink-0 ${activeTab === 'calendar' || isHeaderCalendarOpen ? 'text-white' : 'text-[var(--ink)] dark:text-zinc-200'}`} />
+      </button>
+
+      <AnimatePresence>
+        {isHeaderCalendarOpen && (
+          <>
+            <div className="fixed inset-0 z-30" onClick={() => setIsHeaderCalendarOpen(false)} />
+            <motion.div
+              initial={{ opacity: 0, y: 8, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.95 }}
+              className="absolute right-0 top-full mt-2 w-80 bg-white/90 dark:bg-zinc-900/95 backdrop-blur-2xl border border-white/80 dark:border-zinc-700/80 rounded-2xl shadow-2xl p-4 z-40 space-y-3"
+            >
+              <div className="flex justify-between items-center pb-2 border-b border-[var(--glass-edge)]">
+                <span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4 text-[var(--lavenderAccent)]" /> {monthNames[calendarMonth]} {calendarYear}
+                </span>
+                <button
+                  onClick={() => {
+                    setActiveTab('calendar');
+                    setIsHeaderCalendarOpen(false);
+                  }}
+                  className="text-xs text-[var(--lavenderAccent)] font-semibold hover:underline cursor-pointer"
+                >
+                  Открыть весь календарь
+                </button>
+              </div>
+
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                {Object.entries(calendarEvents).length === 0 ? (
+                  <p className="text-xs text-[var(--soft)] italic py-3 text-center">В этом месяце нет проектов с датами.</p>
+                ) : (
+                  Object.entries(calendarEvents).map(([dayNum, events]) => (
+                    <div
+                      key={dayNum}
+                      onClick={() => {
+                        setSelectedCalendarDay(Number(dayNum));
+                        setActiveTab('calendar');
+                        setIsHeaderCalendarOpen(false);
+                      }}
+                      className="p-2.5 rounded-xl bg-white/60 dark:bg-zinc-800/60 border border-[var(--glass-edge)] hover:border-[var(--lavenderAccent)] cursor-pointer transition-all space-y-1 text-left"
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-xs text-[var(--lavDeep)] dark:text-purple-300">{dayNum} {monthNamesGenitive[calendarMonth]} {calendarYear}</span>
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--lavenderSoft)] text-[var(--lavDeep)]">
+                          {events[0]?.time}
+                        </span>
+                      </div>
+                      <div className="font-semibold text-xs text-[var(--ink)]">{events[0]?.title}</div>
+                      <p className="text-[11px] text-[var(--soft)] line-clamp-1">{events[0]?.desc}</p>
+                    </div>
+                  ))
+                )}
+              </div>
             </motion.div>
           </>
         )}
@@ -1012,209 +1151,113 @@ export default function App() {
         <main className={`flex-1 relative flex flex-col min-w-0 ${
           activeTab === 'moodboard'
             ? 'p-2 sm:p-3 space-y-1.5 h-full overflow-hidden'
-            : 'p-4 sm:p-6 lg:p-8 space-y-6 h-full overflow-y-auto overflow-x-hidden'
+            : 'px-3 sm:px-6 pt-2 pb-6 space-y-4 h-full overflow-y-auto overflow-x-hidden'
         }`}>
           
-          {/* Responsive Mobile Header Navigation (Hamburger only, positioned on the right) */}
-          {activeTab !== 'moodboard' && (
-            <div className="md:hidden flex items-center justify-end shrink-0 relative z-30 pointer-events-auto pb-1">
-              {renderMobileNavButton()}
-            </div>
-          )}
+          {/* MAIN PANEL TOP NAVBAR HEADER (ALL PAGES) */}
+          {activeTab !== 'moodboard' && activeTab !== 'projectCard' && (
+            <div className="flex flex-col gap-2 shrink-0 pt-0">
+              {/* Top Row: Title on Left, Notifications + Calendar + Hamburger Menu on Right */}
+              <div className="flex items-center justify-between gap-3 w-full">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  {(selectedProject || activeTab === 'testPage') && (
+                    <button
+                      onClick={() => {
+                        setSelectedProject(null);
+                        setActiveTab('projects');
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full glass-panel hover:bg-white/80 dark:hover:bg-zinc-800 text-xs font-semibold text-[var(--ink)] transition-all cursor-pointer shadow-xs shrink-0"
+                    >
+                      <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
+                      <span>К проектам</span>
+                    </button>
+                  )}
 
-          {/* MAIN PANEL TOP NAVBAR Header (Shown on tabs except Moodboard Editor, Project Card, and Test Page) */}
-          {activeTab !== 'moodboard' && activeTab !== 'projectCard' && activeTab !== 'testPage' && (
-            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 shrink-0">
-              <div>
-                <div className="flex items-center gap-3">
-                  <h1 className="text-3xl font-semibold tracking-tight text-[var(--ink)]">
-                    {activeTab === 'projects' && 'Мои проекты'}
+                  <h1 className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight text-[var(--ink)] truncate">
+                    {activeTab === 'projects' && (selectedProject ? selectedProject.name : 'Мои проекты')}
                     {activeTab === 'calendar' && 'Календарь мероприятий'}
                     {activeTab === 'warehouse' && 'Складской инвентарь'}
                     {activeTab === 'images' && 'Галерея'}
                     {activeTab === 'documents' && 'Мои документы'}
                     {activeTab === 'profile' && 'Профиль бренда'}
                     {activeTab === 'settings' && 'Настройки'}
-                    {activeTab === 'testPage' && 'Тестовая страница'}
+                    {activeTab === 'testPage' && (selectedProject ? selectedProject.name : 'Тестовая страница')}
                   </h1>
-                  
-                  {/* Notification Badge Bell */}
-                  <div className="relative">
+                </div>
+
+                {/* Right Actions Cluster: Notification Bell + Calendar + Hamburger (Mobile) + Primary Action */}
+                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                  {/* Primary Action Desktop buttons */}
+                  {activeTab === 'projects' && !selectedProject && (
                     <button
-                      onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-                      className="w-9 h-9 rounded-full glass-panel flex items-center justify-center text-[var(--soft)] hover:text-[var(--ink)] transition-all shadow-sm cursor-pointer"
+                      onClick={() => setIsNewProjOpen(true)}
+                      className="hidden sm:flex bg-gradient-to-r from-[#8C52D0] to-[#582F89] hover:opacity-95 text-white rounded-full px-3.5 sm:px-4 py-1.5 text-xs font-semibold shadow-md transition-all items-center gap-1.5 cursor-pointer"
                     >
-                      <Bell className="w-4 h-4" />
-                      {unreadNotificationsCount > 0 && (
-                        <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 rounded-full bg-[var(--warn)] shadow-sm" />
-                      )}
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Новый проект</span>
                     </button>
+                  )}
 
-                    {/* Notifications overlay menu */}
-                    <AnimatePresence>
-                      {isNotificationsOpen && (
-                        <>
-                          <div className="fixed inset-0 z-30" onClick={() => setIsNotificationsOpen(false)} />
-                          <motion.div
-                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                            className="absolute right-0 mt-2 w-80 bg-white/70 dark:bg-zinc-900/75 backdrop-blur-2xl border border-white/80 dark:border-zinc-700/80 rounded-2xl shadow-2xl p-4 z-40 space-y-3"
-                            style={{
-                              backdropFilter: 'blur(20px)',
-                              WebkitBackdropFilter: 'blur(20px)',
-                            }}
-                          >
-                            <div className="flex justify-between items-center pb-2 border-b border-[var(--glass-edge)]">
-                              <span className="text-xs font-semibold text-[var(--ink)]">События клиентов</span>
-                              {unreadNotificationsCount > 0 && (
-                                <button
-                                  onClick={handleMarkAllNotificationsAsRead}
-                                  className="text-xs text-[var(--lavenderAccent)] font-medium hover:underline"
-                                >
-                                  Прочитать все
-                                </button>
-                              )}
-                            </div>
-
-                            <div className="space-y-2.5 max-h-60 overflow-y-auto">
-                              {notifications.map(notif => (
-                                <div
-                                  key={notif.id}
-                                  onClick={() => handleNotificationClick(notif.projectId, notif.id)}
-                                  className={`p-2.5 rounded-xl text-left transition-colors cursor-pointer text-xs ${
-                                    notif.read ? 'bg-zinc-50/55 dark:bg-zinc-950/20' : 'bg-[var(--lavenderSoft)] border-l-2 border-[var(--lavDeep)]'
-                                  }`}
-                                >
-                                  <div className="flex justify-between font-medium text-[var(--ink)]">
-                                    <span>{notif.title}</span>
-                                    <span className="text-xs text-[var(--faint)] font-normal">{notif.time}</span>
-                                  </div>
-                                  <p className="text-[var(--soft)] text-xs mt-0.5 leading-snug">{notif.msg}</p>
-                                </div>
-                              ))}
-                            </div>
-                          </motion.div>
-                        </>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
-                  {/* Quick Calendar Button & Dropdown (Mobile & Tablet only, hidden on Desktop where right sidebar exists) */}
-                  <div className="relative xl:hidden">
+                  {activeTab === 'warehouse' && (
                     <button
-                      onClick={() => setIsHeaderCalendarOpen(!isHeaderCalendarOpen)}
-                      title="Календарь событий декоратора"
-                      className={`h-9 px-3 rounded-full glass-panel flex items-center gap-1.5 text-xs font-semibold transition-all shadow-sm cursor-pointer ${
-                        activeTab === 'calendar' || isHeaderCalendarOpen
-                          ? 'bg-[var(--lavDeep)] text-white'
-                          : 'text-[var(--soft)] hover:text-[var(--ink)]'
-                      }`}
+                      onClick={() => setIsWarehouseAdding(true)}
+                      className="hidden sm:flex bg-gradient-to-r from-[#8C52D0] to-[#582F89] hover:opacity-95 text-white rounded-full px-3.5 sm:px-4 py-1.5 text-xs font-semibold shadow-md transition-all items-center gap-1.5 cursor-pointer"
                     >
-                      <Calendar className="w-4 h-4 shrink-0" />
-                      <span className="hidden sm:inline">Календарь</span>
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Новый товар</span>
                     </button>
+                  )}
 
-                    <AnimatePresence>
-                      {isHeaderCalendarOpen && (
-                        <>
-                          <div className="fixed inset-0 z-30" onClick={() => setIsHeaderCalendarOpen(false)} />
-                          <motion.div
-                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                            className="absolute right-0 mt-2 w-80 bg-white/90 dark:bg-zinc-900/95 backdrop-blur-2xl border border-white/80 dark:border-zinc-700/80 rounded-2xl shadow-2xl p-4 z-40 space-y-3"
-                            style={{
-                              backdropFilter: 'blur(20px)',
-                              WebkitBackdropFilter: 'blur(20px)',
-                            }}
-                          >
-                            <div className="flex justify-between items-center pb-2 border-b border-[var(--glass-edge)]">
-                              <span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
-                                <Calendar className="w-4 h-4 text-[var(--lavenderAccent)]" /> {monthNames[calendarMonth]} {calendarYear}
-                              </span>
-                              <button
-                                onClick={() => {
-                                  setActiveTab('calendar');
-                                  setIsHeaderCalendarOpen(false);
-                                }}
-                                className="text-xs text-[var(--lavenderAccent)] font-semibold hover:underline cursor-pointer"
-                              >
-                                Открыть весь календарь
-                              </button>
-                            </div>
+                  {activeTab === 'images' && imagesHeaderActions && (
+                    <div className="hidden sm:flex items-center gap-2">
+                      {imagesHeaderActions}
+                    </div>
+                  )}
 
-                            <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                              {Object.entries(calendarEvents).length === 0 ? (
-                                <p className="text-xs text-[var(--soft)] italic py-3 text-center">В этом месяце нет проектов с датами.</p>
-                              ) : (
-                                Object.entries(calendarEvents).map(([dayNum, events]) => (
-                                  <div
-                                    key={dayNum}
-                                    onClick={() => {
-                                      setSelectedCalendarDay(Number(dayNum));
-                                      setActiveTab('calendar');
-                                      setIsHeaderCalendarOpen(false);
-                                    }}
-                                    className="p-2.5 rounded-xl bg-white/60 dark:bg-zinc-800/60 border border-[var(--glass-edge)] hover:border-[var(--lavenderAccent)] cursor-pointer transition-all space-y-1 text-left"
-                                  >
-                                    <div className="flex justify-between items-center">
-                                      <span className="font-bold text-xs text-[var(--lavDeep)] dark:text-purple-300">{dayNum} {monthNamesGenitive[calendarMonth]} {calendarYear}</span>
-                                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--lavenderSoft)] text-[var(--lavDeep)]">
-                                        {events[0]?.time}
-                                      </span>
-                                    </div>
-                                    <div className="font-semibold text-xs text-[var(--ink)]">{events[0]?.title}</div>
-                                    <p className="text-[11px] text-[var(--soft)] line-clamp-1">{events[0]?.desc}</p>
-                                  </div>
-                                ))
-                              )}
-                            </div>
-                          </motion.div>
-                        </>
-                      )}
-                    </AnimatePresence>
+                  {/* Notification Bell Button */}
+                  {renderNotificationsButton()}
+
+                  {/* Calendar Button */}
+                  {renderHeaderCalendarButton()}
+
+                  {/* Hamburger Menu Button (Mobile) */}
+                  <div className="md:hidden">
+                    {renderMobileNavButton()}
                   </div>
                 </div>
-                
-                <p className="text-[var(--soft)] mt-1 text-[13px] leading-relaxed">
-                  {activeTab === 'projects' && 'Создавайте макеты, открывайте сметный калькулятор и возвращайтесь к ним в любой момент.'}
-                  {activeTab === 'calendar' && 'График монтажей, сдачи проектов, выездов команды и встреч с клиентами.'}
-                  {activeTab === 'warehouse' && 'Каталог вашего декора, флористики и оборудования. Учет остатков и задействованных в проектах позиций.'}
-                  {activeTab === 'images' && 'Ваша галерея загруженных референсов, сгенерированных ИИ фонов, элементов флористики и декора для оформления.'}
-                  {activeTab === 'documents' && 'Реквизиты, на кого оформляется договор, шаблоны договора и акта. Только автоматическая генерация и печать, оплата не принимается в сервисе.'}
-                  {activeTab === 'profile' && 'Настройки реквизитов и контактов студии для формирования коммерческих предложений.'}
-                  {activeTab === 'settings' && 'Управление параметрами оформления и цветовой темой интерфейса.'}
-                </p>
               </div>
 
-              {activeTab === 'projects' && (
-                <button
-                  onClick={() => setIsNewProjOpen(true)}
-                  className="shrink-0 bg-gradient-to-r from-[#8C52D0] to-[#582F89] hover:opacity-95 text-white rounded-full px-6 py-3 text-[13px] font-medium shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" /> Новый проект
-                </button>
-              )}
+              {/* Subtitle / Description & Mobile Primary Action Buttons */}
+              {activeTab !== 'projectCard' && activeTab !== 'testPage' && (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <p className="text-[var(--soft)] text-xs sm:text-sm font-normal leading-relaxed">
+                    {activeTab === 'projects' && !selectedProject && 'Создавайте макеты, открывайте сметный калькулятор и возвращайтесь к ним в любой момент.'}
+                    {activeTab === 'calendar' && 'График монтажей, сдачи проектов, выездов команды и встреч с клиентами.'}
+                    {activeTab === 'warehouse' && 'Каталог вашего декора, флористики и оборудования. Учет остатков и задействованных в проектах позиций.'}
+                    {activeTab === 'images' && 'Ваша галерея загруженных референсов, сгенерированных ИИ фонов, элементов флористики и декора для оформления.'}
+                    {activeTab === 'documents' && 'Реквизиты, на кого оформляется договор, шаблоны договора и акта. Только автоматическая генерация и печать, оплата не принимается в сервисе.'}
+                    {activeTab === 'profile' && 'Настройки реквизитов и контактов студии для формирования коммерческих предложений.'}
+                    {activeTab === 'settings' && 'Управление параметрами оформления и цветовой темой интерфейса.'}
+                  </p>
 
-              {activeTab === 'warehouse' && (
-                <button
-                  onClick={() => setIsWarehouseAdding(true)}
-                  className="shrink-0 bg-gradient-to-r from-[#8C52D0] to-[#582F89] hover:opacity-95 text-white rounded-full px-6 py-3 text-[13px] font-medium shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" /> Новый товар
-                </button>
-              )}
+                  {/* Mobile Primary Action Buttons */}
+                  {activeTab === 'projects' && !selectedProject && (
+                    <button
+                      onClick={() => setIsNewProjOpen(true)}
+                      className="sm:hidden w-full bg-gradient-to-r from-[#8C52D0] to-[#582F89] hover:opacity-95 text-white rounded-full px-4 py-2.5 text-xs font-semibold shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" /> Новый проект
+                    </button>
+                  )}
 
-              {activeTab === 'images' && imagesHeaderActions && (
-                <div className="shrink-0 flex items-center gap-2">
-                  {imagesHeaderActions}
-                </div>
-              )}
-
-              {activeTab === 'editor' && moodboardHeaderActions && (
-                <div className="shrink-0 flex items-center gap-2">
-                  {moodboardHeaderActions}
+                  {activeTab === 'warehouse' && (
+                    <button
+                      onClick={() => setIsWarehouseAdding(true)}
+                      className="sm:hidden w-full bg-gradient-to-r from-[#8C52D0] to-[#582F89] hover:opacity-95 text-white rounded-full px-4 py-2.5 text-xs font-semibold shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" /> Новый товар
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -1294,62 +1337,60 @@ export default function App() {
                 >
                   <>
                       {/* Header controls */}
-                  <div className="space-y-4">
+                  <div className="space-y-2.5">
                     {/* Row 1: Categories / Status Filter pills */}
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                      <div className="flex flex-wrap gap-2">
-                        {[
-                          { key: 'all', label: 'Все проекты', count: counts.all, badgeStyle: 'bg-amber-500/15 text-amber-700 dark:text-amber-300' },
-                          { key: 'progress', label: 'В работе', count: counts.progress, badgeStyle: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' },
-                          { key: 'waiting', label: 'Ждут ответа', count: counts.waiting, badgeStyle: 'bg-sky-500/15 text-sky-700 dark:text-sky-300' },
-                          { key: 'approved', label: 'Согласованы', count: counts.approved, badgeStyle: 'bg-violet-500/15 text-violet-700 dark:text-violet-300' },
-                          { key: 'archive', label: 'Архив', count: counts.archive, badgeStyle: 'bg-zinc-500/15 text-zinc-600 dark:text-zinc-300' },
-                          { key: 'trash', label: 'Корзина', count: counts.trash, badgeStyle: 'bg-rose-500/15 text-rose-700 dark:text-rose-300' }
-                        ].map((pill) => {
-                          const isActive = projectFilter === pill.key;
+                    <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 -mx-1 px-1 max-w-full sm:flex-wrap">
+                      {[
+                        { key: 'all', label: 'Все проекты', count: counts.all, badgeStyle: 'bg-amber-500/15 text-amber-700 dark:text-amber-300' },
+                        { key: 'progress', label: 'В работе', count: counts.progress, badgeStyle: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' },
+                        { key: 'waiting', label: 'Ждут ответа', count: counts.waiting, badgeStyle: 'bg-sky-500/15 text-sky-700 dark:text-sky-300' },
+                        { key: 'approved', label: 'Согласованы', count: counts.approved, badgeStyle: 'bg-violet-500/15 text-violet-700 dark:text-violet-300' },
+                        { key: 'archive', label: 'Архив', count: counts.archive, badgeStyle: 'bg-zinc-500/15 text-zinc-600 dark:text-zinc-300' },
+                        { key: 'trash', label: 'Корзина', count: counts.trash, badgeStyle: 'bg-rose-500/15 text-rose-700 dark:text-rose-300' }
+                      ].map((pill) => {
+                        const isActive = projectFilter === pill.key;
 
-                          return (
-                            <button
-                              key={pill.key}
-                              onClick={() => setProjectFilter(pill.key as any)}
-                              className={`rounded-full text-xs font-medium tracking-wide transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
-                                isActive
-                                  ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white border border-[#582F89] shadow-md shadow-purple-900/20 px-3.5 py-1.5 scale-[1.02]'
-                                  : 'bg-transparent text-[var(--soft)] hover:text-[var(--ink)] border border-transparent px-2 py-1'
-                              }`}
-                            >
-                              <span>{pill.label}</span>
-                              <span className={`inline-flex items-center justify-center rounded-full text-[11px] font-bold min-w-[20px] h-5 px-1.5 transition-all duration-200 ${
-                                isActive
-                                  ? 'bg-white/20 text-white backdrop-blur-sm'
-                                  : pill.badgeStyle
-                              }`}>
-                                {pill.count}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
+                        return (
+                          <button
+                            key={pill.key}
+                            onClick={() => setProjectFilter(pill.key as any)}
+                            className={`rounded-full text-xs font-semibold tracking-tight transition-all duration-200 cursor-pointer flex items-center gap-1 shrink-0 whitespace-nowrap ${
+                              isActive
+                                ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-xs px-2.5 py-1'
+                                : 'bg-transparent text-[var(--soft)] hover:text-[var(--ink)] hover:bg-black/5 dark:hover:bg-white/5 border border-transparent px-2 py-1'
+                            }`}
+                          >
+                            <span>{pill.label}</span>
+                            <span className={`inline-flex items-center justify-center rounded-full text-[10px] font-bold min-w-[16px] h-4 px-1 transition-all duration-200 ${
+                              isActive
+                                ? 'bg-white/20 text-white backdrop-blur-xs'
+                                : pill.badgeStyle
+                            }`}>
+                              {pill.count}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
 
                     {/* Row 2: Search Input, Sorting Select, and View Mode Switcher */}
-                    <div className="flex items-center justify-between gap-3 bg-white/10 dark:bg-zinc-900/5 p-2 rounded-full border border-[var(--glass-edge)]/40">
-                      <div className="flex flex-1 items-center gap-3 max-w-xl">
+                    <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 bg-white/10 dark:bg-zinc-900/5 p-1.5 rounded-2xl sm:rounded-full border border-[var(--glass-edge)]/40">
+                      <div className="flex flex-1 items-center gap-2 max-w-xl w-full sm:w-auto">
                         <div className="relative flex-1">
-                          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
                           <input
                             type="text"
                             placeholder="Поиск по клиенту, площадке..."
                             value={projectQuery}
                             onChange={(e) => setProjectQuery(e.target.value)}
-                            className="pl-9 pr-4 py-1.5 rounded-full text-xs bg-white/30 dark:bg-zinc-900/20 border border-zinc-200/50 dark:border-zinc-800/50 text-[var(--ink)] placeholder:text-zinc-400 focus:outline-none focus:border-[var(--lavenderAccent)] w-full transition-colors"
+                            className="pl-8 pr-3 py-1 rounded-full text-xs bg-white/30 dark:bg-zinc-900/20 border border-zinc-200/50 dark:border-zinc-800/50 text-[var(--ink)] placeholder:text-zinc-400 focus:outline-none focus:border-[var(--lavenderAccent)] w-full transition-colors"
                           />
                         </div>
 
                         <select
                           value={projectSort}
                           onChange={(e) => setProjectSort(e.target.value as any)}
-                          className="text-xs bg-white/30 dark:bg-zinc-900/20 border border-zinc-200/50 dark:border-zinc-800/50 rounded-full py-1.5 px-3.5 text-[var(--ink)] focus:outline-none focus:border-[var(--lavenderAccent)] font-medium transition-colors"
+                          className="text-xs bg-white/30 dark:bg-zinc-900/20 border border-zinc-200/50 dark:border-zinc-800/50 rounded-full py-1 px-2.5 text-[var(--ink)] focus:outline-none focus:border-[var(--lavenderAccent)] font-medium transition-colors shrink-0"
                         >
                           <option value="date">По дате события</option>
                           <option value="name">По алфавиту</option>

@@ -92,90 +92,224 @@ const baseBriefFieldDefinitions: { key: string; filledBy: 'client' | 'designer';
 ];
 
 export default function BlankTestPage({ project, onClose, onUpdateProject, showToast, onOpenEditor }: BlankTestPageProps) {
+  // Helper functions for formatting date and budget
+  const formatProjectDate = (dateStr?: any) => {
+    if (!dateStr) return '';
+    const str = String(dateStr);
+    if (str.includes('T')) {
+      try {
+        return new Date(str).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+      } catch {
+        return str;
+      }
+    }
+    return str;
+  };
+
+  const formatProjectBudget = (budgetNum?: any) => {
+    if (budgetNum === undefined || budgetNum === null || budgetNum === '') return '';
+    const num = Number(budgetNum);
+    if (!isNaN(num) && num > 0) {
+      return `${num.toLocaleString('ru')} ₽`;
+    }
+    return String(budgetNum);
+  };
+
+  const buildBriefValues = (proj?: Project) => {
+    const emptyBrief = {
+      "ИМЯ КЛИЕНТА": "",
+      "ТЕЛЕФОН": "",
+      "РЕКВИЗИТЫ ПЛАТЕЛЬЩИКА": "",
+      "СОБЫТИЕ": "",
+      "ДАТА": "",
+      "ГОСТЕЙ": "",
+      "ФОРМАТ СОБЫТИЯ": "",
+      "ПЛОЩАДКА": "",
+      "АДРЕС": "",
+      "КОНТАКТ ПЛОЩАДКИ": "",
+      "РАЗМЕР ЗОНЫ МОНТАЖА": "",
+      "КРЕПЕЖ К СТЕНАМ": "",
+      "КРЕПЕЖ К ПОТОЛКУ": "",
+      "СОГЛАСОВАНИЕ ОФОРМЛЕНИЯ": "",
+      "ЭЛЕКТРИЧЕСТВО У СЦЕНЫ": "",
+      "ПОДЪЕЗД / ГРУЗОВОЙ ЛИФТ": "",
+      "ПРАЗДНИК НА УЛИЦЕ": "",
+      "ХРАНЕНИЕ НА ПЛОЩАДКЕ": "",
+      "ДЕМОНТАЖ / ВЫВОЗ": "",
+      "КТО ПРИНИМАЕТ РАБОТЫ": "",
+      "ПАЛИТРА ОФОРМЛЕНИЯ": "",
+      "СТИЛЬ ОФОРМЛЕНИЯ": "",
+      "ОРИЕНТИРОВОЧНЫЙ БЮДЖЕТ": "",
+      "ДОПОЛНИТЕЛЬНАЯ ИНФОРМАЦИЯ": "",
+      "ДОСТУП НА МОНТАЖ": "",
+      "ОКНО МОНТАЖА": "",
+      "КОНСТРУКЦИИ ДЕКОРА": "",
+    };
+
+    if (!proj) return emptyBrief;
+
+    const formattedDate = formatProjectDate(proj.date);
+    const formattedBudget = formatProjectBudget(proj.budget);
+
+    const colorsVal = Array.isArray(proj.brief?.colors)
+      ? proj.brief.colors.join(', ')
+      : (typeof proj.brief?.colors === 'string' ? proj.brief.colors : proj.briefValues?.["ПАЛИТРА ОФОРМЛЕНИЯ"] || "");
+
+    return {
+      ...emptyBrief,
+      "ИМЯ КЛИЕНТА": proj.clientName && proj.clientName !== 'Не указан' ? proj.clientName : "",
+      "ТЕЛЕФОН": proj.clientPhone || "",
+      "РЕКВИЗИТЫ ПЛАТЕЛЬЩИКА": proj.briefValues?.["РЕКВИЗИТЫ ПЛАТЕЛЬЩИКА"] || "",
+      "СОБЫТИЕ": proj.name || "",
+      "ДАТА": formattedDate,
+      "ГОСТЕЙ": proj.brief?.guestsCount ? `${proj.brief.guestsCount} человек` : (proj.briefValues?.["ГОСТЕЙ"] || ""),
+      "ФОРМАТ СОБЫТИЯ": proj.briefValues?.["ФОРМАТ СОБЫТИЯ"] || "",
+      "ПЛОЩАДКА": proj.venue || "",
+      "АДРЕС": proj.briefValues?.["АДРЕС"] || "",
+      "КОНТАКТ ПЛОЩАДКИ": proj.briefValues?.["КОНТАКТ ПЛОЩАДКИ"] || "",
+      "РАЗМЕР ЗОНЫ МОНТАЖА": proj.briefValues?.["РАЗМЕР ЗОНЫ МОНТАЖА"] || "",
+      "КРЕПЕЖ К СТЕНАМ": proj.briefValues?.["КРЕПЕЖ К СТЕНАМ"] || "",
+      "КРЕПЕЖ К ПОТОЛКУ": proj.briefValues?.["КРЕПЕЖ К ПОТОЛКУ"] || "",
+      "СОГЛАСОВАНИЕ ОФОРМЛЕНИЯ": proj.briefValues?.["СОГЛАСОВАНИЕ ОФОРМЛЕНИЯ"] || "",
+      "ЭЛЕКТРИЧЕСТВО У СЦЕНЫ": proj.briefValues?.["ЭЛЕКТРИЧЕСТВО У СЦЕНЫ"] || "",
+      "ПОДЪЕЗД / ГРУЗОВОЙ ЛИФТ": proj.briefValues?.["ПОДЪЕЗД / ГРУЗОВОЙ ЛИФТ"] || "",
+      "ПРАЗДНИК НА УЛИЦЕ": proj.briefValues?.["ПРАЗДНИК НА УЛИЦЕ"] || "",
+      "ХРАНЕНИЕ НА ПЛОЩАДКЕ": proj.briefValues?.["ХРАНЕНИЕ НА ПЛОЩАДКЕ"] || "",
+      "ДЕМОНТАЖ / ВЫВОЗ": proj.briefValues?.["ДЕМОНТАЖ / ВЫВОЗ"] || "",
+      "КТО ПРИНИМАЕТ РАБОТЫ": proj.briefValues?.["КТО ПРИНИМАЕТ РАБОТЫ"] || "",
+      "ПАЛИТРА ОФОРМЛЕНИЯ": colorsVal,
+      "СТИЛЬ ОФОРМЛЕНИЯ": proj.brief?.style || proj.briefValues?.["СТИЛЬ ОФОРМЛЕНИЯ"] || "",
+      "ОРИЕНТИРОВОЧНЫЙ БЮДЖЕТ": formattedBudget,
+      "ДОПОЛНИТЕЛЬНАЯ ИНФОРМАЦИЯ": proj.brief?.specialRequests || proj.briefValues?.["ДОПОЛНИТЕЛЬНАЯ ИНФОРМАЦИЯ"] || "",
+      "ДОСТУП НА МОНТАЖ": proj.briefValues?.["ДОСТУП НА МОНТАЖ"] || "",
+      "ОКНО МОНТАЖА": proj.briefValues?.["ОКНО МОНТАЖА"] || "",
+      "КОНСТРУКЦИИ ДЕКОРА": proj.briefValues?.["КОНСТРУКЦИИ ДЕКОРА"] || "",
+      ...(proj.briefValues || {})
+    };
+  };
+
   const [activeTab, setActiveTab] = useState<'overview' | 'brief' | 'design' | 'calc' | 'journal' | 'docs'>('overview');
 
-  // Interactive project header state
-  const [projectName, setProjectName] = useState<string>("Свадьба «Свет и Грация»");
+  // Interactive project header state synchronized with project object
+  const [projectName, setProjectName] = useState<string>(project?.name || "");
   const [isEditingTitle, setIsEditingTitle] = useState<boolean>(false);
-  const [titleInput, setTitleInput] = useState<string>("Свадьба «Свет и Грация»");
-  const [hasNotifications, setHasNotifications] = useState<boolean>(true);
+  const [titleInput, setTitleInput] = useState<string>(project?.name || "");
+  const [hasNotifications, setHasNotifications] = useState<boolean>(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState<boolean>(false);
-  const [currentStep, setCurrentStep] = useState<number>(0);
+  const [currentStep, setCurrentStep] = useState<number>(project?.currentStep ?? 0);
   const [isStepMenuOpen, setIsStepMenuOpen] = useState<boolean>(false);
   const steps = ['Бриф', 'Визуализация', 'Смета', 'Согласовано'];
 
-  // Brief interactive state filled with realistic test data from project card
-  const [briefValues, setBriefValues] = useState<Record<string, string>>({
-    "ИМЯ КЛИЕНТА": "Анна Соколова",
-    "ТЕЛЕФОН": "+7 (905) 123-45-67",
-    "РЕКВИЗИТЫ ПЛАТЕЛЬЩИКА": "ИП Соколова А. В. / ИНН 77123456789",
-    "СОБЫТИЕ": "Свадьба Артёма и Анны",
-    "ДАТА": "15 сентября 2026",
-    "ГОСТЕЙ": "85 человек",
-    "ФОРМАТ СОБЫТИЯ": "Банкет и выездная регистрация",
-    "ПЛОЩАДКА": "Ресторан «Royal Hall»",
-    "АДРЕС": "г. Москва, Набережная Трапезникова, д. 12",
-    "КОНТАКТ ПЛОЩАДКИ": "Виктория (менеджер): +7 (916) 987-65-43",
-    "РАЗМЕР ЗОНЫ МОНТАЖА": "Сцена 6×4м, президиум 4×3м, 10 столов",
-    "КРЕПЕЖ К СТЕНАМ": "Запрещен (только самонесущие конструкции)",
-    "КРЕПЕЖ К ПОТОЛКУ": "Разрешен по фермам (высота 4.5м)",
-    "СОГЛАСОВАНИЕ ОФОРМЛЕНИЯ": "Требуется за 5 дней до монтажа",
-    "ЭЛЕКТРИЧЕСТВО У СЦЕНЫ": "220V, 3 розетки, 5 кВт",
-    "ПОДЪЕЗД / ГРУЗОВОЙ ЛИФТ": "Есть грузовой лифт 2×1.5м",
-    "ПРАЗДНИК НА УЛИЦЕ": "Выездная регистрация на веранде",
-    "ХРАНЕНИЕ НА ПЛОЩАДКЕ": "Есть гримерка для декораторов",
-    "ДЕМОНТАЖ / ВЫВОЗ": "Ночной демонтаж с 23:00 до 03:00",
-    "КТО ПРИНИМАЕТ РАБОТЫ": "Организатор Ксения",
-    "ПАЛИТРА ОФОРМЛЕНИЯ": "Шампань, лаванда, пудрово-розовый, золото",
-    "СТИЛЬ ОФОРМЛЕНИЯ": "Современный органический шик",
-    "ОРИЕНТИРОВОЧНЫЙ БЮДЖЕТ": "450 000 ₽",
-    "ДОПОЛНИТЕЛЬНАЯ ИНФОРМАЦИЯ": "Особое внимание выездной арке — живые цветы и легкая вуаль. Понадобятся свечи в колбах вдоль прохода.",
-    "ДОСТУП НА МОНТАЖ": "с 07:00 в день мероприятия",
-    "ОКНО МОНТАЖА": "6 часов (с 07:00 до 13:00)",
-    "КОНСТРУКЦИИ ДЕКОРА": "Металлическая арка 2.5м, стойки под композиции, текстиль",
-  });
+  // Brief interactive state filled strictly from project card or empty
+  const [briefValues, setBriefValues] = useState<Record<string, string>>(() => buildBriefValues(project));
 
-  // Synchronize state if project prop is passed
+  // Default elements for Visualization 1 if none present
+  const defaultVisualizationElements = [
+    { id: 'el-1', name: 'Неоновая двойная арка-аркада', category: 'Конструкции', quantity: 1, price: 45000 },
+    { id: 'el-2', name: 'Гексагональная арка «Винтаж»', category: 'Конструкции', quantity: 1, price: 29000 },
+    { id: 'el-3', name: 'Гирлянда «Королевская роза»', category: 'Флористика', quantity: 1, price: 45000 },
+    { id: 'el-4', name: 'Свадебный венок из пампасной травы', category: 'Флористика', quantity: 1, price: 32000 },
+    { id: 'el-5', name: 'Прямоугольный портал «Президиум»', category: 'Конструкции', quantity: 1, price: 38000 }
+  ];
+
+  const getInitialScenesData = (proj: any) => {
+    const raw = proj?.scenesData;
+    if (!raw || !Array.isArray(raw) || raw.length === 0) {
+      return [
+        {
+          id: 'scene-1',
+          name: 'Визуализация 1',
+          subtitle: 'Концепция оформления декор-зоны',
+          image: '',
+          defaultPrice: 189000,
+          elements: defaultVisualizationElements
+        },
+        {
+          id: 'scene-2',
+          name: 'Визуализация 2',
+          subtitle: 'Президиум и выездная регистрация',
+          image: '',
+          defaultPrice: 80000,
+          elements: [
+            { id: 'el-201', name: 'Фоновая конструкция президиума', category: 'Конструкции', quantity: 1, price: 40000 },
+            { id: 'el-202', name: 'Композиции на стол молодоженов', category: 'Флористика', quantity: 2, price: 20000 },
+            { id: 'el-203', name: 'Напольные подсвечники с гильзами', category: 'Декор', quantity: 4, price: 20000 }
+          ]
+        }
+      ];
+    }
+    return raw.map((sc: any, idx: number) => {
+      const rawImg = sc.image || sc.imageUrl || '';
+      const img = (rawImg && !rawImg.includes('unsplash')) ? rawImg : '';
+      if (!sc.elements || !Array.isArray(sc.elements) || sc.elements.length === 0) {
+        if (idx === 0) {
+          return {
+            ...sc,
+            image: img,
+            elements: defaultVisualizationElements
+          };
+        }
+        return { ...sc, image: img, elements: [] };
+      }
+      return { ...sc, image: img };
+    });
+  };
+
+  const defaultServiceEstimateItems = [
+    { id: 'srv-1', name: 'Доставка', category: 'Логистика', quantity: 1, price: 0 },
+    { id: 'srv-2', name: 'Монтаж', category: 'Монтаж', quantity: 1, price: 0 }
+  ];
+
+  const getInitialServiceEstimate = (proj: any) => {
+    const raw = proj?.serviceEstimate || proj?.services;
+    if (raw && Array.isArray(raw) && raw.length > 0) {
+      return raw;
+    }
+    return defaultServiceEstimateItems;
+  };
+
+  // Financial & status persistent state synchronized with project
+  const [advanceAmount, setAdvanceAmount] = useState<number>(project?.advance !== undefined ? project.advance : 0);
+  const [isEditingClientPrice, setIsEditingClientPrice] = useState<boolean>(false);
+  const [isEditingAdvance, setIsEditingAdvance] = useState<boolean>(false);
+  const [projectStatus, setProjectStatus] = useState<'in_progress' | 'completed' | 'cancelled'>(
+    project?.status === 'approved' ? 'completed' : project?.status === 'trash' ? 'cancelled' : 'in_progress'
+  );
+
+  const [markupPercent] = useState<number>(20);
+  const [taxRate] = useState<number>(6);
+  const [finalPrice, setFinalPrice] = useState<number>(project?.budget || 0);
+
+  // Estimate & scenes interactive state
+  const [visualizationScenes, setVisualizationScenes] = useState<any[]>(() => getInitialScenesData(project));
+  const [disabledSceneIds, setDisabledSceneIds] = useState<string[]>(project?.disabledSceneIds || []);
+  const [customScenePrices, setCustomScenePrices] = useState<Record<string, number>>(project?.customScenePrices || {});
+  const [serviceEstimate, setServiceEstimate] = useState<Array<{ id: string; name: string; category: string; quantity: number; price: number }>>(() => getInitialServiceEstimate(project));
+
+  // Venue photos array from project or empty
+  const [venuePhotos, setVenuePhotos] = useState<string[]>(project?.photos || []);
+
+  // Synchronize state whenever project prop updates
   useEffect(() => {
     if (project) {
-      setProjectName(project.name || "Свадьба «Свет и Грация»");
-      setTitleInput(project.name || "Свадьба «Свет и Грация»");
+      setProjectName(project.name || "");
+      setTitleInput(project.name || "");
       if (project.currentStep !== undefined) {
         setCurrentStep(project.currentStep);
       }
-      if (project.status === 'trash' || project.status === 'progress' || project.status === 'approved') {
-        setProjectStatus(project.status === 'approved' ? 'completed' : 'in_progress');
+      if (project.status) {
+        setProjectStatus(project.status === 'approved' ? 'completed' : project.status === 'trash' ? 'cancelled' : 'in_progress');
       }
 
-      const formattedDate = project.date
-        ? (project.date.includes('T') ? new Date(project.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }) : project.date)
-        : "15 сентября 2026";
+      setBriefValues(buildBriefValues(project));
 
-      const formattedBudget = project.budget
-        ? `${project.budget.toLocaleString('ru')} ₽`
-        : "450 000 ₽";
-
-      setBriefValues(prev => ({
-        ...prev,
-        "ИМЯ КЛИЕНТА": project.clientName && project.clientName !== 'Не указан' ? project.clientName : (prev["ИМЯ КЛИЕНТА"] || "Анна Соколова"),
-        "ТЕЛЕФОН": project.clientPhone || prev["ТЕЛЕФОН"] || "+7 (905) 123-45-67",
-        "СОБЫТИЕ": project.name || prev["СОБЫТИЕ"] || "Свадьба Артёма и Анны",
-        "ДАТА": formattedDate,
-        "ПЛОЩАДКА": project.venue || prev["ПЛОЩАДКА"] || "Ресторан «Royal Hall»",
-        "ОРИЕНТИРОВОЧНЫЙ БЮДЖЕТ": formattedBudget,
-        "СТИЛЬ ОФОРМЛЕНИЯ": project.brief?.style || prev["СТИЛЬ ОФОРМЛЕНИЯ"] || "Современный органический шик",
-        "ГОСТЕЙ": project.brief?.guestsCount ? `${project.brief.guestsCount} человек` : (prev["ГОСТЕЙ"] || "85 человек"),
-        "ДОПОЛНИТЕЛЬНАЯ ИНФОРМАЦИЯ": project.brief?.specialRequests || prev["ДОПОЛНИТЕЛЬНАЯ ИНФОРМАЦИЯ"] || "",
-        ...(project.briefData || {})
-      }));
-
-      if (project.budget) setFinalPrice(project.budget);
-      if (project.advance !== undefined) setAdvanceAmount(project.advance);
-      if (project.scenesData && project.scenesData.length > 0) setVisualizationScenes(project.scenesData);
-      if (project.estimate && project.estimate.length > 0) setServiceEstimate(project.estimate);
-      if (project.disabledSceneIds) setDisabledSceneIds(project.disabledSceneIds);
-      if (project.customScenePrices) setCustomScenePrices(project.customScenePrices);
-      if (project.photos && project.photos.length > 0) setVenuePhotos(project.photos);
+      setFinalPrice(project.budget || 0);
+      setAdvanceAmount(project.advance !== undefined ? project.advance : 0);
+      setVisualizationScenes(getInitialScenesData(project));
+      setServiceEstimate(getInitialServiceEstimate(project));
+      setDisabledSceneIds(project.disabledSceneIds || []);
+      setCustomScenePrices(project.customScenePrices || {});
+      setVenuePhotos(project.photos || []);
     }
   }, [project]);
 
@@ -202,59 +336,103 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
 
   // Carousel state for Visualizations
   const [vizIndex, setVizIndex] = useState<number>(0);
-  const visualizations = [
-    {
-      id: 1,
-      title: 'ВИЗУАЛИЗАЦИЯ 1 (АРКА И ЦВЕТОЧНАЯ ЗОНА)',
-      subtitle: 'Концепция декор-арки и зоны церемонии',
-      image: 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=800&q=80'
-    },
-    {
-      id: 2,
-      title: 'ВИЗУАЛИЗАЦИЯ 2 (ПРЕЗИДИУМ & СТОЛ)',
-      subtitle: '3D Эскиз оформления центрального стола',
-      image: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=800&q=80'
-    },
-    {
-      id: 3,
-      title: 'ВИЗУАЛИЗАЦИЯ 3 (WELCOME-ЗОНА)',
-      subtitle: 'Приветственный стенд и композиции у входа',
-      image: 'https://images.unsplash.com/photo-1478146896981-b80fe463b330?auto=format&fit=crop&w=800&q=80'
+  // Dynamic visualizations built strictly from project scenes / editor sketches
+  const visualizations = useMemo(() => {
+    if (visualizationScenes && visualizationScenes.length > 0) {
+      const mapped = visualizationScenes.map((sc: any, idx: number) => {
+        const rawImg = sc.image || sc.imageUrl || '';
+        const img = (rawImg && !rawImg.includes('unsplash')) ? rawImg : '';
+        return {
+          id: sc.id || idx + 1,
+          title: sc.name ? sc.name.toUpperCase() : `ВИЗУАЛИЗАЦИЯ ${idx + 1}`,
+          subtitle: sc.subtitle || 'Концепция оформления',
+          image: img,
+          sceneIndex: idx,
+          sceneData: sc
+        };
+      });
+      if (mapped.length > 0) return mapped;
     }
-  ];
+    if (project?.decoratorSketches && project.decoratorSketches.length > 0) {
+      return project.decoratorSketches.map((img, idx) => ({
+        id: idx + 1,
+        title: `ЭСКИЗ ${idx + 1}`,
+        subtitle: 'Эскиз из редактора',
+        image: img,
+        sceneIndex: idx
+      }));
+    }
+    if (project?.imageUrl && !project.imageUrl.includes('unsplash')) {
+      return [{
+        id: 1,
+        title: 'ОСНОВНАЯ ВИЗУАЛИЗАЦИЯ',
+        subtitle: project.name || 'Эскиз проекта',
+        image: project.imageUrl,
+        sceneIndex: 0
+      }];
+    }
+    return [
+      {
+        id: 1,
+        title: 'ВИЗУАЛИЗАЦИЯ 1',
+        subtitle: 'Концепция декор-арки и зоны церемонии',
+        image: '',
+        sceneIndex: 0
+      },
+      {
+        id: 2,
+        title: 'ВИЗУАЛИЗАЦИЯ 2',
+        subtitle: 'Президиум и стол молодоженов',
+        image: '',
+        sceneIndex: 1
+      }
+    ];
+  }, [visualizationScenes, project]);
 
-  // Carousel state for AI Visualizations
+  // Dynamic AI Visualizations strictly from project AI concepts / AI generated scenes
   const [aiVizIndex, setAiVizIndex] = useState<number>(0);
-  const aiVisualizations = [
-    {
-      id: 1,
-      title: 'ИИ ВИЗУАЛИЗАЦИЯ 1 (ЗОНА ЦЕРЕМОНИИ)',
-      subtitle: 'Генерация ИИ: Цветочная арка и зеркальный подиум',
-      image: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80'
-    },
-    {
-      id: 2,
-      title: 'ИИ ВИЗУАЛИЗАЦИЯ 2 (ВЕЧЕРНЕЕ ОСВЕЩЕНИЕ)',
-      subtitle: 'Генерация ИИ: Подсветка столов и ретро-гирлянды',
-      image: 'https://images.unsplash.com/photo-1527529482837-4698179dc6ce?auto=format&fit=crop&w=800&q=80'
-    },
-    {
-      id: 3,
-      title: 'ИИ ВИЗУАЛИЗАЦИЯ 3 (ФОТОЗОНА & ТЕКСТИЛЬ)',
-      subtitle: 'Генерация ИИ: Сервировка стола и драпировка ткани',
-      image: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80'
+  const aiVisualizations = useMemo(() => {
+    if (project?.aiConcepts && project.aiConcepts.length > 0) {
+      return project.aiConcepts.map((imgUrl, idx) => ({
+        id: idx + 1,
+        title: `ИИ ВИЗУАЛИЗАЦИЯ ${idx + 1}`,
+        subtitle: 'Генерация ИИ: Концепт-эскиз',
+        image: imgUrl
+      }));
     }
-  ];
-
-  // Venue photos array with default venue photos + uploaded photos support
-  const [venuePhotos, setVenuePhotos] = useState<string[]>([
-    'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1478146896981-b80fe463b330?auto=format&fit=crop&w=600&q=80'
-  ]);
+    if (visualizationScenes && visualizationScenes.length > 0) {
+      const aiScenes = visualizationScenes
+        .filter((sc: any) => sc.isAiGenerated || sc.isAi)
+        .map((sc: any, idx: number) => ({
+          id: sc.id || idx + 1,
+          title: sc.name || `ИИ ВИЗУАЛИЗАЦИЯ ${idx + 1}`,
+          subtitle: sc.subtitle || 'Генерация ИИ',
+          image: sc.image || sc.imageUrl || ''
+        }))
+        .filter((v: any) => Boolean(v.image));
+      if (aiScenes.length > 0) return aiScenes;
+    }
+    return [
+      {
+        id: 1,
+        title: 'ИИ ВИЗУАЛИЗАЦИЯ 1 (ЗОНА ЦЕРЕМОНИИ)',
+        subtitle: 'Генерация ИИ: Цветочная арка и зеркальный подиум',
+        image: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80'
+      },
+      {
+        id: 2,
+        title: 'ИИ ВИЗУАЛИЗАЦИЯ 2 (ВЕЧЕРНЕЕ ОСВЕЩЕНИЕ)',
+        subtitle: 'Генерация ИИ: Подсветка столов и ретро-гирлянды',
+        image: 'https://images.unsplash.com/photo-1527529482837-4698179dc6ce?auto=format&fit=crop&w=800&q=80'
+      },
+      {
+        id: 3,
+        title: 'ИИ ВИЗУАЛИЗАЦИЯ 3 (ФОТОЗОНА & ТЕКСТИЛЬ)',
+        subtitle: 'Генерация ИИ: Сервировка стола и драпировка ткани',
+        image: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80'
+      }
+    ];
+  }, [visualizationScenes, project]);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -270,7 +448,13 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {
-          setVenuePhotos(prev => prev.length < 6 ? [...prev, event.target!.result as string] : prev);
+          const newPhoto = event.target.result as string;
+          if (venuePhotos.length >= 6) return;
+          const updated = [...venuePhotos, newPhoto];
+          setVenuePhotos(updated);
+          if (project && onUpdateProject) {
+            onUpdateProject({ ...project, photos: updated });
+          }
           showToast?.('Фото загружено', 'Новое фото площадки успешно добавлено в проект', 'success');
         }
       };
@@ -315,60 +499,9 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
     }
   };
 
-  // Estimate interactive state
-  const [visualizationScenes, setVisualizationScenes] = useState([
-    {
-      id: 'scene-1',
-      name: 'Визуализация 1',
-      subtitle: 'Декор-арка и зона торжественной церемонии',
-      defaultPrice: 70000,
-      elements: [
-        { name: 'Конструктив фотозоны каркас', price: 25000 },
-        { name: 'Живая сортовая флористика (розы)', price: 45000 }
-      ]
-    },
-    {
-      id: 'scene-2',
-      name: 'Визуализация 2',
-      subtitle: '3D Эскиз оформления президиума и столов',
-      defaultPrice: 45000,
-      elements: [
-        { name: 'Оформление президиума текстилем', price: 20000 },
-        { name: 'Композиция из цветов на стол', price: 25000 }
-      ]
-    },
-    {
-      id: 'scene-3',
-      name: 'Визуализация 3',
-      subtitle: 'Приветственная Welcome-зона и план рассадки',
-      defaultPrice: 35000,
-      elements: [
-        { name: 'Приветственный задекорированный стенд', price: 15000 },
-        { name: 'Декоративные свечи и стойки', price: 20000 }
-      ]
-    }
-  ]);
-
-  const [disabledSceneIds, setDisabledSceneIds] = useState<string[]>([]);
-  const [customScenePrices, setCustomScenePrices] = useState<Record<string, number>>({});
-  const [serviceEstimate, setServiceEstimate] = useState<Array<{ id: string; name: string; category: string; quantity: number; price: number }>>([
-    { id: 'def_work_1', name: 'Монтаж и демонтаж конструкций', category: 'Работа', quantity: 1, price: 12000 },
-    { id: 'def_work_2', name: 'Транспортная доставка (Грузовой авто)', category: 'Доставка', quantity: 1, price: 5000 }
-  ]);
-
   const [newWorkName, setNewWorkName] = useState('');
   const [newWorkPrice, setNewWorkPrice] = useState<number | ''>('');
   const [showAddWorkRow, setShowAddWorkRow] = useState(false);
-
-  // Financial & status persistent state
-  const [advanceAmount, setAdvanceAmount] = useState<number>(135000);
-  const [isEditingClientPrice, setIsEditingClientPrice] = useState<boolean>(false);
-  const [isEditingAdvance, setIsEditingAdvance] = useState<boolean>(false);
-  const [projectStatus, setProjectStatus] = useState<'in_progress' | 'completed' | 'cancelled'>('in_progress');
-
-  const [markupPercent] = useState<number>(20);
-  const [taxRate] = useState<number>(6);
-  const [finalPrice, setFinalPrice] = useState<number>(450000);
 
   const getSceneCost = (sc: any) => {
     if (customScenePrices[sc.id] !== undefined) {
@@ -444,67 +577,24 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
   };
 
   const handleAddWorkPosition = () => {
-    if (!showAddWorkRow) {
-      setShowAddWorkRow(true);
-      return;
-    }
-    const nameToAdd = newWorkName.trim() || 'Новые монтажные работы';
-    const priceToAdd = newWorkPrice !== '' ? Number(newWorkPrice) : 0;
     const newItem = {
       id: `work_${Date.now()}`,
-      name: nameToAdd,
-      category: 'Доставка',
+      name: 'Монтажные работы / Доставка',
+      category: 'Логистика',
       quantity: 1,
-      price: priceToAdd
+      price: 0
     };
     setServiceEstimate(prev => [...prev, newItem]);
-    setNewWorkName('');
-    setNewWorkPrice('');
-    setShowAddWorkRow(false);
-    showToast?.('Работа добавлена', `Добавлена позиция «${nameToAdd}» (${priceToAdd.toLocaleString('ru')} ₽)`, 'success');
+    showToast?.('Работа добавлена', 'В раздел монтажных работ добавлена новая позиция', 'success');
   };
 
   const handleResetCalculator = () => {
-    setVisualizationScenes([
-      {
-        id: 'scene-1',
-        name: 'Визуализация 1',
-        subtitle: 'Декор-арка и зона торжественной церемонии',
-        defaultPrice: 70000,
-        elements: [
-          { name: 'Конструктив фотозоны каркас', price: 25000 },
-          { name: 'Живая сортовая флористика (розы)', price: 45000 }
-        ]
-      },
-      {
-        id: 'scene-2',
-        name: 'Визуализация 2',
-        subtitle: '3D Эскиз оформления президиума и столов',
-        defaultPrice: 45000,
-        elements: [
-          { name: 'Оформление президиума текстилем', price: 20000 },
-          { name: 'Композиция из цветов на стол', price: 25000 }
-        ]
-      },
-      {
-        id: 'scene-3',
-        name: 'Визуализация 3',
-        subtitle: 'Приветственная Welcome-зона и план рассадки',
-        defaultPrice: 35000,
-        elements: [
-          { name: 'Приветственный задекорированный стенд', price: 15000 },
-          { name: 'Декоративные свечи и стойки', price: 20000 }
-        ]
-      }
-    ]);
-    setServiceEstimate([
-      { id: 'def_work_1', name: 'Монтаж и демонтаж конструкций', category: 'Работа', quantity: 1, price: 12000 },
-      { id: 'def_work_2', name: 'Транспортная доставка (Грузовой авто)', category: 'Доставка', quantity: 1, price: 5000 }
-    ]);
+    setVisualizationScenes(getInitialScenesData(project));
+    setServiceEstimate(getInitialServiceEstimate(project));
     setDisabledSceneIds([]);
     setCustomScenePrices({});
-    setFinalPrice(450000);
-    showToast?.('Сброс сметы', 'Параметры сметы восстановлены к исходным', 'info');
+    setFinalPrice(project?.budget || 0);
+    showToast?.('Сброс сметы', 'Параметры сметы восстановлены к исходным данным проекта', 'info');
   };
 
   // Journal / Tasks & Notes State
@@ -524,51 +614,7 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
     completed?: boolean;
     category: string;
     createdAt?: string;
-  }>>([
-    {
-      id: 'tn_1',
-      type: 'task',
-      title: 'Заказать каркас круглого президиума у сварщиков',
-      dueDate: '2026-08-10',
-      completed: true,
-      category: 'Монтаж',
-      createdAt: '01.08.2026'
-    },
-    {
-      id: 'tn_2',
-      type: 'task',
-      title: 'Согласовать палитру роз с флористом (голландская поставка)',
-      dueDate: '2026-08-12',
-      completed: false,
-      category: 'Закупка',
-      createdAt: '02.08.2026'
-    },
-    {
-      id: 'tn_3',
-      type: 'note',
-      title: 'Площадка просит сделать защитное покрытие под свечи на столах',
-      dueDate: '2026-08-15',
-      category: 'Клиент',
-      createdAt: '03.08.2026'
-    },
-    {
-      id: 'tn_4',
-      type: 'task',
-      title: 'Забронировать грузовой борт на ночной демонтаж (23:00)',
-      dueDate: '2026-08-14',
-      completed: false,
-      category: 'Логистика',
-      createdAt: '04.08.2026'
-    },
-    {
-      id: 'tn_5',
-      type: 'note',
-      title: 'Высота потолков в Royal Hall ровно 4.5м, нужны стремянки 3м+',
-      dueDate: '2026-08-15',
-      category: 'Важное',
-      createdAt: '05.08.2026'
-    }
-  ]);
+  }>>(project?.tasks || []);
 
   const handleAddTaskNote = () => {
     if (!newTitle.trim()) {
@@ -617,7 +663,41 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
   };
 
   const handleUpdateBriefField = (key: string, value: string) => {
-    setBriefValues(prev => ({ ...prev, [key]: value }));
+    const nextBriefValues = { ...briefValues, [key]: value };
+    setBriefValues(nextBriefValues);
+
+    if (project && onUpdateProject) {
+      let updatedClientName = project.clientName;
+      let updatedClientPhone = project.clientPhone;
+      let updatedVenue = project.venue;
+      let updatedDate = project.date;
+      let updatedBudget = project.budget;
+
+      if (key === 'ИМЯ КЛИЕНТА') updatedClientName = value;
+      if (key === 'ТЕЛЕФОН') updatedClientPhone = value;
+      if (key === 'ПЛОЩАДКА') updatedVenue = value;
+      if (key === 'ДАТА') updatedDate = value;
+      if (key === 'ОРИЕНТИРОВОЧНЫЙ БЮДЖЕТ') {
+        const num = parseInt(value.replace(/\D/g, ''), 10);
+        if (!isNaN(num)) updatedBudget = num;
+      }
+
+      onUpdateProject({
+        ...project,
+        clientName: updatedClientName,
+        clientPhone: updatedClientPhone,
+        venue: updatedVenue,
+        date: updatedDate,
+        budget: updatedBudget,
+        briefValues: nextBriefValues,
+        brief: {
+          ...project.brief,
+          style: nextBriefValues["СТИЛЬ ОФОРМЛЕНИЯ"] || project.brief?.style || '',
+          guestsCount: parseInt(nextBriefValues["ГОСТЕЙ"], 10) || project.brief?.guestsCount || 0,
+          specialRequests: nextBriefValues["ДОПОЛНИТЕЛЬНАЯ ИНФОРМАЦИЯ"] || project.brief?.specialRequests || ''
+        }
+      });
+    }
   };
 
   const briefFieldDefinitions = useMemo(() => [
@@ -943,19 +1023,25 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
           {/* CLIENT & PROJECT INFO PILLS */}
           <div className="flex flex-wrap items-center gap-1.5 text-xs text-zinc-700 dark:text-zinc-300 w-full min-w-0">
             <span className="flex items-center gap-1 font-medium bg-white/80 dark:bg-zinc-800/80 px-2.5 py-0.5 rounded-full border border-white/90 dark:border-zinc-700/60 shadow-2xs text-[11px] shrink-0">
-              <User className="w-3 h-3 text-[#8C52D0]" /> <strong className="font-bold text-zinc-900 dark:text-zinc-100">{briefValues["ИМЯ КЛИЕНТА"] || 'Анна Соколова'}</strong>
+              <User className="w-3 h-3 text-[#8C52D0]" /> <strong className="font-bold text-zinc-900 dark:text-zinc-100">{briefValues["ИМЯ КЛИЕНТА"] || 'Клиент не указан'}</strong>
             </span>
 
-            <a href={`tel:${briefValues["ТЕЛЕФОН"] || '+7 (905) 123-45-67'}`} className="flex items-center gap-1 font-medium bg-white/80 dark:bg-zinc-800/80 px-2.5 py-0.5 rounded-full border border-white/90 dark:border-zinc-700/60 shadow-2xs text-[11px] hover:border-[#8C52D0] hover:text-[#8C52D0] transition-colors shrink-0">
-              <Phone className="w-3 h-3 text-[#8C52D0]" /> {briefValues["ТЕЛЕФОН"] || '+7 (905) 123-45-67'}
-            </a>
+            {briefValues["ТЕЛЕФОН"] ? (
+              <a href={`tel:${briefValues["ТЕЛЕФОН"]}`} className="flex items-center gap-1 font-medium bg-white/80 dark:bg-zinc-800/80 px-2.5 py-0.5 rounded-full border border-white/90 dark:border-zinc-700/60 shadow-2xs text-[11px] hover:border-[#8C52D0] hover:text-[#8C52D0] transition-colors shrink-0">
+                <Phone className="w-3 h-3 text-[#8C52D0]" /> {briefValues["ТЕЛЕФОН"]}
+              </a>
+            ) : (
+              <span className="flex items-center gap-1 font-medium bg-white/80 dark:bg-zinc-800/80 px-2.5 py-0.5 rounded-full border border-white/90 dark:border-zinc-700/60 shadow-2xs text-[11px] shrink-0 opacity-70">
+                <Phone className="w-3 h-3 text-[#8C52D0]" /> Телефон не указан
+              </span>
+            )}
 
             <span className="flex items-center gap-1 font-medium bg-white/80 dark:bg-zinc-800/80 px-2.5 py-0.5 rounded-full border border-white/90 dark:border-zinc-700/60 shadow-2xs text-[11px] shrink-0">
-              <Calendar className="w-3 h-3 text-[#8C52D0]" /> {briefValues["ДАТА"] || '15 сент 2026'}
+              <Calendar className="w-3 h-3 text-[#8C52D0]" /> {briefValues["ДАТА"] || 'Дата не указана'}
             </span>
 
             <span className="flex items-center gap-1 font-medium bg-white/80 dark:bg-zinc-800/80 px-2.5 py-0.5 rounded-full border border-white/90 dark:border-zinc-700/60 shadow-2xs text-[11px] shrink-0">
-              <MapPin className="w-3 h-3 text-[#8C52D0]" /> {briefValues["ПЛОЩАДКА"] || '«Royal Hall»'}
+              <MapPin className="w-3 h-3 text-[#8C52D0]" /> {briefValues["ПЛОЩАДКА"] || 'Площадка не указана'}
             </span>
           </div>
         </div>
@@ -1262,6 +1348,7 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
                     aiVizIndex={aiVizIndex}
                     setAiVizIndex={setAiVizIndex}
                     aiVisualizations={aiVisualizations}
+                    onOpenEditor={onOpenEditor}
                   />
 
                   <CalcBlock
@@ -1383,6 +1470,7 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
                     aiVizIndex={aiVizIndex}
                     setAiVizIndex={setAiVizIndex}
                     aiVisualizations={aiVisualizations}
+                    onOpenEditor={onOpenEditor}
                   />
                 </motion.div>
               )}

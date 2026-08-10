@@ -1,7 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Plus, Check, X, Layers, Percent, Package, ArrowUpRight, ArrowDownLeft, LayoutGrid, List, Pencil, Upload, Image as ImageIcon, Trash2, Sparkles, Sliders, RotateCcw, Loader2 } from 'lucide-react';
 import { WarehouseItem } from '../types';
 import DeleteConfirmModal from './DeleteConfirmModal';
+
+interface CategoryItem {
+  key: string;
+  label: string;
+}
+
+const DEFAULT_WAREHOUSE_CATEGORIES: CategoryItem[] = [
+  { key: 'Конструкции', label: 'Конструкции' },
+  { key: 'Вазы и посуда', label: 'Вазы и посуда' },
+  { key: 'Текстиль', label: 'Текстиль' },
+  { key: 'Освещение', label: 'Освещение' },
+  { key: 'Декор', label: 'Декор' }
+];
 
 interface WarehouseTabProps {
   items: WarehouseItem[];
@@ -207,8 +220,101 @@ export default function WarehouseTab({
   // Delete item state
   const [deletingItem, setDeletingItem] = useState<{ id: string; name: string } | null>(null);
 
-  // Filter categories
-  const categories = ['all', 'Конструкции', 'Вазы и посуда', 'Текстиль', 'Освещение', 'Декор'];
+  // Custom categories state
+  const [customCategories, setCustomCategories] = useState<CategoryItem[]>(() => {
+    const saved = localStorage.getItem('pop_warehouse_categories');
+    return saved ? JSON.parse(saved) : DEFAULT_WAREHOUSE_CATEGORIES;
+  });
+
+  // Adding/Editing categories state
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [editingCategoryKey, setEditingCategoryKey] = useState<string | null>(null);
+  const [editingCategoryName, setEditingCategoryName] = useState('');
+  const [deleteCategoryConfirm, setDeleteCategoryConfirm] = useState<{ key: string; label: string } | null>(null);
+
+  // Persist categories
+  useEffect(() => {
+    localStorage.setItem('pop_warehouse_categories', JSON.stringify(customCategories));
+  }, [customCategories]);
+
+  const allCategoriesList: CategoryItem[] = [
+    { key: 'all', label: 'Все товары' },
+    ...customCategories
+  ];
+
+  const getCategoryCount = (catKey: string) => {
+    if (catKey === 'all') return items.length;
+    const catObj = customCategories.find(c => c.key === catKey);
+    const catLabel = catObj ? catObj.label : catKey;
+    return items.filter(item => item.category === catKey || item.category === catLabel).length;
+  };
+
+  // Add new category
+  const handleAddCategorySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCategoryName.trim()) return;
+    const key = 'cat_' + Date.now();
+    const newCat: CategoryItem = {
+      key,
+      label: newCategoryName.trim()
+    };
+    const updated = [...customCategories, newCat];
+    setCustomCategories(updated);
+    setNewCategoryName('');
+    setIsAddingCategory(false);
+    setSelectedCategory(key);
+    showToast('Категория добавлена', `Категория «${newCat.label}» успешно создана.`, 'success');
+  };
+
+  // Rename category
+  const handleRenameCategorySubmit = (e: React.FormEvent, key: string) => {
+    e.preventDefault();
+    if (!editingCategoryName.trim()) {
+      setEditingCategoryKey(null);
+      return;
+    }
+    const oldCat = customCategories.find(c => c.key === key);
+    const oldLabel = oldCat ? oldCat.label : key;
+    const newLabel = editingCategoryName.trim();
+
+    const updatedCategories = customCategories.map(cat => 
+      cat.key === key ? { ...cat, label: newLabel } : cat
+    );
+    setCustomCategories(updatedCategories);
+
+    // Update existing items with old category name or key
+    const updatedItems = items.map(item => {
+      if (item.category === key || item.category === oldLabel) {
+        return { ...item, category: newLabel };
+      }
+      return item;
+    });
+    onUpdateItems(updatedItems);
+
+    setEditingCategoryKey(null);
+    showToast('Категория изменена', 'Название категории успешно обновлено.', 'success');
+  };
+
+  // Delete category
+  const handleDeleteCategory = (key: string, label: string) => {
+    setDeleteCategoryConfirm({ key, label });
+  };
+
+  const confirmDeleteCategory = () => {
+    if (!deleteCategoryConfirm) return;
+    const { key, label } = deleteCategoryConfirm;
+
+    const updatedCats = customCategories.filter(cat => cat.key !== key);
+    setCustomCategories(updatedCats);
+
+    if (selectedCategory === key) {
+      setSelectedCategory('all');
+    }
+
+    setDeleteCategoryConfirm(null);
+    showToast('Категория удалена', `Категория «${label}» успешно удалена.`, 'info');
+  };
 
   // Rent out / Return simulation (In projects / on shelves)
   const handleRentToggle = (itemId: string, action: 'rent' | 'return') => {
@@ -321,7 +427,10 @@ export default function WarehouseTab({
   };
 
   const filteredItems = items.filter(item => {
-    const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
+    const activeCatObj = customCategories.find(c => c.key === selectedCategory);
+    const matchesCategory = selectedCategory === 'all' || 
+      item.category === selectedCategory || 
+      (activeCatObj && item.category === activeCatObj.label);
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || item.category.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
@@ -331,47 +440,126 @@ export default function WarehouseTab({
       {/* Header controls */}
       <div className="space-y-4">
         {/* Row 1: Categories */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="flex flex-wrap gap-1.5">
-            {categories.map((cat, index) => {
-              const isActive = selectedCategory === cat;
-              const count = cat === 'all' ? items.length : items.filter(item => item.category === cat).length;
-              
-              let customStyle: React.CSSProperties = {
-                color: isActive ? undefined : '#43384A',
-              };
-              if (index === 0) {
-                customStyle.fontWeight = 'normal';
-              } else if (index === 1) {
-                customStyle.fontWeight = 'normal';
-                customStyle.textDecorationLine = 'none';
-                customStyle.lineHeight = '16px';
-              }
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 -mx-1 px-1 max-w-full sm:flex-wrap">
+          {allCategoriesList.map((cat) => {
+            const count = getCategoryCount(cat.key);
+            const isActive = selectedCategory === cat.key;
+            const isEditing = editingCategoryKey === cat.key;
+
+            if (isEditing) {
               return (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  style={customStyle}
-                  className={`rounded-full text-xs font-light tracking-wide border transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
+                <form
+                  key={cat.key}
+                  onSubmit={(e) => handleRenameCategorySubmit(e, cat.key)}
+                  className="flex items-center gap-1 bg-white dark:bg-zinc-800 px-3 py-1 rounded-full border border-[var(--lavenderAccent)] shrink-0"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <input
+                    type="text"
+                    value={editingCategoryName}
+                    onChange={(e) => setEditingCategoryName(e.target.value)}
+                    className="text-xs bg-transparent text-[var(--ink)] focus:outline-none w-20 font-semibold"
+                    autoFocus
+                    onBlur={() => setEditingCategoryKey(null)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') setEditingCategoryKey(null);
+                    }}
+                  />
+                  <button type="submit" className="text-green-500 hover:text-green-600 transition-colors cursor-pointer">
+                    <Check className="w-3.5 h-3.5" />
+                  </button>
+                  <button type="button" onClick={() => setEditingCategoryKey(null)} className="text-rose-500 hover:text-rose-600 transition-colors cursor-pointer">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </form>
+              );
+            }
+
+            return (
+              <button
+                key={cat.key}
+                onClick={() => setSelectedCategory(cat.key)}
+                className={`rounded-full text-xs font-semibold tracking-tight transition-all duration-200 cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+                  isActive
+                    ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-xs px-3 py-1'
+                    : 'bg-transparent text-[var(--soft)] hover:text-[var(--ink)] hover:bg-black/5 dark:hover:bg-white/5 border border-transparent px-2.5 py-1'
+                }`}
+              >
+                <span>{cat.label}</span>
+                <span
+                  className={`inline-flex items-center justify-center rounded-full text-[10px] font-bold min-w-[18px] h-4.5 px-1.5 transition-all duration-200 ${
                     isActive
-                      ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white border-[#582F89] shadow-sm px-3.5 py-1.5 font-medium'
-                      : 'bg-transparent text-[var(--soft)] hover:text-[var(--ink)] border-transparent px-2 py-1'
+                      ? 'bg-white/20 text-white backdrop-blur-xs'
+                      : 'bg-[var(--lavenderSoft)] text-[var(--lavDeep)] dark:bg-purple-950/60 dark:text-[var(--lavenderAccent)]'
                   }`}
                 >
-                  <span>{cat === 'all' ? 'Общее количество' : cat}</span>
-                  <span
-                    className={`inline-flex items-center justify-center rounded-full text-xs font-medium min-w-[20px] h-5 px-1.5 transition-all duration-200 ${
-                      isActive
-                        ? 'bg-white text-[var(--lavDeep)] font-bold'
-                        : 'bg-[var(--lavenderSoft)] text-[var(--lavDeep)] dark:bg-purple-950/60 dark:text-[var(--lavenderAccent)] font-medium'
-                    }`}
-                  >
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+                  {count}
+                </span>
+
+                {/* Inline Editing Controls for active category (except 'all') */}
+                {isActive && cat.key !== 'all' && (
+                  <div className="flex items-center gap-1 border-l border-white/20 dark:border-zinc-300/30 pl-1.5 ml-0.5">
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingCategoryKey(cat.key);
+                        setEditingCategoryName(cat.label);
+                      }}
+                      className="p-0.5 hover:bg-white/20 dark:hover:bg-black/10 rounded transition-all text-white/80 hover:text-white dark:text-zinc-800/80 dark:hover:text-zinc-900"
+                      title="Редактировать название"
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </span>
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteCategory(cat.key, cat.label);
+                      }}
+                      className="p-0.5 hover:bg-rose-500/30 rounded transition-all text-rose-300 hover:text-rose-100 dark:text-rose-600 dark:hover:text-rose-800"
+                      title="Удалить категорию"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </span>
+                  </div>
+                )}
+              </button>
+            );
+          })}
+
+          {/* Add Category inline button */}
+          {isAddingCategory ? (
+            <form onSubmit={handleAddCategorySubmit} className="flex items-center gap-1.5 bg-white dark:bg-zinc-900 px-3 py-1 rounded-full border border-zinc-200 dark:border-zinc-800 animate-fadeIn shrink-0">
+              <input
+                type="text"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="Новая категория..."
+                className="text-xs bg-transparent text-[var(--ink)] focus:outline-none w-28 font-medium px-1"
+                autoFocus
+                onBlur={() => {
+                  setTimeout(() => {
+                    if (!newCategoryName.trim()) {
+                      setIsAddingCategory(false);
+                    }
+                  }, 200);
+                }}
+              />
+              <button type="submit" className="text-green-500 hover:text-green-600 p-0.5 cursor-pointer">
+                <Check className="w-3.5 h-3.5" />
+              </button>
+              <button type="button" onClick={() => setIsAddingCategory(false)} className="text-rose-500 hover:text-rose-600 p-0.5 cursor-pointer">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </form>
+          ) : (
+            <button
+              onClick={() => setIsAddingCategory(true)}
+              className="px-3 py-1 rounded-full text-xs font-semibold border border-dashed border-zinc-300 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-all flex items-center gap-1 cursor-pointer shrink-0"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Категория</span>
+            </button>
+          )}
         </div>
 
         {/* Row 2: Search Input and View Mode Switcher */}
@@ -604,11 +792,11 @@ export default function WarehouseTab({
                       onChange={(e) => setNewItemCat(e.target.value)}
                       className="w-full text-xs px-3 py-2 rounded-xl bg-white/80 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 text-[var(--ink)] focus:outline-none focus:border-[var(--lavenderAccent)] transition-all cursor-pointer"
                     >
-                      <option value="Конструкции">Конструкции</option>
-                      <option value="Вазы и посуда">Вазы и посуда</option>
-                      <option value="Текстиль">Текстиль</option>
-                      <option value="Освещение">Освещение</option>
-                      <option value="Декор">Декор</option>
+                      {customCategories.map(cat => (
+                        <option key={cat.key} value={cat.label}>
+                          {cat.label}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
@@ -958,7 +1146,7 @@ export default function WarehouseTab({
         </div>
       )}
 
-      {/* Delete Confirmation Dialog */}
+      {/* Item Delete Confirmation Dialog */}
       <DeleteConfirmModal
         isOpen={!!deletingItem}
         title="Удалить позицию со склада?"
@@ -968,6 +1156,18 @@ export default function WarehouseTab({
         isDangerous={true}
         onClose={() => setDeletingItem(null)}
         onConfirm={confirmDeleteItem}
+      />
+
+      {/* Category Delete Confirmation Dialog */}
+      <DeleteConfirmModal
+        isOpen={!!deleteCategoryConfirm}
+        title="Удалить категорию?"
+        itemName={deleteCategoryConfirm?.label}
+        description={`Вы действительно хотите удалить категорию «${deleteCategoryConfirm?.label}»? Товары из нее останутся на складе.`}
+        confirmText="Удалить категорию"
+        isDangerous={true}
+        onClose={() => setDeleteCategoryConfirm(null)}
+        onConfirm={confirmDeleteCategory}
       />
     </div>
   );

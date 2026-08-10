@@ -28,6 +28,8 @@ export interface Project {
   currentStep: number; // 0: Бриф, 1: Визуал, 2: Смета, 3: Согласование
   budget: number;
   clientPrice?: number;
+  advance?: number;
+  tasks?: any[];
   estimate: EstimateItem[];
   brief: BriefData;
   briefValues?: Record<string, string>;
@@ -38,6 +40,8 @@ export interface Project {
   disabledSceneIds?: string[];
   customScenePrices?: Record<string, number>;
   photos?: string[];
+  decoratorSketches?: string[];
+  aiConcepts?: string[];
 }
 
 export interface WarehouseItem {

@@ -25,7 +25,6 @@ interface ImagesTabProps {
 
 export default function ImagesTab({ images, onUpdateImages, showToast, setHeaderActions }: ImagesTabProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [sourceFilter, setSourceFilter] = useState<'all' | 'uploaded' | 'ai'>('all');
   const [activeDropdownImageId, setActiveDropdownImageId] = useState<string | null>(null);
   const [zoomedImage, setZoomedImage] = useState<ImageItem | null>(null);
 
@@ -57,18 +56,6 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
   useEffect(() => {
     localStorage.setItem('pop_image_categories', JSON.stringify(customCategories));
   }, [customCategories]);
-
-  const getCategoryCount = (catKey: string) => {
-    let baseImages = images;
-    if (sourceFilter === 'ai') {
-      baseImages = images.filter(img => img.isAiGenerated);
-    } else if (sourceFilter === 'uploaded') {
-      baseImages = images.filter(img => !img.isAiGenerated);
-    }
-    
-    if (catKey === 'all') return baseImages.length;
-    return baseImages.filter(img => img.category === catKey).length;
-  };
 
   const handleCategoryChange = (imgId: string, newCategory: string) => {
     const updated = images.map(img => img.id === imgId ? { ...img, category: newCategory } : img);
@@ -194,74 +181,30 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
     });
   };
 
+  const getCategoryCount = (catKey: string) => {
+    if (catKey === 'all') return images.length;
+    if (catKey === 'ai_fiolet') return images.filter(img => img.isAiGenerated).length;
+    return images.filter(img => img.category === catKey).length;
+  };
+
   const filteredImages = images.filter(img => {
-    const matchCategory = selectedCategory === 'all' || img.category === selectedCategory;
-    const matchSource = sourceFilter === 'all' 
-      ? true 
-      : sourceFilter === 'ai' 
-        ? img.isAiGenerated === true 
-        : !img.isAiGenerated;
-    return matchCategory && matchSource;
+    if (selectedCategory === 'all') return true;
+    if (selectedCategory === 'ai_fiolet') return img.isAiGenerated === true;
+    return img.category === selectedCategory;
   });
 
   // Helper list to map categories for rendering tabs
-  const allCategoriesList = [
+  const allCategoriesList: { key: string; label: string; isSpecial?: boolean }[] = [
     { key: 'all', label: 'Все фото' },
+    { key: 'ai_fiolet', label: 'Создано ИИ', isSpecial: true },
     ...customCategories
   ];
 
   return (
     <div className="space-y-6">
-      {/* Top filter row */}
-      <div className="flex justify-end">
-        {/* Source Segmented Control */}
-        <div className="flex bg-zinc-100/80 dark:bg-zinc-800/40 p-1 rounded-xl border border-[var(--glass-edge)]/30 shadow-sm overflow-x-auto max-w-full">
-          <button
-            onClick={() => {
-              setSourceFilter('all');
-              setSelectedCategory('all');
-            }}
-            className={`px-3.5 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
-              sourceFilter === 'all'
-                ? 'bg-white dark:bg-zinc-900 text-[var(--ink)] shadow-sm'
-                : 'text-zinc-500 hover:text-[var(--ink)]'
-            }`}
-          >
-            Все ({images.length})
-          </button>
-          <button
-            onClick={() => {
-              setSourceFilter('uploaded');
-              setSelectedCategory('all');
-            }}
-            className={`px-3.5 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
-              sourceFilter === 'uploaded'
-                ? 'bg-white dark:bg-zinc-900 text-[var(--ink)] shadow-sm'
-                : 'text-zinc-500 hover:text-[var(--ink)]'
-            }`}
-          >
-            Загруженные ({images.filter(img => !img.isAiGenerated).length})
-          </button>
-          <button
-            onClick={() => {
-              setSourceFilter('ai');
-              setSelectedCategory('all');
-            }}
-            className={`px-3.5 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
-              sourceFilter === 'ai'
-                ? 'bg-white dark:bg-zinc-900 text-violet-600 dark:text-violet-400 shadow-sm'
-                : 'text-zinc-500 hover:text-[var(--ink)]'
-            }`}
-          >
-            <Sparkles className="w-3 h-3 text-violet-500 shrink-0 animate-pulse" />
-            <span>Создано ИИ ({images.filter(img => img.isAiGenerated).length})</span>
-          </button>
-        </div>
-      </div>
-
       {/* Categories Bar */}
-      <div className="flex flex-wrap gap-2 items-center bg-white/10 dark:bg-zinc-900/5 p-3 rounded-2xl border border-[var(--glass-edge)]/40 justify-between">
-        <div className="flex flex-wrap gap-2 items-center">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 max-w-full sm:flex-wrap">
           {allCategoriesList.map((cat) => {
             const count = getCategoryCount(cat.key);
             const isActive = selectedCategory === cat.key;
@@ -272,14 +215,14 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
                 <form
                   key={cat.key}
                   onSubmit={(e) => handleRenameCategorySubmit(e, cat.key)}
-                  className="flex items-center gap-1.5 bg-white dark:bg-zinc-800 px-3.5 py-1.5 rounded-full border border-[var(--lavenderAccent)]"
+                  className="flex items-center gap-1 bg-white dark:bg-zinc-800 px-3 py-1 rounded-full border border-[var(--lavenderAccent)] shrink-0"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <input
                     type="text"
                     value={editingCategoryName}
                     onChange={(e) => setEditingCategoryName(e.target.value)}
-                    className="text-xs bg-transparent text-[var(--ink)] focus:outline-none w-24 font-semibold"
+                    className="text-xs bg-transparent text-[var(--ink)] focus:outline-none w-20 font-semibold"
                     autoFocus
                     onBlur={() => setEditingCategoryKey(null)}
                     onKeyDown={(e) => {
@@ -296,27 +239,47 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
               );
             }
 
+            if (cat.isSpecial) {
+              return (
+                <button
+                  key={cat.key}
+                  onClick={() => setSelectedCategory(cat.key)}
+                  className={`rounded-full text-xs font-semibold tracking-tight transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap shadow-xs px-3 py-1 bg-white dark:bg-zinc-900 border ${
+                    isActive
+                      ? 'border-[#8C52D0] ring-2 ring-[#8C52D0]/30 text-[#8C52D0]'
+                      : 'border-zinc-200 dark:border-zinc-800 text-[#8C52D0] hover:border-[#8C52D0]/60'
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#8C52D0] shrink-0" />
+                  <span>Создано ИИ</span>
+                  <span className="inline-flex items-center justify-center rounded-full text-[10px] font-bold min-w-[18px] h-4.5 px-1.5 bg-[#8C52D0]/10 text-[#8C52D0]">
+                    {count}
+                  </span>
+                </button>
+              );
+            }
+
             return (
               <button
                 key={cat.key}
                 onClick={() => setSelectedCategory(cat.key)}
-                className={`rounded-full text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
+                className={`rounded-full text-xs font-semibold tracking-tight transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap ${
                   isActive
-                    ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white border border-[#582F89] px-3.5 py-1.5 font-semibold shadow-sm'
-                    : 'bg-transparent border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white px-2 py-1'
+                    ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-xs px-3 py-1'
+                    : 'bg-transparent border-transparent text-[var(--soft)] hover:text-[var(--ink)] hover:bg-black/5 dark:hover:bg-white/5 px-2.5 py-1'
                 }`}
               >
                 <span>{cat.label}</span>
-                <span className={`inline-flex items-center justify-center rounded-full text-[10px] font-bold min-w-[18px] h-[18px] px-1.5 transition-all ${
+                <span className={`inline-flex items-center justify-center rounded-full text-[10px] font-bold min-w-[18px] h-4.5 px-1.5 transition-all ${
                   isActive
-                    ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white'
+                    ? 'bg-white/20 text-white'
                     : 'bg-[var(--lavenderSoft)] text-[var(--lavDeep)] dark:bg-purple-950/60 dark:text-[var(--lavenderAccent)]'
                 }`}>
                   {count}
                 </span>
 
                 {/* Inline Editing Controls for active custom category */}
-                {isActive && cat.key !== 'all' && (
+                {isActive && cat.key !== 'all' && !cat.isSpecial && (
                   <div className="flex items-center gap-1 border-l border-white/20 dark:border-zinc-300/30 pl-1.5 ml-0.5">
                     <span
                       onClick={(e) => {

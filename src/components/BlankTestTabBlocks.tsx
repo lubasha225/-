@@ -1,4 +1,5 @@
 import React from 'react';
+import { EditorSketchCanvasPreview } from './EditorSketchCanvasPreview';
 import {
   Clipboard,
   Send,
@@ -364,6 +365,7 @@ interface DesignBlockProps {
   aiVizIndex: number;
   setAiVizIndex: React.Dispatch<React.SetStateAction<number>>;
   aiVisualizations: Array<{ title: string; subtitle: string; image: string }>;
+  onOpenEditor?: () => void;
 }
 
 export const DesignBlock: React.FC<DesignBlockProps> = ({
@@ -380,9 +382,18 @@ export const DesignBlock: React.FC<DesignBlockProps> = ({
   visualizations,
   aiVizIndex,
   setAiVizIndex,
-  aiVisualizations
+  aiVisualizations,
+  onOpenEditor
 }) => {
   const isCollapsed = isOverview && overviewCollapsed.design;
+
+  const currentViz = visualizations && visualizations.length > 0
+    ? (visualizations[vizIndex] || visualizations[0])
+    : { title: 'Эскиз', subtitle: 'Нет изображений', image: '' };
+
+  const currentAiViz = aiVisualizations && aiVisualizations.length > 0
+    ? (aiVisualizations[aiVizIndex] || aiVisualizations[0])
+    : { title: 'ИИ Концепт', subtitle: 'Нет изображений', image: '' };
 
   return (
     <div className={isOverview ? "bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[28px] border border-zinc-200/50 dark:border-zinc-800/40 p-5 sm:p-6 shadow-xs transition-all space-y-6" : "space-y-6"}>
@@ -414,7 +425,11 @@ export const DesignBlock: React.FC<DesignBlockProps> = ({
           {!isCollapsed && (
             <button
               onClick={() => {
-                showToast?.('Редактор дизайна', 'Переход в встроенный графический редактор...', 'info');
+                if (onOpenEditor) {
+                  onOpenEditor();
+                } else {
+                  showToast?.('Редактор дизайна', 'Переход в встроенный графический редактор...', 'info');
+                }
               }}
               style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
               className="rounded-full px-4 py-1.5 text-xs font-bold text-white flex items-center gap-1.5 cursor-pointer transition-all duration-300 hover:shadow-md hover:opacity-95 active:scale-[0.98] shadow-xs shrink-0"
@@ -463,20 +478,27 @@ export const DesignBlock: React.FC<DesignBlockProps> = ({
                 </div>
               </div>
 
-              <div className="relative aspect-16/10 rounded-2xl overflow-hidden border border-zinc-200/80 dark:border-zinc-800 shadow-xs group cursor-pointer">
-                <img
-                  src={visualizations[vizIndex].image}
-                  alt={visualizations[vizIndex].title}
-                  className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
+              <div className="relative aspect-16/10 rounded-2xl overflow-hidden border border-zinc-200/80 dark:border-zinc-800 shadow-xs group cursor-pointer bg-zinc-100 dark:bg-zinc-800">
+                <EditorSketchCanvasPreview
+                  title={currentViz.title}
+                  subtitle={currentViz.subtitle}
+                  sceneIndex={currentViz.sceneIndex ?? vizIndex}
+                  image={currentViz.image}
+                  sceneData={currentViz.sceneData}
+                  elements={currentViz.elements}
                 />
 
                 {/* HOVER EDIT OVERLAY BUTTON */}
-                <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-3 z-10">
+                <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-3 z-30">
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      showToast?.('Редактор эскизов', 'Открытие эскиза декоратора в графическом редакторе...', 'info');
+                      if (onOpenEditor) {
+                        onOpenEditor();
+                      } else {
+                        showToast?.('Редактор эскизов', 'Открытие эскиза декоратора в графическом редакторе...', 'info');
+                      }
                     }}
                     style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
                     className="rounded-full px-4 py-2 text-xs font-bold text-white flex items-center gap-1.5 cursor-pointer shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:scale-105"
@@ -484,11 +506,6 @@ export const DesignBlock: React.FC<DesignBlockProps> = ({
                     <SlidersHorizontal className="w-3.5 h-3.5 text-white" />
                     <span>Редактировать</span>
                   </button>
-                </div>
-
-                <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 via-black/40 to-transparent text-white z-20 pointer-events-none">
-                  <span className="text-[10px] font-mono tracking-wider opacity-80 block">{visualizations[vizIndex].title}</span>
-                  <p className="text-xs font-semibold">{visualizations[vizIndex].subtitle}</p>
                 </div>
               </div>
             </div>
@@ -497,17 +514,17 @@ export const DesignBlock: React.FC<DesignBlockProps> = ({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1">
-                  <Sparkles className="w-3.5 h-3.5" /> ИИ Концепции ({aiVizIndex + 1}/{aiVisualizations.length})
+                  <Sparkles className="w-3.5 h-3.5" /> ИИ Концепции ({aiVisualizations.length > 0 ? aiVizIndex + 1 : 0}/{aiVisualizations.length})
                 </span>
                 <div className="flex items-center gap-1.5">
                   <button
-                    onClick={() => setAiVizIndex(prev => (prev === 0 ? aiVisualizations.length - 1 : prev - 1))}
+                    onClick={() => setAiVizIndex(prev => (prev === 0 ? Math.max(0, aiVisualizations.length - 1) : prev - 1))}
                     className="p-1 rounded-lg bg-white/60 dark:bg-zinc-800/60 hover:bg-indigo-100 text-zinc-700 dark:text-zinc-300 cursor-pointer transition-colors"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => setAiVizIndex(prev => (prev === aiVisualizations.length - 1 ? 0 : prev + 1))}
+                    onClick={() => setAiVizIndex(prev => (prev === Math.max(0, aiVisualizations.length - 1) ? 0 : prev + 1))}
                     className="p-1 rounded-lg bg-white/60 dark:bg-zinc-800/60 hover:bg-indigo-100 text-zinc-700 dark:text-zinc-300 cursor-pointer transition-colors"
                   >
                     <ChevronRight className="w-4 h-4" />
@@ -515,12 +532,19 @@ export const DesignBlock: React.FC<DesignBlockProps> = ({
                 </div>
               </div>
 
-              <div className="relative aspect-16/10 rounded-2xl overflow-hidden border border-indigo-200/80 dark:border-indigo-900/60 shadow-xs group cursor-pointer">
-                <img
-                  src={aiVisualizations[aiVizIndex].image}
-                  alt={aiVisualizations[aiVizIndex].title}
-                  className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
-                />
+              <div className="relative aspect-16/10 rounded-2xl overflow-hidden border border-indigo-200/80 dark:border-indigo-900/60 shadow-xs group cursor-pointer bg-zinc-100 dark:bg-zinc-800">
+                {currentAiViz.image ? (
+                  <img
+                    src={currentAiViz.image}
+                    alt={currentAiViz.title}
+                    className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
+                  />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center text-indigo-400 p-4 text-center">
+                    <Sparkles className="w-8 h-8 mb-2 opacity-50" />
+                    <span className="text-xs">Нет ИИ концепций</span>
+                  </div>
+                )}
 
                 {/* HOVER EDIT OVERLAY BUTTON */}
                 <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-3 z-10">
@@ -528,7 +552,11 @@ export const DesignBlock: React.FC<DesignBlockProps> = ({
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      showToast?.('Редактор концепта', 'Открытие ИИ концепта в графическом редакторе...', 'info');
+                      if (onOpenEditor) {
+                        onOpenEditor();
+                      } else {
+                        showToast?.('Редактор концептов', 'Открытие концепта в графическом редакторе...', 'info');
+                      }
                     }}
                     style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
                     className="rounded-full px-4 py-2 text-xs font-bold text-white flex items-center gap-1.5 cursor-pointer shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:scale-105"
@@ -539,8 +567,8 @@ export const DesignBlock: React.FC<DesignBlockProps> = ({
                 </div>
 
                 <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 via-black/40 to-transparent text-white z-20 pointer-events-none">
-                  <span className="text-[10px] font-mono tracking-wider opacity-80 block">{aiVisualizations[aiVizIndex].title}</span>
-                  <p className="text-xs font-semibold">{aiVisualizations[aiVizIndex].subtitle}</p>
+                  <span className="text-[10px] font-mono tracking-wider opacity-80 block">{currentAiViz.title}</span>
+                  <p className="text-xs font-semibold">{currentAiViz.subtitle}</p>
                 </div>
               </div>
             </div>
@@ -654,8 +682,66 @@ export const CalcBlock: React.FC<CalcBlockProps> = ({
 }) => {
   const isCollapsed = isOverview && overviewCollapsed.calc;
 
+  const [expandedSceneIds, setExpandedSceneIds] = React.useState<string[]>(['scene-1']);
+
+  const toggleExpandScene = (sceneId: string) => {
+    setExpandedSceneIds(prev =>
+      prev.includes(sceneId) ? prev.filter(id => id !== sceneId) : [...prev, sceneId]
+    );
+  };
+
+  const handleUpdateElementInScene = (sceneId: string, elementKey: any, field: 'name' | 'price', value: any) => {
+    if (!setVisualizationScenes) return;
+    setVisualizationScenes(prev => prev.map((sc, idx) => {
+      const scMatch = sc.id ? sc.id === sceneId : `scene-${idx}` === sceneId;
+      if (!scMatch) return sc;
+      const elements = sc.elements || [];
+      const updatedElements = elements.map((el: any, elIdx: number) => {
+        const elMatch = el.id ? el.id === elementKey : elIdx === elementKey;
+        if (!elMatch) return el;
+        return { ...el, [field]: value };
+      });
+      return { ...sc, elements: updatedElements };
+    }));
+  };
+
+  const handleDeleteElementFromScene = (sceneId: string, elementKey: any) => {
+    if (!setVisualizationScenes) return;
+    setVisualizationScenes(prev => prev.map((sc, idx) => {
+      const scMatch = sc.id ? sc.id === sceneId : `scene-${idx}` === sceneId;
+      if (!scMatch) return sc;
+      const elements = sc.elements || [];
+      const updatedElements = elements.filter((el: any, elIdx: number) => {
+        const elMatch = el.id ? el.id === elementKey : elIdx === elementKey;
+        return !elMatch;
+      });
+      return { ...sc, elements: updatedElements };
+    }));
+    showToast?.('Элемент удален', 'Элемент декора удален из состава визуализации', 'info');
+  };
+
+  const handleAddElementToScene = (sceneId: string) => {
+    if (!setVisualizationScenes) return;
+    const newEl = {
+      id: `el_${Date.now()}`,
+      name: 'Новый декор элемент',
+      category: 'Декор',
+      quantity: 1,
+      price: 0
+    };
+    setVisualizationScenes(prev => prev.map((sc, idx) => {
+      const scMatch = sc.id ? sc.id === sceneId : `scene-${idx}` === sceneId;
+      if (!scMatch) return sc;
+      return { ...sc, elements: [...(sc.elements || []), newEl] };
+    }));
+    showToast?.('Элемент добавлен', 'Новый элемент добавлен в состав визуализации', 'success');
+  };
+
   const decorCost = visualizationScenes.reduce((sum: number, sc: any) => {
     if (disabledSceneIds.includes(sc.id)) return sum;
+    if (sc.elements && Array.isArray(sc.elements) && sc.elements.length > 0) {
+      return sum + sc.elements.reduce((s: number, el: any) => s + (Number(el.price) || 0), 0);
+    }
     return sum + getSceneCost(sc);
   }, 0);
 
@@ -736,94 +822,201 @@ export const CalcBlock: React.FC<CalcBlockProps> = ({
                 {/* VISUALIZATIONS SUMMARY ROWS */}
                 {visualizationScenes.length > 0 ? (
                   visualizationScenes.map((sc, idx) => {
+                    const sceneId = sc.id || `scene-${idx}`;
                     const isIncluded = !disabledSceneIds.includes(sc.id);
-                    const cost = getSceneCost(sc);
+                    const elements = sc.elements || [];
+                    const isExpanded = expandedSceneIds.includes(sceneId);
+
+                    const calculatedCost = (elements && elements.length > 0)
+                      ? elements.reduce((sum: number, el: any) => sum + (Number(el.price) || 0), 0)
+                      : getSceneCost(sc);
 
                     return (
-                      <tr
-                        key={sc.id || idx}
-                        className={`group transition-colors ${
-                          isIncluded
-                            ? 'hover:bg-purple-50/30 dark:hover:bg-purple-950/20'
-                            : 'opacity-50 bg-stone-50/60 dark:bg-zinc-900/40'
-                        }`}
-                      >
-                        {/* PREVIEW ICON */}
-                        <td className="py-2.5 px-1 sm:px-3">
-                          <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center shadow-2xs border ${
+                      <React.Fragment key={sceneId}>
+                        <tr
+                          className={`group transition-colors ${
                             isIncluded
-                              ? 'bg-purple-100/80 dark:bg-purple-900/50 border-purple-200 dark:border-purple-800 text-[#8C52D0] dark:text-purple-300'
-                              : 'bg-stone-200/60 dark:bg-zinc-800 border-stone-300 dark:border-zinc-700 text-stone-400'
-                          }`}>
-                            <Palette className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
-                          </div>
-                        </td>
-
-                        {/* SCENE NAME & SUBTITLE */}
-                        <td className="py-2.5 px-1.5 sm:px-3">
-                          <div className="flex flex-col min-w-0">
-                            {handleUpdateSceneName ? (
-                              <input
-                                type="text"
-                                value={sc.name || `Декор ${idx + 1}`}
-                                onChange={(e) => handleUpdateSceneName(sc.id, e.target.value)}
-                                className={`font-semibold text-xs sm:text-sm bg-transparent border-b border-transparent hover:border-purple-300 focus:border-[#8C52D0] focus:outline-none transition-colors w-full ${
-                                  isIncluded ? 'text-stone-900 dark:text-stone-100' : 'line-through text-stone-400 dark:text-zinc-500'
+                              ? 'hover:bg-purple-50/30 dark:hover:bg-purple-950/20'
+                              : 'opacity-50 bg-stone-50/60 dark:bg-zinc-900/40'
+                          }`}
+                        >
+                          {/* PREVIEW ICON & TOGGLE BUTTON */}
+                          <td className="py-2.5 px-1 sm:px-3">
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => toggleExpandScene(sceneId)}
+                                className="p-1 rounded-lg text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/60 transition-colors cursor-pointer"
+                                title={isExpanded ? 'Свернуть состав элементов' : 'Развернуть состав элементов'}
+                              >
+                                {isExpanded ? (
+                                  <ChevronUp className="w-4 h-4 stroke-[2.5]" />
+                                ) : (
+                                  <ChevronDown className="w-4 h-4 stroke-[2.5]" />
+                                )}
+                              </button>
+                              <div
+                                onClick={() => toggleExpandScene(sceneId)}
+                                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center shadow-2xs border cursor-pointer ${
+                                  isIncluded
+                                    ? 'bg-purple-100/80 dark:bg-purple-900/50 border-purple-200 dark:border-purple-800 text-[#8C52D0] dark:text-purple-300'
+                                    : 'bg-stone-200/60 dark:bg-zinc-800 border-stone-300 dark:border-zinc-700 text-stone-400'
                                 }`}
-                              />
-                            ) : (
-                              <span className={`font-semibold text-xs sm:text-sm truncate ${isIncluded ? 'text-stone-900 dark:text-stone-100' : 'line-through text-stone-400 dark:text-zinc-500'}`}>
-                                {sc.name || `Декор ${idx + 1}`}
-                              </span>
-                            )}
-                            <span className="text-[10px] sm:text-[11px] text-zinc-600 dark:text-zinc-400 font-normal truncate">
-                              {sc.subtitle || 'Отдельный элемент декора'}
-                            </span>
-                          </div>
-                        </td>
+                              >
+                                <Palette className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
+                              </div>
+                            </div>
+                          </td>
 
-                        {/* TOGGLE CHECKMARK */}
-                        <td className="py-2.5 px-1 sm:px-3 text-center">
-                          <button
-                            type="button"
-                            onClick={() => handleToggleSceneInEstimate(sc.id)}
-                            className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full inline-flex items-center justify-center transition-all cursor-pointer ${
-                              isIncluded
-                                ? 'bg-emerald-500 text-white shadow-2xs hover:bg-emerald-600'
-                                : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-600 hover:bg-zinc-300 dark:hover:bg-zinc-700'
-                            }`}
-                            title={isIncluded ? 'Включено в смету (нажмите чтобы исключить)' : 'Исключено из сметы (нажмите чтобы включить)'}
-                          >
-                            <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
-                          </button>
-                        </td>
+                          {/* SCENE NAME & SUBTITLE */}
+                          <td className="py-2.5 px-1.5 sm:px-3">
+                            <div className="flex flex-col min-w-0">
+                              {handleUpdateSceneName ? (
+                                <input
+                                  type="text"
+                                  value={sc.name || `Декор ${idx + 1}`}
+                                  onChange={(e) => handleUpdateSceneName(sc.id, e.target.value)}
+                                  className={`font-semibold text-xs sm:text-sm bg-transparent border-b border-transparent hover:border-purple-300 focus:border-[#8C52D0] focus:outline-none transition-colors w-full ${
+                                    isIncluded ? 'text-stone-900 dark:text-stone-100' : 'line-through text-stone-400 dark:text-zinc-500'
+                                  }`}
+                                />
+                              ) : (
+                                <span className={`font-semibold text-xs sm:text-sm truncate ${isIncluded ? 'text-stone-900 dark:text-stone-100' : 'line-through text-stone-400 dark:text-zinc-500'}`}>
+                                  {sc.name || `Декор ${idx + 1}`}
+                                </span>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => toggleExpandScene(sceneId)}
+                                className="text-[10px] sm:text-[11px] text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-200 font-normal truncate text-left flex items-center gap-1 cursor-pointer"
+                              >
+                                <span>
+                                  {elements.length > 0
+                                    ? `Состав: ${elements.length} эл. (нажмите чтобы ${isExpanded ? 'свернуть' : 'развернуть'})`
+                                    : (sc.subtitle || 'Нажмите, чтобы добавить состав элементов')}
+                                </span>
+                              </button>
+                            </div>
+                          </td>
 
-                        {/* COST INPUT & DELETE */}
-                        <td className="py-2.5 px-1.5 sm:px-3 text-right">
-                          <div className="inline-flex items-center gap-1 sm:gap-2 justify-end">
-                            <input
-                              type="number"
-                              disabled={!isIncluded}
-                              value={cost}
-                              onChange={(e) => handleUpdateScenePrice(sc.id, Number(e.target.value))}
-                              className={`w-20 sm:w-28 text-right font-bold text-xs sm:text-sm bg-white dark:bg-zinc-800 border rounded-xl px-1.5 sm:px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-[#8C52D0] ${
-                                isIncluded
-                                  ? 'border-purple-200 dark:border-purple-800 text-stone-900 dark:text-stone-100'
-                                  : 'border-stone-200 text-stone-400 bg-stone-100/50'
-                              }`}
-                            />
-                            <span className="font-semibold text-stone-700 dark:text-stone-300 text-xs sm:text-sm">₽</span>
+                          {/* TOGGLE CHECKMARK */}
+                          <td className="py-2.5 px-1 sm:px-3 text-center">
                             <button
                               type="button"
-                              onClick={() => handleDeleteScene(sc.id)}
-                              className="p-1 text-stone-400 hover:text-rose-500 transition-colors cursor-pointer shrink-0"
-                              title="Удалить позицию"
+                              onClick={() => handleToggleSceneInEstimate(sc.id)}
+                              className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full inline-flex items-center justify-center transition-all cursor-pointer ${
+                                isIncluded
+                                  ? 'bg-emerald-500 text-white shadow-2xs hover:bg-emerald-600'
+                                  : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-600 hover:bg-zinc-300 dark:hover:bg-zinc-700'
+                              }`}
+                              title={isIncluded ? 'Включено в смету (нажмите чтобы исключить)' : 'Исключено из сметы (нажмите чтобы включить)'}
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
                             </button>
-                          </div>
-                        </td>
-                      </tr>
+                          </td>
+
+                          {/* COST INPUT & DELETE */}
+                          <td className="py-2.5 px-1.5 sm:px-3 text-right">
+                            <div className="inline-flex items-center gap-1 sm:gap-2 justify-end">
+                              <input
+                                type="number"
+                                disabled={!isIncluded}
+                                value={calculatedCost}
+                                onChange={(e) => handleUpdateScenePrice(sc.id, Number(e.target.value))}
+                                className={`w-20 sm:w-28 text-right font-bold text-xs sm:text-sm bg-white dark:bg-zinc-800 border rounded-xl px-1.5 sm:px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-[#8C52D0] ${
+                                  isIncluded
+                                    ? 'border-purple-200 dark:border-purple-800 text-stone-900 dark:text-stone-100'
+                                    : 'border-stone-200 text-stone-400 bg-stone-100/50'
+                                }`}
+                              />
+                              <span className="font-semibold text-stone-700 dark:text-stone-300 text-xs sm:text-sm">₽</span>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteScene(sc.id)}
+                                className="p-1 text-stone-400 hover:text-rose-500 transition-colors cursor-pointer shrink-0"
+                                title="Удалить позицию"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+
+                        {/* EXPANDABLE INCLUDED ELEMENTS LIST */}
+                        {isExpanded && (
+                          <tr className="bg-purple-50/20 dark:bg-purple-950/10">
+                            <td colSpan={4} className="py-2 px-2 sm:px-4">
+                              <div className="ml-4 sm:ml-8 p-3.5 bg-white/90 dark:bg-zinc-900/90 rounded-2xl border border-purple-200/60 dark:border-purple-800/40 shadow-xs space-y-2.5">
+                                <div className="flex items-center justify-between pb-2 border-b border-stone-200/50 dark:border-zinc-800">
+                                  <div className="flex items-center gap-2">
+                                    <Sparkles className="w-3.5 h-3.5 text-[#8C52D0]" />
+                                    <span className="text-[11px] font-semibold text-stone-800 dark:text-stone-200">
+                                      Состав элементов «{sc.name || 'Визуализации'}» ({elements.length} шт.)
+                                    </span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleAddElementToScene(sceneId)}
+                                    className="text-xs font-semibold text-[#8C52D0] dark:text-purple-300 hover:text-purple-800 dark:hover:text-purple-200 flex items-center gap-1 cursor-pointer"
+                                  >
+                                    <Plus className="w-3.5 h-3.5" />
+                                    <span>Добавить элемент</span>
+                                  </button>
+                                </div>
+
+                                {elements.length > 0 ? (
+                                  <div className="space-y-2">
+                                    {elements.map((el: any, elIdx: number) => {
+                                      const elKey = el.id || elIdx;
+                                      return (
+                                        <div
+                                          key={elKey}
+                                          className="flex items-center gap-2 text-xs bg-stone-50 dark:bg-zinc-800/80 p-2 rounded-xl border border-stone-200/60 dark:border-zinc-700/60 hover:border-purple-300 dark:hover:border-purple-700 transition-colors"
+                                        >
+                                          <div className="p-1 bg-purple-100 dark:bg-purple-900/50 text-[#8C52D0] rounded-lg shrink-0">
+                                            <Sparkles className="w-3 h-3" />
+                                          </div>
+                                          <input
+                                            type="text"
+                                            value={el.name || ''}
+                                            onChange={(e) => handleUpdateElementInScene(sceneId, elKey, 'name', e.target.value)}
+                                            placeholder="Название элемента..."
+                                            className="font-semibold text-xs text-stone-900 dark:text-stone-100 bg-transparent border-b border-transparent hover:border-purple-300 focus:border-[#8C52D0] focus:outline-none flex-1 min-w-0"
+                                          />
+                                          <span className="text-[10px] text-stone-400 shrink-0 hidden sm:inline">
+                                            {el.category || 'Декор'} • {el.quantity || 1} шт.
+                                          </span>
+                                          <div className="inline-flex items-center gap-1 shrink-0">
+                                            <input
+                                              type="number"
+                                              value={el.price || 0}
+                                              onChange={(e) => handleUpdateElementInScene(sceneId, elKey, 'price', Number(e.target.value))}
+                                              className="w-20 text-right font-bold text-xs bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-700 rounded-lg px-2 py-0.5 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-[#8C52D0]"
+                                            />
+                                            <span className="font-semibold text-stone-600 dark:text-stone-400 text-xs">₽</span>
+                                          </div>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleDeleteElementFromScene(sceneId, elKey)}
+                                            className="p-1 text-stone-400 hover:text-rose-500 transition-colors cursor-pointer shrink-0"
+                                            title="Удалить элемент"
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                          </button>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                ) : (
+                                  <div className="text-[11px] text-stone-400 italic py-1 text-center">
+                                    Нет добавленных элементов. Нажмите «+ Добавить элемент», чтобы внести состав.
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
                     );
                   })
                 ) : (
@@ -849,100 +1042,60 @@ export const CalcBlock: React.FC<CalcBlockProps> = ({
                 </tr>
 
                 {/* SERVICES ROWS */}
-                {serviceEstimate.map((item) => (
-                  <tr key={item.id} className="hover:bg-stone-50/60 dark:hover:bg-zinc-800/40 transition-colors">
-                    <td className="py-2.5 px-1 sm:px-3">
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-stone-100 dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 text-stone-600 dark:text-stone-300 flex items-center justify-center shadow-2xs">
-                        <Truck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      </div>
-                    </td>
+                {serviceEstimate.length > 0 ? (
+                  serviceEstimate.map((item) => (
+                    <tr key={item.id} className="hover:bg-stone-50/60 dark:hover:bg-zinc-800/40 transition-colors">
+                      <td className="py-2.5 px-1 sm:px-3">
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-stone-100 dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 text-stone-600 dark:text-stone-300 flex items-center justify-center shadow-2xs">
+                          <Truck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        </div>
+                      </td>
 
-                    <td className="py-2.5 px-1.5 sm:px-3">
-                      <div className="flex flex-col min-w-0">
-                        {handleUpdateEstimateItemName ? (
+                      <td className="py-2.5 px-1.5 sm:px-3">
+                        <div className="flex flex-col min-w-0">
+                          {handleUpdateEstimateItemName ? (
+                            <input
+                              type="text"
+                              value={item.name}
+                              onChange={(e) => handleUpdateEstimateItemName(item.id, e.target.value)}
+                              className="font-semibold text-xs sm:text-sm bg-transparent text-stone-900 dark:text-stone-100 border-b border-transparent hover:border-stone-300 focus:border-[#8C52D0] focus:outline-none w-full"
+                            />
+                          ) : (
+                            <span className="font-semibold text-xs sm:text-sm text-stone-900 dark:text-stone-100 truncate">{item.name}</span>
+                          )}
+                          <span className="text-[10px] text-zinc-600 dark:text-zinc-400 font-normal truncate">
+                            {item.category || 'Услуга'} • {item.quantity || 1} шт.
+                          </span>
+                        </div>
+                      </td>
+
+                      <td className="py-2.5 px-1 sm:px-3 text-center"></td>
+
+                      <td className="py-2.5 px-1.5 sm:px-3 text-right">
+                        <div className="inline-flex items-center gap-1 sm:gap-2 justify-end">
                           <input
-                            type="text"
-                            value={item.name}
-                            onChange={(e) => handleUpdateEstimateItemName(item.id, e.target.value)}
-                            className="font-semibold text-xs sm:text-sm bg-transparent text-stone-900 dark:text-stone-100 border-b border-transparent hover:border-stone-300 focus:border-[#8C52D0] focus:outline-none w-full"
+                            type="number"
+                            value={item.price}
+                            onChange={(e) => handleUpdateEstimateItemPrice ? handleUpdateEstimateItemPrice(item.id, Number(e.target.value)) : setServiceEstimate(prev => prev.map(i => i.id === item.id ? { ...i, price: Number(e.target.value) } : i))}
+                            className="w-20 sm:w-28 text-right font-bold text-xs sm:text-sm bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-xl px-1.5 sm:px-2.5 py-1 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-[#8C52D0]"
                           />
-                        ) : (
-                          <span className="font-semibold text-xs sm:text-sm text-stone-900 dark:text-stone-100 truncate">{item.name}</span>
-                        )}
-                        <span className="text-[10px] text-zinc-600 dark:text-zinc-400 font-normal truncate">
-                          {item.category || 'Услуга'} • {item.quantity || 1} шт.
-                        </span>
-                      </div>
-                    </td>
-
-                    <td className="py-2.5 px-1 sm:px-3 text-center"></td>
-
-                    <td className="py-2.5 px-1.5 sm:px-3 text-right">
-                      <div className="inline-flex items-center gap-1 sm:gap-2 justify-end">
-                        <input
-                          type="number"
-                          value={item.price}
-                          onChange={(e) => handleUpdateEstimateItemPrice ? handleUpdateEstimateItemPrice(item.id, Number(e.target.value)) : setServiceEstimate(prev => prev.map(i => i.id === item.id ? { ...i, price: Number(e.target.value) } : i))}
-                          className="w-20 sm:w-28 text-right font-bold text-xs sm:text-sm bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-xl px-1.5 sm:px-2.5 py-1 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-[#8C52D0]"
-                        />
-                        <span className="font-semibold text-stone-700 dark:text-stone-300 text-xs sm:text-sm">₽</span>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteEstimateItem ? handleDeleteEstimateItem(item.id) : setServiceEstimate(prev => prev.filter(i => i.id !== item.id))}
-                          className="p-1 text-stone-400 hover:text-rose-500 transition-colors cursor-pointer shrink-0"
-                          title="Удалить работу"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-
-                {/* ADD WORK ROW INPUT */}
-                {showAddWorkRow && (
-                  <tr className="bg-purple-50/40 dark:bg-purple-950/20">
-                    <td className="py-2.5 px-3">
-                      <div className="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-900/60 text-[#8C52D0] flex items-center justify-center">
-                        <Plus className="w-4 h-4" />
-                      </div>
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <div className="flex flex-col gap-1">
-                        <input
-                          type="text"
-                          placeholder="Название работы или доставки..."
-                          value={newWorkName}
-                          onChange={(e) => setNewWorkName(e.target.value)}
-                          className="bg-white dark:bg-zinc-800 border border-[#8C52D0]/50 rounded-xl px-2.5 py-1 text-xs text-stone-900 dark:text-stone-100 focus:outline-none"
-                        />
-                      </div>
-                    </td>
-                    <td className="py-2.5 px-3 text-center">
-                      <span className="text-[10px] text-stone-400">Новая позиция</span>
-                    </td>
-                    <td className="py-2.5 px-3 text-right">
-                      <div className="inline-flex items-center gap-1.5 justify-end">
-                        <input
-                          type="number"
-                          placeholder="0"
-                          value={newWorkPrice}
-                          onChange={(e) => setNewWorkPrice(e.target.value ? Number(e.target.value) : '')}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleAddWorkPosition();
-                          }}
-                          className="w-28 border border-stone-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-stone-800 dark:text-stone-100 placeholder:text-stone-400 px-2.5 py-1 rounded-xl text-right font-bold text-sm focus:outline-none shadow-2xs"
-                        />
-                        <span className="font-semibold text-stone-700 dark:text-stone-300 text-sm">₽</span>
-                        <button
-                          type="button"
-                          onClick={() => setShowAddWorkRow(false)}
-                          className="p-1 text-stone-300 hover:text-rose-500 transition-colors cursor-pointer"
-                          title="Отмена"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                          <span className="font-semibold text-stone-700 dark:text-stone-300 text-xs sm:text-sm">₽</span>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteEstimateItem ? handleDeleteEstimateItem(item.id) : setServiceEstimate(prev => prev.filter(i => i.id !== item.id))}
+                            className="p-1 text-stone-400 hover:text-rose-500 transition-colors cursor-pointer shrink-0"
+                            title="Удалить работу"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="py-3 text-center text-stone-400 text-xs italic">
+                      Нет позиций монтажных работ или доставки
                     </td>
                   </tr>
                 )}
@@ -957,15 +1110,21 @@ export const CalcBlock: React.FC<CalcBlockProps> = ({
               onClick={() => {
                 if (setVisualizationScenes) {
                   const newNum = visualizationScenes.length + 1;
+                  const defaultDecorImages = [
+                    'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=800&q=80',
+                    'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=800&q=80',
+                    'https://images.unsplash.com/photo-1478146896981-b80fe463b330?auto=format&fit=crop&w=800&q=80'
+                  ];
                   const newScene = {
                     id: `scene-${Date.now()}`,
-                    name: `Декор ${newNum}`,
-                    subtitle: `Отдельный элемент декора`,
+                    name: `Визуализация ${newNum}`,
+                    subtitle: `Концепция оформления декор-зоны`,
+                    image: defaultDecorImages[(newNum - 1) % defaultDecorImages.length],
                     defaultPrice: 0,
                     elements: []
                   };
                   setVisualizationScenes(prev => [...prev, newScene]);
-                  showToast?.('Добавлен декор', `Создана новая позиция: Декор ${newNum}`, 'success');
+                  showToast?.('Добавлен декор', `Создана новая позиция: Визуализация ${newNum}`, 'success');
                 }
               }}
               className="w-full py-3 px-5 rounded-full bg-[#F3E8FF] dark:bg-purple-950/40 hover:bg-[#E9D5FF] dark:hover:bg-purple-900/50 border border-[#8C52D0]/50 dark:border-purple-600/50 flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 active:scale-[0.98] shadow-xs"

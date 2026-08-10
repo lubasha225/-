@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { EditorSketchCanvasPreview } from './EditorSketchCanvasPreview';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   X,
@@ -355,26 +356,40 @@ export default function ProjectDetailModal({
 
   // Carousel state for Visualizations
   const [vizIndex, setVizIndex] = useState<number>(0);
-  const visualizations = [
-    {
-      id: 1,
-      title: 'ВИЗУАЛИЗАЦИЯ 1 (АРКА И ЦВЕТОЧНАЯ ЗОНА)',
-      subtitle: 'Концепция декор-арки и зоны церемонии',
-      image: project?.imageUrl || 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=800&q=80'
-    },
-    {
-      id: 2,
-      title: 'ВИЗУАЛИЗАЦИЯ 2 (ПРЕЗИДИУМ & СТОЛ)',
-      subtitle: '3D Эскиз оформления центрального стола',
-      image: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=800&q=80'
-    },
-    {
-      id: 3,
-      title: 'ВИЗУАЛИЗАЦИЯ 3 (WELCOME-ЗОНА)',
-      subtitle: 'Приветственный стенд и композиции у входа',
-      image: 'https://images.unsplash.com/photo-1478146896981-b80fe463b330?auto=format&fit=crop&w=800&q=80'
-    }
-  ];
+  const visualizations = (project?.scenesData && project.scenesData.length > 0)
+    ? project.scenesData.map((sc: any, i: number) => {
+        const rawImg = sc.backdropImage || sc.image || sc.imageUrl || '';
+        const img = (rawImg && !rawImg.includes('unsplash')) ? rawImg : '';
+        return {
+          id: sc.id || i + 1,
+          title: sc.name ? sc.name.toUpperCase() : `ВИЗУАЛИЗАЦИЯ ${i + 1}`,
+          subtitle: sc.subtitle || 'Эскиз оформления',
+          image: img,
+          sceneIndex: i,
+          sceneData: sc,
+          elements: sc.elements
+        };
+      })
+    : [
+        {
+          id: 1,
+          title: 'ВИЗУАЛИЗАЦИЯ 1',
+          subtitle: 'Концепция декор-арки и зоны церемонии',
+          image: '',
+          sceneIndex: 0,
+          sceneData: null,
+          elements: []
+        },
+        {
+          id: 2,
+          title: 'ВИЗУАЛИЗАЦИЯ 2',
+          subtitle: 'Президиум и стол молодоженов',
+          image: '',
+          sceneIndex: 1,
+          sceneData: null,
+          elements: []
+        }
+      ];
 
   // Carousel state for AI Visualizations
   const [aiVizIndex, setAiVizIndex] = useState<number>(0);
@@ -1553,18 +1568,16 @@ export default function ProjectDetailModal({
                       title="Нажмите, чтобы открыть визуализацию в редакторе"
                     >
                       <div className="aspect-square w-full max-w-[280px] sm:max-w-[300px] overflow-hidden rounded-2xl border border-stone-200/80 dark:border-zinc-800 shadow-xs relative transition-all duration-300 group-hover:shadow-md group-hover:border-[#8C52D0]">
-                        <img
-                          src={visualizations[vizIndex].image}
-                          alt={visualizations[vizIndex].title}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        <EditorSketchCanvasPreview
+                          title={visualizations[vizIndex % visualizations.length]?.title}
+                          subtitle={visualizations[vizIndex % visualizations.length]?.subtitle}
+                          sceneIndex={visualizations[vizIndex % visualizations.length]?.sceneIndex ?? (vizIndex % visualizations.length)}
+                          image={visualizations[vizIndex % visualizations.length]?.image}
+                          sceneData={visualizations[vizIndex % visualizations.length]?.sceneData}
+                          elements={visualizations[vizIndex % visualizations.length]?.elements}
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex flex-col justify-end p-3 transition-opacity">
-                          <span className="text-[11px] text-white font-bold leading-tight drop-shadow-xs">
-                            {visualizations[vizIndex].subtitle}
-                          </span>
-                        </div>
                         {/* HOVER BADGE */}
-                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/60 dark:bg-black/75 backdrop-blur-md text-white text-[9px] font-bold px-2.5 py-1 rounded-full shadow-md flex items-center gap-1 border border-white/20">
+                        <div className="absolute top-2 right-2 z-30 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/60 dark:bg-black/75 backdrop-blur-md text-white text-[9px] font-bold px-2.5 py-1 rounded-full shadow-md flex items-center gap-1 border border-white/20">
                           <Edit2 className="w-2.5 h-2.5" /> Редактировать
                         </div>
                       </div>
