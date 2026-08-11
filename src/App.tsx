@@ -272,19 +272,36 @@ export default function App() {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isMobileProfileMenuOpen, setIsMobileProfileMenuOpen] = useState(false);
 
-  // Brand Logo state (sync with Brand Profile)
+  // Brand Logo & Profile state (sync with Brand Profile)
   const [brandLogoUrl, setBrandLogoUrl] = useState<string | null>(() => {
     return localStorage.getItem('fleur_studio_logo') || null;
   });
+  const [brandUserName, setBrandUserName] = useState<string>(() => {
+    return localStorage.getItem('fleur_user_name') || 'Денис С.';
+  });
+  const [brandUserEmail, setBrandUserEmail] = useState<string>(() => {
+    return localStorage.getItem('fleur_user_email') || 'denis@fleur-decor.ru';
+  });
 
   useEffect(() => {
-    const checkLogo = () => {
+    const syncProfile = () => {
       setBrandLogoUrl(localStorage.getItem('fleur_studio_logo') || null);
+      setBrandUserName(localStorage.getItem('fleur_user_name') || 'Денис С.');
+      setBrandUserEmail(localStorage.getItem('fleur_user_email') || 'denis@fleur-decor.ru');
     };
-    window.addEventListener('storage', checkLogo);
-    checkLogo();
-    return () => window.removeEventListener('storage', checkLogo);
+    window.addEventListener('storage', syncProfile);
+    syncProfile();
+    return () => window.removeEventListener('storage', syncProfile);
   }, [activeTab]);
+
+  const getUserInitials = (name: string) => {
+    if (!name) return 'Д';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+  };
 
   // Notification lists
   const [notifications, setNotifications] = useState([
@@ -412,7 +429,7 @@ export default function App() {
         "ТЕЛЕФОН": newProj.clientPhone || "",
         "СОБЫТИЕ": newProj.name && !newProj.name.startsWith('proj_') ? newProj.name : "",
         "ДАТА": newProj.date || "",
-        "ПЛОЩАДКА": newProj.venue && newProj.venue !== 'Площадка не указана' ? newProj.venue : "",
+        "АДРЕС ПЛОЩАДКИ/НАЗВАНИЕ": newProj.venue && newProj.venue !== 'Площадка не указана' ? newProj.venue : "",
         "ОРИЕНТИРОВОЧНЫЙ БЮДЖЕТ": newProj.budget ? `${newProj.budget.toLocaleString('ru')} ₽` : "",
       },
       brief: {
@@ -772,48 +789,82 @@ export default function App() {
       <AnimatePresence>
         {isMobileNavOpen && (
           <>
-            <div className="fixed inset-0 z-[90]" onClick={() => setIsMobileNavOpen(false)} />
+            {/* Backdrop */}
             <motion.div
-              initial={{ opacity: 0, y: 8, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 8, scale: 0.95 }}
-              transition={{ duration: 0.15 }}
-              className="absolute right-0 top-full mt-2 w-56 bg-white/90 dark:bg-zinc-900/95 backdrop-blur-2xl border border-white/80 dark:border-zinc-700/60 rounded-2xl shadow-2xl p-1.5 z-[100] overflow-hidden"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-black/25 dark:bg-black/50 backdrop-blur-xs z-[1199]"
+              onClick={() => setIsMobileNavOpen(false)}
+            />
+
+            {/* Side Curtain Drawer */}
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 26, stiffness: 260 }}
+              className="fixed top-0 right-0 bottom-0 h-full w-[280px] sm:w-[320px] bg-white/80 dark:bg-zinc-900/85 backdrop-blur-2xl border-l border-white/60 dark:border-zinc-800/60 shadow-2xl z-[1200] flex flex-col p-5 overflow-y-auto"
             >
-              {[
-                { value: 'projects', label: 'Мои проекты', icon: <FolderKanban className="w-4 h-4" /> },
-                { value: 'projectCard', label: 'Карточка проекта', icon: <FolderOpen className="w-4 h-4" /> },
-                { value: 'moodboard', label: 'Редактор', icon: <Layout className="w-4 h-4" /> },
-                { value: 'calendar', label: 'Календарь', icon: <Calendar className="w-4 h-4" /> },
-                { value: 'warehouse', label: 'Мой склад', icon: <Warehouse className="w-4 h-4" /> },
-                { value: 'images', label: 'Мои изображения', icon: <ImageIcon className="w-4 h-4" /> },
-                { value: 'documents', label: 'Мои документы', icon: <FileText className="w-4 h-4" /> },
-                { value: 'profile', label: 'Профиль бренда', icon: <User className="w-4 h-4" /> },
-                { value: 'settings', label: 'Настройки', icon: <Settings className="w-4 h-4" /> }
-              ].map((item) => {
-                const isSelected = activeTab === item.value;
-                return (
-                  <button
-                    key={item.value}
-                    onClick={() => {
-                      setSelectedProject(null);
-                      setActiveTab(item.value as any);
-                      setIsMobileNavOpen(false);
-                    }}
-                    className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-between cursor-pointer ${
-                      isSelected
-                        ? 'bg-[var(--lavDeep)] text-white shadow-xs'
-                        : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/80'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      {item.icon}
-                      <span>{item.label}</span>
-                    </div>
-                    {isSelected && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
-                  </button>
-                );
-              })}
+              {/* Header */}
+              <div className="flex items-center justify-between pb-4 border-b border-zinc-200/60 dark:border-zinc-800/80 mb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#8C52D0] to-[#582F89] flex items-center justify-center text-white font-bold text-sm shadow-xs">
+                    Ф
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Навигация</h3>
+                    <p className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400">Студия Декора</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsMobileNavOpen(false)}
+                  className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer"
+                  title="Закрыть шторку"
+                >
+                  <X className="w-4 h-4 stroke-[2.5]" />
+                </button>
+              </div>
+
+              {/* Menu Options */}
+              <div className="flex flex-col gap-1.5 flex-1">
+                {[
+                  { value: 'projects', label: 'Мои проекты', icon: <FolderKanban className="w-4 h-4" /> },
+                  { value: 'moodboard', label: 'Редактор', icon: <Layout className="w-4 h-4" /> },
+                  { value: 'calendar', label: 'Календарь', icon: <Calendar className="w-4 h-4" /> },
+                  { value: 'warehouse', label: 'Мой склад', icon: <Warehouse className="w-4 h-4" /> },
+                  { value: 'images', label: 'Мои изображения', icon: <ImageIcon className="w-4 h-4" /> },
+                  { value: 'documents', label: 'Мои документы', icon: <FileText className="w-4 h-4" /> },
+                  { value: 'profile', label: 'Профиль бренда', icon: <User className="w-4 h-4" /> },
+                  { value: 'settings', label: 'Настройки', icon: <Settings className="w-4 h-4" /> }
+                ].map((item) => {
+                  const isSelected = activeTab === item.value;
+                  return (
+                    <button
+                      key={item.value}
+                      onClick={() => {
+                        setSelectedProject(null);
+                        setActiveTab(item.value as any);
+                        setIsMobileNavOpen(false);
+                      }}
+                      className={`w-[calc(100%+40px)] -mx-5 px-5 py-2.5 text-xs transition-all flex items-center justify-between cursor-pointer ${
+                        isSelected
+                          ? 'border-l-4 border-[#8C52D0] dark:border-[#C084FC] bg-gradient-to-r from-[#F3E8FF] via-[#E9D5FF]/60 to-transparent dark:from-[#582F89]/85 dark:via-[#8C52D0]/40 dark:to-transparent text-[#4C1D95] dark:text-purple-100 font-semibold'
+                          : 'text-zinc-800 dark:text-zinc-200 hover:bg-white/60 dark:hover:bg-zinc-800/60 font-medium'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className={isSelected ? 'text-[#8C52D0] dark:text-[#C084FC]' : 'text-[#8C52D0] dark:text-purple-400'}>
+                          {item.icon}
+                        </span>
+                        <span>{item.label}</span>
+                      </div>
+                      {isSelected && <Check className="w-4 h-4 text-[#8C52D0] dark:text-[#C084FC] stroke-[2.5]" />}
+                    </button>
+                  );
+                })}
+              </div>
             </motion.div>
           </>
         )}
@@ -987,7 +1038,7 @@ export default function App() {
       {/* 1. BRAND SIDEBAR (LEFT) */}
       <aside
         className={`shrink-0 hidden md:flex flex-col gap-4 sticky top-0 h-screen border-r backdrop-blur-xl z-20 transition-all duration-300 ${
-          isLeftSidebarExpanded ? 'w-56 p-4' : 'w-14 items-center py-4 px-1.5'
+          isLeftSidebarExpanded ? 'w-[260px] p-4' : 'w-14 items-center py-4 px-1.5'
         }`}
         style={{ backgroundColor: 'var(--sidebar-bg)', borderColor: 'var(--sidebar-border)' }}
       >
@@ -999,7 +1050,7 @@ export default function App() {
                 Ф
               </div>
               <div className="min-w-0">
-                <span className="font-semibold text-[#1B0E20] dark:text-zinc-100 text-[14px] tracking-tight leading-tight block">Флёр Деко</span>
+                <span className="font-semibold text-[var(--ink)] text-[14px] tracking-tight leading-tight block">Флёр Деко</span>
                 <span className="text-[10px] text-[var(--faint)] leading-none mt-0.5 block">премиум</span>
               </div>
             </div>
@@ -1031,7 +1082,7 @@ export default function App() {
         )}
 
         {/* Sidebar Navigation */}
-        <nav className={`flex flex-col gap-0.5 w-full ${!isLeftSidebarExpanded ? 'items-center' : ''}`}>
+        <nav className={`flex flex-col gap-1 w-full ${!isLeftSidebarExpanded ? 'items-center' : ''}`}>
           {[
             { key: 'projects', label: 'Мои проекты', icon: <FolderKanban className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'moodboard', label: 'Редактор', icon: <Layout className="w-[17px] h-[17px] shrink-0" /> },
@@ -1040,26 +1091,33 @@ export default function App() {
             { key: 'documents', label: 'Мои документы', icon: <FileText className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'profile', label: 'Профиль бренда', icon: <User className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'settings', label: 'Настройки', icon: <Settings className="w-[17px] h-[17px] shrink-0" /> }
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => {
-                setSelectedProject(null);
-                setActiveTab(tab.key as any);
-              }}
-              title={!isLeftSidebarExpanded ? tab.label : undefined}
-              className={`flex items-center gap-2.5 rounded-xl text-[14px] transition-all cursor-pointer ${
-                isLeftSidebarExpanded ? 'px-3 py-1.5 w-full justify-start' : 'p-1.5 w-8 h-8 justify-center'
-              } ${
-                activeTab === tab.key
-                  ? 'bg-[var(--glass-strong)] border border-[var(--glass-edge)] text-[#1B0D22] dark:text-zinc-100 font-normal shadow-sm'
-                  : 'text-[#1B0D22] dark:text-zinc-300 hover:bg-white/30 dark:hover:bg-zinc-800/20 border border-transparent font-normal'
-              }`}
-            >
-              {tab.icon}
-              {isLeftSidebarExpanded && <span>{tab.label}</span>}
-            </button>
-          ))}
+          ].map((tab) => {
+            const isSelected = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => {
+                  setSelectedProject(null);
+                  setActiveTab(tab.key as any);
+                }}
+                title={!isLeftSidebarExpanded ? tab.label : undefined}
+                className={`flex items-center text-[14px] transition-all cursor-pointer ${
+                  isLeftSidebarExpanded
+                    ? isSelected
+                      ? '-mx-4 px-4 py-2.5 w-[calc(100%+32px)] justify-start border-l-4 border-[#8C52D0] dark:border-[#C084FC] bg-gradient-to-r from-[#F3E8FF] via-[#E9D5FF]/60 to-transparent dark:from-[#582F89]/85 dark:via-[#8C52D0]/40 dark:to-transparent text-[#4C1D95] dark:text-purple-100 font-semibold gap-2.5'
+                      : 'px-3 py-2 w-full justify-start text-[var(--soft)] dark:text-zinc-300 hover:text-[var(--ink)] hover:bg-white/40 dark:hover:bg-zinc-800/40 rounded-xl font-normal gap-2.5'
+                    : isSelected
+                      ? '-mx-1.5 px-1.5 py-2 w-[calc(100%+12px)] justify-center border-l-4 border-[#8C52D0] dark:border-[#C084FC] bg-gradient-to-r from-[#F3E8FF] via-[#E9D5FF]/60 to-transparent dark:from-[#582F89]/85 dark:via-[#8C52D0]/40 dark:to-transparent text-[#4C1D95] dark:text-purple-100 font-semibold'
+                      : 'p-1.5 w-8 h-8 justify-center text-[var(--soft)] dark:text-zinc-300 hover:text-[var(--ink)] hover:bg-white/40 dark:hover:bg-zinc-800/40 rounded-xl font-normal'
+                }`}
+              >
+                <span className={isSelected ? 'text-[#8C52D0] dark:text-[#C084FC]' : ''}>
+                  {tab.icon}
+                </span>
+                {isLeftSidebarExpanded && <span>{tab.label}</span>}
+              </button>
+            );
+          })}
         </nav>
 
         <div className="flex-1" />
@@ -1072,14 +1130,20 @@ export default function App() {
               onClick={() => setIsProfileExpanded(!isProfileExpanded)}
               className="flex items-center justify-between cursor-pointer"
             >
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-[var(--lavenderSoft)] text-[var(--lavDeep)] flex items-center justify-center font-medium text-xs shrink-0">ДС</div>
-                <div className="min-w-0">
-                  <p className="font-medium text-[var(--ink)] text-xs truncate">Денис С.</p>
-                  <p className="text-[10px] text-[var(--faint)] truncate">denis@example.com</p>
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-full bg-[var(--lavenderSoft)] text-[var(--lavDeep)] flex items-center justify-center font-medium text-xs shrink-0 overflow-hidden shadow-xs border border-[var(--lavenderAccent)]/20">
+                  {brandLogoUrl ? (
+                    <img src={brandLogoUrl} alt={brandUserName} className="w-full h-full object-cover" />
+                  ) : (
+                    <span>{getUserInitials(brandUserName)}</span>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-[var(--ink)] text-xs truncate">{brandUserName}</p>
+                  <p className="text-[10px] text-[var(--faint)] truncate">{brandUserEmail}</p>
                 </div>
               </div>
-              <ChevronDown className={`w-3.5 h-3.5 text-[var(--faint)] transition-transform duration-300 ${isProfileExpanded ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-3.5 h-3.5 text-[var(--faint)] shrink-0 transition-transform duration-300 ${isProfileExpanded ? 'rotate-180' : ''}`} />
             </div>
 
             {/* Always Visible Tariff Block */}
@@ -1137,10 +1201,14 @@ export default function App() {
         ) : (
           <button
             onClick={() => setIsLeftSidebarExpanded(true)}
-            title="Денис С. (Тариф PRO)"
-            className="w-8 h-8 rounded-full bg-[var(--lavenderSoft)] text-[var(--lavDeep)] flex items-center justify-center font-semibold text-xs shrink-0 hover:scale-105 transition-transform cursor-pointer"
+            title={`${brandUserName} (${brandUserEmail}) · Тариф PRO`}
+            className="w-8 h-8 rounded-full bg-[var(--lavenderSoft)] text-[var(--lavDeep)] flex items-center justify-center font-semibold text-xs shrink-0 hover:scale-105 transition-transform cursor-pointer overflow-hidden shadow-xs border border-[var(--lavenderAccent)]/20"
           >
-            ДС
+            {brandLogoUrl ? (
+              <img src={brandLogoUrl} alt={brandUserName} className="w-full h-full object-cover" />
+            ) : (
+              <span>{getUserInitials(brandUserName)}</span>
+            )}
           </button>
         )}
       </aside>
@@ -1375,27 +1443,27 @@ export default function App() {
                     </div>
 
                     {/* Row 2: Search Input, Sorting Select, and View Mode Switcher */}
-                    <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 bg-white/10 dark:bg-zinc-900/5 p-1.5 rounded-2xl sm:rounded-full border border-[var(--glass-edge)]/40">
+                    <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 bg-white/40 dark:bg-zinc-900/60 p-1.5 rounded-2xl sm:rounded-full border border-[var(--glass-edge)]">
                       <div className="flex flex-1 items-center gap-2 max-w-xl w-full sm:w-auto">
                         <div className="relative flex-1">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
+                          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
                           <input
                             type="text"
                             placeholder="Поиск по клиенту, площадке..."
                             value={projectQuery}
                             onChange={(e) => setProjectQuery(e.target.value)}
-                            className="pl-8 pr-3 py-1 rounded-full text-xs bg-white/30 dark:bg-zinc-900/20 border border-zinc-200/50 dark:border-zinc-800/50 text-[var(--ink)] placeholder:text-zinc-400 focus:outline-none focus:border-[var(--lavenderAccent)] w-full transition-colors"
+                            className="pl-9 pr-3 py-1.5 rounded-full text-xs bg-white/70 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700/80 text-[var(--ink)] placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none focus:border-[var(--lavenderAccent)] w-full transition-colors shadow-2xs"
                           />
                         </div>
 
                         <select
                           value={projectSort}
                           onChange={(e) => setProjectSort(e.target.value as any)}
-                          className="text-xs bg-white/30 dark:bg-zinc-900/20 border border-zinc-200/50 dark:border-zinc-800/50 rounded-full py-1 px-2.5 text-[var(--ink)] focus:outline-none focus:border-[var(--lavenderAccent)] font-medium transition-colors shrink-0"
+                          className="text-xs bg-white/70 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700/80 rounded-full py-1.5 px-3 text-[var(--ink)] focus:outline-none focus:border-[var(--lavenderAccent)] font-medium transition-colors shrink-0 shadow-2xs cursor-pointer"
                         >
-                          <option value="date">По дате события</option>
-                          <option value="name">По алфавиту</option>
-                          <option value="status">По статусу</option>
+                          <option value="date" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100">По дате события</option>
+                          <option value="name" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100">По алфавиту</option>
+                          <option value="status" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100">По статусу</option>
                         </select>
                       </div>
 
@@ -2452,163 +2520,157 @@ export default function App() {
         {/* RIGHT SIDEBAR (Collapsible, dynamic panel) */}
         <aside
           className={`shrink-0 hidden xl:flex flex-col sticky top-0 h-screen border-l backdrop-blur-xl z-20 transition-all duration-300 overflow-hidden ${
-            isRightSidebarExpanded ? 'w-64 p-4' : 'w-14 items-center py-4 px-1.5'
+            isRightSidebarExpanded ? 'w-[310px] p-4' : 'w-14 items-center py-4 px-1.5'
           }`}
           style={{ backgroundColor: 'var(--sidebar-bg)', borderColor: 'var(--sidebar-border)' }}
         >
-          {/* EXPANDED CONTENT (Calendar First, then Tasks) */}
+          {/* EXPANDED CONTENT (Calendar First, then Tasks & Scheduled items) */}
           {isRightSidebarExpanded ? (
-            <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-6 select-none pr-1 custom-scrollbar">
+            <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-5 select-none pr-1 custom-scrollbar">
               
-              {/* Calendar Widget (Top Section) */}
-              <div className="space-y-3">
-                <h2 className="text-base font-semibold text-[var(--ink)] tracking-tight flex items-center justify-between w-full">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-[var(--lavenderAccent)]" />
-                    <span>Календарь событий</span>
-                  </div>
-                  <button
-                    onClick={() => setIsRightSidebarExpanded(false)}
-                    title="Свернуть боковую панель"
-                    className="w-8 h-8 rounded-full hover:bg-white/20 dark:hover:bg-black/20 flex items-center justify-center text-[var(--soft)] hover:text-[var(--ink)] cursor-pointer transition-colors shrink-0"
-                  >
-                    <ChevronsRight className="w-4 h-4 text-[var(--soft)]" />
-                  </button>
-                </h2>
-                
-                <div className="glass-panel p-4 rounded-2xl flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-[var(--ink)]">{monthNames[calendarMonth]} {calendarYear}</span>
-                    <div className="flex gap-1">
-                      <button onClick={handlePrevMonth} title="Предыдущий месяц" className="p-1 text-[var(--faint)] hover:text-[var(--ink)] text-xs focus:outline-none cursor-pointer"><ChevronDown className="w-3 h-3 rotate-90" /></button>
-                      <button onClick={handleNextMonth} title="Следующий месяц" className="p-1 text-[var(--faint)] hover:text-[var(--ink)] text-xs focus:outline-none cursor-pointer"><ChevronDown className="w-3 h-3 -rotate-90" /></button>
-                    </div>
-                  </div>
-                  
-                  {/* Week days */}
-                  <div className="grid grid-cols-7 text-center text-xs font-semibold text-[var(--faint)] border-b pb-1.5" style={{ borderColor: 'var(--line)' }}>
-                    <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
-                  </div>
-                  
-                  {/* Days grid with prominent marks and dynamic click event */}
-                  <div className="grid grid-cols-7 text-center gap-y-2 text-xs font-medium text-[var(--soft)] mt-1">
-                    {calendarDays.map((day, idx) => {
-                      const isSelected = selectedCalendarDay === day.num && day.currentMonth;
-                      const hasEvent = day.currentMonth && calendarEvents[day.num];
-                      
-                      let bgStyle = '';
-                      let textStyle = day.currentMonth ? 'text-[var(--soft)]' : 'text-[var(--faint)] opacity-30';
-                      let dotStyle = '';
+              {/* Header */}
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-[var(--lavenderAccent)]" />
+                  <span className="text-sm font-bold text-[var(--ink)] tracking-tight">Календарь событий</span>
+                </div>
+                <button
+                  onClick={() => setIsRightSidebarExpanded(false)}
+                  title="Свернуть боковую панель"
+                  className="w-7 h-7 rounded-full hover:bg-white/20 dark:hover:bg-black/20 flex items-center justify-center text-[var(--soft)] hover:text-[var(--ink)] cursor-pointer transition-colors shrink-0"
+                >
+                  <ChevronsRight className="w-4 h-4 text-[var(--soft)]" />
+                </button>
+              </div>
 
-                      if (day.currentMonth && day.eventType) {
-                        if (day.eventType === 'warn') {
-                          bgStyle = 'bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-200 border border-rose-500/40 font-medium';
-                          dotStyle = 'bg-rose-600';
-                        } else if (day.eventType === 'indigo') {
-                          bgStyle = 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/70 dark:text-indigo-200 border border-indigo-500/40 font-medium';
-                          dotStyle = 'bg-indigo-600';
-                        } else if (day.eventType === 'lavender') {
-                          bgStyle = 'bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-200 border border-purple-500/40 font-medium';
-                          dotStyle = 'bg-purple-600';
-                        } else if (day.eventType === 'sage') {
-                          bgStyle = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-200 border border-emerald-500/40 font-medium';
-                          dotStyle = 'bg-emerald-600';
-                        }
-                      }
-
-                      return (
-                        <div
-                          key={idx}
-                          onClick={() => day.currentMonth && setSelectedCalendarDay(day.num)}
-                          className={`calendar-day-cell relative cursor-pointer p-1.5 rounded-xl transition-all flex flex-col items-center justify-center hover:bg-white/40 dark:hover:bg-black/30 ${bgStyle} ${textStyle} ${
-                            isSelected ? 'ring-2 ring-[var(--lavenderAccent)] scale-[1.04]' : ''
-                          }`}
-                        >
-                          {day.num}
-                          {hasEvent && <span className={`w-1 h-1 rounded-full mt-0.5 ${dotStyle || 'bg-[var(--lavDeep)]'}`} />}
-                        </div>
-                      );
-                    })}
+              {/* Calendar Widget */}
+              <div className="bg-white/40 dark:bg-zinc-900/40 backdrop-blur-md p-4 rounded-[24px] border border-zinc-200/50 dark:border-zinc-800/50 shadow-xs flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold text-[var(--ink)]">{monthNames[calendarMonth]} {calendarYear}</span>
+                  <div className="flex gap-1">
+                    <button onClick={handlePrevMonth} title="Предыдущий месяц" className="w-6 h-6 rounded-full bg-white/60 dark:bg-zinc-800/60 hover:bg-white dark:hover:bg-zinc-700 flex items-center justify-center text-[var(--soft)] hover:text-[var(--ink)] text-xs transition-colors cursor-pointer"><ChevronDown className="w-3 h-3 rotate-90" /></button>
+                    <button onClick={handleNextMonth} title="Следующий месяц" className="w-6 h-6 rounded-full bg-white/60 dark:bg-zinc-800/60 hover:bg-white dark:hover:bg-zinc-700 flex items-center justify-center text-[var(--soft)] hover:text-[var(--ink)] text-xs transition-colors cursor-pointer"><ChevronDown className="w-3 h-3 -rotate-90" /></button>
                   </div>
                 </div>
+                
+                {/* Week days */}
+                <div className="grid grid-cols-7 text-center text-[11px] font-semibold text-[var(--faint)] border-b pb-1.5" style={{ borderColor: 'var(--line)' }}>
+                  <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
+                </div>
+                
+                {/* Days grid with prominent marks and dynamic click event */}
+                <div className="grid grid-cols-7 text-center gap-y-1 text-xs font-medium text-[var(--soft)] mt-1">
+                  {calendarDays.map((day, idx) => {
+                    const isSelected = selectedCalendarDay === day.num && day.currentMonth;
+                    const hasEvent = day.currentMonth && calendarEvents[day.num];
+                    
+                    let bgStyle = '';
+                    let textStyle = day.currentMonth ? 'text-[var(--ink)] font-medium' : 'text-[var(--faint)] opacity-30';
+                    let dotStyle = '';
 
-                {/* Dynamic event display area */}
-                <div className="glass-panel p-3.5 rounded-2xl bg-white/20 dark:bg-black/20 border border-[var(--glass-edge)] mt-2">
-                  <p className="text-xs font-semibold text-[var(--ink)] uppercase tracking-wider mb-2">
-                    События: {selectedCalendarDay} {monthNamesGenitive[calendarMonth]} {calendarYear}
-                  </p>
-                  {calendarEvents[selectedCalendarDay] ? (
-                    <div className="space-y-2">
-                      {calendarEvents[selectedCalendarDay].map((ev, i) => {
-                        let borderCol = 'var(--lavenderAccent)';
-                        let bgCol = 'var(--lavenderSoft)';
-                        if (ev.type === 'warn') { borderCol = 'var(--warn)'; bgCol = 'var(--warnSoft)'; }
-                        if (ev.type === 'sage') { borderCol = 'var(--sage)'; bgCol = 'var(--sageSoft)'; }
-                        if (ev.type === 'indigo') { borderCol = '#6366F1'; bgCol = 'rgba(99, 102, 241, 0.1)'; }
+                    if (day.currentMonth && day.eventType) {
+                      if (day.eventType === 'warn') {
+                        bgStyle = 'bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-200 border border-rose-500/40';
+                        dotStyle = 'bg-rose-600';
+                      } else if (day.eventType === 'indigo') {
+                        bgStyle = 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/70 dark:text-indigo-200 border border-indigo-500/40';
+                        dotStyle = 'bg-indigo-600';
+                      } else if (day.eventType === 'lavender') {
+                        bgStyle = 'bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-200 border border-purple-500/40';
+                        dotStyle = 'bg-purple-600';
+                      } else if (day.eventType === 'sage') {
+                        bgStyle = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-200 border border-emerald-500/40';
+                        dotStyle = 'bg-emerald-600';
+                      }
+                    }
 
-                        return (
-                          <div
-                            key={i}
-                            onClick={() => {
-                              setSelectedProject(ev.project);
-                              setActiveTab('projectCard');
-                            }}
-                            className="p-2.5 rounded-xl border-l-2 text-[var(--ink)] transition-all duration-300 hover:translate-x-1 cursor-pointer"
-                            style={{ borderLeftColor: borderCol, backgroundColor: bgCol }}
-                          >
-                            <div className="flex justify-between items-center mb-1">
-                              <span className="font-medium text-xs">{ev.title}</span>
-                              <span className="text-xs font-medium opacity-85">{ev.time}</span>
-                            </div>
-                            <p className="text-xs text-[var(--soft)]">{ev.desc}</p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <p className="text-[11px] text-[var(--soft)] italic py-1">Нет запланированных событий.</p>
-                  )}
+                    if (isSelected) {
+                      bgStyle = 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white font-bold shadow-xs';
+                      textStyle = 'text-white';
+                    }
+
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => day.currentMonth && setSelectedCalendarDay(day.num)}
+                        className={`calendar-day-cell relative cursor-pointer w-8 h-8 mx-auto rounded-full transition-all flex flex-col items-center justify-center hover:scale-105 ${bgStyle} ${textStyle}`}
+                      >
+                        {day.num}
+                        {hasEvent && !isSelected && (
+                          <span className={`w-1 h-1 rounded-full absolute bottom-1 ${dotStyle || 'bg-[#8C52D0]'}`} />
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
-              <div className="h-px bg-[var(--glass-edge)]" style={{ background: 'var(--line)' }} />
-
-              {/* Synchronized Project Tasks and Notes list filtered by selected calendar date */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between flex-wrap gap-1">
-                  <h2 className="text-sm font-semibold text-[var(--ink)] tracking-tight flex items-center gap-1.5">
+              {/* Scheduled Events & Tasks Section */}
+              <div className="space-y-3 pt-1">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5">
                     <CheckSquare className="w-4 h-4 text-[var(--lavenderAccent)]" />
-                    <span>Задачи и заметки</span>
-                  </h2>
+                    <h2 className="text-sm font-bold text-[var(--ink)] tracking-tight">Запланировано</h2>
+                  </div>
 
-                  {/* Filter toggle: Selected Date vs All */}
-                  <div className="flex bg-stone-100 dark:bg-zinc-800 p-0.5 rounded-full border border-stone-200 dark:border-zinc-700 text-[10px]">
+                  {/* Filter toggle */}
+                  <div className="flex bg-zinc-100 dark:bg-zinc-800/80 p-0.5 rounded-full border border-zinc-200/80 dark:border-zinc-700/80 text-[10px]">
                     <button
                       onClick={() => setSidebarTaskFilter('date')}
-                      className={`px-2 py-0.5 rounded-full font-bold transition-all cursor-pointer ${
+                      className={`px-2.5 py-0.5 rounded-full font-semibold transition-all cursor-pointer ${
                         sidebarTaskFilter === 'date'
-                          ? 'bg-[#582F89] text-white shadow-2xs'
-                          : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
+                          ? 'bg-[#8C52D0] text-white shadow-2xs'
+                          : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
                       }`}
-                      title={`Задачи на ${selectedCalendarDay} ${monthNamesGenitive[calendarMonth]}`}
+                      title={`Записи на ${selectedCalendarDay} ${monthNamesGenitive[calendarMonth]}`}
                     >
                       {selectedCalendarDay} {monthNamesGenitive[calendarMonth]?.slice(0, 3)}
                     </button>
                     <button
                       onClick={() => setSidebarTaskFilter('all')}
-                      className={`px-2 py-0.5 rounded-full font-bold transition-all cursor-pointer ${
+                      className={`px-2.5 py-0.5 rounded-full font-semibold transition-all cursor-pointer ${
                         sidebarTaskFilter === 'all'
-                          ? 'bg-[#582F89] text-white shadow-2xs'
-                          : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
+                          ? 'bg-[#8C52D0] text-white shadow-2xs'
+                          : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
                       }`}
                       title="Показать все записи"
                     >
-                      Все ({globalProjectTasksNotes.length})
+                      Все
                     </button>
                   </div>
                 </div>
 
-                {/* Filter computation */}
+                {/* Calendar Events for Selected Date */}
+                {calendarEvents[selectedCalendarDay] && calendarEvents[selectedCalendarDay].length > 0 && (
+                  <div className="space-y-2">
+                    {calendarEvents[selectedCalendarDay].map((ev, i) => {
+                      let borderCol = '#8C52D0';
+                      if (ev.type === 'warn') { borderCol = '#EF4444'; }
+                      if (ev.type === 'sage') { borderCol = '#10B981'; }
+                      if (ev.type === 'indigo') { borderCol = '#6366F1'; }
+
+                      return (
+                        <div
+                          key={i}
+                          onClick={() => {
+                            setSelectedProject(ev.project);
+                            setActiveTab('projectCard');
+                          }}
+                          className="bg-white/40 dark:bg-zinc-900/40 backdrop-blur-md p-3 rounded-[20px] border border-zinc-200/50 dark:border-zinc-800/50 border-l-4 text-[var(--ink)] transition-all duration-300 hover:scale-[1.01] cursor-pointer shadow-xs"
+                          style={{ borderLeftColor: borderCol }}
+                        >
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="font-semibold text-xs text-[var(--ink)]">{ev.title}</span>
+                            <span className="text-[10px] font-bold text-[#8C52D0] dark:text-purple-300 bg-purple-100/80 dark:bg-purple-950/60 px-2 py-0.5 rounded-full">{ev.time}</span>
+                          </div>
+                          <p className="text-xs text-[var(--soft)]">{ev.desc}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Tasks and Notes List */}
                 {(() => {
                   const dayStr = selectedCalendarDay < 10 ? `0${selectedCalendarDay}` : `${selectedCalendarDay}`;
                   const monthStr = (calendarMonth + 1) < 10 ? `0${calendarMonth + 1}` : `${calendarMonth + 1}`;
@@ -2620,20 +2682,21 @@ export default function App() {
                   });
 
                   const activeList = sidebarTaskFilter === 'date' ? itemsForDate : globalProjectTasksNotes;
+                  const hasEvents = calendarEvents[selectedCalendarDay] && calendarEvents[selectedCalendarDay].length > 0;
 
-                  if (activeList.length === 0) {
+                  if (activeList.length === 0 && !hasEvents) {
                     return (
-                      <div className="glass-panel p-3.5 rounded-xl text-center space-y-2">
+                      <div className="bg-white/30 dark:bg-zinc-900/30 p-4 rounded-[20px] border border-zinc-200/40 dark:border-zinc-800/40 text-center space-y-2">
                         <CheckSquare className="w-5 h-5 mx-auto text-[var(--soft)] opacity-40" />
                         <p className="text-xs text-[var(--soft)]">
                           {sidebarTaskFilter === 'date'
-                            ? `На ${selectedCalendarDay} ${monthNamesGenitive[calendarMonth]} нет задач или заметок.`
+                            ? `На ${selectedCalendarDay} ${monthNamesGenitive[calendarMonth]} нет записей.`
                             : 'Журнал задач пуст.'}
                         </p>
                         {sidebarTaskFilter === 'date' && globalProjectTasksNotes.length > 0 && (
                           <button
                             onClick={() => setSidebarTaskFilter('all')}
-                            className="text-[10px] font-bold text-[#8C52D0] hover:underline cursor-pointer"
+                            className="text-[10px] font-bold text-[#8C52D0] dark:text-purple-300 hover:underline cursor-pointer"
                           >
                             Показать все записи ({globalProjectTasksNotes.length})
                           </button>
@@ -2643,7 +2706,7 @@ export default function App() {
                   }
 
                   return (
-                    <div className="space-y-2 max-h-72 overflow-y-auto pr-0.5 custom-scrollbar">
+                    <div className="space-y-2">
                       {activeList.map((item: any) => {
                         const isTask = item.type === 'task';
                         const isCompleted = item.completed;
@@ -2663,12 +2726,12 @@ export default function App() {
                         return (
                           <div
                             key={item.id}
-                            className={`glass-panel p-2.5 rounded-xl border transition-all duration-300 hover:scale-[1.01] ${
+                            className={`bg-white/40 dark:bg-zinc-900/40 backdrop-blur-md p-3 rounded-[20px] border border-zinc-200/50 dark:border-zinc-800/50 transition-all duration-300 hover:scale-[1.01] shadow-xs ${
                               isCompleted ? 'opacity-50' : ''
                             }`}
                           >
-                            <div className="flex items-start gap-2">
-                              {/* Left Icon or Checkbox */}
+                            <div className="flex items-start gap-2.5">
+                              {/* Left Checkbox or Icon */}
                               {isTask ? (
                                 <button
                                   type="button"
@@ -2688,12 +2751,12 @@ export default function App() {
                               )}
 
                               {/* Main Content */}
-                              <div className="flex-1 min-w-0 space-y-1">
-                                <p className={`text-xs font-medium text-[var(--ink)] leading-tight ${isCompleted ? 'line-through text-[var(--faint)]' : ''}`}>
+                              <div className="flex-1 min-w-0 space-y-1.5">
+                                <p className={`text-xs font-semibold text-[var(--ink)] leading-snug ${isCompleted ? 'line-through text-[var(--faint)]' : ''}`}>
                                   {item.title}
                                 </p>
 
-                                <div className="flex items-center flex-wrap gap-1 text-[9px] font-medium">
+                                <div className="flex items-center flex-wrap gap-1 text-[10px] font-medium">
                                   {/* Project badge */}
                                   <button
                                     onClick={() => {
@@ -2703,19 +2766,14 @@ export default function App() {
                                         setActiveTab('projectCard');
                                       }
                                     }}
-                                    className="px-1.5 py-0.5 rounded bg-purple-100/80 dark:bg-purple-900/40 text-[#582F89] dark:text-purple-300 hover:underline truncate max-w-[120px] cursor-pointer"
+                                    className="px-2 py-0.5 rounded-full bg-purple-100/80 dark:bg-purple-900/40 text-[#582F89] dark:text-purple-300 font-semibold hover:underline truncate max-w-[120px] cursor-pointer"
                                   >
                                     {item.projectName || 'Проект'}
                                   </button>
 
                                   {/* Category */}
-                                  <span className={`px-1.5 py-0.5 rounded ${catClass}`}>
+                                  <span className={`px-2 py-0.5 rounded-full font-medium ${catClass}`}>
                                     {item.category}
-                                  </span>
-
-                                  {/* Type pill */}
-                                  <span className="text-stone-400 dark:text-stone-500">
-                                    • {isTask ? 'Задача' : 'Заметка'}
                                   </span>
                                 </div>
                               </div>

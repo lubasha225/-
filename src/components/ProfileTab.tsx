@@ -6,12 +6,13 @@ interface ProfileTabProps {
 }
 
 export default function ProfileTab({ showToast }: ProfileTabProps) {
-  const [studioName, setStudioName] = useState('Студия «Флёр»');
-  const [tagline, setTagline] = useState('премиальный декор и концептуальная флористика');
-  const [email, setEmail] = useState('denis@fleur-decor.ru');
-  const [phone, setPhone] = useState('+7 (999) 456-78-90');
-  const [website, setWebsite] = useState('www.fleur-decor.ru');
-  const [location, setLocation] = useState('Москва, Пресненская наб. 12');
+  const [studioName, setStudioName] = useState(() => localStorage.getItem('fleur_studio_name') || 'Студия «Флёр»');
+  const [ownerName, setOwnerName] = useState(() => localStorage.getItem('fleur_user_name') || 'Денис С.');
+  const [tagline, setTagline] = useState(() => localStorage.getItem('fleur_studio_tagline') || 'премиальный декор и концептуальная флористика');
+  const [email, setEmail] = useState(() => localStorage.getItem('fleur_user_email') || 'denis@fleur-decor.ru');
+  const [phone, setPhone] = useState(() => localStorage.getItem('fleur_studio_phone') || '+7 (999) 456-78-90');
+  const [website, setWebsite] = useState(() => localStorage.getItem('fleur_studio_website') || 'www.fleur-decor.ru');
+  const [location, setLocation] = useState(() => localStorage.getItem('fleur_studio_location') || 'Москва, Пресненская наб. 12');
   const [logoUrl, setLogoUrl] = useState<string | null>(() => {
     return localStorage.getItem('fleur_studio_logo') || null;
   });
@@ -29,7 +30,7 @@ export default function ProfileTab({ showToast }: ProfileTabProps) {
         setLogoUrl(base64String);
         localStorage.setItem('fleur_studio_logo', base64String);
         window.dispatchEvent(new Event('storage'));
-        showToast('Логотип загружен', 'Логотип бренда успешно обновлен.', 'success');
+        showToast('Логотип загружен', 'Аватар / логотип бренда успешно обновлен.', 'success');
       };
       reader.readAsDataURL(file);
     }
@@ -39,11 +40,19 @@ export default function ProfileTab({ showToast }: ProfileTabProps) {
     setLogoUrl(null);
     localStorage.removeItem('fleur_studio_logo');
     window.dispatchEvent(new Event('storage'));
-    showToast('Логотип удален', 'Установлен стандартный логотип.', 'info');
+    showToast('Логотип удален', 'Установлены стандартные инициалы.', 'info');
   };
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
+    localStorage.setItem('fleur_studio_name', studioName);
+    localStorage.setItem('fleur_user_name', ownerName);
+    localStorage.setItem('fleur_user_email', email);
+    localStorage.setItem('fleur_studio_tagline', tagline);
+    localStorage.setItem('fleur_studio_phone', phone);
+    localStorage.setItem('fleur_studio_website', website);
+    localStorage.setItem('fleur_studio_location', location);
+    window.dispatchEvent(new Event('storage'));
     showToast('Профиль сохранен', 'Все настройки бренда и контакты успешно обновлены.', 'success');
   };
 
@@ -171,6 +180,21 @@ export default function ProfileTab({ showToast }: ProfileTabProps) {
 
             <div className="space-y-1">
               <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal block">
+                Имя декоратора / руководителя
+              </label>
+              <input
+                type="text"
+                required
+                value={ownerName}
+                onChange={(e) => setOwnerName(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-50/80 dark:bg-zinc-950/30 border border-zinc-200/80 dark:border-zinc-800/80 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#8C52D0] text-sm font-normal placeholder:text-zinc-400 transition-colors"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal block">
                 Слоган студии
               </label>
               <input
@@ -180,12 +204,10 @@ export default function ProfileTab({ showToast }: ProfileTabProps) {
                 className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-50/80 dark:bg-zinc-950/30 border border-zinc-200/80 dark:border-zinc-800/80 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#8C52D0] text-sm font-normal placeholder:text-zinc-400 transition-colors"
               />
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal block">
-                Email студии
+                Email руководителя / студии
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
@@ -198,7 +220,9 @@ export default function ProfileTab({ showToast }: ProfileTabProps) {
                 />
               </div>
             </div>
+          </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal block">
                 Контактный телефон
@@ -213,9 +237,7 @@ export default function ProfileTab({ showToast }: ProfileTabProps) {
                 />
               </div>
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal block">
                 Сайт компании
@@ -230,18 +252,18 @@ export default function ProfileTab({ showToast }: ProfileTabProps) {
                 />
               </div>
             </div>
+          </div>
 
-            <div className="space-y-1">
-              <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal block">
-                Адрес студии / Склада
-              </label>
-              <input
-                type="text"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-50/80 dark:bg-zinc-950/30 border border-zinc-200/80 dark:border-zinc-800/80 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#8C52D0] text-sm font-normal placeholder:text-zinc-400 transition-colors"
-              />
-            </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal block">
+              Адрес студии / Склада
+            </label>
+            <input
+              type="text"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-50/80 dark:bg-zinc-950/30 border border-zinc-200/80 dark:border-zinc-800/80 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#8C52D0] text-sm font-normal placeholder:text-zinc-400 transition-colors"
+            />
           </div>
 
           <div className="flex justify-center pt-3">

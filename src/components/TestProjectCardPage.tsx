@@ -131,13 +131,11 @@ export default function TestProjectCardPage({
     return {
       "ИМЯ КЛИЕНТА": project.clientName && project.clientName !== 'Не указан' ? project.clientName : (saved["ИМЯ КЛИЕНТА"] || ""),
       "ТЕЛЕФОН": project.clientPhone || saved["ТЕЛЕФОН"] || "",
-      "РЕКВИЗИТЫ ПЛАТЕЛЬЩИКА": saved["РЕКВИЗИТЫ ПЛАТЕЛЬЩИКА"] || "",
       "СОБЫТИЕ": project.name && !project.name.startsWith('proj_') ? project.name : (saved["СОБЫТИЕ"] || ""),
       "ДАТА": project.date || saved["ДАТА"] || "",
       "ГОСТЕЙ": project.brief?.guestsCount ? String(project.brief.guestsCount) : (saved["ГОСТЕЙ"] || ""),
       "ФОРМАТ СОБЫТИЯ": saved["ФОРМАТ СОБЫТИЯ"] || "",
-      "ПЛОЩАДКА": project.venue && project.venue !== 'Площадка не указана' ? project.venue : (saved["ПЛОЩАДКА"] || ""),
-      "АДРЕС": saved["АДРЕС"] || "",
+      "АДРЕС ПЛОЩАДКИ/НАЗВАНИЕ": project.venue && project.venue !== 'Площадка не указана' ? project.venue : (saved["АДРЕС ПЛОЩАДКИ/НАЗВАНИЕ"] || saved["ПЛОЩАДКА"] || ""),
       "КОНТАКТ ПЛОЩАДКИ": saved["КОНТАКТ ПЛОЩАДКИ"] || "",
       "РАЗМЕР ЗОНЫ МОНТАЖА": saved["РАЗМЕР ЗОНЫ МОНТАЖА"] || "",
       "КРЕПЕЖ К СТЕНАМ": saved["КРЕПЕЖ К СТЕНАМ"] || "",
@@ -465,13 +463,11 @@ export default function TestProjectCardPage({
     setBriefValues({
       "ИМЯ КЛИЕНТА": project.clientName && project.clientName !== 'Не указан' ? project.clientName : (saved["ИМЯ КЛИЕНТА"] || ""),
       "ТЕЛЕФОН": project.clientPhone || saved["ТЕЛЕФОН"] || "",
-      "РЕКВИЗИТЫ ПЛАТЕЛЬЩИКА": saved["РЕКВИЗИТЫ ПЛАТЕЛЬЩИКА"] || "",
       "СОБЫТИЕ": project.name && !project.name.startsWith('proj_') ? project.name : (saved["СОБЫТИЕ"] || ""),
       "ДАТА": project.date || saved["ДАТА"] || "",
       "ГОСТЕЙ": (project.brief?.guestsCount && project.brief.guestsCount > 0) ? String(project.brief.guestsCount) : (saved["ГОСТЕЙ"] || ""),
       "ФОРМАТ СОБЫТИЯ": saved["ФОРМАТ СОБЫТИЯ"] || "",
-      "ПЛОЩАДКА": project.venue && project.venue !== 'Площадка не указана' ? project.venue : (saved["ПЛОЩАДКА"] || ""),
-      "АДРЕС": saved["АДРЕС"] || "",
+      "АДРЕС ПЛОЩАДКИ/НАЗВАНИЕ": project.venue && project.venue !== 'Площадка не указана' ? project.venue : (saved["АДРЕС ПЛОЩАДКИ/НАЗВАНИЕ"] || saved["ПЛОЩАДКА"] || ""),
       "КОНТАКТ ПЛОЩАДКИ": saved["КОНТАКТ ПЛОЩАДКИ"] || "",
       "РАЗМЕР ЗОНЫ МОНТАЖА": saved["РАЗМЕР ЗОНЫ МОНТАЖА"] || "",
       "КРЕПЕЖ К СТЕНАМ": saved["КРЕПЕЖ К СТЕНАМ"] || "",
@@ -1018,16 +1014,14 @@ export default function TestProjectCardPage({
 
   // Brief field dataset grouped systematically: Client fields first, then Decorator fields
   const baseBriefFieldDefinitions: { key: string; filledBy: 'client' | 'designer'; multiline?: boolean }[] = [
-    // --- 1. КЛИЕНТСКИЙ БЛОК (24 поля) ---
+    // --- 1. КЛИЕНТСКИЙ БЛОК (22 поля) ---
     { key: "ИМЯ КЛИЕНТА", filledBy: 'client' },
     { key: "ТЕЛЕФОН", filledBy: 'client' },
-    { key: "РЕКВИЗИТЫ ПЛАТЕЛЬЩИКА", filledBy: 'client' },
     { key: "СОБЫТИЕ", filledBy: 'client' },
     { key: "ДАТА", filledBy: 'client' },
     { key: "ГОСТЕЙ", filledBy: 'client' },
     { key: "ФОРМАТ СОБЫТИЯ", filledBy: 'client' },
-    { key: "ПЛОЩАДКА", filledBy: 'client' },
-    { key: "АДРЕС", filledBy: 'client' },
+    { key: "АДРЕС ПЛОЩАДКИ/НАЗВАНИЕ", filledBy: 'client' },
     { key: "КОНТАКТ ПЛОЩАДКИ", filledBy: 'client' },
     { key: "РАЗМЕР ЗОНЫ МОНТАЖА", filledBy: 'client' },
     { key: "КРЕПЕЖ К СТЕНАМ", filledBy: 'client' },
@@ -1473,8 +1467,8 @@ export default function TestProjectCardPage({
                               key={field.key}
                               className={`p-2.5 rounded-xl border border-l-2 text-left transition-all flex flex-col justify-between shadow-2xs ${
                                 isEmpty
-                                  ? 'border-dashed border-purple-300 border-l-[#8C52D0] dark:border-purple-800 bg-purple-50/40 dark:bg-purple-950/20'
-                                  : 'border-purple-200/80 border-l-[#8C52D0] dark:border-purple-900/50 bg-purple-50/20 dark:bg-purple-950/10'
+                                  ? 'border-dashed border-purple-300/80 border-l-[#8C52D0] dark:border-purple-900/40 dark:border-l-purple-500/70 bg-purple-50/30 dark:bg-zinc-900/40'
+                                  : 'border-purple-200/60 border-l-[#8C52D0] dark:border-zinc-800 dark:border-l-purple-500/70 bg-purple-50/10 dark:bg-zinc-900/60'
                               }`}
                             >
                               <div className="flex items-center justify-between gap-1 mb-1.5">
@@ -1491,7 +1485,7 @@ export default function TestProjectCardPage({
                                   placeholder=""
                                   className={`w-full text-sm font-semibold rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] resize-none ${
                                     isEmpty
-                                      ? 'bg-purple-50/60 text-[#582F89] italic font-medium border-purple-200 dark:bg-purple-950/40 dark:text-purple-300'
+                                      ? 'bg-purple-50/50 text-[#582F89] italic font-medium border-purple-200/60 dark:bg-zinc-900/90 dark:text-purple-300/80 dark:border-zinc-800'
                                       : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
                                   }`}
                                 />
@@ -1503,7 +1497,7 @@ export default function TestProjectCardPage({
                                   placeholder=""
                                   className={`w-full text-sm font-semibold rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] ${
                                     isEmpty
-                                      ? 'bg-purple-50/60 text-[#582F89] italic font-medium border-purple-200 dark:bg-purple-950/40 dark:text-purple-300'
+                                      ? 'bg-purple-50/50 text-[#582F89] italic font-medium border-purple-200/60 dark:bg-zinc-900/90 dark:text-purple-300/80 dark:border-zinc-800'
                                       : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
                                   }`}
                                 />
@@ -1537,8 +1531,8 @@ export default function TestProjectCardPage({
                               key={field.key}
                               className={`p-2.5 rounded-xl border border-l-2 text-left transition-all flex flex-col justify-between shadow-2xs relative group ${
                                 isEmpty
-                                  ? 'border-dashed border-rose-400/90 border-l-rose-500 dark:border-rose-800 bg-rose-50/60 dark:bg-rose-950/30'
-                                  : 'border-stone-200/80 border-l-stone-400 dark:border-l-zinc-500 dark:border-zinc-800/80 bg-white/60 dark:bg-zinc-950/30'
+                                  ? 'border-dashed border-zinc-300 border-l-zinc-400 dark:border-zinc-800 dark:border-l-zinc-600 bg-zinc-50/60 dark:bg-zinc-900/30'
+                                  : 'border-stone-200/80 border-l-stone-400 dark:border-l-zinc-500 dark:border-zinc-800/80 bg-white/60 dark:bg-zinc-900/60'
                               }`}
                             >
                               <div className="flex items-center justify-between gap-1 mb-1.5">
@@ -1571,7 +1565,7 @@ export default function TestProjectCardPage({
                                   placeholder=""
                                   className={`w-full text-sm font-semibold rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] resize-none ${
                                     isEmpty
-                                      ? 'bg-rose-100/50 text-rose-600 italic font-medium border-rose-300 dark:bg-rose-950/40 dark:text-rose-400'
+                                      ? 'bg-zinc-100/50 text-zinc-600 italic font-medium border-zinc-200 dark:bg-zinc-900/80 dark:text-zinc-400 dark:border-zinc-800'
                                       : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
                                   }`}
                                 />
@@ -1583,7 +1577,7 @@ export default function TestProjectCardPage({
                                   placeholder=""
                                   className={`w-full text-sm font-semibold rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] ${
                                     isEmpty
-                                      ? 'bg-rose-100/50 text-rose-600 italic font-medium border-rose-300 dark:bg-rose-950/40 dark:text-rose-400'
+                                      ? 'bg-zinc-100/50 text-zinc-600 italic font-medium border-zinc-200 dark:bg-zinc-900/80 dark:text-zinc-400 dark:border-zinc-800'
                                       : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
                                   }`}
                                 />

@@ -86,7 +86,8 @@ import {
   Shapes,
   DoorOpen,
   Ruler,
-  Move
+  Move,
+  Utensils
 } from 'lucide-react';
 import { Project, EstimateItem } from '../types';
 import { CATALOG_ASSETS, LibraryItem } from './editor/EditorLibraryData';
@@ -159,22 +160,19 @@ interface EditorScene {
 
 const NEW_CATALOG_CATEGORIES = [
   { id: 'favorites', title: 'Избранное', icon: 'Heart' },
-  { id: 'text', title: 'Текст', icon: 'Type' },
   { id: 'warehouse', title: 'Склад', icon: 'Box' },
-  { id: 'arches', title: 'Арки', icon: 'Layers' },
-  { id: 'stands', title: 'Стойки', icon: 'Columns' },
-  { id: 'tables', title: 'Столы', icon: 'Table' },
-  { id: 'screens', title: 'Ширмы', icon: 'Grid' },
-  { id: 'flowers', title: 'Цветы', icon: 'Flower2' },
-  { id: 'compositions', title: 'Композиции', icon: 'Sparkles' },
-  { id: 'vases', title: 'Вазы', icon: 'Tag' },
-  { id: 'details', title: 'Детали', icon: 'Compass' },
-  { id: 'textiles', title: 'Текстиль', icon: 'AlignLeft' },
-  { id: 'light', title: 'Свет', icon: 'Lightbulb' },
+  { id: 'construction', title: 'Конструкция', icon: 'Layers' },
   { id: 'podiums', title: 'Подиумы', icon: 'Columns' },
-  { id: 'furniture', title: 'Мебель', icon: 'Bookmark' },
+  { id: 'textiles', title: 'Текстиль', icon: 'AlignLeft' },
+  { id: 'flowers', title: 'Флористика', icon: 'Flower2' },
   { id: 'balloons', title: 'Шары', icon: 'CircleDot' },
-  { id: 'themes', title: 'Тематика', icon: 'Palette' }
+  { id: 'decor', title: 'Декор', icon: 'Compass' },
+  { id: 'sequins', title: 'Пайетки', icon: 'Sparkles' },
+  { id: 'light', title: 'Свет', icon: 'Lightbulb' },
+  { id: 'furniture', title: 'Мебель', icon: 'Table' },
+  { id: 'tableware', title: 'Сервировка', icon: 'Utensils' },
+  { id: 'themes', title: 'Тематика', icon: 'Palette' },
+  { id: 'text', title: 'Текст', icon: 'Type' }
 ];
 
 const SCHEMA_CATALOG_CATEGORIES = [
@@ -231,23 +229,27 @@ const CategoryIcon: React.FC<{
   // Fallback to default Lucide icons
   switch (cat.id) {
     case 'favorites': return <Heart className={`w-5 h-5 ${isSelected ? 'fill-[#8C52D0] text-[#8C52D0]' : 'text-[#8C52D0] fill-[#8C52D0]'}`} />;
-    case 'text': return <Type className="w-5 h-5 text-[#8C52D0]" />;
     case 'warehouse': return <Box className="w-5 h-5 text-[#8C52D0]" />;
+    case 'construction': return <Layers className="w-5 h-5 text-[#8C52D0]" />;
+    case 'podiums': return <Columns className="w-5 h-5 text-[#8C52D0]" />;
+    case 'textiles': return <AlignLeft className="w-5 h-5 text-[#8C52D0]" />;
+    case 'flowers': return <Flower2 className="w-5 h-5 text-[#8C52D0]" />;
+    case 'balloons': return <CircleDot className="w-5 h-5 text-[#8C52D0]" />;
+    case 'decor': return <Compass className="w-5 h-5 text-[#8C52D0]" />;
+    case 'sequins': return <Sparkles className="w-5 h-5 text-[#8C52D0]" />;
+    case 'light': return <Lightbulb className="w-5 h-5 text-[#8C52D0]" />;
+    case 'furniture': return <TableIcon className="w-5 h-5 text-[#8C52D0]" />;
+    case 'tableware': return <Utensils className="w-5 h-5 text-[#8C52D0]" />;
+    case 'themes': return <Palette className="w-5 h-5 text-[#8C52D0]" />;
+    case 'text': return <Type className="w-5 h-5 text-[#8C52D0]" />;
+    // Legacy & Schema categories
     case 'arches': return <Layers className="w-5 h-5 text-[#8C52D0]" />;
     case 'stands': return <Columns className="w-5 h-5 text-[#8C52D0]" />;
     case 'tables': return <TableIcon className="w-5 h-5 text-[#8C52D0]" />;
     case 'screens': return <GridIcon className="w-5 h-5 text-[#8C52D0]" />;
-    case 'flowers': return <Flower2 className="w-5 h-5 text-[#8C52D0]" />;
     case 'compositions': return <Sparkles className="w-5 h-5 text-[#8C52D0]" />;
     case 'vases': return <Tag className="w-5 h-5 text-[#8C52D0]" />;
     case 'details': return <Compass className="w-5 h-5 text-[#8C52D0]" />;
-    case 'textiles': return <AlignLeft className="w-5 h-5 text-[#8C52D0]" />;
-    case 'light': return <Lightbulb className="w-5 h-5 text-[#8C52D0]" />;
-    case 'podiums': return <Columns className="w-5 h-5 text-[#8C52D0]" />;
-    case 'furniture': return <Bookmark className="w-5 h-5 text-[#8C52D0]" />;
-    case 'balloons': return <CircleDot className="w-5 h-5 text-[#8C52D0]" />;
-    case 'themes': return <Palette className="w-5 h-5 text-[#8C52D0]" />;
-    // Schema categories
     case 'schema_furniture': return <Bookmark className="w-5 h-5 text-[#8C52D0]" />;
     case 'schema_podiums': return <Columns className="w-5 h-5 text-[#8C52D0]" />;
     case 'schema_compositions': return <GridIcon className="w-5 h-5 text-[#8C52D0]" />;
@@ -1188,7 +1190,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
   const [historyIndex, setHistoryIndex] = useState<number>(0);
 
   // Library Category filtering
-  const [selectedCategory, setSelectedCategory] = useState<string>('arches');
+  const [selectedCategory, setSelectedCategory] = useState<string>('construction');
   const [editingCaptionId, setEditingCaptionId] = useState<string | null>(null);
   const [editingCaptionText, setEditingCaptionText] = useState<string>('');
   const [libSearch, setLibSearch] = useState<string>('');
@@ -1201,11 +1203,11 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
   useEffect(() => {
     if (activeWorkspaceTab === 'floorplan') {
       if (!SCHEMA_CATALOG_CATEGORIES.some(c => c.id === selectedCategory) && selectedCategory !== 'favorites') {
-        setSelectedCategory(SCHEMA_CATALOG_CATEGORIES[0]?.id || 'schema_arch');
+        setSelectedCategory(SCHEMA_CATALOG_CATEGORIES[0]?.id || 'schema_furniture');
       }
     } else {
       if (SCHEMA_CATALOG_CATEGORIES.some(c => c.id === selectedCategory)) {
-        setSelectedCategory('arches');
+        setSelectedCategory('construction');
       }
     }
   }, [activeWorkspaceTab]);
@@ -1527,7 +1529,15 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
         ...(CATALOG_ASSETS.textiles || [])
       ].filter(item => favoritesList.includes(item.id));
     } else {
-      const custom = CUSTOM_LIBRARY_ITEMS.filter(i => i.category === selectedCategory);
+      let custom = CUSTOM_LIBRARY_ITEMS.filter(i => i.category === selectedCategory);
+      if (selectedCategory === 'construction') {
+        custom = CUSTOM_LIBRARY_ITEMS.filter(i => ['construction', 'arches', 'stands', 'screens', 'compositions'].includes(i.category));
+      } else if (selectedCategory === 'decor') {
+        custom = CUSTOM_LIBRARY_ITEMS.filter(i => ['decor', 'details', 'vases'].includes(i.category));
+      } else if (selectedCategory === 'furniture') {
+        custom = CUSTOM_LIBRARY_ITEMS.filter(i => ['furniture', 'tables'].includes(i.category));
+      }
+
       let assetItems: LibraryItem[] = [];
       switch (selectedCategory) {
         case 'warehouse':
@@ -1539,14 +1549,20 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
             ...(CATALOG_ASSETS.decor || [])
           ];
           break;
+        case 'construction':
         case 'arches':
-          assetItems = CATALOG_ASSETS.arches || [];
-          break;
         case 'stands':
-          assetItems = CATALOG_ASSETS.stands || [];
+        case 'screens':
+          assetItems = [
+            ...(CATALOG_ASSETS.arches || []),
+            ...(CATALOG_ASSETS.stands || [])
+          ];
           break;
-        case 'tables':
-          assetItems = CATALOG_ASSETS.tables || [];
+        case 'podiums':
+          assetItems = [];
+          break;
+        case 'textiles':
+          assetItems = CATALOG_ASSETS.textiles || [];
           break;
         case 'flowers':
           assetItems = CATALOG_ASSETS.flowers || [];
@@ -1554,17 +1570,30 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
         case 'balloons':
           assetItems = CATALOG_ASSETS.balloons || [];
           break;
-        case 'vases':
-          assetItems = (CATALOG_ASSETS.decor || []).filter(i => i.name.toLowerCase().includes('ваз') || i.id.toLowerCase().includes('vase'));
-          break;
+        case 'decor':
         case 'details':
-          assetItems = (CATALOG_ASSETS.decor || []).filter(i => !i.name.toLowerCase().includes('ваз') && !i.id.toLowerCase().includes('vase'));
+        case 'vases':
+          assetItems = CATALOG_ASSETS.decor || [];
           break;
-        case 'textiles':
-          assetItems = CATALOG_ASSETS.textiles || [];
+        case 'sequins':
+          assetItems = (CATALOG_ASSETS.decor || []).filter(i => i.name.toLowerCase().includes('пайетк') || i.id.toLowerCase().includes('sequin'));
           break;
         case 'light':
           assetItems = CATALOG_ASSETS.light || [];
+          break;
+        case 'furniture':
+        case 'tables':
+          assetItems = CATALOG_ASSETS.tables || [];
+          break;
+        case 'tableware':
+        case 'serving':
+          assetItems = (CATALOG_ASSETS.decor || []).filter(i => i.name.toLowerCase().includes('сервировк') || i.name.toLowerCase().includes('посуд') || i.name.toLowerCase().includes('бокал') || i.name.toLowerCase().includes('тарелк'));
+          break;
+        case 'themes':
+          assetItems = [];
+          break;
+        case 'text':
+          assetItems = [];
           break;
         default:
           break;
@@ -2737,28 +2766,32 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                 {(activeWorkspaceTab === 'floorplan' ? SCHEMA_CATALOG_CATEGORIES : NEW_CATALOG_CATEGORIES).map((cat) => {
                   const isSelected = selectedCategory === cat.id;
                   return (
-                    <button
-                      key={cat.id}
-                      onClick={() => {
-                        setSelectedCategory(cat.id);
-                        setLibSearch('');
-                      }}
-                      className={`w-full py-2 px-1 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer border group ${
-                        isSelected
-                          ? 'bg-[#EAE4F8] text-[#5B3E88] border-[#D4C5ED] dark:bg-purple-950 dark:text-purple-200 dark:border-purple-800 shadow-xs'
-                          : 'bg-transparent hover:bg-white/70 dark:hover:bg-zinc-800/70 border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
-                      }`}
-                      title={cat.title}
-                    >
-                      <div className="flex items-center justify-center mb-1 transition-transform group-hover:scale-110">
-                        <CategoryIcon cat={cat} isSelected={isSelected} />
-                      </div>
-                      <span className={`text-[10px] leading-tight text-center truncate max-w-full px-0.5 tracking-tight ${
-                        isSelected ? 'font-bold text-[#5B3E88] dark:text-purple-200' : 'font-medium text-zinc-600 dark:text-zinc-400'
-                      }`}>
-                        {cat.title}
-                      </span>
-                    </button>
+                    <React.Fragment key={cat.id}>
+                      <button
+                        onClick={() => {
+                          setSelectedCategory(cat.id);
+                          setLibSearch('');
+                        }}
+                        className={`w-full py-2 px-1 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer border group ${
+                          isSelected
+                            ? 'bg-[#EAE4F8] text-[#5B3E88] border-[#D4C5ED] dark:bg-purple-950 dark:text-purple-200 dark:border-purple-800 shadow-xs'
+                            : 'bg-transparent hover:bg-white/70 dark:hover:bg-zinc-800/70 border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
+                        }`}
+                        title={cat.title}
+                      >
+                        <div className="flex items-center justify-center mb-1 transition-transform group-hover:scale-110">
+                          <CategoryIcon cat={cat} isSelected={isSelected} />
+                        </div>
+                        <span className={`text-[10px] leading-tight text-center truncate max-w-full px-0.5 tracking-tight ${
+                          isSelected ? 'font-bold text-[#5B3E88] dark:text-purple-200' : 'font-medium text-zinc-600 dark:text-zinc-400'
+                        }`}>
+                          {cat.title}
+                        </span>
+                      </button>
+                      {cat.id === 'warehouse' && activeWorkspaceTab !== 'floorplan' && (
+                        <div className="w-10 my-1 border-b border-zinc-300/80 dark:border-zinc-700/80 shrink-0" />
+                      )}
+                    </React.Fragment>
                   );
                 })}
 
@@ -2778,20 +2811,6 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
               {/* CARDS GRID AREA */}
               <div className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden max-h-full scrollbar-none pr-1">
                 <div className="grid grid-cols-2 md:portrait:grid-cols-2 md:landscape:grid-cols-3 lg:grid-cols-4 lg:landscape:grid-cols-4 xl:grid-cols-4 gap-1.5 sm:gap-2">
-                  {/* Plus item custom upload button */}
-                  <label className="group relative aspect-square w-full rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700 hover:border-[#5B3E88] bg-white/60 dark:bg-zinc-900/60 cursor-pointer transition-all shadow-2xs flex flex-col items-center justify-center p-2 text-center">
-                    <div className="w-8 h-8 rounded-full bg-[#EAE4F8] dark:bg-purple-950/80 text-[#5B3E88] dark:text-purple-300 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
-                      <Plus className="w-4 h-4" />
-                    </div>
-                    <span className="text-[10px] font-bold text-zinc-700 dark:text-zinc-300">Загрузить</span>
-                    <input
-                      type="file"
-                      accept="image/png"
-                      onChange={handleCustomPngUpload}
-                      className="hidden"
-                    />
-                  </label>
-
                   {getCategoryItems().map((item) => {
                     const isFav = favoritesList.includes(item.id);
                     return (
@@ -3435,6 +3454,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         onClick={() => {
                           setActiveToolPopover(prev => prev === 'group' ? null : 'group');
                           setActiveFilterTool(null);
+                          setIsDrawingMeasurement(false);
+                          setRotationInputId(null);
                         }}
                         className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
                           activeToolPopover === 'group'
@@ -3449,22 +3470,10 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                       {/* Popover Group / Ungroup */}
                       {activeToolPopover === 'group' && (
                         <div
-                          className="absolute left-10 sm:left-11 top-0 z-50 bg-white/45 dark:bg-zinc-900/60 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 p-2 rounded-2xl shadow-xl shadow-purple-950/10 flex flex-col gap-1 min-w-[175px] animate-fadeIn select-none"
-                          style={{
-                            backdropFilter: 'blur(16px)',
-                            WebkitBackdropFilter: 'blur(16px)',
-                            backgroundColor: 'rgba(255, 255, 255, 0.45)'
-                          }}
+                          className="absolute left-10 sm:left-11 top-0 z-50 bg-white/60 dark:bg-zinc-900/60 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 p-2 rounded-2xl shadow-xl shadow-purple-950/10 flex flex-col gap-1 min-w-[175px] animate-fadeIn select-none backdrop-blur-md"
                         >
                           <div className="flex items-center justify-between px-1 pb-1 border-b border-purple-200/50 dark:border-zinc-800 text-[11px] font-bold text-[#5B3E88] dark:text-purple-300">
                             <span>Группировка</span>
-                            <button
-                              onClick={() => setActiveToolPopover(null)}
-                              className="p-1 rounded-full hover:bg-purple-500/20 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
-                              title="Закрыть"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
                           </div>
                           <button
                             onClick={() => {
@@ -3534,6 +3543,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         onClick={() => {
                           setActiveToolPopover(prev => prev === 'layers' ? null : 'layers');
                           setActiveFilterTool(null);
+                          setIsDrawingMeasurement(false);
+                          setRotationInputId(null);
                         }}
                         className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
                           activeToolPopover === 'layers'
@@ -3548,22 +3559,10 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                       {/* Popover Layers */}
                       {activeToolPopover === 'layers' && (
                         <div
-                          className="absolute left-10 sm:left-11 top-0 z-50 bg-white/45 dark:bg-zinc-900/60 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 p-2 rounded-2xl shadow-xl shadow-purple-950/10 flex flex-col gap-1 min-w-[175px] animate-fadeIn select-none"
-                          style={{
-                            backdropFilter: 'blur(16px)',
-                            WebkitBackdropFilter: 'blur(16px)',
-                            backgroundColor: 'rgba(255, 255, 255, 0.45)'
-                          }}
+                          className="absolute left-10 sm:left-11 top-0 z-50 bg-white/60 dark:bg-zinc-900/60 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 p-2 rounded-2xl shadow-xl shadow-purple-950/10 flex flex-col gap-1 min-w-[175px] animate-fadeIn select-none backdrop-blur-md"
                         >
                           <div className="flex items-center justify-between px-1 pb-1 border-b border-purple-200/50 dark:border-zinc-800 text-[11px] font-bold text-[#5B3E88] dark:text-purple-300">
                             <span>Порядок слоев</span>
-                            <button
-                              onClick={() => setActiveToolPopover(null)}
-                              className="p-1 rounded-full hover:bg-purple-500/20 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
-                              title="Закрыть"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
                           </div>
                           <button
                             onClick={() => {
@@ -3666,6 +3665,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         onClick={() => {
                           setActiveToolPopover(prev => prev === 'flip' ? null : 'flip');
                           setActiveFilterTool(null);
+                          setIsDrawingMeasurement(false);
+                          setRotationInputId(null);
                         }}
                         className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
                           activeToolPopover === 'flip'
@@ -3680,22 +3681,10 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                       {/* Popover Flip */}
                       {activeToolPopover === 'flip' && (
                         <div
-                          className="absolute left-10 sm:left-11 top-0 z-50 bg-white/45 dark:bg-zinc-900/60 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 p-2 rounded-2xl shadow-xl shadow-purple-950/10 flex flex-col gap-1 min-w-[175px] animate-fadeIn select-none"
-                          style={{
-                            backdropFilter: 'blur(16px)',
-                            WebkitBackdropFilter: 'blur(16px)',
-                            backgroundColor: 'rgba(255, 255, 255, 0.45)'
-                          }}
+                          className="absolute left-10 sm:left-11 top-0 z-50 bg-white/60 dark:bg-zinc-900/60 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 p-2 rounded-2xl shadow-xl shadow-purple-950/10 flex flex-col gap-1 min-w-[175px] animate-fadeIn select-none backdrop-blur-md"
                         >
                           <div className="flex items-center justify-between px-1 pb-1 border-b border-purple-200/50 dark:border-zinc-800 text-[11px] font-bold text-[#5B3E88] dark:text-purple-300">
                             <span>Отражение</span>
-                            <button
-                              onClick={() => setActiveToolPopover(null)}
-                              className="p-1 rounded-full hover:bg-purple-500/20 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
-                              title="Закрыть"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
                           </div>
                           <button
                             onClick={() => {
@@ -3735,6 +3724,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                           setIsDrawingMeasurement(prev => !prev);
                           setActiveToolPopover(null);
                           setActiveFilterTool(null);
+                          setRotationInputId(null);
                           if (!isDrawingMeasurement) {
                             showToast('Инструмент Замеры', 'Зажмите мышью на холсте и потяните от точки к точке', 'info');
                           }
@@ -3752,24 +3742,13 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                       {/* Popover options for Measurement */}
                       {isDrawingMeasurement && (
                         <div
-                          className="absolute left-10 sm:left-11 top-0 z-50 bg-white/45 dark:bg-zinc-900/60 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 p-2.5 rounded-2xl shadow-xl shadow-purple-950/10 flex flex-col gap-1.5 min-w-[195px] animate-fadeIn select-none"
-                          style={{
-                            backdropFilter: 'blur(16px)',
-                            WebkitBackdropFilter: 'blur(16px)',
-                          }}
+                          className="absolute left-10 sm:left-11 top-0 z-50 bg-white/60 dark:bg-zinc-900/60 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 p-2.5 rounded-2xl shadow-xl shadow-purple-950/10 flex flex-col gap-1.5 min-w-[195px] animate-fadeIn select-none backdrop-blur-md"
                         >
                           <div className="flex items-center justify-between px-1 pb-1 border-b border-purple-200/50 dark:border-zinc-800 text-[11px] font-bold text-[#5B3E88] dark:text-purple-300">
                             <span className="flex items-center gap-1">
                               <Ruler className="w-3.5 h-3.5" />
                               Замеры
                             </span>
-                            <button
-                              onClick={() => setIsDrawingMeasurement(false)}
-                              className="p-1 rounded-full hover:bg-purple-500/20 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
-                              title="Закрыть"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
                           </div>
 
                           <p className="text-[10px] text-zinc-600 dark:text-zinc-300 px-1 leading-snug">
@@ -3871,29 +3850,16 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                           <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
                         </button>
                         
-                        {/* POPUP ADJUSTMENT TOOL SLIDER OR ZOOM (Positioned directly next to bottom-right toolbar, semi-transparent & compact) */}
+                        {/* POPUP ADJUSTMENT TOOL SLIDER OR ZOOM (Positioned to the left of bottom-right toolbar, semi-transparent & compact) */}
                       {activeFilterTool && (activeFilterTool === 'zoom' || selectedElem) && (
                         <div
                           className={`absolute ${
                             activeFilterTool === 'recolor'
-                              ? 'bottom-[56px] right-2 sm:right-full sm:mr-2 sm:bottom-0 w-64 max-w-[calc(100vw-32px)] p-3 bg-white/45 dark:bg-zinc-900/60'
-                              : 'bottom-full mb-2 right-0 w-12 sm:w-14 p-2 bg-white/45 dark:bg-zinc-900/60'
-                          } z-50 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 rounded-2xl shadow-xl shadow-purple-950/10 flex flex-col items-center gap-2 animate-fadeIn pointer-events-auto transition-all select-none`}
-                          style={{
-                            backdropFilter: 'blur(16px)',
-                            WebkitBackdropFilter: 'blur(16px)',
-                          }}
+                              ? 'bottom-full mb-2 right-0 w-64 max-w-[calc(100vw-32px)] p-3 bg-white/60 dark:bg-zinc-900/60'
+                              : 'bottom-full mb-2 right-0 w-12 sm:w-14 p-2 bg-white/60 dark:bg-zinc-900/60'
+                          } z-50 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 rounded-2xl shadow-xl shadow-purple-950/10 flex flex-col items-center gap-1.5 animate-fadeIn pointer-events-auto transition-all select-none backdrop-blur-md`}
                         >
                           
-                          {/* Top Close Button */}
-                          <button
-                            onClick={() => setActiveFilterTool(null)}
-                            className="text-zinc-400 hover:text-zinc-700 dark:hover:text-white p-0.5 rounded-full hover:bg-zinc-200 dark:hover:bg-white/10 transition-colors cursor-pointer self-end"
-                            title="Закрыть"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-
                           {/* Recolor Tool Panel */}
                           {activeFilterTool === 'recolor' && selectedElem && (
                             <div className="flex flex-col gap-2 w-full text-xs">
@@ -4021,10 +3987,10 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
                           {/* Vertical Slider & Controls for Canvas Zoom */}
                           {activeFilterTool === 'zoom' && (
-                            <div className="flex flex-col items-center gap-1.5 p-1 min-w-[52px]">
+                            <div className="flex flex-col items-center gap-1 p-0.5 w-full">
                               <button
                                 onClick={() => setZoomScale(prev => Math.min(4.0, Number((prev + 0.15).toFixed(2))))}
-                                className="w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-purple-100 dark:hover:bg-purple-900/50 text-zinc-700 dark:text-zinc-200 flex items-center justify-center font-bold text-sm cursor-pointer transition-colors shadow-2xs"
+                                className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-purple-100 dark:hover:bg-purple-900/50 text-zinc-700 dark:text-zinc-200 flex items-center justify-center font-bold text-xs cursor-pointer transition-colors shadow-2xs shrink-0"
                                 title="Увеличить масштаб холста"
                               >
                                 +
@@ -4039,11 +4005,11 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                 onChange={(e) => {
                                   setZoomScale(parseFloat(e.target.value) / 100);
                                 }}
-                                className="h-28 w-2 accent-[var(--lavDeep)] dark:accent-purple-400 cursor-pointer rounded-lg appearance-none bg-zinc-200 dark:bg-zinc-700 [writing-mode:vertical-lr] [direction:rtl]"
+                                className="h-20 w-1.5 accent-[var(--lavDeep)] dark:accent-purple-400 cursor-pointer rounded-lg appearance-none bg-zinc-200 dark:bg-zinc-700 [writing-mode:vertical-lr] [direction:rtl]"
                               />
                               <button
                                 onClick={() => setZoomScale(prev => Math.max(0.2, Number((prev - 0.15).toFixed(2))))}
-                                className="w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-purple-100 dark:hover:bg-purple-900/50 text-zinc-700 dark:text-zinc-200 flex items-center justify-center font-bold text-sm cursor-pointer transition-colors shadow-2xs"
+                                className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-purple-100 dark:hover:bg-purple-900/50 text-zinc-700 dark:text-zinc-200 flex items-center justify-center font-bold text-xs cursor-pointer transition-colors shadow-2xs shrink-0"
                                 title="Уменьшить масштаб холста"
                               >
                                 -
@@ -4065,7 +4031,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
                           {/* Vertical Slider for Brightness */}
                           {activeFilterTool === 'brightness' && selectedElem && (
-                            <div className="flex flex-col items-center gap-2">
+                            <div className="flex flex-col items-center gap-1.5 py-1">
                               <input
                                 type="range"
                                 orient="vertical"
@@ -4076,7 +4042,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                   const val = parseInt(e.target.value);
                                   updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, exposure: val } : item));
                                 }}
-                                className="h-28 w-2 accent-[var(--lavDeep)] dark:accent-purple-400 cursor-pointer rounded-lg appearance-none [writing-mode:vertical-lr] [direction:rtl]"
+                                className="h-24 w-1.5 accent-[var(--lavDeep)] dark:accent-purple-400 cursor-pointer rounded-lg appearance-none [writing-mode:vertical-lr] [direction:rtl]"
                                 style={{ background: 'linear-gradient(to top, #27272a, #a1a1aa, #ffffff)' }}
                               />
                               <span className="text-[10px] font-bold font-mono text-[var(--lavDeep)] dark:text-purple-300">
@@ -4087,7 +4053,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
                           {/* Vertical Slider for Hue */}
                           {activeFilterTool === 'hue' && selectedElem && (
-                            <div className="flex flex-col items-center gap-2">
+                            <div className="flex flex-col items-center gap-1.5 py-1">
                               <input
                                 type="range"
                                 orient="vertical"
@@ -4098,7 +4064,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                   const val = parseInt(e.target.value);
                                   updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, hue: val } : item));
                                 }}
-                                className="h-28 w-2 accent-[var(--lavDeep)] dark:accent-purple-400 cursor-pointer rounded-lg appearance-none [writing-mode:vertical-lr] [direction:rtl]"
+                                className="h-24 w-1.5 accent-[var(--lavDeep)] dark:accent-purple-400 cursor-pointer rounded-lg appearance-none [writing-mode:vertical-lr] [direction:rtl]"
                                 style={{ background: 'linear-gradient(to top, red, yellow, green, cyan, blue, magenta, red)' }}
                               />
                               <span className="text-[10px] font-bold font-mono text-[var(--lavDeep)] dark:text-purple-300">
@@ -4109,7 +4075,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
                           {/* Vertical Slider for Temp */}
                           {activeFilterTool === 'temp' && selectedElem && (
-                            <div className="flex flex-col items-center gap-2">
+                            <div className="flex flex-col items-center gap-1.5 py-1">
                               <input
                                 type="range"
                                 orient="vertical"
@@ -4120,7 +4086,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                   const val = parseInt(e.target.value);
                                   updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, temp: val } : item));
                                 }}
-                                className="h-28 w-2 accent-[var(--lavDeep)] dark:accent-purple-400 cursor-pointer rounded-lg appearance-none [writing-mode:vertical-lr] [direction:rtl]"
+                                className="h-24 w-1.5 accent-[var(--lavDeep)] dark:accent-purple-400 cursor-pointer rounded-lg appearance-none [writing-mode:vertical-lr] [direction:rtl]"
                                 style={{ background: 'linear-gradient(to top, #3b82f6, #eff6ff, #f59e0b)' }}
                               />
                               <span className="text-[10px] font-bold font-mono text-[var(--lavDeep)] dark:text-purple-300">
@@ -4131,7 +4097,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
                           {/* Vertical Slider for Saturate */}
                           {activeFilterTool === 'saturate' && selectedElem && (
-                            <div className="flex flex-col items-center gap-2">
+                            <div className="flex flex-col items-center gap-1.5 py-1">
                               <input
                                 type="range"
                                 orient="vertical"
@@ -4142,7 +4108,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                   const val = parseInt(e.target.value);
                                   updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, saturate: val } : item));
                                 }}
-                                className="h-28 w-2 accent-[var(--lavDeep)] dark:accent-purple-400 cursor-pointer rounded-lg appearance-none [writing-mode:vertical-lr] [direction:rtl]"
+                                className="h-24 w-1.5 accent-[var(--lavDeep)] dark:accent-purple-400 cursor-pointer rounded-lg appearance-none [writing-mode:vertical-lr] [direction:rtl]"
                                 style={{ background: 'linear-gradient(to top, #a1a1aa, #c084fc, #8b5cf6)' }}
                               />
                               <span className="text-[10px] font-bold font-mono text-[var(--lavDeep)] dark:text-purple-300">
@@ -4153,7 +4119,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
                           {/* Vertical Slider for Opacity */}
                           {activeFilterTool === 'opacity' && selectedElem && (
-                            <div className="flex flex-col items-center gap-2">
+                            <div className="flex flex-col items-center gap-1.5 py-1">
                               <input
                                 type="range"
                                 orient="vertical"
@@ -4164,7 +4130,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                   const val = parseInt(e.target.value);
                                   updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, opacity: val } : item));
                                 }}
-                                className="h-28 w-2 accent-[var(--lavDeep)] dark:accent-purple-400 cursor-pointer rounded-lg appearance-none [writing-mode:vertical-lr] [direction:rtl]"
+                                className="h-24 w-1.5 accent-[var(--lavDeep)] dark:accent-purple-400 cursor-pointer rounded-lg appearance-none [writing-mode:vertical-lr] [direction:rtl]"
                                 style={{ background: 'linear-gradient(to top, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 1))' }}
                               />
                               <span className="text-[10px] font-bold font-mono text-[var(--lavDeep)] dark:text-purple-300">
@@ -4180,6 +4146,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                       <button
                         onClick={() => {
                           setActiveToolPopover(null);
+                          setIsDrawingMeasurement(false);
+                          setRotationInputId(null);
                           if (!selectedId && activeFilterTool !== 'recolor') {
                             showToast('Выберите элемент', 'Кликните на элемент для окрашивания в нужный цвет', 'info');
                           }
@@ -4199,6 +4167,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                       <button
                         onClick={() => {
                           setActiveToolPopover(null);
+                          setIsDrawingMeasurement(false);
+                          setRotationInputId(null);
                           if (!selectedId && activeFilterTool !== 'brightness') {
                             showToast('Выберите элемент', 'Кликните на элемент для настройки яркости', 'info');
                           }
@@ -4218,6 +4188,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                       <button
                         onClick={() => {
                           setActiveToolPopover(null);
+                          setIsDrawingMeasurement(false);
+                          setRotationInputId(null);
                           if (!selectedId && activeFilterTool !== 'hue') {
                             showToast('Выберите элемент', 'Кликните на элемент для настройки тона', 'info');
                           }
@@ -4237,6 +4209,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                       <button
                         onClick={() => {
                           setActiveToolPopover(null);
+                          setIsDrawingMeasurement(false);
+                          setRotationInputId(null);
                           if (!selectedId && activeFilterTool !== 'temp') {
                             showToast('Выберите элемент', 'Кликните на элемент для настройки температуры', 'info');
                           }
@@ -4256,6 +4230,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                       <button
                         onClick={() => {
                           setActiveToolPopover(null);
+                          setIsDrawingMeasurement(false);
+                          setRotationInputId(null);
                           if (!selectedId && activeFilterTool !== 'saturate') {
                             showToast('Выберите элемент', 'Кликните на элемент для настройки насыщенности', 'info');
                           }
@@ -4275,6 +4251,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                       <button
                         onClick={() => {
                           setActiveToolPopover(null);
+                          setIsDrawingMeasurement(false);
+                          setRotationInputId(null);
                           if (!selectedId && activeFilterTool !== 'opacity') {
                             showToast('Выберите элемент', 'Кликните на элемент для настройки прозрачности', 'info');
                           }
@@ -4294,6 +4272,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                       <button
                         onClick={() => {
                           setActiveToolPopover(null);
+                          setIsDrawingMeasurement(false);
+                          setRotationInputId(null);
                           setActiveFilterTool(prev => prev === 'zoom' ? null : 'zoom');
                         }}
                         className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 border-t border-zinc-200/60 dark:border-zinc-700/60 pt-0.5 mt-0.5 ${
@@ -4367,11 +4347,28 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                     onClick={(e) => {
                       if (e.target === e.currentTarget) {
                         setSelectedIds([]);
+                        setSelectedId(null);
+                        setActiveToolPopover(null);
+                        setActiveFilterTool(null);
+                        setIsDrawingMeasurement(false);
+                        setRotationInputId(null);
                       }
                     }}
                   >
                 {/* Backdrop & Grid Clip Layer */}
-                <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none z-0">
+                <div
+                  className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-auto z-0"
+                  onClick={(e) => {
+                    if (e.target === e.currentTarget) {
+                      setSelectedIds([]);
+                      setSelectedId(null);
+                      setActiveToolPopover(null);
+                      setActiveFilterTool(null);
+                      setIsDrawingMeasurement(false);
+                      setRotationInputId(null);
+                    }
+                  }}
+                >
                   {activeScene.backdropType === 'image' && activeScene.backdropImage ? (
                     <img
                       src={activeScene.backdropImage}
@@ -4999,14 +4996,11 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                   <div
                                     className={`absolute left-1/2 -translate-x-1/2 ${
                                       isNearTop ? 'top-full mt-4' : '-translate-y-[165px] top-0'
-                                    } z-50 bg-white/45 dark:bg-zinc-900/60 text-zinc-900 dark:text-zinc-100 p-3 rounded-2xl shadow-xl shadow-purple-950/10 border border-white/80 dark:border-zinc-700/80 flex flex-col items-center gap-2 pointer-events-auto min-w-[210px] animate-fadeIn select-none`}
+                                    } z-50 bg-white/95 dark:bg-zinc-900/95 text-zinc-900 dark:text-zinc-100 p-3 rounded-2xl shadow-xl shadow-purple-950/10 border border-white/80 dark:border-zinc-700/80 flex flex-col items-center gap-2 pointer-events-auto min-w-[210px] animate-fadeIn select-none backdrop-blur-md`}
                                     style={{
                                       transform: `rotate(${-el.rotation}deg) scaleX(${el.isFlippedH ? -1 : 1}) scaleY(${el.isFlippedV ? -1 : 1}) scale(${1 / ((canvasScale * zoomScale) || 1)})`,
                                       transformOrigin: isNearTop ? 'top center' : 'bottom center',
-                                      WebkitFontSmoothing: 'antialiased',
-                                      backdropFilter: 'blur(16px)',
-                                      WebkitBackdropFilter: 'blur(16px)',
-                                      backgroundColor: 'rgba(255, 255, 255, 0.45)'
+                                      WebkitFontSmoothing: 'antialiased'
                                     }}
                                     onMouseDown={(e) => e.stopPropagation()}
                                     onClick={(e) => e.stopPropagation()}
@@ -5016,16 +5010,6 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                         <RotateCw className="w-3.5 h-3.5 text-[#5B3E88] dark:text-purple-400 stroke-[2.2]" />
                                         Угол поворота
                                       </span>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setRotationInputId(null);
-                                        }}
-                                        className="p-1 rounded-full hover:bg-purple-500/20 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
-                                        title="Закрыть"
-                                      >
-                                        <X className="w-3.5 h-3.5" />
-                                      </button>
                                     </div>
 
                                     {/* Number Input & Step Buttons */}
@@ -5104,14 +5088,11 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
                             return (
                               <div
-                                className={`absolute left-1/2 -translate-x-1/2 ${positionClass} flex items-center gap-1.5 bg-white/45 dark:bg-zinc-900/60 text-zinc-800 dark:text-zinc-100 px-3.5 py-1.5 rounded-full shadow-lg shadow-purple-950/10 border border-white/80 dark:border-zinc-700/80 z-50 pointer-events-auto select-none`}
+                                className={`absolute left-1/2 -translate-x-1/2 ${positionClass} flex items-center gap-1.5 bg-white/95 dark:bg-zinc-900/95 text-zinc-800 dark:text-zinc-100 px-3.5 py-1.5 rounded-full shadow-lg shadow-purple-950/10 border border-white/80 dark:border-zinc-700/80 z-50 pointer-events-auto select-none backdrop-blur-md`}
                                 style={{
                                   transform: `rotate(${-el.rotation}deg) scaleX(${el.isFlippedH ? -1 : 1}) scaleY(${el.isFlippedV ? -1 : 1}) scale(${1 / ((canvasScale * zoomScale) || 1)})`,
                                   transformOrigin: isNearBottom ? 'bottom center' : 'top center',
-                                  WebkitFontSmoothing: 'antialiased',
-                                  backdropFilter: 'blur(16px)',
-                                  WebkitBackdropFilter: 'blur(16px)',
-                                  backgroundColor: 'rgba(255, 255, 255, 0.45)'
+                                  WebkitFontSmoothing: 'antialiased'
                                 }}
                               >
                                 {/* Lock Toggle */}
@@ -5156,18 +5137,6 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                   title="Удалить со сцены"
                                 >
                                   <Trash2 className="w-4 h-4 text-rose-500 dark:text-rose-400 stroke-[2.3] group-hover:scale-110 transition-transform" />
-                                </button>
-
-                                {/* Close / Deselect */}
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedId(null);
-                                  }}
-                                  className="p-1.5 rounded-full hover:bg-purple-500/20 active:scale-90 transition-all cursor-pointer flex items-center justify-center group"
-                                  title="Закрыть панель"
-                                >
-                                  <X className="w-4 h-4 text-zinc-500 hover:text-zinc-900 dark:hover:text-white stroke-[2.3] group-hover:scale-110 transition-transform" />
                                 </button>
                               </div>
                             );
@@ -5233,12 +5202,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         }}
                       >
                         <span
-                          className="text-[10px] font-extrabold text-[#5B3E88] dark:text-purple-300 bg-white/60 dark:bg-zinc-900/60 px-2.5 py-1 rounded-full border border-white/80 dark:border-zinc-700/80 shadow-md flex items-center gap-1.5"
-                          style={{
-                            backdropFilter: 'blur(16px)',
-                            WebkitBackdropFilter: 'blur(16px)',
-                            backgroundColor: 'rgba(255, 255, 255, 0.55)'
-                          }}
+                          className="text-[10px] font-extrabold text-[#5B3E88] dark:text-purple-300 bg-white/95 dark:bg-zinc-900/95 px-2.5 py-1 rounded-full border border-white/80 dark:border-zinc-700/80 shadow-md flex items-center gap-1.5 backdrop-blur-md"
                         >
                           <BoxSelect className="w-3 h-3 text-[#5B3E88] dark:text-purple-300" />
                           Выделено элементов: {selectedElements.length}
@@ -5249,14 +5213,11 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                       <div
                         className={`absolute left-1/2 -translate-x-1/2 ${
                           isNearTop ? 'bottom-2' : '-top-14'
-                        } flex items-center gap-1.5 bg-white/45 dark:bg-zinc-900/60 text-zinc-800 dark:text-zinc-100 px-3.5 py-1.5 rounded-full shadow-lg shadow-purple-950/10 border border-white/80 dark:border-zinc-700/80 z-50 pointer-events-auto select-none`}
+                        } flex items-center gap-1.5 bg-white/95 dark:bg-zinc-900/95 text-zinc-800 dark:text-zinc-100 px-3.5 py-1.5 rounded-full shadow-lg shadow-purple-950/10 border border-white/80 dark:border-zinc-700/80 z-50 pointer-events-auto select-none backdrop-blur-md`}
                         style={{
                           transform: `scale(${1 / ((canvasScale * zoomScale) || 1)})`,
                           transformOrigin: isNearTop ? 'bottom center' : 'top center',
-                          WebkitFontSmoothing: 'antialiased',
-                          backdropFilter: 'blur(16px)',
-                          WebkitBackdropFilter: 'blur(16px)',
-                          backgroundColor: 'rgba(255, 255, 255, 0.45)'
+                          WebkitFontSmoothing: 'antialiased'
                         }}
                         onMouseDown={(e) => e.stopPropagation()}
                         onClick={(e) => e.stopPropagation()}
@@ -5338,15 +5299,6 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         >
                           <Trash2 className="w-4 h-4 text-rose-500 dark:text-rose-400 stroke-[2.3] group-hover:scale-110 transition-transform" />
                         </button>
-
-                        {/* Deselect / Close */}
-                        <button
-                          onClick={() => setSelectedIds([])}
-                          className="p-1.5 rounded-full hover:bg-purple-500/20 active:scale-90 transition-all cursor-pointer flex items-center justify-center group"
-                          title="Закрыть панель (снять выделение)"
-                        >
-                          <X className="w-4 h-4 text-zinc-500 hover:text-zinc-900 dark:hover:text-white stroke-[2.3] group-hover:scale-110 transition-transform" />
-                        </button>
                       </div>
                     </div>
                   );
@@ -5364,7 +5316,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: '100%' }}
                           transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                          className="absolute bottom-0 inset-x-0 z-[70] w-full max-h-[65%] sm:max-h-[420px] flex flex-col bg-white/45 dark:bg-zinc-900/50 border-t border-x border-white/70 dark:border-white/15 rounded-t-[28px] shadow-[0_-12px_35px_rgba(0,0,0,0.15)] backdrop-blur-[24px] overflow-hidden pointer-events-auto"
+                          className="absolute bottom-0 inset-x-0 z-[70] w-full max-h-[65%] sm:max-h-[420px] flex flex-col bg-white/95 dark:bg-zinc-900/95 border-t border-x border-white/70 dark:border-white/15 rounded-t-[28px] shadow-[0_-12px_35px_rgba(0,0,0,0.15)] backdrop-blur-[24px] overflow-hidden pointer-events-auto"
                         >
                           {/* Drawer Header with Tabs at the Top */}
                           <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-white/40 dark:border-white/10 bg-white/25 dark:bg-zinc-900/30 backdrop-blur-md shrink-0">

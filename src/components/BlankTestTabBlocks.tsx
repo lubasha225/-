@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { EditorSketchCanvasPreview } from './EditorSketchCanvasPreview';
+import { PrivacyPolicyModal } from './PrivacyPolicyModal';
 import {
   Clipboard,
   Send,
@@ -72,6 +73,8 @@ export const BriefBlock: React.FC<BriefBlockProps> = ({
   setNewFieldName
 }) => {
   const isCollapsed = isOverview && overviewCollapsed.brief;
+  const [pdnConsent, setPdnConsent] = useState(true);
+  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
 
   return (
     <div className={isOverview ? "bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[28px] border border-zinc-200/50 dark:border-zinc-800/40 p-5 sm:p-6 shadow-xs transition-all space-y-6" : "space-y-6"}>
@@ -96,7 +99,11 @@ export const BriefBlock: React.FC<BriefBlockProps> = ({
             <button
               type="button"
               onClick={() => {
-                showToast?.('Бриф отправлен', 'Ссылка на бриф скопирована и отправлена клиенту', 'success');
+                if (!pdnConsent) {
+                  showToast?.('Требуется согласие', 'Пожалуйста, подтвердите согласие на обработку персональных данных (152-ФЗ)', 'warn');
+                  return;
+                }
+                showToast?.('Бриф отправлен', 'Ссылка на бриф скопирована. Данные передаются напрямую оператору (152-ФЗ)', 'success');
               }}
               style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
               className="w-8 h-8 sm:w-auto sm:h-8 sm:px-3.5 rounded-full text-white flex items-center justify-center gap-1.5 cursor-pointer transition-all duration-300 hover:shadow-md hover:scale-105 active:scale-95 shadow-xs shrink-0"
@@ -144,8 +151,8 @@ export const BriefBlock: React.FC<BriefBlockProps> = ({
                     key={field.key}
                     className={`p-2.5 rounded-xl border border-l-2 text-left transition-all flex flex-col justify-between shadow-2xs ${
                       isEmpty
-                        ? 'border-dashed border-purple-300 border-l-[#8C52D0] dark:border-purple-800 bg-purple-50/40 dark:bg-purple-950/20'
-                        : 'border-purple-200/80 border-l-[#8C52D0] dark:border-purple-900/50 bg-white/80 dark:bg-zinc-900/60'
+                        ? 'border-dashed border-purple-300/80 border-l-[#8C52D0] dark:border-purple-900/40 dark:border-l-purple-500/70 bg-purple-50/30 dark:bg-zinc-900/40'
+                        : 'border-purple-200/60 border-l-[#8C52D0] dark:border-zinc-800 dark:border-l-purple-500/70 bg-white/80 dark:bg-zinc-900/60'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-1 mb-1.5">
@@ -162,7 +169,7 @@ export const BriefBlock: React.FC<BriefBlockProps> = ({
                         placeholder="Заполните информацию..."
                         className={`w-full text-xs font-semibold rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] resize-none ${
                           isEmpty
-                            ? 'bg-purple-50/60 text-[#582F89] italic font-medium border-purple-200 dark:bg-purple-950/40 dark:text-purple-300'
+                            ? 'bg-purple-50/50 text-[#582F89] italic font-medium border-purple-200/60 dark:bg-zinc-900/90 dark:text-purple-300/80 dark:border-zinc-800'
                             : 'bg-white/90 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100 border-zinc-200 dark:border-zinc-800'
                         }`}
                       />
@@ -174,7 +181,7 @@ export const BriefBlock: React.FC<BriefBlockProps> = ({
                         placeholder="Заполните значение..."
                         className={`w-full text-xs font-semibold rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] ${
                           isEmpty
-                            ? 'bg-purple-50/60 text-[#582F89] italic font-medium border-purple-200 dark:bg-purple-950/40 dark:text-purple-300'
+                            ? 'bg-purple-50/50 text-[#582F89] italic font-medium border-purple-200/60 dark:bg-zinc-900/90 dark:text-purple-300/80 dark:border-zinc-800'
                             : 'bg-white/90 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100 border-zinc-200 dark:border-zinc-800'
                         }`}
                       />
@@ -182,6 +189,51 @@ export const BriefBlock: React.FC<BriefBlockProps> = ({
                   </div>
                 );
               })}
+            </div>
+
+            {/* PDN CONSENT & OPERATOR NOTICE (152-ФЗ) */}
+            <div className="mt-3.5 space-y-2.5">
+              <div className="p-3.5 bg-emerald-500/10 dark:bg-emerald-950/30 rounded-2xl border border-emerald-500/20 text-xs text-emerald-900 dark:text-emerald-200 font-normal leading-relaxed flex items-start gap-2.5">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                <div>
+                  <strong>Сбор данных от субъекта ПДн (152-ФЗ):</strong> Кнопка «Отправить бриф» отправляет анкету клиенту для самостоятельного заполнения. Поступающие данные приходят напрямую от субъекта в форму на вашем домене, где вы выступаете оператором персональных данных.
+                </div>
+              </div>
+
+              <div className="p-3.5 bg-white/60 dark:bg-zinc-900/40 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs backdrop-blur-md">
+                <label className="flex items-start gap-2.5 cursor-pointer select-none group text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                  <input
+                    type="checkbox"
+                    checked={pdnConsent}
+                    onChange={(e) => setPdnConsent(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 rounded text-[#8C52D0] focus:ring-[#8C52D0] border-zinc-300 dark:border-zinc-700 cursor-pointer accent-[#8C52D0]"
+                  />
+                  <span>
+                    Я даю согласие на <span className="font-semibold text-zinc-900 dark:text-zinc-100">обработку персональных данных</span> в соответствии с{' '}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setIsPrivacyModalOpen(true);
+                      }}
+                      className="text-[#8C52D0] dark:text-purple-400 font-semibold underline hover:text-[#582F89] transition-colors cursor-pointer"
+                    >
+                      Политикой конфиденциальности
+                    </button>{' '}
+                    (152-ФЗ)
+                  </span>
+                </label>
+
+                <button
+                  type="button"
+                  onClick={() => setIsPrivacyModalOpen(true)}
+                  className="text-[11px] text-zinc-600 dark:text-zinc-400 hover:text-[#8C52D0] dark:hover:text-purple-300 font-medium underline flex items-center gap-1 cursor-pointer shrink-0"
+                >
+                  <FileText className="w-3.5 h-3.5 text-[#8C52D0]" />
+                  <span>Открыть политику</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -346,6 +398,8 @@ export const BriefBlock: React.FC<BriefBlockProps> = ({
           </div>
         </div>
       )}
+
+      <PrivacyPolicyModal isOpen={isPrivacyModalOpen} onClose={() => setIsPrivacyModalOpen(false)} />
     </div>
   );
 };

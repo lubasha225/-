@@ -59,16 +59,14 @@ interface BlankTestPageProps {
 }
 
 const baseBriefFieldDefinitions: { key: string; filledBy: 'client' | 'designer'; multiline?: boolean }[] = [
-  // --- 1. КЛИЕНТСКИЙ БЛОК (24 поля) ---
+  // --- 1. КЛИЕНТСКИЙ БЛОК (22 поля) ---
   { key: "ИМЯ КЛИЕНТА", filledBy: 'client' },
   { key: "ТЕЛЕФОН", filledBy: 'client' },
-  { key: "РЕКВИЗИТЫ ПЛАТЕЛЬЩИКА", filledBy: 'client' },
   { key: "СОБЫТИЕ", filledBy: 'client' },
   { key: "ДАТА", filledBy: 'client' },
   { key: "ГОСТЕЙ", filledBy: 'client' },
   { key: "ФОРМАТ СОБЫТИЯ", filledBy: 'client' },
-  { key: "ПЛОЩАДКА", filledBy: 'client' },
-  { key: "АДРЕС", filledBy: 'client' },
+  { key: "АДРЕС ПЛОЩАДКИ/НАЗВАНИЕ", filledBy: 'client' },
   { key: "КОНТАКТ ПЛОЩАДКИ", filledBy: 'client' },
   { key: "РАЗМЕР ЗОНЫ МОНТАЖА", filledBy: 'client' },
   { key: "КРЕПЕЖ К СТЕНАМ", filledBy: 'client' },
@@ -119,13 +117,11 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
     const emptyBrief = {
       "ИМЯ КЛИЕНТА": "",
       "ТЕЛЕФОН": "",
-      "РЕКВИЗИТЫ ПЛАТЕЛЬЩИКА": "",
       "СОБЫТИЕ": "",
       "ДАТА": "",
       "ГОСТЕЙ": "",
       "ФОРМАТ СОБЫТИЯ": "",
-      "ПЛОЩАДКА": "",
-      "АДРЕС": "",
+      "АДРЕС ПЛОЩАДКИ/НАЗВАНИЕ": "",
       "КОНТАКТ ПЛОЩАДКИ": "",
       "РАЗМЕР ЗОНЫ МОНТАЖА": "",
       "КРЕПЕЖ К СТЕНАМ": "",
@@ -159,13 +155,11 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
       ...emptyBrief,
       "ИМЯ КЛИЕНТА": proj.clientName && proj.clientName !== 'Не указан' ? proj.clientName : "",
       "ТЕЛЕФОН": proj.clientPhone || "",
-      "РЕКВИЗИТЫ ПЛАТЕЛЬЩИКА": proj.briefValues?.["РЕКВИЗИТЫ ПЛАТЕЛЬЩИКА"] || "",
       "СОБЫТИЕ": proj.name || "",
       "ДАТА": formattedDate,
       "ГОСТЕЙ": proj.brief?.guestsCount ? `${proj.brief.guestsCount} человек` : (proj.briefValues?.["ГОСТЕЙ"] || ""),
       "ФОРМАТ СОБЫТИЯ": proj.briefValues?.["ФОРМАТ СОБЫТИЯ"] || "",
-      "ПЛОЩАДКА": proj.venue || "",
-      "АДРЕС": proj.briefValues?.["АДРЕС"] || "",
+      "АДРЕС ПЛОЩАДКИ/НАЗВАНИЕ": proj.venue || proj.briefValues?.["АДРЕС ПЛОЩАДКИ/НАЗВАНИЕ"] || proj.briefValues?.["ПЛОЩАДКА"] || "",
       "КОНТАКТ ПЛОЩАДКИ": proj.briefValues?.["КОНТАКТ ПЛОЩАДКИ"] || "",
       "РАЗМЕР ЗОНЫ МОНТАЖА": proj.briefValues?.["РАЗМЕР ЗОНЫ МОНТАЖА"] || "",
       "КРЕПЕЖ К СТЕНАМ": proj.briefValues?.["КРЕПЕЖ К СТЕНАМ"] || "",
@@ -675,7 +669,7 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
 
       if (key === 'ИМЯ КЛИЕНТА') updatedClientName = value;
       if (key === 'ТЕЛЕФОН') updatedClientPhone = value;
-      if (key === 'ПЛОЩАДКА') updatedVenue = value;
+      if (key === 'АДРЕС ПЛОЩАДКИ/НАЗВАНИЕ' || key === 'ПЛОЩАДКА') updatedVenue = value;
       if (key === 'ДАТА') updatedDate = value;
       if (key === 'ОРИЕНТИРОВОЧНЫЙ БЮДЖЕТ') {
         const num = parseInt(value.replace(/\D/g, ''), 10);
@@ -1041,7 +1035,7 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
             </span>
 
             <span className="flex items-center gap-1 font-medium bg-white/80 dark:bg-zinc-800/80 px-2.5 py-0.5 rounded-full border border-white/90 dark:border-zinc-700/60 shadow-2xs text-[11px] shrink-0">
-              <MapPin className="w-3 h-3 text-[#8C52D0]" /> {briefValues["ПЛОЩАДКА"] || 'Площадка не указана'}
+              <MapPin className="w-3 h-3 text-[#8C52D0]" /> {briefValues["АДРЕС ПЛОЩАДКИ/НАЗВАНИЕ"] || briefValues["ПЛОЩАДКА"] || 'Площадка не указана'}
             </span>
           </div>
         </div>

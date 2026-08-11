@@ -563,15 +563,15 @@ export default function WarehouseTab({
         </div>
 
         {/* Row 2: Search Input and View Mode Switcher */}
-        <div className="flex items-center justify-between gap-3 bg-white/10 dark:bg-zinc-900/5 p-2 rounded-2xl border border-[var(--glass-edge)]/40">
+        <div className="flex items-center justify-between gap-3 bg-white/40 dark:bg-zinc-900/60 p-2 rounded-2xl border border-[var(--glass-edge)]">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
             <input
               type="text"
               placeholder="Поиск по инвентарю..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-1.5 rounded-xl text-xs bg-white/30 dark:bg-zinc-900/20 border border-zinc-200/50 dark:border-zinc-800/50 text-[var(--ink)] placeholder:text-zinc-400 focus:outline-none focus:border-[var(--lavenderAccent)] w-full transition-colors"
+              className="pl-9 pr-4 py-1.5 rounded-xl text-xs bg-white/70 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700/80 text-[var(--ink)] placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none focus:border-[var(--lavenderAccent)] w-full transition-colors shadow-2xs"
             />
           </div>
 
