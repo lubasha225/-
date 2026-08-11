@@ -1666,7 +1666,16 @@ interface DocsBlockProps {
   isOverview?: boolean;
   overviewCollapsed: { brief: boolean; design: boolean; calc: boolean; journal: boolean; docs: boolean };
   toggleOverviewSection: (key: 'brief' | 'design' | 'calc' | 'journal' | 'docs') => void;
-  showToast?: (title: string, message: string, type?: 'success' | 'error' | 'info') => void;
+  showToast?: (title: string, message: string, type?: 'success' | 'error' | 'info' | 'warn') => void;
+}
+
+type PayerType = 'individual' | 'ip' | 'ooo' | 'selfEmployed';
+
+interface LogEntry {
+  id: string;
+  title: string;
+  code: string;
+  generatedAt: string;
 }
 
 export const DocsBlock: React.FC<DocsBlockProps> = ({
@@ -1677,9 +1686,252 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
 }) => {
   const isCollapsed = isOverview && overviewCollapsed.docs;
 
+  // Selected client entity type
+  const [payerType, setPayerType] = useState<PayerType>('individual');
+
+  // Client form states (kept in JS memory only, never saved to localStorage/sessionStorage/server)
+  const [individualFields, setIndividualFields] = useState({
+    fullName: '',
+    phone: '',
+    passportSeriesNumber: '',
+    passportIssuedBy: '',
+    passportIssueDate: '',
+    passportCode: '',
+    registrationAddress: ''
+  });
+
+  const [selfEmployedFields, setSelfEmployedFields] = useState({
+    fullName: '',
+    inn: '',
+    phone: '',
+    registrationAddress: ''
+  });
+
+  const [ipFields, setIpFields] = useState({
+    ipName: '',
+    inn: '',
+    ogrnip: '',
+    phone: '',
+    registrationAddress: '',
+    bankAccount: ''
+  });
+
+  const [oooFields, setOooFields] = useState({
+    companyName: '',
+    inn: '',
+    kpp: '',
+    ogrn: '',
+    legalAddress: '',
+    signatoryName: '',
+    signatoryPosition: '',
+    phone: '',
+    bankAccount: ''
+  });
+
+  // Document selection states (default: all 4 checked)
+  const [selectedDocs, setSelectedDocs] = useState<Record<string, boolean>>({
+    'decor-contract': true,
+    'deposit-agreement': true,
+    'acceptance-act': true,
+    'pd-consent': true
+  });
+
+  // Generated document state (for badge & border highlight in current session)
+  const [generatedDocs, setGeneratedDocs] = useState<Record<string, boolean>>({});
+
+  // Journal history log
+  const [generatedLog, setGeneratedLog] = useState<LogEntry[]>([
+    { id: '1', title: 'Договор на декор', code: '№ ДК-2026/08', generatedAt: '02.08.2026' },
+    { id: '2', title: 'Соглашение о задатке', code: '№ СЗ-2026/08', generatedAt: '02.08.2026' },
+    { id: '3', title: 'Акт сдачи-приёмки', code: '№ АКТ-2026/15', generatedAt: '20.08.2026' }
+  ]);
+
+  // Helper to toggle document checkbox
+  const toggleDocCheckbox = (id: string) => {
+    setSelectedDocs(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  // Document definitions
+  const docDefinitions = [
+    {
+      id: 'decor-contract',
+      title: 'Договор на декор',
+      code: '№ ДК-2026/08',
+      size: '2.4 МБ',
+      desc: 'Договор оказания услуг по оформлению и декорированию площадки',
+      icon: FileText,
+      iconBg: 'bg-purple-100 dark:bg-purple-950/80 text-[#8C52D0] dark:text-purple-300 border-purple-200 dark:border-purple-800',
+      accentColor: 'from-purple-500/10 to-transparent'
+    },
+    {
+      id: 'deposit-agreement',
+      title: 'Соглашение о задатке',
+      code: '№ СЗ-2026/08',
+      size: '1.1 МБ',
+      desc: 'Гарантийная сумма бронирования даты (30 000 ₽)',
+      icon: ShieldCheck,
+      iconBg: 'bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+      accentColor: 'from-amber-500/10 to-transparent'
+    },
+    {
+      id: 'acceptance-act',
+      title: 'Акт сдачи-приёмки',
+      code: '№ АКТ-2026/15',
+      size: '850 КБ',
+      desc: 'Акт приемки выполненных декораторских работ',
+      icon: FileCheck,
+      iconBg: 'bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800',
+      accentColor: 'from-blue-500/10 to-transparent'
+    },
+    {
+      id: 'pd-consent',
+      title: 'Согласие на обработку ПД',
+      code: '№ ОПД-2026/01',
+      size: '420 КБ',
+      desc: 'Согласие 152-ФЗ и разрешение на фотосъемку декора',
+      icon: FileSignature,
+      iconBg: 'bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800',
+      accentColor: 'from-indigo-500/10 to-transparent'
+    }
+  ];
+
+  // Form validation check
+  const validateForm = (): { isValid: boolean; errorMsg?: string } => {
+    if (payerType === 'individual') {
+      if (!individualFields.fullName.trim()) return { isValid: false, errorMsg: 'Укажите ФИО заказчика' };
+      if (!individualFields.phone.trim()) return { isValid: false, errorMsg: 'Укажите телефон заказчика' };
+      if (!individualFields.passportSeriesNumber.trim()) return { isValid: false, errorMsg: 'Укажите серию и номер паспорта' };
+      if (!individualFields.passportIssuedBy.trim()) return { isValid: false, errorMsg: 'Укажите кем выдан паспорт' };
+      if (!individualFields.passportIssueDate.trim()) return { isValid: false, errorMsg: 'Укажите дату выдачи паспорта' };
+      if (!individualFields.passportCode.trim()) return { isValid: false, errorMsg: 'Укажите код подразделения' };
+      if (!individualFields.registrationAddress.trim()) return { isValid: false, errorMsg: 'Укажите адрес регистрации' };
+    } else if (payerType === 'selfEmployed') {
+      if (!selfEmployedFields.fullName.trim()) return { isValid: false, errorMsg: 'Укажите ФИО самозанятого' };
+      if (!selfEmployedFields.inn.trim()) return { isValid: false, errorMsg: 'Укажите ИНН (12 цифр)' };
+      if (!selfEmployedFields.phone.trim()) return { isValid: false, errorMsg: 'Укажите телефон' };
+      if (!selfEmployedFields.registrationAddress.trim()) return { isValid: false, errorMsg: 'Укажите адрес регистрации' };
+    } else if (payerType === 'ip') {
+      if (!ipFields.ipName.trim()) return { isValid: false, errorMsg: 'Укажите наименование ИП' };
+      if (!ipFields.inn.trim()) return { isValid: false, errorMsg: 'Укажите ИНН (12 цифр)' };
+      if (!ipFields.ogrnip.trim()) return { isValid: false, errorMsg: 'Укажите ОГРНИП (15 цифр)' };
+      if (!ipFields.phone.trim()) return { isValid: false, errorMsg: 'Укажите телефон' };
+      if (!ipFields.registrationAddress.trim()) return { isValid: false, errorMsg: 'Укажите адрес регистрации' };
+    } else if (payerType === 'ooo') {
+      if (!oooFields.companyName.trim()) return { isValid: false, errorMsg: 'Укажите наименование ООО' };
+      if (!oooFields.inn.trim()) return { isValid: false, errorMsg: 'Укажите ИНН (10 цифр)' };
+      if (!oooFields.kpp.trim()) return { isValid: false, errorMsg: 'Укажите КПП (9 цифр)' };
+      if (!oooFields.ogrn.trim()) return { isValid: false, errorMsg: 'Укажите ОГРН (13 цифр)' };
+      if (!oooFields.legalAddress.trim()) return { isValid: false, errorMsg: 'Укажите юридический адрес' };
+      if (!oooFields.signatoryName.trim()) return { isValid: false, errorMsg: 'Укажите ФИО подписанта' };
+      if (!oooFields.signatoryPosition.trim()) return { isValid: false, errorMsg: 'Укажите должность подписанта' };
+      if (!oooFields.phone.trim()) return { isValid: false, errorMsg: 'Укажите телефон' };
+    }
+
+    return { isValid: true };
+  };
+
+  // Generate documents action (Pure client-side via Blob download, then auto-clear)
+  const handleGenerateDocuments = () => {
+    const docsToGenerate = docDefinitions.filter(d => selectedDocs[d.id]);
+    if (docsToGenerate.length === 0) {
+      showToast?.('Ошибка выбора', 'Отметьте хотя бы один документ для генерации', 'warn');
+      return;
+    }
+
+    const validation = validateForm();
+    if (!validation.isValid) {
+      showToast?.('Заполните данные', validation.errorMsg || 'Заполните все обязательные поля', 'warn');
+      return;
+    }
+
+    // Today date formatted
+    const todayStr = new Date().toLocaleDateString('ru-RU');
+
+    // Build client details text summary
+    let clientDetailsText = '';
+    if (payerType === 'individual') {
+      clientDetailsText = `ФИО: ${individualFields.fullName}\nТел: ${individualFields.phone}\nПаспорт: ${individualFields.passportSeriesNumber}, выдан ${individualFields.passportIssuedBy}, дата: ${individualFields.passportIssueDate}, код: ${individualFields.passportCode}\nАдрес: ${individualFields.registrationAddress}`;
+    } else if (payerType === 'selfEmployed') {
+      clientDetailsText = `ФИО: ${selfEmployedFields.fullName}\nИНН: ${selfEmployedFields.inn}\nТел: ${selfEmployedFields.phone}\nАдрес: ${selfEmployedFields.registrationAddress}`;
+    } else if (payerType === 'ip') {
+      clientDetailsText = `Наименование: ${ipFields.ipName}\nИНН: ${ipFields.inn}\nОГРНИП: ${ipFields.ogrnip}\nТел: ${ipFields.phone}\nАдрес: ${ipFields.registrationAddress}\nРеквизиты: ${ipFields.bankAccount || 'Не указаны'}`;
+    } else if (payerType === 'ooo') {
+      clientDetailsText = `Наименование: ${oooFields.companyName}\nИНН: ${oooFields.inn}\nКПП: ${oooFields.kpp}\nОГРН: ${oooFields.ogrn}\nЮр. адрес: ${oooFields.legalAddress}\nВ лице: ${oooFields.signatoryPosition} ${oooFields.signatoryName}, действующего на основании Устава\nТел: ${oooFields.phone}\nРеквизиты: ${oooFields.bankAccount || 'Не указаны'}`;
+    }
+
+    // Generate files via client-side Blob downloads
+    const newGeneratedDocsMap: Record<string, boolean> = { ...generatedDocs };
+    const newLogItems: LogEntry[] = [];
+
+    docsToGenerate.forEach(doc => {
+      newGeneratedDocsMap[doc.id] = true;
+
+      // File text content
+      const fileContent = `====================================================\n${doc.title.toUpperCase()} (${doc.code})\nДата формирования: ${todayStr}\n====================================================\n\n1. ДАННЫЕ ЗАКАЗЧИКА / СУБЪЕКТА:\n${clientDetailsText}\n\n2. ПРЕДМЕТ СОГЛАШЕНИЯ:\n${doc.desc}\n\nДокумент сформирован локально в браузере.\nПерсональные данные удалены из оперативной памяти сразу после скачивания.\n====================================================\n`;
+
+      const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${doc.id}_${doc.code.replace(/[^a-zA-Z0-9]/g, '_')}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      newLogItems.push({
+        id: String(Date.now() + Math.random()),
+        title: doc.title,
+        code: doc.code,
+        generatedAt: todayStr
+      });
+    });
+
+    setGeneratedDocs(newGeneratedDocsMap);
+    setGeneratedLog(prev => [...newLogItems, ...prev]);
+
+    // IMMEDIATELY CLEAR ALL CLIENT INPUT FIELDS (JS memory reset)
+    setIndividualFields({
+      fullName: '',
+      phone: '',
+      passportSeriesNumber: '',
+      passportIssuedBy: '',
+      passportIssueDate: '',
+      passportCode: '',
+      registrationAddress: ''
+    });
+    setSelfEmployedFields({
+      fullName: '',
+      inn: '',
+      phone: '',
+      registrationAddress: ''
+    });
+    setIpFields({
+      ipName: '',
+      inn: '',
+      ogrnip: '',
+      phone: '',
+      registrationAddress: '',
+      bankAccount: ''
+    });
+    setOooFields({
+      companyName: '',
+      inn: '',
+      kpp: '',
+      ogrn: '',
+      legalAddress: '',
+      signatoryName: '',
+      signatoryPosition: '',
+      phone: '',
+      bankAccount: ''
+    });
+
+    showToast?.('Документы сформированы', `Успешно сгенерировано файлов: ${docsToGenerate.length}. Данные клиента удалены из памяти.`, 'success');
+  };
+
   return (
     <div className={isOverview ? "bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[28px] border border-zinc-200/50 dark:border-zinc-800/40 p-5 sm:p-6 shadow-xs transition-all space-y-6" : "space-y-6"}>
-      {/* DOCS HEADER */}
+      {/* HEADER */}
       <div className={`flex items-center justify-between gap-4 ${isCollapsed ? '' : 'pb-4 border-b border-zinc-200/40 dark:border-zinc-800/40'}`}>
         <div className="flex items-center gap-3.5 min-w-0">
           <div className="p-2 bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 rounded-xl shrink-0">
@@ -1690,141 +1942,616 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
               Документы и договоры
             </h3>
             <p className="text-xs sm:text-sm font-normal text-zinc-700 dark:text-zinc-300 leading-relaxed truncate">
-              Договоры, акты приема-передачи и чеки оплаты
+              Локальное формирование договоров, актов и согласий без сохранения ПДн
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          {!isCollapsed && (
-            <button
-              onClick={() => showToast?.('Генерация пакета', 'Создается комплект документов в PDF...', 'success')}
-              className="w-8 h-8 rounded-full text-white flex items-center justify-center cursor-pointer transition-all duration-300 hover:shadow-md hover:scale-105 active:scale-95 shadow-xs shrink-0"
-              style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
-              title="Сгенерировать документы"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-white" />
-            </button>
-          )}
-
-          {isOverview && (
-            <button
-              type="button"
-              onClick={() => toggleOverviewSection('docs')}
-              className="w-8 h-8 rounded-full text-zinc-700 dark:text-zinc-300 bg-white/70 dark:bg-zinc-800/70 border border-zinc-200/60 dark:border-zinc-700/60 hover:bg-purple-50 dark:hover:bg-purple-950/60 transition-all cursor-pointer flex items-center justify-center shrink-0"
-              title={isCollapsed ? 'Развернуть' : 'Свернуть'}
-            >
-              {isCollapsed ? <ChevronDown className="w-4 h-4 text-[#8C52D0]" /> : <ChevronUp className="w-4 h-4 text-[#8C52D0]" />}
-            </button>
-          )}
-        </div>
+        {isOverview && (
+          <button
+            type="button"
+            onClick={() => toggleOverviewSection('docs')}
+            className="w-8 h-8 rounded-full text-zinc-700 dark:text-zinc-300 bg-white/70 dark:bg-zinc-800/70 border border-zinc-200/60 dark:border-zinc-700/60 hover:bg-purple-50 dark:hover:bg-purple-950/60 transition-all cursor-pointer flex items-center justify-center shrink-0"
+            title={isCollapsed ? 'Развернуть' : 'Свернуть'}
+          >
+            {isCollapsed ? <ChevronDown className="w-4 h-4 text-[#8C52D0]" /> : <ChevronUp className="w-4 h-4 text-[#8C52D0]" />}
+          </button>
+        )}
       </div>
 
       {!isCollapsed && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            {
-              id: 'decor-contract',
-              title: 'Договор на декор',
-              code: '№ ДК-2026/08',
-              date: '01.08.2026',
-              size: '2.4 МБ',
-              desc: 'Договор оказания услуг по оформлению и декорированию площадки',
-              icon: FileText,
-              iconBg: 'bg-purple-100 dark:bg-purple-950/80 text-[#8C52D0] dark:text-purple-300 border-purple-200 dark:border-purple-800',
-              accentColor: 'from-purple-500/10 to-transparent'
-            },
-            {
-              id: 'deposit-agreement',
-              title: 'Соглашение о задатке',
-              code: '№ СЗ-2026/08',
-              date: '01.08.2026',
-              size: '1.1 МБ',
-              desc: 'Гарантийная сумма бронирования даты (30 000 ₽)',
-              icon: ShieldCheck,
-              iconBg: 'bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800',
-              accentColor: 'from-amber-500/10 to-transparent'
-            },
-            {
-              id: 'acceptance-act',
-              title: 'Акт сдачи-приёмки',
-              code: '№ АКТ-2026/15',
-              date: 'В процессе',
-              size: '850 КБ',
-              desc: 'Акт приемки выполненных декораторских работ',
-              icon: FileCheck,
-              iconBg: 'bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800',
-              accentColor: 'from-blue-500/10 to-transparent'
-            },
-            {
-              id: 'pd-consent',
-              title: 'Согласие на обработку ПД',
-              code: '№ ОПД-2026/01',
-              date: '01.08.2026',
-              size: '420 КБ',
-              desc: 'Согласие 152-ФЗ и разрешение на фотосъемку декора',
-              icon: FileSignature,
-              iconBg: 'bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800',
-              accentColor: 'from-indigo-500/10 to-transparent'
-            }
-          ].map((doc) => {
-            const DocIcon = doc.icon;
-            return (
-              <div
-                key={doc.id}
-                className="group relative p-4 bg-white/80 dark:bg-zinc-950/60 rounded-2xl border border-stone-200/80 dark:border-zinc-800 flex flex-col justify-between gap-3 text-left backdrop-blur-xs transition-all duration-300 hover:shadow-md hover:border-purple-300/80 dark:hover:border-purple-800 overflow-hidden"
-              >
-                <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${doc.accentColor} rounded-bl-full pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity`} />
-
-                <div className="space-y-2.5 relative z-10">
-                  <div className="flex items-start gap-3">
-                    <div className={`w-10 h-10 rounded-2xl border flex items-center justify-center shrink-0 shadow-2xs ${doc.iconBg}`}>
-                      <DocIcon className="w-5 h-5 stroke-[2.2]" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <span className="text-[10px] font-mono text-zinc-600 dark:text-zinc-400 font-normal uppercase tracking-normal block leading-tight mb-0.5">
-                        {doc.code}
-                      </span>
-                      <h4 className="font-semibold text-sm text-stone-900 dark:text-stone-100 group-hover:text-[#8C52D0] dark:group-hover:text-purple-300 transition-colors leading-snug">
-                        {doc.title}
-                      </h4>
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-zinc-700 dark:text-zinc-300 line-clamp-2 leading-relaxed">
-                    {doc.desc}
-                  </p>
-                </div>
-
-                <div className="pt-3 border-t border-stone-100 dark:border-zinc-800/80 flex items-center justify-between gap-2 relative z-10">
-                  <div className="text-[10px] text-stone-400 font-mono space-x-1.5">
-                    <span className="font-bold text-stone-500 dark:text-stone-400">PDF</span>
-                    <span>•</span>
-                    <span>{doc.size}</span>
-                  </div>
-
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => showToast?.('Просмотр документа', `Открываем ${doc.title}...`, 'info')}
-                      className="p-1.5 hover:bg-purple-100 dark:hover:bg-purple-900/40 text-stone-500 hover:text-[#582F89] dark:hover:text-purple-300 rounded-lg transition-colors cursor-pointer"
-                      title="Просмотреть"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => showToast?.('Скачивание', `Загрузка файла ${doc.title}...`, 'success')}
-                      className="p-1.5 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-stone-500 hover:text-emerald-600 dark:hover:text-emerald-300 rounded-lg transition-colors cursor-pointer"
-                      title="Скачать PDF"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
+        <div className="space-y-6">
+          {/* 1. БЛОК: ЗАПОЛНЕНИЕ ДАННЫХ КЛИЕНТА */}
+          <div className="p-5 sm:p-6 bg-white/60 dark:bg-zinc-950/40 rounded-[28px] border border-zinc-200/60 dark:border-zinc-800/80 shadow-2xs backdrop-blur-md space-y-5">
+            <div className="flex flex-col gap-3 pb-3 border-b border-zinc-200/40 dark:border-zinc-800/40">
+              <div className="w-full">
+                <h4 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+                  Заполнение данных клиента
+                </h4>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 font-normal">
+                  Укажите реквизиты стороны для автоматической подстановки в выбранные документы
+                </p>
               </div>
-            );
-          })}
+
+              {/* PAYER TYPE SELECTOR SWITCH */}
+              <div className="flex items-center gap-1.5 p-1 bg-zinc-100 dark:bg-zinc-800/80 rounded-full border border-zinc-200/60 dark:border-zinc-700/60 self-start overflow-x-auto no-scrollbar max-w-full touch-pan-x">
+                {(
+                  [
+                    { id: 'individual', label: 'Физлицо' },
+                    { id: 'ip', label: 'ИП' },
+                    { id: 'ooo', label: 'ООО' },
+                    { id: 'selfEmployed', label: 'Самозанятый' }
+                  ] as const
+                ).map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setPayerType(item.id)}
+                    className={`px-3.5 py-1.5 rounded-full text-xs transition-all duration-200 whitespace-nowrap cursor-pointer ${
+                      payerType === item.id
+                        ? 'bg-[#8C52D0] text-white font-semibold shadow-xs'
+                        : 'text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* DYNAMIC FORM FIELDS BY PAYER TYPE */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              {/* --- ФИЗЛИЦО --- */}
+              {payerType === 'individual' && (
+                <>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal block">
+                      ФИО ПОЛНОСТЬЮ *
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      data-private="true"
+                      value={individualFields.fullName}
+                      onChange={(e) => setIndividualFields({ ...individualFields, fullName: e.target.value })}
+                      placeholder="Иванов Иван Иванович"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal block">
+                      ТЕЛЕФОН *
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      data-private="true"
+                      value={individualFields.phone}
+                      onChange={(e) => setIndividualFields({ ...individualFields, phone: e.target.value })}
+                      placeholder="+7 (900) 000-00-00"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal block">
+                      ПАСПОРТ: СЕРИЯ И НОМЕР *
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      data-private="true"
+                      value={individualFields.passportSeriesNumber}
+                      onChange={(e) => setIndividualFields({ ...individualFields, passportSeriesNumber: e.target.value })}
+                      placeholder="45 12 345678"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1 sm:col-span-2">
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal block">
+                      КЕМ ВЫДАН *
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      data-private="true"
+                      value={individualFields.passportIssuedBy}
+                      onChange={(e) => setIndividualFields({ ...individualFields, passportIssuedBy: e.target.value })}
+                      placeholder="ГУ МВД России по г. Москве"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal block">
+                      ДАТА ВЫДАЧИ *
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      data-private="true"
+                      value={individualFields.passportIssueDate}
+                      onChange={(e) => setIndividualFields({ ...individualFields, passportIssueDate: e.target.value })}
+                      placeholder="01.01.2020"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal block">
+                      КОД ПОДРАЗДЕЛЕНИЯ *
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      data-private="true"
+                      value={individualFields.passportCode}
+                      onChange={(e) => setIndividualFields({ ...individualFields, passportCode: e.target.value })}
+                      placeholder="770-001"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1 sm:col-span-2 lg:col-span-2">
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal block">
+                      АДРЕС РЕГИСТРАЦИИ *
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      data-private="true"
+                      value={individualFields.registrationAddress}
+                      onChange={(e) => setIndividualFields({ ...individualFields, registrationAddress: e.target.value })}
+                      placeholder="г. Москва, ул. Ленина, д. 10, кв. 5"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* --- САМОЗАНЯТЫЙ --- */}
+              {payerType === 'selfEmployed' && (
+                <>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal block">
+                      ФИО ПОЛНОСТЬЮ *
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      data-private="true"
+                      value={selfEmployedFields.fullName}
+                      onChange={(e) => setSelfEmployedFields({ ...selfEmployedFields, fullName: e.target.value })}
+                      placeholder="Иванов Иван Иванович"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal block">
+                      ИНН (12 ЦИФР) *
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      data-private="true"
+                      value={selfEmployedFields.inn}
+                      onChange={(e) => setSelfEmployedFields({ ...selfEmployedFields, inn: e.target.value })}
+                      placeholder="770000000000"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal block">
+                      ТЕЛЕФОН *
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      data-private="true"
+                      value={selfEmployedFields.phone}
+                      onChange={(e) => setSelfEmployedFields({ ...selfEmployedFields, phone: e.target.value })}
+                      placeholder="+7 (900) 000-00-00"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1 sm:col-span-2 lg:col-span-3">
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal block">
+                      АДРЕС РЕГИСТРАЦИИ *
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      data-private="true"
+                      value={selfEmployedFields.registrationAddress}
+                      onChange={(e) => setSelfEmployedFields({ ...selfEmployedFields, registrationAddress: e.target.value })}
+                      placeholder="г. Москва, ул. Ленина, д. 10, кв. 5"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* --- ИП --- */}
+              {payerType === 'ip' && (
+                <>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal block">
+                      НАИМЕНОВАНИЕ *
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      data-private="true"
+                      value={ipFields.ipName}
+                      onChange={(e) => setIpFields({ ...ipFields, ipName: e.target.value })}
+                      placeholder="ИП Иванов Иван Иванович"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal block">
+                      ИНН (12 ЦИФР) *
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      data-private="true"
+                      value={ipFields.inn}
+                      onChange={(e) => setIpFields({ ...ipFields, inn: e.target.value })}
+                      placeholder="770000000000"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal block">
+                      ОГРНИП (15 ЦИФР) *
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      data-private="true"
+                      value={ipFields.ogrnip}
+                      onChange={(e) => setIpFields({ ...ipFields, ogrnip: e.target.value })}
+                      placeholder="320770000000000"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal block">
+                      ТЕЛЕФОН *
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      data-private="true"
+                      value={ipFields.phone}
+                      onChange={(e) => setIpFields({ ...ipFields, phone: e.target.value })}
+                      placeholder="+7 (900) 000-00-00"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1 sm:col-span-2">
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal block">
+                      АДРЕС РЕГИСТРАЦИИ *
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      data-private="true"
+                      value={ipFields.registrationAddress}
+                      onChange={(e) => setIpFields({ ...ipFields, registrationAddress: e.target.value })}
+                      placeholder="г. Москва, ул. Ленина, д. 10, кв. 5"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1 sm:col-span-2 lg:col-span-3">
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal block">
+                      РАСЧЁТНЫЙ СЧЁТ / БАНК / БИК (НЕОБЯЗАТЕЛЬНО)
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      data-private="true"
+                      value={ipFields.bankAccount}
+                      onChange={(e) => setIpFields({ ...ipFields, bankAccount: e.target.value })}
+                      placeholder="р/с 40802810..., ПАО Сбербанк, БИК 044525225"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* --- ООО --- */}
+              {payerType === 'ooo' && (
+                <>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal block">
+                      НАИМЕНОВАНИЕ *
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      data-private="true"
+                      value={oooFields.companyName}
+                      onChange={(e) => setOooFields({ ...oooFields, companyName: e.target.value })}
+                      placeholder="ООО «Название»"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal block">
+                      ИНН (10 ЦИФР) *
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      data-private="true"
+                      value={oooFields.inn}
+                      onChange={(e) => setOooFields({ ...oooFields, inn: e.target.value })}
+                      placeholder="7700000000"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal block">
+                      КПП (9 ЦИФР) *
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      data-private="true"
+                      value={oooFields.kpp}
+                      onChange={(e) => setOooFields({ ...oooFields, kpp: e.target.value })}
+                      placeholder="770101001"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal block">
+                      ОГРН (13 ЦИФР) *
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      data-private="true"
+                      value={oooFields.ogrn}
+                      onChange={(e) => setOooFields({ ...oooFields, ogrn: e.target.value })}
+                      placeholder="1207700000000"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1 sm:col-span-2">
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal block">
+                      ЮРИДИЧЕСКИЙ АДРЕС *
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      data-private="true"
+                      value={oooFields.legalAddress}
+                      onChange={(e) => setOooFields({ ...oooFields, legalAddress: e.target.value })}
+                      placeholder="г. Москва, ул. Тверская, д. 1, офис 100"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal block">
+                      ПОДПИСАНТ — ФИО *
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      data-private="true"
+                      value={oooFields.signatoryName}
+                      onChange={(e) => setOooFields({ ...oooFields, signatoryName: e.target.value })}
+                      placeholder="Петров Петр Петрович"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal block">
+                      ПОДПИСАНТ — ДОЛЖНОСТЬ *
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      data-private="true"
+                      value={oooFields.signatoryPosition}
+                      onChange={(e) => setOooFields({ ...oooFields, signatoryPosition: e.target.value })}
+                      placeholder="Генерального директора"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal block">
+                      ТЕЛЕФОН *
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      data-private="true"
+                      value={oooFields.phone}
+                      onChange={(e) => setOooFields({ ...oooFields, phone: e.target.value })}
+                      placeholder="+7 (495) 000-00-00"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1 sm:col-span-2 lg:col-span-3">
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal block">
+                      РАСЧЁТНЫЙ СЧЁТ / БАНК / БИК (НЕОБЯЗАТЕЛЬНО)
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      data-private="true"
+                      value={oooFields.bankAccount}
+                      onChange={(e) => setOooFields({ ...oooFields, bankAccount: e.target.value })}
+                      placeholder="р/с 40702810..., ПАО Сбербанк, БИК 044525225"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* 2. БЛОК: ДОКУМЕНТЫ И ДОГОВОРЫ */}
+          <div className="space-y-4">
+            <div>
+              <h4 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+                Документы и договоры
+              </h4>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 font-normal">
+                Отметьте документы галочками и нажмите «Сгенерировать и сохранить» для скачивания
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+              {docDefinitions.map((doc) => {
+                const DocIcon = doc.icon;
+                const isChecked = !!selectedDocs[doc.id];
+                const isGenerated = !!generatedDocs[doc.id];
+
+                return (
+                  <div
+                    key={doc.id}
+                    className={`group relative p-3.5 bg-white/80 dark:bg-zinc-950/60 rounded-2xl border flex flex-col justify-between gap-2.5 text-left backdrop-blur-xs transition-all duration-300 hover:shadow-md overflow-hidden ${
+                      isGenerated
+                        ? 'border-[#8C52D0] dark:border-purple-500 shadow-sm'
+                        : isChecked
+                        ? 'border-purple-200 dark:border-purple-800'
+                        : 'border-zinc-200/80 dark:border-zinc-800 opacity-80'
+                    }`}
+                  >
+                    {/* ACCENT BACKGROUND SHIMMER */}
+                    <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${doc.accentColor} rounded-bl-full pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity`} />
+
+                    <div className="space-y-2 relative z-10">
+                      {/* TOP ROW: ICON + TITLE / CODE + BADGE */}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start gap-2.5 min-w-0">
+                          <div className={`w-8 h-8 rounded-xl border flex items-center justify-center shrink-0 shadow-2xs mt-0.5 ${doc.iconBg}`}>
+                            <DocIcon className="w-4 h-4 stroke-[2.2]" />
+                          </div>
+                          <div className="min-w-0">
+                            <span className="text-[10px] font-mono text-zinc-500 dark:text-zinc-400 font-normal uppercase tracking-normal block leading-tight mb-0.5">
+                              {doc.code}
+                            </span>
+                            <h4 className="font-semibold text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 leading-snug">
+                              {doc.title}
+                            </h4>
+                          </div>
+                        </div>
+
+                        {isGenerated && (
+                          <span className="px-2 py-0.5 text-[9px] font-semibold bg-purple-100 text-[#8C52D0] dark:bg-purple-950 dark:text-purple-300 rounded-full border border-purple-300/50 shrink-0">
+                            Сформирован
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400 line-clamp-2 leading-relaxed font-normal">
+                        {doc.desc}
+                      </p>
+                    </div>
+
+                    {/* BOTTOM ROW: ROUND CHECKBOX (LEFT) + FORMAT & SIZE (RIGHT) */}
+                    <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between gap-2 relative z-10 text-[10px] text-zinc-500 dark:text-zinc-400">
+                      <button
+                        type="button"
+                        onClick={() => toggleDocCheckbox(doc.id)}
+                        className="flex items-center gap-1.5 cursor-pointer group/cb"
+                      >
+                        <div className={`w-4 h-4 rounded-full border transition-all flex items-center justify-center shrink-0 ${
+                          isChecked
+                            ? 'bg-[#8C52D0] border-[#8C52D0] text-white shadow-2xs'
+                            : 'border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 group-hover/cb:border-[#8C52D0]'
+                        }`}>
+                          {isChecked && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                        </div>
+                      </button>
+
+                      <span className="font-mono text-[10px] text-zinc-500 dark:text-zinc-400">
+                        DOCX / TXT • {doc.size}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* MAIN GENERATE BUTTON (Placed under the 4 template cards) */}
+            <div className="flex justify-end pt-1">
+              <button
+                type="button"
+                onClick={handleGenerateDocuments}
+                style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                className="px-6 py-2.5 rounded-full text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all hover:opacity-95 cursor-pointer shadow-sm shrink-0 active:scale-95"
+              >
+                <Sparkles className="w-4 h-4 text-white" />
+                <span>Сгенерировать и сохранить</span>
+              </button>
+            </div>
+          </div>
+
+          {/* 3. БЛОК: ЖУРНАЛ СГЕНЕРИРОВАННЫХ ДОКУМЕНТОВ */}
+          <div className="pt-4 border-t border-zinc-200/40 dark:border-zinc-800/40 space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider flex items-center gap-2">
+                <FileText className="w-3.5 h-3.5 text-[#8C52D0]" />
+                Журнал сформированных документов
+              </h4>
+              <span className="text-[11px] text-zinc-600 dark:text-zinc-400">
+                Записей: {generatedLog.length}
+              </span>
+            </div>
+
+            <div className="bg-white/60 dark:bg-zinc-900/40 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60 divide-y divide-zinc-100 dark:divide-zinc-800/60 overflow-hidden shadow-2xs">
+              {generatedLog.length === 0 ? (
+                <div className="p-4 text-center text-xs text-zinc-600 dark:text-zinc-400 font-normal">
+                  Документы ещё не формировались
+                </div>
+              ) : (
+                generatedLog.map((item) => (
+                  <div key={item.id} className="p-3 sm:px-4 flex items-center justify-between gap-3 text-xs">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                      <span className="font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+                        {item.title}
+                      </span>
+                      <span className="text-[10px] font-mono text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md shrink-0">
+                        {item.code}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0 text-zinc-600 dark:text-zinc-400 text-[11px]">
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 font-normal text-[10px]">
+                        сформирован {item.generatedAt}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

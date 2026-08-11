@@ -20,6 +20,8 @@ import {
   AlertCircle,
   HelpCircle,
   CheckSquare,
+  CheckCircle2,
+  Wallet,
   Square,
   ChevronDown,
   ChevronLeft,
@@ -39,7 +41,9 @@ import {
   Settings,
   Menu,
   X,
-  FlaskConical
+  FlaskConical,
+  MoreHorizontal,
+  Maximize2
 } from 'lucide-react';
 
 import { Project, WarehouseItem, Task, DocumentItem, ImageItem, ProjectStatus, EstimateItem } from './types';
@@ -58,6 +62,9 @@ import DocumentsTab from './components/DocumentsTab';
 import ProfileTab from './components/ProfileTab';
 import SettingsTab from './components/SettingsTab';
 import BlankTestPage from './components/BlankTestPage';
+import StatisticsTab from './components/StatisticsTab';
+import SidebarStatisticsWidget from './components/SidebarStatisticsWidget';
+import DetailedCalendarTab from './components/DetailedCalendarTab';
 
 export default function App() {
   // Theme state
@@ -74,7 +81,10 @@ export default function App() {
   });
 
   // Main active tab state
-  const [activeTab, setActiveTab] = useState<'projects' | 'projectCard' | 'testCard' | 'testPage' | 'warehouse' | 'images' | 'documents' | 'profile' | 'moodboard' | 'calendar' | 'settings'>('projects');
+  const [activeTab, setActiveTab] = useState<'projects' | 'projectCard' | 'testCard' | 'testPage' | 'warehouse' | 'images' | 'documents' | 'profile' | 'moodboard' | 'calendar' | 'statistics' | 'settings'>('projects');
+
+  // Right sidebar tab state (calendar & tasks combined vs statistics)
+  const [rightSidebarTab, setRightSidebarTab] = useState<'calendar' | 'statistics'>('calendar');
 
   // Core database states with local persistence
   const [projects, setProjects] = useState<Project[]>(() => {
@@ -1245,6 +1255,7 @@ export default function App() {
                   <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--ink)] truncate">
                     {activeTab === 'projects' && (selectedProject ? selectedProject.name : 'Мои проекты')}
                     {activeTab === 'calendar' && 'Календарь мероприятий'}
+                    {activeTab === 'statistics' && 'Статистика и аналитика'}
                     {activeTab === 'warehouse' && 'Складской инвентарь'}
                     {activeTab === 'images' && 'Галерея'}
                     {activeTab === 'documents' && 'Мои документы'}
@@ -1334,57 +1345,155 @@ export default function App() {
 
           {/* QUICK METRICS DASHBOARD ROW */}
           {activeTab === 'projects' && !selectedProject && (
-            <div className="grid grid-cols-4 gap-2 sm:gap-3 md:gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 md:gap-4">
               
-              {/* Metric 1: В РАБОТЕ */}
-              <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md p-2.5 sm:p-3.5 md:p-4 rounded-2xl flex flex-col justify-between border border-[var(--glass-edge)]/60 shadow-2xs hover:bg-white/60 dark:hover:bg-zinc-900/40 transition-all duration-300">
-                <div className="flex items-center gap-1.5 text-[var(--faint)] mb-1">
-                  <Zap className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-500 shrink-0" />
-                  <span className="text-[10px] sm:text-xs font-semibold tracking-wider uppercase truncate">В работе</span>
+              {/* Metric 1: В РАБОТЕ (Soft Coral/Pink - 70% opacity) */}
+              <div className="relative overflow-hidden bg-[#f8c5c8]/70 dark:bg-rose-950/60 backdrop-blur-md p-3 sm:p-3.5 md:p-4 rounded-[22px] flex flex-col justify-between border border-[#f4a8ac]/80 dark:border-rose-800/40 shadow-xs hover:shadow-md transition-all duration-300 group">
+                {/* Background Large Cut-off Decorative Icon */}
+                <Zap className="absolute -right-4 -bottom-4 sm:-right-5 sm:-bottom-5 w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 text-rose-950/15 dark:text-white/10 pointer-events-none select-none -rotate-12 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6" />
+
+                {/* Header Row: Icon Left, Dots Right */}
+                <div className="relative z-10 flex items-center justify-between gap-2 mb-1">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-rose-900/10 dark:bg-white/10 flex items-center justify-center text-rose-900 dark:text-rose-200 shrink-0">
+                    <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  </div>
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-rose-900/10 dark:bg-white/10 flex items-center justify-center text-rose-900/70 dark:text-rose-200/70">
+                    <MoreHorizontal className="w-3.5 h-3.5" />
+                  </div>
                 </div>
-                <div className="my-auto">
-                  <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold text-[var(--ink)] tracking-tight leading-none">{metrics.inProgress}</span>
+
+                {/* Title */}
+                <span className="relative z-10 text-[11px] sm:text-xs font-semibold text-rose-950/80 dark:text-rose-200/90 tracking-wide mb-0.5">
+                  В работе
+                </span>
+
+                {/* Large Number */}
+                <div className="relative z-10 my-0.5">
+                  <span className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-rose-950 dark:text-white tracking-tight leading-none">
+                    {metrics.inProgress}
+                  </span>
                 </div>
-                <span className="text-[10px] sm:text-xs text-[var(--soft)] mt-1 truncate">+1 на неделе</span>
+
+                {/* Bottom Row: Trend label */}
+                <div className="relative z-10 flex items-end justify-between gap-1.5 mt-1 pt-0.5">
+                  <span className="text-[11px] font-medium text-rose-900/80 dark:text-rose-300/80 truncate">
+                    +1 на неделе
+                  </span>
+                </div>
               </div>
               
-              {/* Metric 2: СУММА В РАБОТЕ */}
-              <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md p-2.5 sm:p-3.5 md:p-4 rounded-2xl flex flex-col justify-between border border-[var(--glass-edge)]/60 shadow-2xs hover:bg-white/60 dark:hover:bg-zinc-900/40 transition-all duration-300">
-                <div className="flex items-center gap-1.5 text-[var(--faint)] mb-1">
-                  <FolderKanban className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-indigo-400 shrink-0" />
-                  <span className="text-[10px] sm:text-xs font-semibold tracking-wider uppercase truncate">Сумма</span>
+              {/* Metric 2: СУММА В РАБОТЕ (Soft Teal/Cyan - 70% opacity) */}
+              <div className="relative overflow-hidden bg-[#a4e5d9]/70 dark:bg-teal-950/60 backdrop-blur-md p-3 sm:p-3.5 md:p-4 rounded-[22px] flex flex-col justify-between border border-[#83d4c3]/80 dark:border-teal-800/40 shadow-xs hover:shadow-md transition-all duration-300 group">
+                {/* Background Large Cut-off Decorative Icon */}
+                <Wallet className="absolute -right-4 -bottom-4 sm:-right-5 sm:-bottom-5 w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 text-teal-950/15 dark:text-white/10 pointer-events-none select-none -rotate-12 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6" />
+
+                {/* Header Row: Icon Left, Dots Right */}
+                <div className="relative z-10 flex items-center justify-between gap-2 mb-1">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-teal-900/10 dark:bg-white/10 flex items-center justify-center text-teal-900 dark:text-teal-200 shrink-0">
+                    <FolderKanban className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  </div>
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-teal-900/10 dark:bg-white/10 flex items-center justify-center text-teal-900/70 dark:text-teal-200/70">
+                    <MoreHorizontal className="w-3.5 h-3.5" />
+                  </div>
                 </div>
-                <div className="my-auto flex items-baseline gap-1 flex-wrap">
-                  <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold text-[var(--ink)] tracking-tight leading-none">{(inProgressSum / 1000).toFixed(0)}</span>
-                  <span className="text-[10px] sm:text-xs font-medium text-[var(--soft)]">тыс. ₽</span>
+
+                {/* Title */}
+                <span className="relative z-10 text-[11px] sm:text-xs font-semibold text-teal-950/80 dark:text-teal-200/90 tracking-wide mb-0.5">
+                  Сумма в работе
+                </span>
+
+                {/* Large Number */}
+                <div className="relative z-10 my-0.5 flex items-baseline gap-1 flex-wrap">
+                  <span className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-teal-950 dark:text-white tracking-tight leading-none">
+                    {(inProgressSum / 1000).toLocaleString('ru-RU', { maximumFractionDigits: 0 })}
+                  </span>
+                  <span className="text-[11px] sm:text-xs font-bold text-teal-900/80 dark:text-teal-300">
+                    тыс. ₽
+                  </span>
                 </div>
-                <span className="text-[10px] sm:text-xs text-[var(--soft)] mt-1 truncate">активные сметы</span>
+
+                {/* Bottom Row: Trend label */}
+                <div className="relative z-10 flex items-end justify-between gap-1.5 mt-1 pt-0.5">
+                  <span className="text-[11px] font-medium text-teal-900/80 dark:text-teal-300/80 truncate">
+                    активные сметы
+                  </span>
+                </div>
               </div>
               
-              {/* Metric 3: ВЫПОЛНЕНО */}
-              <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md p-2.5 sm:p-3.5 md:p-4 rounded-2xl flex flex-col justify-between border border-[var(--glass-edge)]/60 shadow-2xs hover:bg-white/60 dark:hover:bg-zinc-900/40 transition-all duration-300">
-                <div className="flex items-center gap-1.5 text-[var(--faint)] mb-1">
-                  <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-500 shrink-0" />
-                  <span className="text-[10px] sm:text-xs font-semibold tracking-wider uppercase truncate">Выполнено</span>
+              {/* Metric 3: ВЫПОЛНЕНО (Soft Lime/Sage Green - 70% opacity) */}
+              <div className="relative overflow-hidden bg-[#d8f2b2]/70 dark:bg-emerald-950/60 backdrop-blur-md p-3 sm:p-3.5 md:p-4 rounded-[22px] flex flex-col justify-between border border-[#c3e895]/80 dark:border-emerald-800/40 shadow-xs hover:shadow-md transition-all duration-300 group">
+                {/* Background Large Cut-off Decorative Icon */}
+                <CheckCircle2 className="absolute -right-4 -bottom-4 sm:-right-5 sm:-bottom-5 w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 text-lime-950/15 dark:text-white/10 pointer-events-none select-none -rotate-12 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6" />
+
+                {/* Header Row: Icon Left, Dots Right */}
+                <div className="relative z-10 flex items-center justify-between gap-2 mb-1">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-lime-900/10 dark:bg-white/10 flex items-center justify-center text-lime-900 dark:text-lime-200 shrink-0">
+                    <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  </div>
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-lime-900/10 dark:bg-white/10 flex items-center justify-center text-lime-900/70 dark:text-lime-200/70">
+                    <MoreHorizontal className="w-3.5 h-3.5" />
+                  </div>
                 </div>
-                <div className="my-auto flex items-baseline gap-1 flex-wrap">
-                  <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold text-[var(--ink)] tracking-tight leading-none">{(approvedSum / 1000).toFixed(0)}</span>
-                  <span className="text-[10px] sm:text-xs font-medium text-[var(--soft)]">тыс. ₽</span>
+
+                {/* Title */}
+                <span className="relative z-10 text-[11px] sm:text-xs font-semibold text-lime-950/80 dark:text-lime-200/90 tracking-wide mb-0.5">
+                  Выполнено
+                </span>
+
+                {/* Large Number */}
+                <div className="relative z-10 my-0.5 flex items-baseline gap-1 flex-wrap">
+                  <span className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-lime-950 dark:text-white tracking-tight leading-none">
+                    {(approvedSum / 1000).toLocaleString('ru-RU', { maximumFractionDigits: 0 })}
+                  </span>
+                  <span className="text-[11px] sm:text-xs font-bold text-lime-900/80 dark:text-lime-300">
+                    тыс. ₽
+                  </span>
                 </div>
-                <span className="text-[10px] sm:text-xs text-[var(--soft)] mt-1 truncate">закрыто: {projects.filter(p => p.status === 'approved').length}</span>
+
+                {/* Bottom Row: Trend label */}
+                <div className="relative z-10 flex items-end justify-between gap-1.5 mt-1 pt-0.5">
+                  <span className="text-[11px] font-medium text-lime-900/80 dark:text-lime-300/80 truncate">
+                    закрыто: {projects.filter(p => p.status === 'approved').length}
+                  </span>
+                </div>
               </div>
               
-              {/* Metric 4: ПРИБЫЛЬ */}
-              <div className="bg-emerald-500/10 dark:bg-emerald-950/20 backdrop-blur-md p-2.5 sm:p-3.5 md:p-4 rounded-2xl flex flex-col justify-between border border-emerald-500/20 shadow-2xs hover:bg-emerald-500/15 transition-all duration-300">
-                <div className="flex items-center gap-1.5 mb-1 text-emerald-700 dark:text-emerald-300">
-                  <TrendingUp className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
-                  <span className="text-[10px] sm:text-xs font-semibold tracking-wider uppercase truncate">Прибыль</span>
+              {/* Metric 4: ПРИБЫЛЬ (Soft Periwinkle/Indigo-Blue - 70% opacity) */}
+              <div className="relative overflow-hidden bg-[#b8c6fa]/70 dark:bg-indigo-950/60 backdrop-blur-md p-3 sm:p-3.5 md:p-4 rounded-[22px] flex flex-col justify-between border border-[#9cb1f8]/80 dark:border-indigo-800/40 shadow-xs hover:shadow-md transition-all duration-300 group">
+                {/* Background Large Cut-off Decorative Icon */}
+                <TrendingUp className="absolute -right-4 -bottom-4 sm:-right-5 sm:-bottom-5 w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 text-indigo-950/15 dark:text-white/10 pointer-events-none select-none -rotate-12 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6" />
+
+                {/* Header Row: Icon Left, Dots Right */}
+                <div className="relative z-10 flex items-center justify-between gap-2 mb-1">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-indigo-900/10 dark:bg-white/10 flex items-center justify-center text-indigo-900 dark:text-indigo-200 shrink-0">
+                    <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  </div>
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-indigo-900/10 dark:bg-white/10 flex items-center justify-center text-indigo-900/70 dark:text-indigo-200/70">
+                    <MoreHorizontal className="w-3.5 h-3.5" />
+                  </div>
                 </div>
-                <div className="my-auto flex items-baseline gap-1 flex-wrap text-emerald-800 dark:text-emerald-200">
-                  <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold tracking-tight leading-none">{(profitSum / 1000).toFixed(0)}</span>
-                  <span className="text-[10px] sm:text-xs font-medium opacity-90">тыс. ₽</span>
+
+                {/* Title */}
+                <span className="relative z-10 text-[11px] sm:text-xs font-semibold text-indigo-950/80 dark:text-indigo-200/90 tracking-wide mb-0.5">
+                  Прибыль
+                </span>
+
+                {/* Large Number */}
+                <div className="relative z-10 my-0.5 flex items-baseline gap-1 flex-wrap">
+                  <span className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-indigo-950 dark:text-white tracking-tight leading-none">
+                    {(profitSum / 1000).toLocaleString('ru-RU', { maximumFractionDigits: 0 })}
+                  </span>
+                  <span className="text-[11px] sm:text-xs font-bold text-indigo-900/80 dark:text-indigo-300">
+                    тыс. ₽
+                  </span>
                 </div>
-                <span className="text-[10px] sm:text-xs text-emerald-700/80 dark:text-emerald-300/80 mt-1 truncate">чистая прибыль</span>
+
+                {/* Bottom Row: Trend label */}
+                <div className="relative z-10 flex items-end justify-between gap-1.5 mt-1 pt-0.5">
+                  <span className="text-[11px] font-medium text-indigo-900/80 dark:text-indigo-300/80 truncate">
+                    чистая прибыль
+                  </span>
+                </div>
               </div>
 
             </div>
@@ -1443,7 +1552,7 @@ export default function App() {
                     </div>
 
                     {/* Row 2: Search Input, Sorting Select, and View Mode Switcher */}
-                    <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 bg-white/40 dark:bg-zinc-900/60 p-1.5 rounded-2xl sm:rounded-full border border-[var(--glass-edge)]">
+                    <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 bg-white/80 dark:bg-zinc-900/80 p-1.5 rounded-2xl sm:rounded-full border border-[var(--glass-edge)] shadow-2xs">
                       <div className="flex flex-1 items-center gap-2 max-w-xl w-full sm:w-auto">
                         <div className="relative flex-1">
                           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
@@ -1513,14 +1622,14 @@ export default function App() {
                         return (
                           <div
                             key={p.id}
-                            className="glass-panel glass-interactive rounded-2xl sm:rounded-3xl overflow-hidden flex flex-col justify-between h-full transition-all duration-300 hover:shadow-lg"
+                            className="bg-white/85 dark:bg-zinc-900/80 backdrop-blur-md rounded-[28px] border border-zinc-200/60 dark:border-zinc-800/60 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col justify-between h-full group text-left"
                           >
-                            {/* Top Image Visual Cover box - Aspect ratio adapted for mobile/tablet */}
+                            {/* Top Image Visual Cover box - Flush with top/left/right card edges */}
                             <div className="aspect-[16/10] sm:aspect-[4/3] w-full relative shrink-0 overflow-hidden bg-white dark:bg-zinc-900">
                               <img
                                 src={getProjectImage(p)}
                                 alt={p.name}
-                                className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                 referrerPolicy="no-referrer"
                               />
                               {/* Overlay Status Badge */}
@@ -1571,7 +1680,7 @@ export default function App() {
                             </div>
 
                             {/* Info area - Compact padding & tight margins */}
-                            <div className="p-2.5 sm:p-3 space-y-1 sm:space-y-1.5 flex-1 flex flex-col justify-between">
+                            <div className="p-3.5 sm:p-4 space-y-1 sm:space-y-1.5 flex-1 flex flex-col justify-between">
                               <div className="space-y-0.5">
                                 {p.client && (
                                   <div className="flex items-center gap-1 text-[10px] sm:text-xs font-bold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] uppercase tracking-wider truncate">
@@ -1694,63 +1803,110 @@ export default function App() {
                       })}
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 animate-fadeIn">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 animate-fadeIn">
                       {processedProjects.map((p) => {
                         const totalSum = p.estimate.reduce((sum, item) => sum + (item.quantity * item.price), 0);
                         const displayPrice = totalSum > 0 ? totalSum : p.budget;
                         const projectImg = getProjectImage(p);
 
                         return (
-                          <React.Fragment key={p.id}>
-                            {/* Mobile Card Layout (Strict adherence to Figma screenshot) */}
-                            <div
-                              className="md:hidden flex flex-row items-stretch border border-white/90 dark:border-zinc-800/90 shadow-lg text-left bg-white/75 dark:bg-zinc-900/75 h-[142px] rounded-[24px] overflow-hidden w-full relative"
-                            >
-                              {/* Left Image Section */}
-                              <div className="w-[135px] shrink-0 relative overflow-hidden bg-zinc-100 dark:bg-zinc-850">
-                                <img
-                                  src={projectImg}
-                                  alt={p.name}
-                                  className="w-full h-full object-cover"
-                                  referrerPolicy="no-referrer"
-                                />
-                                {/* Status Badge */}
-                                <span className={`absolute top-2.5 left-2.5 text-[10px] font-bold px-2.5 py-0.5 rounded-full backdrop-blur-lg border flex items-center gap-1.5 shadow-md ${
-                                  p.status === 'progress' ? 'bg-emerald-950/40 text-emerald-300 border-emerald-500/30' :
-                                  p.status === 'waiting' ? 'bg-sky-950/40 text-sky-300 border-sky-500/30' :
-                                  p.status === 'approved' ? 'bg-violet-950/40 text-violet-300 border-violet-500/30' :
-                                  p.status === 'trash' ? 'bg-rose-950/40 text-rose-300 border-rose-500/30' :
-                                  'bg-zinc-900/40 text-zinc-300 border-zinc-500/30'
-                                }`}>
-                                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                                    p.status === 'progress' ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)]' :
-                                    p.status === 'waiting' ? 'bg-sky-400 shadow-[0_0_6px_rgba(56,189,248,0.9)]' :
-                                    p.status === 'approved' ? 'bg-violet-400 shadow-[0_0_6px_rgba(167,139,250,0.9)]' :
-                                    p.status === 'trash' ? 'bg-rose-400 shadow-[0_0_6px_rgba(251,113,133,0.9)]' : 'bg-zinc-300'
-                                  }`} />
-                                  <span>
-                                    {p.status === 'approved' ? 'Согласован' :
-                                     p.status === 'progress' ? 'В работе' :
-                                     p.status === 'waiting' ? 'Ждет ответа' :
-                                     p.status === 'trash' ? 'Корзина' : 'Архив'}
-                                  </span>
-                                </span>
+                          <div
+                            key={p.id}
+                            className="bg-white/85 dark:bg-zinc-900/80 backdrop-blur-md rounded-[28px] border border-zinc-200/60 dark:border-zinc-800/60 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col sm:flex-row items-stretch overflow-hidden group w-full text-left"
+                          >
+                            {/* Left Image Section - Flush to card border */}
+                            <div className="w-full sm:w-44 md:w-52 lg:w-56 h-44 sm:h-auto min-h-[160px] overflow-hidden relative shrink-0 bg-zinc-100 dark:bg-zinc-800">
+                              <img
+                                src={projectImg}
+                                alt={p.name}
+                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                referrerPolicy="no-referrer"
+                              />
 
-                                <div className="absolute top-2.5 right-2.5 flex items-center gap-1 z-10">
+                              {/* Status Badge */}
+                              <span className={`absolute top-2.5 left-2.5 text-[11px] font-bold px-2.5 py-1 rounded-full backdrop-blur-md border flex items-center gap-1.5 shadow-xs ${
+                                p.status === 'progress' ? 'bg-emerald-950/40 text-emerald-300 border-emerald-500/30' :
+                                p.status === 'waiting' ? 'bg-sky-950/40 text-sky-300 border-sky-500/30' :
+                                p.status === 'approved' ? 'bg-violet-950/40 text-violet-300 border-violet-500/30' :
+                                p.status === 'trash' ? 'bg-rose-950/40 text-rose-300 border-rose-500/30' :
+                                'bg-zinc-900/40 text-zinc-300 border-zinc-500/30'
+                              }`}>
+                                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                                  p.status === 'progress' ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)]' :
+                                  p.status === 'waiting' ? 'bg-sky-400 shadow-[0_0_6px_rgba(56,189,248,0.9)]' :
+                                  p.status === 'approved' ? 'bg-violet-400 shadow-[0_0_6px_rgba(167,139,250,0.9)]' :
+                                  p.status === 'trash' ? 'bg-rose-400 shadow-[0_0_6px_rgba(251,113,133,0.9)]' : 'bg-zinc-300'
+                                }`} />
+                                <span>
+                                  {p.status === 'approved' ? 'Согласован' :
+                                   p.status === 'progress' ? 'В работе' :
+                                   p.status === 'waiting' ? 'Ждет ответа' :
+                                   p.status === 'trash' ? 'Корзина' : 'Архив'}
+                                </span>
+                              </span>
+
+                              {/* Mobile Overlay Action Buttons */}
+                              <div className="absolute top-2.5 right-2.5 flex sm:hidden items-center gap-1.5 z-10">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigator.clipboard.writeText(`https://fleur-decor.ru/brief/${p.id}`);
+                                    showToast('Бриф скопирован', 'Отправьте ссылку клиенту для прохождения опроса.', 'success');
+                                  }}
+                                  className="w-8 h-8 rounded-full bg-white/80 dark:bg-black/40 backdrop-blur-md flex items-center justify-center text-zinc-800 dark:text-zinc-200 hover:text-purple-600 transition-colors shadow-xs cursor-pointer"
+                                  title="Копировать бриф"
+                                >
+                                  <Copy className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleTrashClick(p);
+                                  }}
+                                  className="w-8 h-8 rounded-full bg-white/80 dark:bg-black/40 backdrop-blur-md flex items-center justify-center text-zinc-800 dark:text-zinc-200 hover:text-rose-600 transition-colors shadow-xs cursor-pointer"
+                                  title={p.status === 'trash' ? "Удалить навсегда" : "Переместить в корзину"}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Right Content Section */}
+                            <div className="p-4 sm:p-5 flex-1 min-w-0 flex flex-col justify-between gap-3">
+                              {/* Row 1: Header info + Desktop/Tablet Action Buttons */}
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0 space-y-1">
+                                  {p.client && (
+                                    <div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] uppercase tracking-wider truncate">
+                                      <User className="w-3.5 h-3.5 shrink-0 opacity-80" />
+                                      <span className="truncate">{p.client}</span>
+                                    </div>
+                                  )}
+                                  <h3 className="font-bold text-base sm:text-lg text-[var(--ink)] leading-snug truncate">
+                                    {p.name}
+                                  </h3>
+                                  <div className="flex items-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-400 truncate">
+                                    <MapPin className="w-3.5 h-3.5 shrink-0 text-zinc-400" />
+                                    <span className="truncate">{p.venue || 'Площадка не указана'}</span>
+                                  </div>
+                                </div>
+
+                                {/* Desktop & Tablet Action Icon Buttons */}
+                                <div className="hidden sm:flex items-center gap-1.5 shrink-0">
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       navigator.clipboard.writeText(`https://fleur-decor.ru/brief/${p.id}`);
                                       showToast('Бриф скопирован', 'Отправьте ссылку клиенту для прохождения опроса.', 'success');
                                     }}
-                                    className="w-7 h-7 rounded-full bg-white/75 dark:bg-black/35 backdrop-blur flex items-center justify-center text-[var(--ink)] hover:text-purple-600 transition-colors cursor-pointer"
+                                    className="w-8 h-8 rounded-full bg-white/60 dark:bg-zinc-800/60 hover:bg-white dark:hover:bg-zinc-800 border border-zinc-200/60 dark:border-zinc-700/60 text-zinc-700 dark:text-zinc-300 hover:text-purple-600 transition-all cursor-pointer flex items-center justify-center shadow-2xs"
                                     title="Копировать бриф"
                                   >
                                     <Copy className="w-3.5 h-3.5" />
                                   </button>
                                   <button
                                     onClick={() => handleTrashClick(p)}
-                                    className="w-7 h-7 rounded-full bg-white/75 dark:bg-black/35 backdrop-blur flex items-center justify-center text-[var(--ink)] hover:text-red-500 transition-colors z-10"
+                                    className="w-8 h-8 rounded-full bg-white/60 dark:bg-zinc-800/60 hover:bg-white dark:hover:bg-zinc-800 border border-zinc-200/60 dark:border-zinc-700/60 text-zinc-700 dark:text-zinc-300 hover:text-rose-600 transition-all cursor-pointer flex items-center justify-center shadow-2xs"
                                     title={p.status === 'trash' ? "Удалить навсегда" : "Переместить в корзину"}
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
@@ -1758,428 +1914,111 @@ export default function App() {
                                 </div>
                               </div>
 
-                              {/* Right Content Section */}
-                              <div className="p-3.5 pr-4 flex flex-col justify-between flex-1 min-w-0">
-                                {/* Row 1: Title, Venue, Copy button */}
-                                <div className="flex items-start justify-between gap-1">
-                                  <div className="min-w-0 space-y-0.5">
-                                    {p.client && (
-                                      <div className="flex items-center gap-1 text-[10px] font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] uppercase tracking-wider truncate">
-                                        <User className="w-3 h-3 shrink-0 opacity-75" />
-                                        <span className="truncate">{p.client}</span>
-                                      </div>
-                                    )}
-                                    <h3 className="font-bold text-[14px] text-[var(--ink)] leading-tight truncate">
-                                      {p.name}
-                                    </h3>
-                                    <div className="flex items-center gap-1 text-[11px] text-[var(--soft)] truncate">
-                                      <MapPin className="w-3 h-3 shrink-0 text-zinc-400" />
-                                      <span className="truncate">{p.venue}</span>
-                                    </div>
-                                  </div>
-
-                                </div>
-
-                                {/* Row 2: Custom Compact Stepper */}
-                                <div className="flex flex-col items-center">
-                                  <div className="relative flex items-center justify-between w-32 py-1">
-                                    {/* Background Line */}
-                                    <div className="absolute left-1 right-1 top-1/2 -translate-y-1/2 h-[2px] bg-zinc-100 dark:bg-zinc-800" />
-                                    {/* Progress Line */}
-                                    <div
-                                      className="absolute left-1 top-1/2 -translate-y-1/2 h-[2px] bg-[#0A7B5C] transition-all duration-500"
-                                      style={{ width: `${(Math.min(p.currentStep, 3) / 3) * 100}%` }}
-                                    />
-                                    {Array.from({ length: 4 }).map((_, idx) => {
+                              {/* Row 2: Custom Stepper Progress Bar */}
+                              <div className="py-1">
+                                <div className="relative px-2">
+                                  <div className="absolute top-[6px] left-4 right-4 h-[2px] bg-zinc-200 dark:bg-zinc-800 rounded-full" />
+                                  <div
+                                    className="absolute top-[6px] left-4 h-[2px] bg-emerald-500 rounded-full transition-all duration-500"
+                                    style={{ width: `${(Math.min(p.currentStep, 3) / 3) * 88}%` }}
+                                  />
+                                  <div className="flex items-center justify-between relative z-10">
+                                    {stepsList.map((stepName, idx) => {
                                       const isDone = idx < p.currentStep;
                                       const isCurrent = idx === p.currentStep;
                                       return (
-                                        <div key={idx} className="relative z-10 flex items-center justify-center">
+                                        <div key={idx} className="flex flex-col items-center">
                                           <div
-                                            className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                                            className={`w-3 h-3 rounded-full transition-all duration-300 ${
                                               isDone
-                                                ? 'bg-[#0A7B5C]'
+                                                ? 'bg-emerald-500 border-2 border-emerald-500'
                                                 : isCurrent
-                                                ? 'bg-[#8C52D0] ring-[3px] ring-[#8C52D0]/20'
-                                                : 'bg-white dark:bg-zinc-900 border-2 border-zinc-200 dark:border-zinc-800'
+                                                ? 'bg-[#8C52D0] border-2 border-[#8C52D0] ring-4 ring-[#8C52D0]/20'
+                                                : 'bg-white dark:bg-zinc-900 border-2 border-zinc-300 dark:border-zinc-700'
                                             }`}
                                           />
+                                          <span className={`text-[10px] sm:text-xs font-semibold mt-1 transition-colors capitalize ${
+                                            isCurrent
+                                              ? 'text-[#8C52D0] font-bold'
+                                              : isDone
+                                              ? 'text-zinc-700 dark:text-zinc-300'
+                                              : 'text-zinc-400 dark:text-zinc-500'
+                                          }`}>
+                                            {stepName}
+                                          </span>
                                         </div>
                                       );
                                     })}
                                   </div>
-                                  <span className="text-[10px] font-bold text-stone-700 dark:text-stone-300 lowercase mt-0.5">
-                                    {['первый этап: бриф', 'второй этап: визуал', 'третий этап: смета', 'четвертый этап: согласование'][p.currentStep] || ''}
+                                </div>
+                              </div>
+
+                              {/* Row 3: Metadata chips (Date, Budget) & Action Buttons */}
+                              <div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-zinc-200/50 dark:border-zinc-800/40">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="inline-flex items-center gap-1.5 text-xs text-zinc-700 dark:text-zinc-300 bg-white/70 dark:bg-zinc-800/60 border border-zinc-200/60 dark:border-zinc-700/60 px-3 py-1 rounded-full font-medium shadow-2xs">
+                                    <Calendar className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                                    <span>{new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                                  </span>
+                                  <span className="inline-flex items-center gap-1 text-xs text-[var(--lavDeep)] dark:text-purple-200 bg-purple-500/10 dark:bg-purple-950/40 border border-purple-500/20 px-3 py-1 rounded-full font-bold shadow-2xs">
+                                    <span>Бюджет:</span>
+                                    <span>{displayPrice.toLocaleString('ru')} ₽</span>
                                   </span>
                                 </div>
 
-                                {/* Row 3: Metadata tags on left, Open button on right */}
-                                <div className="flex items-end justify-between gap-2 mt-1">
-                                  <div className="flex flex-col gap-0.5 min-w-0">
-                                    <span className="text-[9px] text-[var(--soft)] bg-zinc-100/70 dark:bg-zinc-800/40 px-2.5 py-0.5 rounded-full w-max truncate">
-                                      {new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'long', year: 'numeric' })}
-                                    </span>
-                                    <span className="text-[9px] text-[var(--soft)] bg-zinc-100/70 dark:bg-zinc-800/40 px-2.5 py-0.5 rounded-full w-max font-semibold truncate">
-                                      Бюджет: {displayPrice.toLocaleString('ru')} ₽
-                                    </span>
-                                  </div>
+                                <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto mt-1 sm:mt-0">
                                   {p.status === 'trash' ? (
-                                    <div className="flex gap-1.5 shrink-0">
+                                    <>
                                       <button
                                         onClick={() => {
                                           setProjects(prev => prev.map(item => item.id === p.id ? { ...item, status: 'progress' as const } : item));
                                           showToast('Проект восстановлен', `Проект «${p.name}» возвращен в работу.`, 'success');
                                         }}
-                                        className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-semibold text-[10px] py-1.5 px-3 shadow-sm transition-colors cursor-pointer"
+                                        className="flex-1 sm:flex-initial bg-emerald-600 hover:bg-emerald-700 text-white rounded-full px-4 py-1.5 text-xs font-semibold shadow-xs transition-all cursor-pointer"
                                       >
-                                        Восст.
+                                        Восстановить
                                       </button>
                                       <button
                                         onClick={() => {
                                           setProjects(prev => prev.filter(item => item.id !== p.id));
                                           showToast('Удалено навсегда', `Проект «${p.name}» удален окончательно.`, 'warn');
                                         }}
-                                        className="bg-red-500 hover:bg-red-600 text-white rounded-full font-semibold text-[10px] py-1.5 px-2 shadow-sm transition-colors cursor-pointer"
+                                        className="p-1.5 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 border border-rose-500/20 transition-all flex items-center justify-center cursor-pointer"
                                         title="Удалить навсегда"
                                       >
-                                        <Trash2 className="w-3.5 h-3.5" />
+                                        <Trash2 className="w-4 h-4" />
                                       </button>
-                                    </div>
+                                    </>
                                   ) : (
-                                    <button
-                                      onClick={() => {
-                                        setSelectedProject(p);
-                                        setActiveTab('projectCard');
-                                      }}
-                                      style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }} className="text-white rounded-full font-semibold text-[11px] py-1.5 px-5 shadow-sm transition-all duration-300 hover:shadow-md hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0"
-                                    >
-                                      Открыть
-                                    </button>
+                                    <>
+                                      <button
+                                        onClick={() => {
+                                          setSelectedProject(p);
+                                          setActiveTab('projectCard');
+                                        }}
+                                        style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                                        className="flex-1 sm:flex-initial text-white rounded-full px-4 sm:px-5 py-1.5 sm:py-2 text-xs font-semibold shadow-xs hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                                      >
+                                        <FolderKanban className="w-3.5 h-3.5 shrink-0" />
+                                        <span>Проект</span>
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          setSelectedProject(p);
+                                          setActiveTab('moodboard');
+                                        }}
+                                        style={{ border: '1px solid #8C52D0' }}
+                                        className="flex-1 sm:flex-initial bg-transparent text-[#8C52D0] rounded-full px-4 sm:px-4 py-1.5 sm:py-2 text-xs font-semibold hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-1.5 hover:bg-[#8C52D0]/10"
+                                      >
+                                        <Palette className="w-3.5 h-3.5 shrink-0 text-[#8C52D0]" />
+                                        <span className="bg-gradient-to-r from-[#8C52D0] to-[#582F89] bg-clip-text text-transparent font-semibold">Редактор</span>
+                                      </button>
+                                    </>
                                   )}
                                 </div>
                               </div>
                             </div>
-
-                             {/* Tablet Card Layout (Unchanged structure, shown only on tablet) */}
-                             <div
-                               className="glass-panel p-4 rounded-[20px] hidden md:flex lg:hidden items-center gap-5 border border-[var(--glass-edge)]/70 hover:border-[var(--lavenderAccent)]/50 transition-all duration-300 w-full text-left bg-white dark:bg-zinc-900/25 group"
-                             >
-                               {/* Left part - Small preview - horizontal 4:3 Ratio */}
-                               <div className="w-24 sm:w-32 aspect-[4/3] rounded-xl overflow-hidden shrink-0 relative bg-zinc-100/10 dark:bg-zinc-800/20 border border-[var(--glass-edge)]/40">
-                                 <img
-                                   src={projectImg}
-                                   alt={p.name}
-                                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                   referrerPolicy="no-referrer"
-                                 />
-                                 <span className={`absolute top-1.5 left-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full backdrop-blur-lg border flex items-center gap-1 shadow-md ${
-                                   p.status === 'progress' ? 'bg-emerald-950/40 text-emerald-300 border-emerald-500/30' :
-                                   p.status === 'waiting' ? 'bg-sky-950/40 text-sky-300 border-sky-500/30' :
-                                   p.status === 'approved' ? 'bg-violet-950/40 text-violet-300 border-violet-500/30' :
-                                   p.status === 'trash' ? 'bg-rose-950/40 text-rose-300 border-rose-500/30' :
-                                   'bg-zinc-900/40 text-zinc-300 border-zinc-500/30'
-                                 }`}>
-                                   <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                                     p.status === 'progress' ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)]' :
-                                     p.status === 'waiting' ? 'bg-sky-400 shadow-[0_0_6px_rgba(56,189,248,0.9)]' :
-                                     p.status === 'approved' ? 'bg-violet-400 shadow-[0_0_6px_rgba(167,139,250,0.9)]' :
-                                     p.status === 'trash' ? 'bg-rose-400 shadow-[0_0_6px_rgba(251,113,133,0.9)]' : 'bg-zinc-300'
-                                   }`} />
-                                   <span>
-                                     {p.status === 'progress' ? 'В работе' :
-                                      p.status === 'waiting' ? 'Ждет ответа' :
-                                      p.status === 'approved' ? 'Согласован' :
-                                      p.status === 'trash' ? 'Корзина' : 'Архив'}
-                                   </span>
-                                 </span>
-
-                                 <button
-                                   onClick={() => handleTrashClick(p)}
-                                   className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-white/75 dark:bg-black/35 backdrop-blur flex items-center justify-center text-[var(--ink)] hover:text-red-500 transition-colors z-10"
-                                   title={p.status === 'trash' ? "Удалить навсегда" : "Переместить в корзину"}
-                                 >
-                                   <Trash2 className="w-3.5 h-3.5" />
-                                 </button>
-                               </div>
-
-                               {/* Right part - Details */}
-                               <div className="flex-1 min-w-0 flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
-                                 <div className="space-y-1 min-w-0">
-                                   <h3 className="font-medium text-[var(--ink)] text-base leading-tight truncate group-hover:text-[var(--lavDeep)] dark:group-hover:text-[var(--lavenderAccent)] transition-colors duration-300">{p.name}</h3>
-                                   <p className="text-xs text-[var(--faint)] truncate">{p.venue}</p>
-                                   <div className="flex flex-wrap items-center gap-2 mt-1">
-                                     <span className="text-xs text-[var(--soft)] bg-zinc-100 dark:bg-zinc-800/60 px-2 py-0.5 rounded">
-                                       {new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'long', year: 'numeric' })}
-                                     </span>
-                                     <span className="text-xs text-[var(--soft)] bg-zinc-100 dark:bg-zinc-800/60 px-2 py-0.5 rounded font-medium">
-                                       Бюджет: {displayPrice.toLocaleString('ru')} ₽
-                                     </span>
-                                   </div>
-                                 </div>
-                                 
-                                 {/* Stepper progress in the middle (only on medium screens or wider) */}
-                                 <div className="hidden md:block w-48 shrink-0">
-                                   <div className="flex items-center justify-between relative py-1">
-                                     <div className="absolute top-[8px] left-1 right-1 h-[2px] bg-zinc-100 dark:bg-zinc-800/60 z-0 rounded-full" />
-                                     <div
-                                       className="absolute top-[8px] left-1 h-[2px] bg-[var(--sage)] z-0 rounded-full transition-all duration-500"
-                                       style={{ width: `${(Math.min(p.currentStep, 3) / 3) * 92}%` }}
-                                     />
-                                     {stepsList.map((stepName, idx) => {
-                                       const isDone = idx < p.currentStep;
-                                       const isCurrent = idx === p.currentStep;
-                                       return (
-                                         <div key={idx} className="flex flex-col items-center gap-1 relative z-10 flex-1">
-                                           <div
-                                             className={`w-[8px] h-[8px] rounded-full border transition-all duration-300 ${
-                                               isDone
-                                                 ? 'bg-[var(--sage)] border-[var(--sage)]'
-                                                 : isCurrent
-                                                 ? 'bg-[var(--lavenderAccent)] border-[var(--lavenderAccent)]'
-                                                 : 'bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700'
-                                             }`}
-                                             title={stepName}
-                                           />
-                                         </div>
-                                       );
-                                     })}
-                                   </div>
-                                   <div className="text-center text-xs text-[var(--faint)] mt-1">
-                                     ['первый этап: бриф', 'второй этап: визуал', 'третий этап: смета', 'четвертый этап: согласование'][p.currentStep] || ''
-                                   </div>
-                                 </div>
-
-                                 {/* Action buttons */}
-                                 <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
-                                   {p.status === 'trash' ? (
-                                     <>
-                                       <button
-                                         onClick={() => {
-                                           setProjects(prev => prev.map(item => item.id === p.id ? { ...item, status: 'progress' as const } : item));
-                                           showToast('Проект восстановлен', `Проект «${p.name}» возвращен в работу.`, 'success');
-                                         }}
-                                         className="flex-1 sm:flex-initial bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-4 py-2 text-xs font-medium transition-all cursor-pointer whitespace-nowrap"
-                                       >
-                                         Восстановить
-                                       </button>
-                                       <button
-                                         onClick={() => {
-                                           setProjects(prev => prev.filter(item => item.id !== p.id));
-                                           showToast('Удалено навсегда', `Проект «${p.name}» удален окончательно.`, 'warn');
-                                         }}
-                                         className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 transition-all flex items-center justify-center cursor-pointer shrink-0"
-                                         title="Удалить навсегда"
-                                       >
-                                         <Trash2 className="w-3.5 h-3.5" />
-                                       </button>
-                                     </>
-                                   ) : (
-                                     <>
-                                       <button
-                                         onClick={() => {
-                                           setSelectedProject(p);
-                                           setActiveTab('projectCard');
-                                         }}
-                                         style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }} className="flex-1 sm:flex-initial text-white rounded-full px-5 py-2 text-xs font-semibold shadow-sm transition-all duration-300 hover:shadow-md hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] cursor-pointer whitespace-nowrap"
-                                       >
-                                         Открыть проект
-                                       </button>
-                                       <button
-                                         onClick={() => {
-                                           navigator.clipboard.writeText(`https://fleur-decor.ru/brief/${p.id}`);
-                                           showToast('Бриф скопирован', 'Отправьте ссылку клиенту для прохождения опроса.', 'success');
-                                         }}
-                                         className="p-2 rounded-xl bg-white/30 hover:bg-white/50 dark:bg-white/5 border border-[var(--glass-edge)] text-[var(--ink)] transition-all flex items-center justify-center cursor-pointer shrink-0"
-                                         title="Копировать бриф"
-                                       >
-                                         <Copy className="w-3.5 h-3.5" />
-                                       </button>
-                                     </>
-                                   )}
-                                 </div>
-                               </div>
-                             </div>
-
-                             {/* Desktop Card Layout (Strictly matches the layout in the second screenshot) */}
-                             <div
-                               className="hidden lg:flex flex-row items-stretch border border-zinc-200/85 dark:border-zinc-800 shadow-[0_8px_30px_rgba(0,0,0,0.03)] bg-white dark:bg-zinc-900/40 backdrop-blur-md h-[168px] rounded-[24px] overflow-hidden w-full relative group hover:border-[var(--lavenderAccent)]/40 transition-all duration-300 text-left"
-                             >
-                               {/* Left Image Section */}
-                               <div className="w-[180px] shrink-0 relative overflow-hidden bg-zinc-100 dark:bg-zinc-850">
-                                 <img
-                                   src={projectImg}
-                                   alt={p.name}
-                                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-102"
-                                   referrerPolicy="no-referrer"
-                                 />
-                                 {/* Status Badge */}
-                                 <span className={`absolute top-3.5 left-3.5 text-[11px] font-bold px-2.5 py-1 rounded-full backdrop-blur-lg border flex items-center gap-1.5 shadow-md ${
-                                   p.status === 'progress' ? 'bg-emerald-950/40 text-emerald-300 border-emerald-500/30' :
-                                   p.status === 'waiting' ? 'bg-sky-950/40 text-sky-300 border-sky-500/30' :
-                                   p.status === 'approved' ? 'bg-violet-950/40 text-violet-300 border-violet-500/30' :
-                                   p.status === 'trash' ? 'bg-rose-950/40 text-rose-300 border-rose-500/30' :
-                                   'bg-zinc-900/40 text-zinc-300 border-zinc-500/30'
-                                 }`}>
-                                   <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                                     p.status === 'progress' ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)]' :
-                                     p.status === 'waiting' ? 'bg-sky-400 shadow-[0_0_6px_rgba(56,189,248,0.9)]' :
-                                     p.status === 'approved' ? 'bg-violet-400 shadow-[0_0_6px_rgba(167,139,250,0.9)]' :
-                                     p.status === 'trash' ? 'bg-rose-400 shadow-[0_0_6px_rgba(251,113,133,0.9)]' : 'bg-zinc-300'
-                                   }`} />
-                                   <span>
-                                     {p.status === 'approved' ? 'Согласован' :
-                                      p.status === 'progress' ? 'В работе' :
-                                      p.status === 'waiting' ? 'Ждет ответа' :
-                                      p.status === 'trash' ? 'Корзина' : 'Архив'}
-                                   </span>
-                                 </span>
-
-                                 <button
-                                   onClick={() => handleTrashClick(p)}
-                                   className="absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-white/75 dark:bg-black/35 backdrop-blur flex items-center justify-center text-[var(--ink)] hover:text-red-500 transition-colors z-10"
-                                   title={p.status === 'trash' ? "Удалить навсегда" : "Переместить в корзину"}
-                                 >
-                                   <Trash2 className="w-3.5 h-3.5" />
-                                 </button>
-
-                                 {/* Date Tag Removed */}
-                                 <span className="hidden">
-                                   <Calendar className="w-3 h-3 text-white/80 shrink-0" />
-                                   <span>{new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'short' })}</span>
-                                 </span>
-                               </div>
-
-                               {/* Right Content Section */}
-                               <div className="p-4 pr-5 flex flex-col justify-between flex-1 min-w-0">
-                                 {/* Row 1: Title, Venue on left, copy brief button on right */}
-                                 <div className="flex items-start justify-between gap-3">
-                                   <div className="min-w-0 space-y-0.5">
-                                     {p.client && (
-                                       <div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] uppercase tracking-wider truncate">
-                                         <User className="w-3.5 h-3.5 shrink-0 opacity-75" />
-                                         <span className="truncate">{p.client}</span>
-                                       </div>
-                                     )}
-                                     <h3 className="font-bold text-[16px] text-[var(--ink)] leading-tight truncate">
-                                       {p.name}
-                                     </h3>
-                                     <div className="flex items-center gap-1.5 text-[12px] text-[var(--soft)] truncate">
-                                       <MapPin className="w-3.5 h-3.5 shrink-0 text-zinc-400" />
-                                       <span className="truncate">{p.venue}</span>
-                                     </div>
-                                   </div>
-                                   <button
-                                     onClick={() => {
-                                       navigator.clipboard.writeText(`https://fleur-decor.ru/brief/${p.id}`);
-                                       showToast('Бриф скопирован', 'Отправьте ссылку клиенту для прохождения опроса.', 'success');
-                                     }}
-                                     className="hidden"
-                                     title="Копировать бриф"
-                                   >
-                                     <Copy className="w-4 h-4" />
-                                   </button>
-                                 </div>
-
-                                 {/* Row 2: Custom Horizontal Stepper with labels underneath */}
-                                 <div className="relative px-[10px] mt-1">
-                                   {/* Background Line */}
-                                   <div className="absolute left-[15px] right-[15px] top-[5px] h-[2px] bg-zinc-200 dark:bg-zinc-800/80" />
-                                   {/* Progress Line */}
-                                   <div
-                                     className="absolute left-[15px] top-[5px] h-[2px] bg-[#0A7B5C] transition-all duration-500"
-                                     style={{ width: `${(Math.min(p.currentStep, 3) / 3) * 92}%` }}
-                                   />
-                                   <div className="flex items-center justify-between relative z-10">
-                                     {stepsList.map((stepName, idx) => {
-                                       const isDone = idx < p.currentStep;
-                                       const isCurrent = idx === p.currentStep;
-                                       return (
-                                         <div key={idx} className="flex flex-col items-center select-none">
-                                           <div
-                                             className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
-                                               isDone
-                                                 ? 'bg-[#0A7B5C]'
-                                                 : isCurrent
-                                                 ? 'bg-[#8B5CF6] ring-[4px] ring-[#8B5CF6]/20'
-                                                 : 'bg-white dark:bg-zinc-900 border-2 border-zinc-200 dark:border-zinc-800'
-                                             }`}
-                                           />
-                                           <span className={`text-[10px] mt-1.5 font-bold transition-colors ${
-                                             isCurrent
-                                               ? 'text-[#8B5CF6]'
-                                               : isDone
-                                               ? 'text-zinc-700 dark:text-zinc-300'
-                                               : 'text-zinc-400 dark:text-zinc-500'
-                                           }`}>
-                                             {stepName}
-                                           </span>
-                                         </div>
-                                       );
-                                     })}
-                                   </div>
-                                 </div>
-
-                                 {/* Row 3: Metadata chips on left, "Открыть проект" on right */}
-                                 <div className="flex items-center justify-between gap-4 mt-1.5">
-                                   <div className="flex items-center gap-2 min-w-0">
-                                     <span className="text-[11px] text-zinc-600 dark:text-zinc-400 bg-[#F8F9FA] dark:bg-zinc-850 px-3 py-1.5 rounded-xl border border-zinc-100 dark:border-zinc-800/40 truncate">
-                                       {new Date(p.date).toLocaleDateString('ru', { day: 'numeric', month: 'long', year: 'numeric' })}
-                                     </span>
-                                     <span className="text-[11px] text-zinc-600 dark:text-zinc-400 bg-[#F8F9FA] dark:bg-zinc-850 px-3 py-1.5 rounded-xl border border-zinc-100 dark:border-zinc-800/40 font-bold truncate">
-                                       Бюджет: {displayPrice.toLocaleString('ru')} ₽
-                                     </span>
-                                   </div>
-                                   {p.status === 'trash' ? (
-                                     <div className="flex gap-2 shrink-0">
-                                       <button
-                                         onClick={() => {
-                                           setProjects(prev => prev.map(item => item.id === p.id ? { ...item, status: 'progress' as const } : item));
-                                           showToast('Проект восстановлен', `Проект «${p.name}» возвращен в работу.`, 'success');
-                                         }}
-                                         className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-semibold text-[12px] py-2 px-5.5 shadow-sm transition-colors cursor-pointer"
-                                       >
-                                         Восстановить
-                                       </button>
-                                       <button
-                                         onClick={() => {
-                                           setProjects(prev => prev.filter(item => item.id !== p.id));
-                                           showToast('Удалено навсегда', `Проект «${p.name}» удален окончательно.`, 'warn');
-                                         }}
-                                         className="bg-red-500 hover:bg-red-600 text-white rounded-full font-semibold text-[12px] py-2 px-3 shadow-sm transition-colors cursor-pointer flex items-center justify-center gap-1.5"
-                                       >
-                                         <Trash2 className="w-4 h-4" /> Удалить
-                                       </button>
-                                     </div>
-                                   ) : (
-                                     <div className="flex items-center gap-2 shrink-0">
-                                       <button
-                                         onClick={() => {
-                                           setSelectedProject(p);
-                                           setActiveTab('projectCard');
-                                         }}
-                                         style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
-                                         className="text-white rounded-full font-semibold text-[12px] py-2 px-3.5 shadow-sm transition-all duration-300 hover:shadow-md hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0 flex items-center gap-1.5"
-                                       >
-                                         <FolderKanban className="w-3.5 h-3.5 shrink-0" />
-                                         <span>Проект</span>
-                                       </button>
-                                       <button
-                                         onClick={() => {
-                                           setSelectedProject(p);
-                                           setActiveTab('moodboard');
-                                         }}
-                                         style={{ border: '1px solid #8C52D0' }}
-                                         className="bg-transparent text-[#8C52D0] rounded-full font-semibold text-[12px] py-2 px-3.5 shadow-xs transition-all duration-300 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0 flex items-center gap-1.5 hover:bg-[#8C52D0]/10"
-                                       >
-                                         <Palette className="w-3.5 h-3.5 shrink-0 text-[#8C52D0]" />
-                                         <span className="bg-gradient-to-r from-[#8C52D0] to-[#582F89] bg-clip-text text-transparent font-semibold">Редактор</span>
-                                       </button>
-                                     </div>
-                                   )}
-                                 </div>
-                               </div>
-                             </div>
-                          </React.Fragment>
+                          </div>
                         );
                       })}
                     </div>
@@ -2353,128 +2192,32 @@ export default function App() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -15 }}
                   transition={{ duration: 0.3 }}
-                  className="space-y-6"
                 >
-                  <div className="glass-panel p-6 rounded-3xl space-y-5">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--line)]">
-                      <div>
-                        <h2 className="text-xl font-bold text-[var(--ink)] flex items-center gap-2">
-                          <Calendar className="w-5 h-5 text-[var(--lavDeep)]" /> Календарь мероприятий & событий
-                        </h2>
-                        <p className="text-xs text-[var(--soft)]">График монтажей, сдачи проектов и выездов команды</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={handlePrevMonth}
-                          className="p-1.5 rounded-full bg-white/60 dark:bg-zinc-800/60 hover:bg-white dark:hover:bg-zinc-700 text-[var(--soft)] hover:text-[var(--ink)] transition-colors cursor-pointer"
-                          title="Предыдущий месяц"
-                        >
-                          <ChevronDown className="w-4 h-4 rotate-90" />
-                        </button>
-                        <span className="px-3 py-1 bg-[var(--lavenderSoft)] text-[var(--lavDeep)] rounded-full text-xs font-semibold">
-                          {monthNames[calendarMonth]} {calendarYear}
-                        </span>
-                        <button
-                          onClick={handleNextMonth}
-                          className="p-1.5 rounded-full bg-white/60 dark:bg-zinc-800/60 hover:bg-white dark:hover:bg-zinc-700 text-[var(--soft)] hover:text-[var(--ink)] transition-colors cursor-pointer"
-                          title="Следующий месяц"
-                        >
-                          <ChevronDown className="w-4 h-4 -rotate-90" />
-                        </button>
-                      </div>
-                    </div>
+                  <DetailedCalendarTab
+                    projects={projects}
+                    tasks={tasks}
+                    onSelectProject={(proj) => {
+                      setSelectedProject(proj);
+                      setActiveTab('projectCard');
+                    }}
+                    showToast={showToast}
+                  />
+                </motion.div>
+              )}
 
-                    {/* Main Interactive Grid Calendar */}
-                    <div className="grid grid-cols-7 gap-2 text-center text-xs font-bold text-[var(--faint)] mb-2">
-                      {['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map((d, i) => (
-                        <div key={i} className="py-1">{d}</div>
-                      ))}
-                    </div>
-
-                    <div className="grid grid-cols-7 gap-2">
-                      {calendarDays.map((day, idx) => {
-                        const isSelected = selectedCalendarDay === day.num && day.currentMonth;
-                        const hasEvent = day.currentMonth && calendarEvents[day.num];
-
-                        let bgStyle = 'bg-white/40 dark:bg-zinc-800/40 hover:bg-white/80 dark:hover:bg-zinc-700/80';
-                        let textStyle = day.currentMonth ? 'text-[var(--ink)]' : 'text-[var(--faint)] opacity-30';
-                        let dotStyle = '';
-
-                        if (day.currentMonth && day.eventType) {
-                          if (day.eventType === 'warn') {
-                            bgStyle = 'bg-rose-100/80 text-rose-800 dark:bg-rose-950/70 dark:text-rose-200 border border-rose-400/40 font-medium';
-                            dotStyle = 'bg-rose-600';
-                          } else if (day.eventType === 'indigo') {
-                            bgStyle = 'bg-indigo-100/80 text-indigo-800 dark:bg-indigo-950/70 dark:text-indigo-200 border border-indigo-400/40 font-medium';
-                            dotStyle = 'bg-indigo-600';
-                          } else if (day.eventType === 'lavender') {
-                            bgStyle = 'bg-purple-100/80 text-purple-800 dark:bg-purple-950/70 dark:text-purple-200 border border-purple-400/40 font-medium';
-                            dotStyle = 'bg-purple-600';
-                          } else if (day.eventType === 'sage') {
-                            bgStyle = 'bg-emerald-100/80 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-200 border border-emerald-400/40 font-medium';
-                            dotStyle = 'bg-emerald-600';
-                          }
-                        }
-
-                        return (
-                          <div
-                            key={idx}
-                            onClick={() => day.currentMonth && setSelectedCalendarDay(day.num)}
-                            className={`min-h-[64px] p-2 rounded-2xl border border-[var(--glass-edge)] cursor-pointer transition-all flex flex-col items-center justify-between ${bgStyle} ${textStyle} ${
-                              isSelected ? 'ring-2 ring-[var(--lavDeep)] scale-[1.02] shadow-md' : ''
-                            }`}
-                          >
-                            <span className="font-bold text-sm">{day.num}</span>
-                            {hasEvent && (
-                              <div className="w-full space-y-1">
-                                <span className={`w-2 h-2 rounded-full mx-auto block ${dotStyle || 'bg-[var(--lavDeep)]'}`} />
-                                <span className="text-[9px] font-semibold truncate block max-w-full px-1 text-center opacity-90">
-                                  {calendarEvents[day.num][0]?.title}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Detailed Event Log for selected day */}
-                    <div className="pt-4 border-t border-[var(--line)]">
-                      <h3 className="text-sm font-bold text-[var(--ink)] mb-3">
-                        Детализация расписания на {selectedCalendarDay} {monthNamesGenitive[calendarMonth]} {calendarYear}:
-                      </h3>
-                      {calendarEvents[selectedCalendarDay] ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {calendarEvents[selectedCalendarDay].map((ev, i) => (
-                            <div
-                              key={i}
-                              onClick={() => {
-                                setSelectedProject(ev.project);
-                                setActiveTab('projectCard');
-                              }}
-                              className="p-4 rounded-2xl bg-white/60 dark:bg-zinc-800/60 border border-[var(--glass-edge)] hover:border-[var(--lavenderAccent)] cursor-pointer transition-all shadow-xs group"
-                            >
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="font-bold text-sm text-[var(--ink)] group-hover:text-[var(--lavDeep)] transition-colors">
-                                  {ev.title}
-                                </span>
-                                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--lavenderSoft)] text-[var(--lavDeep)]">
-                                  {ev.time}
-                                </span>
-                              </div>
-                              <p className="text-xs text-[var(--soft)] mb-2">{ev.desc}</p>
-                              <div className="text-[11px] font-semibold text-[var(--lavenderAccent)] flex items-center gap-1">
-                                <span>Открыть карточку проекта</span>
-                                <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-[var(--soft)] italic">На эту дату нет запланированных проектов и монтажей.</p>
-                      )}
-                    </div>
-                  </div>
+              {/* STATISTICS TAB */}
+              {activeTab === 'statistics' && (
+                <motion.div
+                  key="statistics-tab"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <StatisticsTab
+                    projects={projects}
+                    showToast={showToast}
+                  />
                 </motion.div>
               )}
 
@@ -2524,273 +2267,318 @@ export default function App() {
           }`}
           style={{ backgroundColor: 'var(--sidebar-bg)', borderColor: 'var(--sidebar-border)' }}
         >
-          {/* EXPANDED CONTENT (Calendar First, then Tasks & Scheduled items) */}
+          {/* EXPANDED CONTENT */}
           {isRightSidebarExpanded ? (
-            <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-5 select-none pr-1 custom-scrollbar">
+            <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-4 select-none pr-1 custom-scrollbar">
               
-              {/* Header */}
-              <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-[var(--lavenderAccent)]" />
-                  <span className="text-sm font-bold text-[var(--ink)] tracking-tight">Календарь событий</span>
+              {/* Header with Mode Switcher (Calendar & Tasks vs Statistics) & Fullscreen/Collapse Actions */}
+              <div className="flex items-center justify-between w-full pb-1 border-b border-zinc-200/50 dark:border-zinc-800/50">
+                {/* Switcher Pills */}
+                <div className="flex bg-zinc-100 dark:bg-zinc-800/80 p-0.5 rounded-full border border-zinc-200/80 dark:border-zinc-700/80 text-[11px] font-medium">
+                  <button
+                    onClick={() => setRightSidebarTab('calendar')}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full transition-all cursor-pointer ${
+                      rightSidebarTab === 'calendar'
+                        ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white font-semibold shadow-xs'
+                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                    }`}
+                  >
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>Календарь</span>
+                  </button>
+                  <button
+                    onClick={() => setRightSidebarTab('statistics')}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full transition-all cursor-pointer ${
+                      rightSidebarTab === 'statistics'
+                        ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white font-semibold shadow-xs'
+                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                    }`}
+                  >
+                    <TrendingUp className="w-3.5 h-3.5" />
+                    <span>Статистика</span>
+                  </button>
                 </div>
-                <button
-                  onClick={() => setIsRightSidebarExpanded(false)}
-                  title="Свернуть боковую панель"
-                  className="w-7 h-7 rounded-full hover:bg-white/20 dark:hover:bg-black/20 flex items-center justify-center text-[var(--soft)] hover:text-[var(--ink)] cursor-pointer transition-colors shrink-0"
-                >
-                  <ChevronsRight className="w-4 h-4 text-[var(--soft)]" />
-                </button>
-              </div>
 
-              {/* Calendar Widget */}
-              <div className="bg-white/40 dark:bg-zinc-900/40 backdrop-blur-md p-4 rounded-[24px] border border-zinc-200/50 dark:border-zinc-800/50 shadow-xs flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-[var(--ink)]">{monthNames[calendarMonth]} {calendarYear}</span>
-                  <div className="flex gap-1">
-                    <button onClick={handlePrevMonth} title="Предыдущий месяц" className="w-6 h-6 rounded-full bg-white/60 dark:bg-zinc-800/60 hover:bg-white dark:hover:bg-zinc-700 flex items-center justify-center text-[var(--soft)] hover:text-[var(--ink)] text-xs transition-colors cursor-pointer"><ChevronDown className="w-3 h-3 rotate-90" /></button>
-                    <button onClick={handleNextMonth} title="Следующий месяц" className="w-6 h-6 rounded-full bg-white/60 dark:bg-zinc-800/60 hover:bg-white dark:hover:bg-zinc-700 flex items-center justify-center text-[var(--soft)] hover:text-[var(--ink)] text-xs transition-colors cursor-pointer"><ChevronDown className="w-3 h-3 -rotate-90" /></button>
-                  </div>
-                </div>
-                
-                {/* Week days */}
-                <div className="grid grid-cols-7 text-center text-[11px] font-semibold text-[var(--faint)] border-b pb-1.5" style={{ borderColor: 'var(--line)' }}>
-                  <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
-                </div>
-                
-                {/* Days grid with prominent marks and dynamic click event */}
-                <div className="grid grid-cols-7 text-center gap-y-1 text-xs font-medium text-[var(--soft)] mt-1">
-                  {calendarDays.map((day, idx) => {
-                    const isSelected = selectedCalendarDay === day.num && day.currentMonth;
-                    const hasEvent = day.currentMonth && calendarEvents[day.num];
-                    
-                    let bgStyle = '';
-                    let textStyle = day.currentMonth ? 'text-[var(--ink)] font-medium' : 'text-[var(--faint)] opacity-30';
-                    let dotStyle = '';
-
-                    if (day.currentMonth && day.eventType) {
-                      if (day.eventType === 'warn') {
-                        bgStyle = 'bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-200 border border-rose-500/40';
-                        dotStyle = 'bg-rose-600';
-                      } else if (day.eventType === 'indigo') {
-                        bgStyle = 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/70 dark:text-indigo-200 border border-indigo-500/40';
-                        dotStyle = 'bg-indigo-600';
-                      } else if (day.eventType === 'lavender') {
-                        bgStyle = 'bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-200 border border-purple-500/40';
-                        dotStyle = 'bg-purple-600';
-                      } else if (day.eventType === 'sage') {
-                        bgStyle = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-200 border border-emerald-500/40';
-                        dotStyle = 'bg-emerald-600';
-                      }
-                    }
-
-                    if (isSelected) {
-                      bgStyle = 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white font-bold shadow-xs';
-                      textStyle = 'text-white';
-                    }
-
-                    return (
-                      <div
-                        key={idx}
-                        onClick={() => day.currentMonth && setSelectedCalendarDay(day.num)}
-                        className={`calendar-day-cell relative cursor-pointer w-8 h-8 mx-auto rounded-full transition-all flex flex-col items-center justify-center hover:scale-105 ${bgStyle} ${textStyle}`}
-                      >
-                        {day.num}
-                        {hasEvent && !isSelected && (
-                          <span className={`w-1 h-1 rounded-full absolute bottom-1 ${dotStyle || 'bg-[#8C52D0]'}`} />
-                        )}
-                      </div>
-                    );
-                  })}
+                {/* Right Action Icons: Full Screen Mode + Collapse Sidebar */}
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setActiveTab(rightSidebarTab)}
+                    title={`Открыть ${rightSidebarTab === 'calendar' ? 'Календарь' : 'Статистику'} на странице`}
+                    className="w-7 h-7 rounded-full hover:bg-white/40 dark:hover:bg-zinc-800 flex items-center justify-center text-[var(--soft)] hover:text-[#8C52D0] dark:hover:text-purple-300 cursor-pointer transition-colors shrink-0"
+                  >
+                    <Maximize2 className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setIsRightSidebarExpanded(false)}
+                    title="Свернуть боковую панель"
+                    className="w-7 h-7 rounded-full hover:bg-white/40 dark:hover:bg-zinc-800 flex items-center justify-center text-[var(--soft)] hover:text-[var(--ink)] cursor-pointer transition-colors shrink-0"
+                  >
+                    <ChevronsRight className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
 
-              {/* Scheduled Events & Tasks Section */}
-              <div className="space-y-3 pt-1">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5">
-                    <CheckSquare className="w-4 h-4 text-[var(--lavenderAccent)]" />
-                    <h2 className="text-sm font-bold text-[var(--ink)] tracking-tight">Запланировано</h2>
-                  </div>
-
-                  {/* Filter toggle */}
-                  <div className="flex bg-zinc-100 dark:bg-zinc-800/80 p-0.5 rounded-full border border-zinc-200/80 dark:border-zinc-700/80 text-[10px]">
-                    <button
-                      onClick={() => setSidebarTaskFilter('date')}
-                      className={`px-2.5 py-0.5 rounded-full font-semibold transition-all cursor-pointer ${
-                        sidebarTaskFilter === 'date'
-                          ? 'bg-[#8C52D0] text-white shadow-2xs'
-                          : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
-                      }`}
-                      title={`Записи на ${selectedCalendarDay} ${monthNamesGenitive[calendarMonth]}`}
-                    >
-                      {selectedCalendarDay} {monthNamesGenitive[calendarMonth]?.slice(0, 3)}
-                    </button>
-                    <button
-                      onClick={() => setSidebarTaskFilter('all')}
-                      className={`px-2.5 py-0.5 rounded-full font-semibold transition-all cursor-pointer ${
-                        sidebarTaskFilter === 'all'
-                          ? 'bg-[#8C52D0] text-white shadow-2xs'
-                          : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
-                      }`}
-                      title="Показать все записи"
-                    >
-                      Все
-                    </button>
-                  </div>
-                </div>
-
-                {/* Calendar Events for Selected Date */}
-                {calendarEvents[selectedCalendarDay] && calendarEvents[selectedCalendarDay].length > 0 && (
-                  <div className="space-y-2">
-                    {calendarEvents[selectedCalendarDay].map((ev, i) => {
-                      let borderCol = '#8C52D0';
-                      if (ev.type === 'warn') { borderCol = '#EF4444'; }
-                      if (ev.type === 'sage') { borderCol = '#10B981'; }
-                      if (ev.type === 'indigo') { borderCol = '#6366F1'; }
-
-                      return (
-                        <div
-                          key={i}
-                          onClick={() => {
-                            setSelectedProject(ev.project);
-                            setActiveTab('projectCard');
-                          }}
-                          className="bg-white/40 dark:bg-zinc-900/40 backdrop-blur-md p-3 rounded-[20px] border border-zinc-200/50 dark:border-zinc-800/50 border-l-4 text-[var(--ink)] transition-all duration-300 hover:scale-[1.01] cursor-pointer shadow-xs"
-                          style={{ borderLeftColor: borderCol }}
+              {/* TAB CONTENT */}
+              {rightSidebarTab === 'calendar' ? (
+                <div className="space-y-4">
+                  {/* Calendar Widget */}
+                  <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md p-4 rounded-[24px] border border-zinc-200/60 dark:border-zinc-800/60 shadow-xs flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-bold text-[var(--ink)]">{monthNames[calendarMonth]} {calendarYear}</span>
+                      <div className="flex gap-1 items-center">
+                        <button
+                          onClick={() => setActiveTab('calendar')}
+                          title="Открыть календарь на весь экран"
+                          className="p-1 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-[var(--soft)] hover:text-[#8C52D0] mr-1"
                         >
-                          <div className="flex justify-between items-center mb-1">
-                            <span className="font-semibold text-xs text-[var(--ink)]">{ev.title}</span>
-                            <span className="text-[10px] font-bold text-[#8C52D0] dark:text-purple-300 bg-purple-100/80 dark:bg-purple-950/60 px-2 py-0.5 rounded-full">{ev.time}</span>
-                          </div>
-                          <p className="text-xs text-[var(--soft)]">{ev.desc}</p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Tasks and Notes List */}
-                {(() => {
-                  const dayStr = selectedCalendarDay < 10 ? `0${selectedCalendarDay}` : `${selectedCalendarDay}`;
-                  const monthStr = (calendarMonth + 1) < 10 ? `0${calendarMonth + 1}` : `${calendarMonth + 1}`;
-                  const selectedFullDate = `${calendarYear}-${monthStr}-${dayStr}`;
-
-                  const itemsForDate = globalProjectTasksNotes.filter((item: any) => {
-                    if (!item.dueDate) return false;
-                    return item.dueDate === selectedFullDate || item.dueDate.endsWith(`-${monthStr}-${dayStr}`);
-                  });
-
-                  const activeList = sidebarTaskFilter === 'date' ? itemsForDate : globalProjectTasksNotes;
-                  const hasEvents = calendarEvents[selectedCalendarDay] && calendarEvents[selectedCalendarDay].length > 0;
-
-                  if (activeList.length === 0 && !hasEvents) {
-                    return (
-                      <div className="bg-white/30 dark:bg-zinc-900/30 p-4 rounded-[20px] border border-zinc-200/40 dark:border-zinc-800/40 text-center space-y-2">
-                        <CheckSquare className="w-5 h-5 mx-auto text-[var(--soft)] opacity-40" />
-                        <p className="text-xs text-[var(--soft)]">
-                          {sidebarTaskFilter === 'date'
-                            ? `На ${selectedCalendarDay} ${monthNamesGenitive[calendarMonth]} нет записей.`
-                            : 'Журнал задач пуст.'}
-                        </p>
-                        {sidebarTaskFilter === 'date' && globalProjectTasksNotes.length > 0 && (
-                          <button
-                            onClick={() => setSidebarTaskFilter('all')}
-                            className="text-[10px] font-bold text-[#8C52D0] dark:text-purple-300 hover:underline cursor-pointer"
-                          >
-                            Показать все записи ({globalProjectTasksNotes.length})
-                          </button>
-                        )}
+                          <Maximize2 className="w-3 h-3" />
+                        </button>
+                        <button onClick={handlePrevMonth} title="Предыдущий месяц" className="w-6 h-6 rounded-full bg-white/60 dark:bg-zinc-800/60 hover:bg-white dark:hover:bg-zinc-700 flex items-center justify-center text-[var(--soft)] hover:text-[var(--ink)] text-xs transition-colors cursor-pointer"><ChevronDown className="w-3 h-3 rotate-90" /></button>
+                        <button onClick={handleNextMonth} title="Следующий месяц" className="w-6 h-6 rounded-full bg-white/60 dark:bg-zinc-800/60 hover:bg-white dark:hover:bg-zinc-700 flex items-center justify-center text-[var(--soft)] hover:text-[var(--ink)] text-xs transition-colors cursor-pointer"><ChevronDown className="w-3 h-3 -rotate-90" /></button>
                       </div>
-                    );
-                  }
+                    </div>
+                    
+                    {/* Week days */}
+                    <div className="grid grid-cols-7 text-center text-[11px] font-semibold text-[var(--faint)] border-b pb-1.5" style={{ borderColor: 'var(--line)' }}>
+                      <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
+                    </div>
+                    
+                    {/* Days grid */}
+                    <div className="grid grid-cols-7 text-center gap-y-1 text-xs font-medium text-[var(--soft)] mt-1">
+                      {calendarDays.map((day, idx) => {
+                        const isSelected = selectedCalendarDay === day.num && day.currentMonth;
+                        const hasEvent = day.currentMonth && calendarEvents[day.num];
+                        
+                        let bgStyle = '';
+                        let textStyle = day.currentMonth ? 'text-[var(--ink)] font-medium' : 'text-[var(--faint)] opacity-30';
+                        let dotStyle = '';
 
-                  return (
-                    <div className="space-y-2">
-                      {activeList.map((item: any) => {
-                        const isTask = item.type === 'task';
-                        const isCompleted = item.completed;
+                        if (day.currentMonth && day.eventType) {
+                          if (day.eventType === 'warn') {
+                            bgStyle = 'bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-200 border border-rose-500/40';
+                            dotStyle = 'bg-rose-600';
+                          } else if (day.eventType === 'indigo') {
+                            bgStyle = 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/70 dark:text-indigo-200 border border-indigo-500/40';
+                            dotStyle = 'bg-indigo-600';
+                          } else if (day.eventType === 'lavender') {
+                            bgStyle = 'bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-200 border border-purple-500/40';
+                            dotStyle = 'bg-purple-600';
+                          } else if (day.eventType === 'sage') {
+                            bgStyle = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-200 border border-emerald-500/40';
+                            dotStyle = 'bg-emerald-600';
+                          }
+                        }
 
-                        // Category styles
-                        const categoryBadges: Record<string, string> = {
-                          'Монтаж': 'bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300',
-                          'Закупка': 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300',
-                          'Смета': 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300',
-                          'Логистика': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300',
-                          'Клиент': 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300',
-                          'Важное': 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300',
-                          'Общее': 'bg-stone-100 text-stone-700 dark:bg-zinc-800 dark:text-stone-300'
-                        };
-                        const catClass = categoryBadges[item.category] || categoryBadges['Общее'];
+                        if (isSelected) {
+                          bgStyle = 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white font-bold shadow-xs';
+                          textStyle = 'text-white';
+                        }
 
                         return (
                           <div
-                            key={item.id}
-                            className={`bg-white/40 dark:bg-zinc-900/40 backdrop-blur-md p-3 rounded-[20px] border border-zinc-200/50 dark:border-zinc-800/50 transition-all duration-300 hover:scale-[1.01] shadow-xs ${
-                              isCompleted ? 'opacity-50' : ''
-                            }`}
+                            key={idx}
+                            onClick={() => day.currentMonth && setSelectedCalendarDay(day.num)}
+                            className={`calendar-day-cell relative cursor-pointer w-8 h-8 mx-auto rounded-full transition-all flex flex-col items-center justify-center hover:scale-105 ${bgStyle} ${textStyle}`}
                           >
-                            <div className="flex items-start gap-2.5">
-                              {/* Left Checkbox or Icon */}
-                              {isTask ? (
-                                <button
-                                  type="button"
-                                  onClick={() => handleToggleGlobalTaskNote(item.id)}
-                                  className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 cursor-pointer transition-all ${
-                                    isCompleted
-                                      ? 'bg-emerald-500 border-emerald-500 text-white'
-                                      : 'border-zinc-400 dark:border-zinc-600 hover:border-[#8C52D0] bg-white/50'
-                                  }`}
-                                >
-                                  {isCompleted && <Check className="w-3 h-3 stroke-[3]" />}
-                                </button>
-                              ) : (
-                                <div className="w-4 h-4 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-300 flex items-center justify-center shrink-0 mt-0.5">
-                                  <FileText className="w-2.5 h-2.5" />
-                                </div>
-                              )}
-
-                              {/* Main Content */}
-                              <div className="flex-1 min-w-0 space-y-1.5">
-                                <p className={`text-xs font-semibold text-[var(--ink)] leading-snug ${isCompleted ? 'line-through text-[var(--faint)]' : ''}`}>
-                                  {item.title}
-                                </p>
-
-                                <div className="flex items-center flex-wrap gap-1 text-[10px] font-medium">
-                                  {/* Project badge */}
-                                  <button
-                                    onClick={() => {
-                                      const found = projects.find(p => p.id === item.projectId || p.name === item.projectName);
-                                      if (found) {
-                                        setSelectedProject(found);
-                                        setActiveTab('projectCard');
-                                      }
-                                    }}
-                                    className="px-2 py-0.5 rounded-full bg-purple-100/80 dark:bg-purple-900/40 text-[#582F89] dark:text-purple-300 font-semibold hover:underline truncate max-w-[120px] cursor-pointer"
-                                  >
-                                    {item.projectName || 'Проект'}
-                                  </button>
-
-                                  {/* Category */}
-                                  <span className={`px-2 py-0.5 rounded-full font-medium ${catClass}`}>
-                                    {item.category}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
+                            {day.num}
+                            {hasEvent && !isSelected && (
+                              <span className={`w-1 h-1 rounded-full absolute bottom-1 ${dotStyle || 'bg-[#8C52D0]'}`} />
+                            )}
                           </div>
                         );
                       })}
                     </div>
-                  );
-                })()}
-              </div>
+                  </div>
+
+                  {/* Scheduled Events & Tasks Section */}
+                  <div className="space-y-3 pt-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <CheckSquare className="w-4 h-4 text-[var(--lavenderAccent)]" />
+                        <h2 className="text-sm font-bold text-[var(--ink)] tracking-tight">Запланировано</h2>
+                      </div>
+
+                      {/* Filter toggle */}
+                      <div className="flex bg-zinc-100 dark:bg-zinc-800/80 p-0.5 rounded-full border border-zinc-200/80 dark:border-zinc-700/80 text-[10px]">
+                        <button
+                          onClick={() => setSidebarTaskFilter('date')}
+                          className={`px-2.5 py-0.5 rounded-full font-semibold transition-all cursor-pointer ${
+                            sidebarTaskFilter === 'date'
+                              ? 'bg-[#8C52D0] text-white shadow-2xs'
+                              : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                          }`}
+                          title={`Записи на ${selectedCalendarDay} ${monthNamesGenitive[calendarMonth]}`}
+                        >
+                          {selectedCalendarDay} {monthNamesGenitive[calendarMonth]?.slice(0, 3)}
+                        </button>
+                        <button
+                          onClick={() => setSidebarTaskFilter('all')}
+                          className={`px-2.5 py-0.5 rounded-full font-semibold transition-all cursor-pointer ${
+                            sidebarTaskFilter === 'all'
+                              ? 'bg-[#8C52D0] text-white shadow-2xs'
+                              : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                          }`}
+                          title="Показать все записи"
+                        >
+                          Все
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Calendar Events for Selected Date */}
+                    {calendarEvents[selectedCalendarDay] && calendarEvents[selectedCalendarDay].length > 0 && (
+                      <div className="space-y-2">
+                        {calendarEvents[selectedCalendarDay].map((ev, i) => {
+                          let borderCol = '#8C52D0';
+                          if (ev.type === 'warn') { borderCol = '#EF4444'; }
+                          if (ev.type === 'sage') { borderCol = '#10B981'; }
+                          if (ev.type === 'indigo') { borderCol = '#6366F1'; }
+
+                          return (
+                            <div
+                              key={i}
+                              onClick={() => {
+                                setSelectedProject(ev.project);
+                                setActiveTab('projectCard');
+                              }}
+                              className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md p-3 rounded-[20px] border border-zinc-200/60 dark:border-zinc-800/60 border-l-4 text-[var(--ink)] transition-all duration-300 hover:scale-[1.01] cursor-pointer shadow-xs"
+                              style={{ borderLeftColor: borderCol }}
+                            >
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="font-semibold text-xs text-[var(--ink)]">{ev.title}</span>
+                                <span className="text-[10px] font-bold text-[#8C52D0] dark:text-purple-300 bg-purple-100/80 dark:bg-purple-950/60 px-2 py-0.5 rounded-full">{ev.time}</span>
+                              </div>
+                              <p className="text-xs text-[var(--soft)]">{ev.desc}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Tasks and Notes List */}
+                    {(() => {
+                      const dayStr = selectedCalendarDay < 10 ? `0${selectedCalendarDay}` : `${selectedCalendarDay}`;
+                      const monthStr = (calendarMonth + 1) < 10 ? `0${calendarMonth + 1}` : `${calendarMonth + 1}`;
+                      const selectedFullDate = `${calendarYear}-${monthStr}-${dayStr}`;
+
+                      const itemsForDate = globalProjectTasksNotes.filter((item: any) => {
+                        if (!item.dueDate) return false;
+                        return item.dueDate === selectedFullDate || item.dueDate.endsWith(`-${monthStr}-${dayStr}`);
+                      });
+
+                      const activeList = sidebarTaskFilter === 'date' ? itemsForDate : globalProjectTasksNotes;
+                      const hasEvents = calendarEvents[selectedCalendarDay] && calendarEvents[selectedCalendarDay].length > 0;
+
+                      if (activeList.length === 0 && !hasEvents) {
+                        return (
+                          <div className="bg-white/30 dark:bg-zinc-900/30 p-4 rounded-[20px] border border-zinc-200/40 dark:border-zinc-800/40 text-center space-y-2">
+                            <CheckSquare className="w-5 h-5 mx-auto text-[var(--soft)] opacity-40" />
+                            <p className="text-xs text-[var(--soft)]">
+                              {sidebarTaskFilter === 'date'
+                                ? `На ${selectedCalendarDay} ${monthNamesGenitive[calendarMonth]} нет записей.`
+                                : 'Журнал задач пуст.'}
+                            </p>
+                            {sidebarTaskFilter === 'date' && globalProjectTasksNotes.length > 0 && (
+                              <button
+                                onClick={() => setSidebarTaskFilter('all')}
+                                className="text-[10px] font-bold text-[#8C52D0] dark:text-purple-300 hover:underline cursor-pointer"
+                              >
+                                Показать все записи ({globalProjectTasksNotes.length})
+                              </button>
+                            )}
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div className="space-y-2">
+                          {activeList.map((item: any) => {
+                            const isTask = item.type === 'task';
+                            const isCompleted = item.completed;
+
+                            const categoryBadges: Record<string, string> = {
+                              'Монтаж': 'bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300',
+                              'Закупка': 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300',
+                              'Смета': 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300',
+                              'Логистика': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300',
+                              'Клиент': 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300',
+                              'Важное': 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300',
+                              'Общее': 'bg-stone-100 text-stone-700 dark:bg-zinc-800 dark:text-stone-300'
+                            };
+                            const catClass = categoryBadges[item.category] || categoryBadges['Общее'];
+
+                            return (
+                              <div
+                                key={item.id}
+                                className={`bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md p-3 rounded-[20px] border border-zinc-200/60 dark:border-zinc-800/60 transition-all duration-300 hover:scale-[1.01] shadow-xs ${
+                                  isCompleted ? 'opacity-50' : ''
+                                }`}
+                              >
+                                <div className="flex items-start gap-2.5">
+                                  {isTask ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleToggleGlobalTaskNote(item.id)}
+                                      className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 cursor-pointer transition-all ${
+                                        isCompleted
+                                          ? 'bg-emerald-500 border-emerald-500 text-white'
+                                          : 'border-zinc-400 dark:border-zinc-600 hover:border-[#8C52D0] bg-white/50'
+                                      }`}
+                                    >
+                                      {isCompleted && <Check className="w-3 h-3 stroke-[3]" />}
+                                    </button>
+                                  ) : (
+                                    <div className="w-4 h-4 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-300 flex items-center justify-center shrink-0 mt-0.5">
+                                      <FileText className="w-2.5 h-2.5" />
+                                    </div>
+                                  )}
+
+                                  <div className="flex-1 min-w-0 space-y-1.5">
+                                    <p className={`text-xs font-semibold text-[var(--ink)] leading-snug ${isCompleted ? 'line-through text-[var(--faint)]' : ''}`}>
+                                      {item.title}
+                                    </p>
+
+                                    <div className="flex items-center flex-wrap gap-1 text-[10px] font-medium">
+                                      <button
+                                        onClick={() => {
+                                          const found = projects.find(p => p.id === item.projectId || p.name === item.projectName);
+                                          if (found) {
+                                            setSelectedProject(found);
+                                            setActiveTab('projectCard');
+                                          }
+                                        }}
+                                        className="px-2 py-0.5 rounded-full bg-purple-100/80 dark:bg-purple-900/40 text-[#582F89] dark:text-purple-300 font-semibold hover:underline truncate max-w-[120px] cursor-pointer"
+                                      >
+                                        {item.projectName || 'Проект'}
+                                      </button>
+
+                                      <span className={`px-2 py-0.5 rounded-full font-medium ${catClass}`}>
+                                        {item.category}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
+              ) : (
+                /* STATISTICS SIDEBAR WIDGET */
+                <SidebarStatisticsWidget
+                  projects={projects}
+                  onOpenFullScreen={() => setActiveTab('statistics')}
+                />
+              )}
 
             </div>
           ) : (
-            /* COLLAPSED CONTENT (Shown only when sidebar is w-14) */
+            /* COLLAPSED CONTENT (EXACTLY TWO ICONS) */
             <div className="flex flex-col items-center gap-3.5 w-full">
-              {/* Collapsed Toggle Button aligned analogously to left sidebar */}
+              {/* Expand Toggle Button */}
               <button
                 onClick={() => setIsRightSidebarExpanded(true)}
                 title="Развернуть боковую панель"
@@ -2801,36 +2589,41 @@ export default function App() {
 
               <div className="w-6 h-px bg-[var(--glass-edge)]" style={{ background: 'var(--line)' }} />
 
-              {/* Collapsed Task Indicator with Badge */}
+              {/* Icon 1: Calendar & Tasks Combined */}
               <button
-                onClick={() => setIsRightSidebarExpanded(true)}
-                title={`Задачи на сегодня (${tasks.filter(t => !t.completed).length} активных)`}
-                className="relative w-8 h-8 rounded-full bg-white/20 dark:bg-black/20 hover:bg-[var(--lavenderSoft)] dark:hover:bg-zinc-800 flex items-center justify-center text-[var(--soft)] hover:text-[var(--lavDeep)] transition-all cursor-pointer"
+                onClick={() => {
+                  setRightSidebarTab('calendar');
+                  setIsRightSidebarExpanded(true);
+                }}
+                title={`Календарь и задачи (${tasks.filter(t => !t.completed).length} активных)`}
+                className={`relative w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                  isRightSidebarExpanded && rightSidebarTab === 'calendar'
+                    ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-md'
+                    : 'bg-white/30 dark:bg-zinc-800/60 hover:bg-[var(--lavenderSoft)] dark:hover:bg-zinc-700 text-[var(--soft)] hover:text-[var(--lavDeep)]'
+                }`}
               >
-                <CheckSquare className="w-3.5 h-3.5" />
+                <Calendar className="w-4 h-4" />
                 {tasks.filter(t => !t.completed).length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-[var(--warn)] text-[8px] font-bold text-white flex items-center justify-center shadow-sm">
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-[9px] font-extrabold text-white flex items-center justify-center shadow-xs border border-white dark:border-zinc-900">
                     {tasks.filter(t => !t.completed).length}
                   </span>
                 )}
               </button>
 
-              {/* Collapsed Calendar Trigger */}
+              {/* Icon 2: Statistics */}
               <button
-                onClick={() => setIsRightSidebarExpanded(true)}
-                title="Календарь на Июль"
-                className="w-8 h-8 rounded-full bg-white/20 dark:bg-black/20 hover:bg-[var(--lavenderSoft)] dark:hover:bg-zinc-800 flex items-center justify-center text-[var(--soft)] hover:text-[var(--lavDeep)] transition-all cursor-pointer"
+                onClick={() => {
+                  setRightSidebarTab('statistics');
+                  setIsRightSidebarExpanded(true);
+                }}
+                title="Статистика и отчеты"
+                className={`w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                  isRightSidebarExpanded && rightSidebarTab === 'statistics'
+                    ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-md'
+                    : 'bg-white/30 dark:bg-zinc-800/60 hover:bg-[var(--lavenderSoft)] dark:hover:bg-zinc-700 text-[var(--soft)] hover:text-[var(--lavDeep)]'
+                }`}
               >
-                <Calendar className="w-3.5 h-3.5" />
-              </button>
-              
-              {/* Quick Statistics Trigger */}
-              <button
-                onClick={() => showToast('Статистика', 'Раздел отчетов сейчас формируется.', 'info')}
-                title="Статистика за месяц"
-                className="w-8 h-8 rounded-full bg-white/20 dark:bg-black/20 hover:bg-[var(--lavenderSoft)] dark:hover:bg-zinc-800 flex items-center justify-center text-[var(--soft)] hover:text-[var(--lavDeep)] transition-all cursor-pointer"
-              >
-                <TrendingUp className="w-3.5 h-3.5" />
+                <TrendingUp className="w-4 h-4" />
               </button>
             </div>
           )}
