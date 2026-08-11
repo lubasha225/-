@@ -989,7 +989,7 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
                       initial={{ opacity: 0, y: 8, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                      className="absolute left-0 sm:left-auto sm:right-0 top-full mt-2 z-50 w-72 p-3 rounded-2xl bg-white dark:bg-zinc-900 border border-purple-200 dark:border-purple-900/60 shadow-2xl space-y-2"
+                      className="fixed top-16 right-3 left-3 sm:left-auto sm:right-0 sm:absolute sm:top-full sm:mt-2 sm:w-80 bg-white/75 dark:bg-zinc-900/80 backdrop-blur-xl border border-white/70 dark:border-zinc-800/70 rounded-[24px] shadow-2xl p-4 z-50 space-y-3"
                     >
                       <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-2">
                         <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">

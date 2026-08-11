@@ -909,7 +909,7 @@ export default function App() {
               initial={{ opacity: 0, y: 8, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 8, scale: 0.95 }}
-              className="absolute right-0 top-full mt-2 w-80 bg-white/90 dark:bg-zinc-900/95 backdrop-blur-2xl border border-white/80 dark:border-zinc-700/80 rounded-2xl shadow-2xl p-4 z-40 space-y-3"
+              className="fixed top-16 right-3 left-3 sm:left-auto sm:right-0 sm:absolute sm:top-full sm:mt-2 sm:w-80 bg-white/75 dark:bg-zinc-900/80 backdrop-blur-xl border border-white/70 dark:border-zinc-800/70 rounded-[24px] shadow-2xl p-4 z-40 space-y-3"
             >
               <div className="flex justify-between items-center pb-2 border-b border-[var(--glass-edge)]">
                 <span className="text-xs font-semibold text-[var(--ink)]">События клиентов</span>
@@ -981,7 +981,7 @@ export default function App() {
                 initial={{ opacity: 0, y: 8, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                className="absolute right-0 top-full mt-2 w-80 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl border border-white/80 dark:border-zinc-700/80 rounded-2xl shadow-2xl p-4 z-40 space-y-3"
+                className="fixed top-16 right-3 left-3 sm:left-auto sm:right-0 sm:absolute sm:top-full sm:mt-2 sm:w-80 bg-white/75 dark:bg-zinc-900/80 backdrop-blur-xl border border-white/70 dark:border-zinc-800/70 rounded-[24px] shadow-2xl p-4 z-40 space-y-3"
               >
                 {/* Header Switcher: Calendar | Statistics */}
                 <div className="flex bg-zinc-100 dark:bg-zinc-800/80 p-1 rounded-xl gap-1 border border-zinc-200/60 dark:border-zinc-700/60">
