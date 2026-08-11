@@ -1963,8 +1963,8 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
         <div className="space-y-6">
           {/* 1. БЛОК: ЗАПОЛНЕНИЕ ДАННЫХ КЛИЕНТА */}
           <div className="p-5 sm:p-6 bg-white/60 dark:bg-zinc-950/40 rounded-[28px] border border-zinc-200/60 dark:border-zinc-800/80 shadow-2xs backdrop-blur-md space-y-5">
-            <div className="flex flex-col gap-3 pb-3 border-b border-zinc-200/40 dark:border-zinc-800/40">
-              <div className="w-full">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-zinc-200/40 dark:border-zinc-800/40">
+              <div>
                 <h4 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
                   Заполнение данных клиента
                 </h4>
@@ -1974,7 +1974,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
               </div>
 
               {/* PAYER TYPE SELECTOR SWITCH */}
-              <div className="flex items-center gap-1.5 p-1 bg-zinc-100 dark:bg-zinc-800/80 rounded-full border border-zinc-200/60 dark:border-zinc-700/60 self-start overflow-x-auto no-scrollbar max-w-full touch-pan-x">
+              <div className="flex items-center gap-1 p-1 bg-zinc-100 dark:bg-zinc-800/80 rounded-full border border-zinc-200/60 dark:border-zinc-700/60 self-start overflow-x-auto no-scrollbar max-w-full touch-pan-x sm:w-full sm:grid sm:grid-cols-4 lg:w-auto lg:flex lg:self-auto shrink-0">
                 {(
                   [
                     { id: 'individual', label: 'Физлицо' },
@@ -1987,7 +1987,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
                     key={item.id}
                     type="button"
                     onClick={() => setPayerType(item.id)}
-                    className={`px-3.5 py-1.5 rounded-full text-xs transition-all duration-200 whitespace-nowrap cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-full text-xs transition-all duration-200 whitespace-nowrap cursor-pointer text-center flex items-center justify-center ${
                       payerType === item.id
                         ? 'bg-[#8C52D0] text-white font-semibold shadow-xs'
                         : 'text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium'

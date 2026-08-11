@@ -278,6 +278,7 @@ export default function App() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isHeaderCalendarOpen, setIsHeaderCalendarOpen] = useState(false);
+  const [headerMenuTab, setHeaderMenuTab] = useState<'calendar' | 'statistics'>('calendar');
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(2);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isMobileProfileMenuOpen, setIsMobileProfileMenuOpen] = useState(false);
@@ -843,6 +844,7 @@ export default function App() {
                   { value: 'projects', label: 'Мои проекты', icon: <FolderKanban className="w-4 h-4" /> },
                   { value: 'moodboard', label: 'Редактор', icon: <Layout className="w-4 h-4" /> },
                   { value: 'calendar', label: 'Календарь', icon: <Calendar className="w-4 h-4" /> },
+                  { value: 'statistics', label: 'Статистика', icon: <TrendingUp className="w-4 h-4" /> },
                   { value: 'warehouse', label: 'Мой склад', icon: <Warehouse className="w-4 h-4" /> },
                   { value: 'images', label: 'Мои изображения', icon: <ImageIcon className="w-4 h-4" /> },
                   { value: 'documents', label: 'Мои документы', icon: <FileText className="w-4 h-4" /> },
@@ -945,81 +947,190 @@ export default function App() {
     </div>
   );
 
-  const renderHeaderCalendarButton = () => (
-    <div className="relative">
-      <button
-        onClick={() => {
-          setIsHeaderCalendarOpen(!isHeaderCalendarOpen);
-          setIsNotificationsOpen(false);
-        }}
-        aria-label="Календарь"
-        title="Календарь событий декоратора"
-        className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full glass-panel flex items-center justify-center transition-all shadow-xs cursor-pointer ${
-          activeTab === 'calendar' || isHeaderCalendarOpen
-            ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white'
-            : 'text-[var(--ink)] hover:text-[var(--lavDeep)] hover:bg-white/90 dark:hover:bg-zinc-800'
-        }`}
-      >
-        <Calendar className={`w-4 h-4 shrink-0 ${activeTab === 'calendar' || isHeaderCalendarOpen ? 'text-white' : 'text-[var(--ink)] dark:text-zinc-200'}`} />
-      </button>
+  const renderHeaderCalendarButton = () => {
+    const isCurrentActive = activeTab === 'calendar' || activeTab === 'statistics' || isHeaderCalendarOpen;
+    const isStatsMode = activeTab === 'statistics' || (isHeaderCalendarOpen && headerMenuTab === 'statistics');
 
-      <AnimatePresence>
-        {isHeaderCalendarOpen && (
-          <>
-            <div className="fixed inset-0 z-30" onClick={() => setIsHeaderCalendarOpen(false)} />
-            <motion.div
-              initial={{ opacity: 0, y: 8, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 8, scale: 0.95 }}
-              className="absolute right-0 top-full mt-2 w-80 bg-white/90 dark:bg-zinc-900/95 backdrop-blur-2xl border border-white/80 dark:border-zinc-700/80 rounded-2xl shadow-2xl p-4 z-40 space-y-3"
-            >
-              <div className="flex justify-between items-center pb-2 border-b border-[var(--glass-edge)]">
-                <span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
-                  <Calendar className="w-4 h-4 text-[var(--lavenderAccent)]" /> {monthNames[calendarMonth]} {calendarYear}
-                </span>
-                <button
-                  onClick={() => {
-                    setActiveTab('calendar');
-                    setIsHeaderCalendarOpen(false);
-                  }}
-                  className="text-xs text-[var(--lavenderAccent)] font-semibold hover:underline cursor-pointer"
-                >
-                  Открыть весь календарь
-                </button>
-              </div>
+    return (
+      <div className="relative">
+        <button
+          onClick={() => {
+            setIsHeaderCalendarOpen(!isHeaderCalendarOpen);
+            setIsNotificationsOpen(false);
+          }}
+          aria-label="Календарь и Статистика"
+          title="Календарь и Статистика"
+          className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full glass-panel flex items-center justify-center transition-all shadow-xs cursor-pointer ${
+            isCurrentActive
+              ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white'
+              : 'text-[var(--ink)] hover:text-[var(--lavDeep)] hover:bg-white/90 dark:hover:bg-zinc-800'
+          }`}
+        >
+          {isStatsMode ? (
+            <TrendingUp className={`w-4 h-4 shrink-0 ${isCurrentActive ? 'text-white' : 'text-[var(--ink)] dark:text-zinc-200'}`} />
+          ) : (
+            <Calendar className={`w-4 h-4 shrink-0 ${isCurrentActive ? 'text-white' : 'text-[var(--ink)] dark:text-zinc-200'}`} />
+          )}
+        </button>
 
-              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                {Object.entries(calendarEvents).length === 0 ? (
-                  <p className="text-xs text-[var(--soft)] italic py-3 text-center">В этом месяце нет проектов с датами.</p>
-                ) : (
-                  Object.entries(calendarEvents).map(([dayNum, events]) => (
-                    <div
-                      key={dayNum}
+        <AnimatePresence>
+          {isHeaderCalendarOpen && (
+            <>
+              <div className="fixed inset-0 z-30" onClick={() => setIsHeaderCalendarOpen(false)} />
+              <motion.div
+                initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                className="absolute right-0 top-full mt-2 w-80 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl border border-white/80 dark:border-zinc-700/80 rounded-2xl shadow-2xl p-4 z-40 space-y-3"
+              >
+                {/* Header Switcher: Calendar | Statistics */}
+                <div className="flex bg-zinc-100 dark:bg-zinc-800/80 p-1 rounded-xl gap-1 border border-zinc-200/60 dark:border-zinc-700/60">
+                  <button
+                    type="button"
+                    onClick={() => setHeaderMenuTab('calendar')}
+                    className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      headerMenuTab === 'calendar'
+                        ? 'bg-white dark:bg-zinc-700 text-[#8C52D0] dark:text-purple-300 shadow-xs'
+                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                    }`}
+                  >
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>Календарь</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHeaderMenuTab('statistics')}
+                    className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      headerMenuTab === 'statistics'
+                        ? 'bg-white dark:bg-zinc-700 text-[#8C52D0] dark:text-purple-300 shadow-xs'
+                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                    }`}
+                  >
+                    <TrendingUp className="w-3.5 h-3.5" />
+                    <span>Статистика</span>
+                  </button>
+                </div>
+
+                {/* TAB 1: CALENDAR CONTENT */}
+                {headerMenuTab === 'calendar' && (
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center pb-2 border-b border-[var(--glass-edge)]">
+                      <span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
+                        <Calendar className="w-4 h-4 text-[var(--lavenderAccent)]" /> {monthNames[calendarMonth]} {calendarYear}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveTab('calendar');
+                          setIsHeaderCalendarOpen(false);
+                        }}
+                        className="text-xs text-[var(--lavenderAccent)] font-semibold hover:underline cursor-pointer"
+                      >
+                        Открыть весь
+                      </button>
+                    </div>
+
+                    <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                      {Object.entries(calendarEvents).length === 0 ? (
+                        <p className="text-xs text-[var(--soft)] italic py-3 text-center">В этом месяце нет проектов с датами.</p>
+                      ) : (
+                        Object.entries(calendarEvents).map(([dayNum, events]) => (
+                          <div
+                            key={dayNum}
+                            onClick={() => {
+                              setSelectedCalendarDay(Number(dayNum));
+                              setActiveTab('calendar');
+                              setIsHeaderCalendarOpen(false);
+                            }}
+                            className="p-2.5 rounded-xl bg-white/60 dark:bg-zinc-800/60 border border-[var(--glass-edge)] hover:border-[var(--lavenderAccent)] cursor-pointer transition-all space-y-1 text-left"
+                          >
+                            <div className="flex justify-between items-center">
+                              <span className="font-bold text-xs text-[var(--lavDeep)] dark:text-purple-300">{dayNum} {monthNamesGenitive[calendarMonth]} {calendarYear}</span>
+                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--lavenderSoft)] text-[var(--lavDeep)]">
+                                {events[0]?.time}
+                              </span>
+                            </div>
+                            <div className="font-semibold text-xs text-[var(--ink)]">{events[0]?.title}</div>
+                            <p className="text-[11px] text-[var(--soft)] line-clamp-1">{events[0]?.desc}</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
                       onClick={() => {
-                        setSelectedCalendarDay(Number(dayNum));
                         setActiveTab('calendar');
                         setIsHeaderCalendarOpen(false);
                       }}
-                      className="p-2.5 rounded-xl bg-white/60 dark:bg-zinc-800/60 border border-[var(--glass-edge)] hover:border-[var(--lavenderAccent)] cursor-pointer transition-all space-y-1 text-left"
+                      className="w-full py-2 rounded-xl bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white text-xs font-semibold shadow-xs hover:opacity-95 cursor-pointer transition-all flex items-center justify-center gap-1.5"
                     >
-                      <div className="flex justify-between items-center">
-                        <span className="font-bold text-xs text-[var(--lavDeep)] dark:text-purple-300">{dayNum} {monthNamesGenitive[calendarMonth]} {calendarYear}</span>
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--lavenderSoft)] text-[var(--lavDeep)]">
-                          {events[0]?.time}
+                      <span>Перейти в Календарь</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+
+                {/* TAB 2: STATISTICS CONTENT */}
+                {headerMenuTab === 'statistics' && (
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center pb-2 border-b border-[var(--glass-edge)]">
+                      <span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
+                        <TrendingUp className="w-4 h-4 text-[var(--lavenderAccent)]" /> Обзор показателей
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveTab('statistics');
+                          setIsHeaderCalendarOpen(false);
+                        }}
+                        className="text-xs text-[var(--lavenderAccent)] font-semibold hover:underline cursor-pointer"
+                      >
+                        Вся статистика
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="p-3 rounded-xl bg-white/60 dark:bg-zinc-800/60 border border-[var(--glass-edge)] space-y-1">
+                        <span className="text-[10px] text-[var(--soft)] font-medium block">Активные проекты</span>
+                        <span className="text-base font-bold text-[var(--ink)]">
+                          {projects.filter(p => p.status !== 'completed' && p.status !== 'archived').length}
                         </span>
                       </div>
-                      <div className="font-semibold text-xs text-[var(--ink)]">{events[0]?.title}</div>
-                      <p className="text-[11px] text-[var(--soft)] line-clamp-1">{events[0]?.desc}</p>
+                      <div className="p-3 rounded-xl bg-white/60 dark:bg-zinc-800/60 border border-[var(--glass-edge)] space-y-1">
+                        <span className="text-[10px] text-[var(--soft)] font-medium block">Завершенные</span>
+                        <span className="text-base font-bold text-emerald-600 dark:text-emerald-400">
+                          {projects.filter(p => p.status === 'completed').length}
+                        </span>
+                      </div>
+                      <div className="col-span-2 p-3 rounded-xl bg-white/60 dark:bg-zinc-800/60 border border-[var(--glass-edge)] space-y-1">
+                        <span className="text-[10px] text-[var(--soft)] font-medium block">Общий бюджет проектов</span>
+                        <span className="text-base font-bold text-[#8C52D0] dark:text-purple-300">
+                          {projects.reduce((acc, p) => acc + (p.totalCost || 0), 0).toLocaleString('ru-RU')} ₽
+                        </span>
+                      </div>
                     </div>
-                  ))
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('statistics');
+                        setIsHeaderCalendarOpen(false);
+                      }}
+                      className="w-full py-2 rounded-xl bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white text-xs font-semibold shadow-xs hover:opacity-95 cursor-pointer transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <span>Перейти к Статистике</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 )}
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </div>
-  );
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  };
 
   return (
     <div className="flex relative w-screen h-screen overflow-hidden bg-transparent font-sans transition-colors duration-300">

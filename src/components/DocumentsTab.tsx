@@ -425,7 +425,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
           </div>
 
           {/* ENTITY SELECTOR SWITCH (ONLY IP / OOO / SELF-EMPLOYED) */}
-          <div className="flex items-center gap-1.5 p-1 bg-zinc-100 dark:bg-zinc-800/80 rounded-full border border-zinc-200/60 dark:border-zinc-700/60 self-start lg:self-auto overflow-x-auto no-scrollbar max-w-full touch-pan-x shrink-0">
+          <div className="flex items-center gap-1 p-1 bg-zinc-100 dark:bg-zinc-800/80 rounded-full border border-zinc-200/60 dark:border-zinc-700/60 self-start overflow-x-auto no-scrollbar max-w-full touch-pan-x sm:w-full sm:grid sm:grid-cols-3 lg:w-auto lg:flex lg:self-auto shrink-0">
             {[
               { id: 'ip', label: 'ИП' },
               { id: 'ooo', label: 'ООО' },
@@ -435,7 +435,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                 key={item.id}
                 type="button"
                 onClick={() => setEntityType(item.id as DecoratorEntityType)}
-                className={`px-3.5 py-1.5 rounded-full text-xs transition-all duration-200 cursor-pointer ${
+                className={`px-3 py-1.5 rounded-full text-xs transition-all duration-200 cursor-pointer text-center flex items-center justify-center ${
                   entityType === item.id
                     ? 'bg-[#8C52D0] text-white font-semibold shadow-xs'
                     : 'text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium'
