@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { EditorSketchCanvasPreview } from './EditorSketchCanvasPreview';
+import { SketchLightboxModal } from './SketchLightboxModal';
+import { toJpeg } from 'html-to-image';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   X,
@@ -354,10 +356,56 @@ export default function ProjectDetailModal({
 
   // Carousel state for Visualizations
   const [vizIndex, setVizIndex] = useState<number>(0);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const modalSketchRef = useRef<HTMLDivElement>(null);
+
+  const handleDownloadModalSketch = async (item: any, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const title = item?.title || 'эскиз_декоратора';
+    const filename = `${title.toLowerCase().replace(/\s+/g, '_')}.jpg`;
+
+    if (item?.image && (item.image.startsWith('data:') || item.image.startsWith('http'))) {
+      const link = document.createElement('a');
+      link.href = item.image;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('Скачивание', 'Сохранение эскиза на ваш компьютер...', 'success');
+      return;
+    }
+
+    if (modalSketchRef.current) {
+      try {
+        const capturedDataUrl = await toJpeg(modalSketchRef.current, { quality: 0.95, cacheBust: true });
+        const link = document.createElement('a');
+        link.href = capturedDataUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast('Скачивание', 'Эскиз сохранен на ваш компьютер', 'success');
+        return;
+      } catch (err) {
+        console.error('Error capturing sketch for download:', err);
+      }
+    }
+
+    if (item?.image) {
+      const link = document.createElement('a');
+      link.href = item.image;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('Скачивание', 'Сохранение эскиза на ваш компьютер...', 'success');
+    }
+  };
   const visualizations = (project?.scenesData && project.scenesData.length > 0)
     ? project.scenesData.map((sc: any, i: number) => {
-        const rawImg = sc.backdropImage || sc.image || sc.imageUrl || '';
-        const img = (rawImg && !rawImg.includes('unsplash')) ? rawImg : '';
+        const rawImg = sc.previewUrl || sc.image || sc.imageUrl || sc.backdropImage || '';
+        const img = (rawImg && !rawImg.includes('unsplash')) ? rawImg : (project?.imageUrl && !project.imageUrl.includes('unsplash') ? project.imageUrl : '');
         return {
           id: sc.id || i + 1,
           title: sc.name ? sc.name.toUpperCase() : `ВИЗУАЛИЗАЦИЯ ${i + 1}`,
@@ -1554,27 +1602,51 @@ export default function ProjectDetailModal({
                       </span>
                     </div>
 
-                    {/* VISUALIZATION CONTENT AREA (CLICKABLE -> OPENS EDITOR) */}
+                    {/* VISUALIZATION CONTENT AREA (CLICKABLE -> OPENS LIGHTBOX VIEWER) */}
                     <div
                       onClick={() => {
-                        showToast('Редактор визуализации', `Переход в редактор: ${visualizations[vizIndex].title}`, 'info');
-                        if (onOpenEditor) onOpenEditor();
+                        setLightboxIndex(vizIndex % visualizations.length);
+                        setIsLightboxOpen(true);
                       }}
                       className="w-full flex-1 flex items-center justify-center my-1 px-1 cursor-pointer group"
-                      title="Нажмите, чтобы открыть визуализацию в редакторе"
+                      title="Нажмите, чтобы развернуть эскиз во весь экран"
                     >
                       <div className="aspect-square w-full max-w-[280px] sm:max-w-[300px] overflow-hidden rounded-2xl border border-stone-200/80 dark:border-zinc-800 shadow-xs relative transition-all duration-300 group-hover:shadow-md group-hover:border-[#8C52D0]">
-                        <EditorSketchCanvasPreview
-                          title={visualizations[vizIndex % visualizations.length]?.title}
-                          subtitle={visualizations[vizIndex % visualizations.length]?.subtitle}
-                          sceneIndex={visualizations[vizIndex % visualizations.length]?.sceneIndex ?? (vizIndex % visualizations.length)}
-                          image={visualizations[vizIndex % visualizations.length]?.image}
-                          sceneData={visualizations[vizIndex % visualizations.length]?.sceneData}
-                          elements={visualizations[vizIndex % visualizations.length]?.elements}
-                        />
-                        {/* HOVER BADGE */}
-                        <div className="absolute top-2 right-2 z-30 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/60 dark:bg-black/75 backdrop-blur-md text-white text-[9px] font-bold px-2.5 py-1 rounded-full shadow-md flex items-center gap-1 border border-white/20">
-                          <Edit2 className="w-2.5 h-2.5" /> Редактировать
+                        <div ref={modalSketchRef} className="w-full h-full">
+                          <EditorSketchCanvasPreview
+                            title={visualizations[vizIndex % visualizations.length]?.title}
+                            subtitle={visualizations[vizIndex % visualizations.length]?.subtitle}
+                            sceneIndex={visualizations[vizIndex % visualizations.length]?.sceneIndex ?? (vizIndex % visualizations.length)}
+                            image={visualizations[vizIndex % visualizations.length]?.image}
+                            sceneData={visualizations[vizIndex % visualizations.length]?.sceneData}
+                            elements={visualizations[vizIndex % visualizations.length]?.elements}
+                            showHuman={!!visualizations[vizIndex % visualizations.length]?.sceneData?.humanVisible}
+                          />
+                        </div>
+                        {/* HOVER BADGES */}
+                        <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2 p-3 z-30">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              showToast('Редактор визуализации', `Переход в редактор: ${visualizations[vizIndex % visualizations.length]?.title}`, 'info');
+                              if (onOpenEditor) onOpenEditor();
+                            }}
+                            style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                            className="rounded-full px-3.5 py-1.5 text-xs font-bold text-white flex items-center gap-1.5 cursor-pointer shadow-lg hover:scale-105 transition-all"
+                          >
+                            <Edit2 className="w-3.5 h-3.5 text-white" />
+                            <span>Редактировать</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={(e) => handleDownloadModalSketch(visualizations[vizIndex % visualizations.length], e)}
+                            className="rounded-full px-3.5 py-1.5 text-xs font-bold text-zinc-900 dark:text-white bg-white/90 dark:bg-zinc-800/90 hover:bg-white dark:hover:bg-zinc-700 flex items-center gap-1.5 cursor-pointer shadow-lg hover:scale-105 transition-all border border-zinc-200 dark:border-zinc-700"
+                          >
+                            <Download className="w-3.5 h-3.5 text-zinc-700 dark:text-zinc-200" />
+                            <span>Скачать</span>
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -2752,6 +2824,19 @@ export default function ProjectDetailModal({
         description={deleteConfirm.description}
         onClose={() => setDeleteConfirm(prev => ({ ...prev, isOpen: false }))}
         onConfirm={deleteConfirm.onConfirm}
+      />
+
+      <SketchLightboxModal
+        isOpen={isLightboxOpen}
+        onClose={() => setIsLightboxOpen(false)}
+        visualizations={visualizations}
+        currentIndex={lightboxIndex}
+        onIndexChange={(idx) => {
+          setLightboxIndex(idx);
+          setVizIndex(idx);
+        }}
+        onOpenEditor={onOpenEditor}
+        showToast={showToast}
       />
     </div>
   );

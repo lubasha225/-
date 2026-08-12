@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { EditorSketchCanvasPreview } from './EditorSketchCanvasPreview';
 import { PrivacyPolicyModal } from './PrivacyPolicyModal';
+import { SketchLightboxModal } from './SketchLightboxModal';
+import { toJpeg } from 'html-to-image';
 import {
   Clipboard,
   Send,
@@ -32,6 +34,39 @@ import {
   Wallet,
   CreditCard
 } from 'lucide-react';
+
+const downloadImageFile = async (url: string, filename = 'sketch.jpg') => {
+  try {
+    if (!url) return;
+    if (url.startsWith('data:')) {
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return;
+    }
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(blobUrl);
+  } catch (err) {
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+};
 
 interface BriefBlockProps {
   isOverview?: boolean;
@@ -99,11 +134,7 @@ export const BriefBlock: React.FC<BriefBlockProps> = ({
             <button
               type="button"
               onClick={() => {
-                if (!pdnConsent) {
-                  showToast?.('Требуется согласие', 'Пожалуйста, подтвердите согласие на обработку персональных данных (152-ФЗ)', 'warn');
-                  return;
-                }
-                showToast?.('Бриф отправлен', 'Ссылка на бриф скопирована. Данные передаются напрямую оператору (152-ФЗ)', 'success');
+                showToast?.('Бриф отправлен', 'Ссылка на бриф скопирована', 'success');
               }}
               style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
               className="w-8 h-8 sm:w-auto sm:h-8 sm:px-3.5 rounded-full text-white flex items-center justify-center gap-1.5 cursor-pointer transition-all duration-300 hover:shadow-md hover:scale-105 active:scale-95 shadow-xs shrink-0"
@@ -191,50 +222,7 @@ export const BriefBlock: React.FC<BriefBlockProps> = ({
               })}
             </div>
 
-            {/* PDN CONSENT & OPERATOR NOTICE (152-ФЗ) */}
-            <div className="mt-3.5 space-y-2.5">
-              <div className="p-3.5 bg-emerald-500/10 dark:bg-emerald-950/30 rounded-2xl border border-emerald-500/20 text-xs text-emerald-900 dark:text-emerald-200 font-normal leading-relaxed flex items-start gap-2.5">
-                <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-                <div>
-                  <strong>Сбор данных от субъекта ПДн (152-ФЗ):</strong> Кнопка «Отправить бриф» отправляет анкету клиенту для самостоятельного заполнения. Поступающие данные приходят напрямую от субъекта в форму на вашем домене, где вы выступаете оператором персональных данных.
-                </div>
-              </div>
 
-              <div className="p-3.5 bg-white/60 dark:bg-zinc-900/40 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs backdrop-blur-md">
-                <label className="flex items-start gap-2.5 cursor-pointer select-none group text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed">
-                  <input
-                    type="checkbox"
-                    checked={pdnConsent}
-                    onChange={(e) => setPdnConsent(e.target.checked)}
-                    className="mt-0.5 w-4 h-4 rounded text-[#8C52D0] focus:ring-[#8C52D0] border-zinc-300 dark:border-zinc-700 cursor-pointer accent-[#8C52D0]"
-                  />
-                  <span>
-                    Я даю согласие на <span className="font-semibold text-zinc-900 dark:text-zinc-100">обработку персональных данных</span> в соответствии с{' '}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setIsPrivacyModalOpen(true);
-                      }}
-                      className="text-[#8C52D0] dark:text-purple-400 font-semibold underline hover:text-[#582F89] transition-colors cursor-pointer"
-                    >
-                      Политикой конфиденциальности
-                    </button>{' '}
-                    (152-ФЗ)
-                  </span>
-                </label>
-
-                <button
-                  type="button"
-                  onClick={() => setIsPrivacyModalOpen(true)}
-                  className="text-[11px] text-zinc-600 dark:text-zinc-400 hover:text-[#8C52D0] dark:hover:text-purple-300 font-medium underline flex items-center gap-1 cursor-pointer shrink-0"
-                >
-                  <FileText className="w-3.5 h-3.5 text-[#8C52D0]" />
-                  <span>Открыть политику</span>
-                </button>
-              </div>
-            </div>
           </div>
 
           {/* SECTION 2: DECORATOR FIELDS */}
@@ -440,6 +428,9 @@ export const DesignBlock: React.FC<DesignBlockProps> = ({
   onOpenEditor
 }) => {
   const isCollapsed = isOverview && overviewCollapsed.design;
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(vizIndex);
+  const sketchPreviewRef = useRef<HTMLDivElement>(null);
 
   const currentViz = visualizations && visualizations.length > 0
     ? (visualizations[vizIndex] || visualizations[0])
@@ -448,6 +439,34 @@ export const DesignBlock: React.FC<DesignBlockProps> = ({
   const currentAiViz = aiVisualizations && aiVisualizations.length > 0
     ? (aiVisualizations[aiVizIndex] || aiVisualizations[0])
     : { title: 'ИИ Концепт', subtitle: 'Нет изображений', image: '' };
+
+  const handleDownloadSketch = async (item: any, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const title = item?.title || 'эскиз_декоратора';
+    const filename = `${title.toLowerCase().replace(/\s+/g, '_')}.jpg`;
+
+    if (item?.image && (item.image.startsWith('data:') || item.image.startsWith('http'))) {
+      downloadImageFile(item.image, filename);
+      showToast?.('Скачивание', 'Сохранение эскиза на ваш компьютер...', 'success');
+      return;
+    }
+
+    if (sketchPreviewRef.current) {
+      try {
+        const capturedDataUrl = await toJpeg(sketchPreviewRef.current, { quality: 0.95, cacheBust: true });
+        downloadImageFile(capturedDataUrl, filename);
+        showToast?.('Скачивание', 'Эскиз сохранен на ваш компьютер', 'success');
+        return;
+      } catch (err) {
+        console.error('Error capturing sketch for download:', err);
+      }
+    }
+
+    if (item?.image) {
+      downloadImageFile(item.image, filename);
+      showToast?.('Скачивание', 'Сохранение эскиза на ваш компьютер...', 'success');
+    }
+  };
 
   return (
     <div className={isOverview ? "bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[28px] border border-zinc-200/50 dark:border-zinc-800/40 p-5 sm:p-6 shadow-xs transition-all space-y-6" : "space-y-6"}>
@@ -532,18 +551,27 @@ export const DesignBlock: React.FC<DesignBlockProps> = ({
                 </div>
               </div>
 
-              <div className="relative aspect-16/10 rounded-2xl overflow-hidden border border-zinc-200/80 dark:border-zinc-800 shadow-xs group cursor-pointer bg-zinc-100 dark:bg-zinc-800">
-                <EditorSketchCanvasPreview
-                  title={currentViz.title}
-                  subtitle={currentViz.subtitle}
-                  sceneIndex={currentViz.sceneIndex ?? vizIndex}
-                  image={currentViz.image}
-                  sceneData={currentViz.sceneData}
-                  elements={currentViz.elements}
-                />
+              <div
+                onClick={() => {
+                  setLightboxIndex(vizIndex);
+                  setIsLightboxOpen(true);
+                }}
+                className="relative aspect-16/10 rounded-2xl overflow-hidden border border-zinc-200/80 dark:border-zinc-800 shadow-xs group cursor-pointer bg-zinc-100 dark:bg-zinc-800"
+              >
+                <div ref={sketchPreviewRef} className="w-full h-full">
+                  <EditorSketchCanvasPreview
+                    title={currentViz.title}
+                    subtitle={currentViz.subtitle}
+                    sceneIndex={currentViz.sceneIndex ?? vizIndex}
+                    image={currentViz.image}
+                    sceneData={currentViz.sceneData}
+                    elements={currentViz.elements}
+                    showHuman={!!currentViz.sceneData?.humanVisible}
+                  />
+                </div>
 
-                {/* HOVER EDIT OVERLAY BUTTON */}
-                <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-3 z-30">
+                {/* HOVER EDIT & DOWNLOAD OVERLAY BUTTONS */}
+                <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2.5 p-3 z-30">
                   <button
                     type="button"
                     onClick={(e) => {
@@ -559,6 +587,15 @@ export const DesignBlock: React.FC<DesignBlockProps> = ({
                   >
                     <SlidersHorizontal className="w-3.5 h-3.5 text-white" />
                     <span>Редактировать</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={(e) => handleDownloadSketch(currentViz, e)}
+                    className="rounded-full px-4 py-2 text-xs font-bold text-zinc-900 dark:text-white bg-white/90 dark:bg-zinc-800/90 hover:bg-white dark:hover:bg-zinc-700 flex items-center gap-1.5 cursor-pointer shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:scale-105 border border-zinc-200 dark:border-zinc-700"
+                  >
+                    <Download className="w-3.5 h-3.5 text-zinc-700 dark:text-zinc-200" />
+                    <span>Скачать</span>
                   </button>
                 </div>
               </div>
@@ -665,6 +702,19 @@ export const DesignBlock: React.FC<DesignBlockProps> = ({
           </div>
         </div>
       )}
+
+      <SketchLightboxModal
+        isOpen={isLightboxOpen}
+        onClose={() => setIsLightboxOpen(false)}
+        visualizations={visualizations}
+        currentIndex={lightboxIndex}
+        onIndexChange={(idx) => {
+          setLightboxIndex(idx);
+          setVizIndex(idx);
+        }}
+        onOpenEditor={onOpenEditor}
+        showToast={showToast}
+      />
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { getStorageItem, getSyncStorageItem } from '../lib/asyncStorage';
 import { motion, AnimatePresence } from 'motion/react';
 import { toJpeg } from 'html-to-image';
 import {
@@ -43,6 +44,7 @@ import {
   CircleDot,
   Tag,
   Lightbulb,
+  Moon,
   AlignLeft,
   AlignCenter,
   AlignRight,
@@ -140,11 +142,26 @@ export interface CanvasElement {
   isFlippedV: boolean;
   svgMarkup: string;
   customImage?: string;
+  aspectRatioAdjusted?: boolean;
   groupId?: string;
   tintColor?: string;
   tintAmount?: number;
   tintMode?: 'color' | 'normal' | 'multiply' | 'overlay';
+  shadowEnabled?: boolean;
+  shadowX?: number;
+  shadowY?: number;
+  shadowBlur?: number;
+  shadowOpacity?: number;
+  shadowColor?: string;
 }
+
+const hexToRgba = (hex: string = '#000000', alpha: number = 0.5) => {
+  let c = hex.replace('#', '');
+  if (c.length === 3) c = c.split('').map(x => x + x).join('');
+  const num = parseInt(c, 16);
+  if (isNaN(num)) return `rgba(0, 0, 0, ${alpha})`;
+  return `rgba(${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}, ${alpha})`;
+};
 
 interface EditorScene {
   id: string;
@@ -215,13 +232,34 @@ const CategoryIcon: React.FC<{
 
   const iconSrc = customUserIcon || `/category-icons/${cat.id}.svg`;
 
+  useEffect(() => {
+    if (!iconSrc) {
+      setImgError(true);
+      return;
+    }
+    setImgError(false);
+    const img = new Image();
+    img.src = iconSrc;
+    img.onload = () => setImgError(false);
+    img.onerror = () => setImgError(true);
+  }, [iconSrc]);
+
   if (!imgError && iconSrc) {
     return (
-      <img
-        src={iconSrc}
-        alt={cat.title}
-        onError={() => setImgError(true)}
-        className="w-5 h-5 object-contain transition-transform group-hover:scale-110"
+      <div
+        style={{
+          maskImage: `url("${iconSrc}")`,
+          WebkitMaskImage: `url("${iconSrc}")`,
+          maskSize: 'contain',
+          WebkitMaskSize: 'contain',
+          maskPosition: 'center',
+          WebkitMaskPosition: 'center',
+          maskRepeat: 'no-repeat',
+          WebkitMaskRepeat: 'no-repeat',
+        }}
+        className="w-5 h-5 bg-[#8C52D0] dark:bg-[var(--lavenderAccent)] transition-transform group-hover:scale-110 shrink-0"
+        role="img"
+        aria-label={cat.title}
       />
     );
   }
@@ -335,7 +373,7 @@ const SCHEMA_LIBRARY_ITEMS: LibraryItem[] = [
     width: 100,
     height: 55,
     caption: "Подиум",
-    svgMarkup: `<svg viewBox="0 0 100 55" class="w-full h-full"><path d="M 5 50 A 45 45 0 0 1 95 50 Z" fill="#F8FAFC" stroke="#475569" stroke-width="2"/><path d="M 20 50 A 30 30 0 0 1 80 50" fill="none" stroke="#475569" stroke-width="1.5" stroke-dasharray="3,3"/></svg>`
+    svgMarkup: `<svg viewBox="0 0 100 55" class="w-full h-full"><path d="M 0 55 A 50 55 0 0 1 100 55 Z" fill="#F8FAFC" stroke="#475569" stroke-width="2"/><path d="M 15 55 A 35 38 0 0 1 85 55" fill="none" stroke="#475569" stroke-width="1.5" stroke-dasharray="3,3"/></svg>`
   },
   {
     id: "schema-podium-rect",
@@ -346,7 +384,7 @@ const SCHEMA_LIBRARY_ITEMS: LibraryItem[] = [
     width: 100,
     height: 55,
     caption: "Подиум",
-    svgMarkup: `<svg viewBox="0 0 100 55" class="w-full h-full"><rect x="4" y="4" width="92" height="47" rx="4" fill="#F8FAFC" stroke="#475569" stroke-width="2"/><rect x="16" y="14" width="68" height="27" rx="2" fill="none" stroke="#475569" stroke-width="1.5"/></svg>`
+    svgMarkup: `<svg viewBox="0 0 100 55" class="w-full h-full"><rect x="0" y="0" width="100" height="55" rx="4" fill="#F8FAFC" stroke="#475569" stroke-width="2"/><rect x="12" y="10" width="76" height="35" rx="2" fill="none" stroke="#475569" stroke-width="1.5"/></svg>`
   },
   {
     id: "schema-stairs",
@@ -357,7 +395,7 @@ const SCHEMA_LIBRARY_ITEMS: LibraryItem[] = [
     width: 90,
     height: 50,
     caption: "Лестница",
-    svgMarkup: `<svg viewBox="0 0 90 50" class="w-full h-full"><rect x="4" y="4" width="82" height="42" rx="2" fill="#F8FAFC" stroke="#475569" stroke-width="2"/><line x1="4" y1="14" x2="86" y2="14" stroke="#475569" stroke-width="1.5"/><line x1="4" y1="24" x2="86" y2="24" stroke="#475569" stroke-width="1.5"/><line x1="4" y1="34" x2="86" y2="34" stroke="#475569" stroke-width="1.5"/></svg>`
+    svgMarkup: `<svg viewBox="0 0 90 50" class="w-full h-full"><rect x="0" y="0" width="90" height="50" rx="2" fill="#F8FAFC" stroke="#475569" stroke-width="2"/><line x1="0" y1="12" x2="90" y2="12" stroke="#475569" stroke-width="1.5"/><line x1="0" y1="25" x2="90" y2="25" stroke="#475569" stroke-width="1.5"/><line x1="0" y1="37" x2="90" y2="37" stroke="#475569" stroke-width="1.5"/></svg>`
   },
 
   // 3. Композиции (Compositions)
@@ -749,7 +787,7 @@ const SCHEMA_LIBRARY_ITEMS: LibraryItem[] = [
     width: 160,
     height: 30,
     caption: "250 см",
-    svgMarkup: `<svg viewBox="0 0 160 30" class="w-full h-full"><line x1="4" y1="4" x2="4" y2="26" stroke="#8C52D0" stroke-width="2.5" stroke-linecap="round"/><line x1="156" y1="4" x2="156" y2="26" stroke="#8C52D0" stroke-width="2.5" stroke-linecap="round"/><line x1="4" y1="15" x2="156" y2="15" stroke="#8C52D0" stroke-width="2.5"/><polygon points="4,15 14,10 14,20" fill="#8C52D0"/><polygon points="156,15 146,10 146,20" fill="#8C52D0"/><rect x="55" y="5" width="50" height="20" rx="10" fill="#FFFFFF" stroke="#8C52D0" stroke-width="1.5"/><text x="80" y="19" font-size="10" font-weight="bold" fill="#8C52D0" text-anchor="middle">250 см</text></svg>`
+    svgMarkup: `<svg viewBox="0 0 160 30" class="w-full h-full text-zinc-700 dark:text-zinc-200"><line x1="4" y1="4" x2="4" y2="26" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="156" y1="4" x2="156" y2="26" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="4" y1="15" x2="156" y2="15" stroke="currentColor" stroke-width="1.5"/><polygon points="4,15 12,11 12,19" fill="currentColor"/><polygon points="156,15 148,11 148,19" fill="currentColor"/><rect x="55" y="5" width="50" height="20" rx="10" fill="#FFFFFF" stroke="currentColor" stroke-width="1.2"/><text x="80" y="19" font-size="10" font-weight="bold" fill="currentColor" text-anchor="middle">250 см</text></svg>`
   },
 
   // 10. Вход/Выход (Entrance/Exit)
@@ -1102,6 +1140,39 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
     showToast('Новая визуализация', `Создана Виз. ${newSceneNum}`, 'info');
   };
 
+  const handleDeleteScene = (sceneId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    const vizScenes = scenes.filter(s => s.id !== 'floorplan');
+    if (vizScenes.length <= 1) {
+      const newSceneId = `scene-${Date.now()}`;
+      const newScene: EditorScene = {
+        id: newSceneId,
+        name: 'Визуализация 1',
+        elements: [],
+        backdropImage: '',
+        backdropColor: '#F3F4F6',
+        backdropType: 'color'
+      };
+      setScenes(prev => {
+        const floorplan = prev.find(s => s.id === 'floorplan');
+        return floorplan ? [newScene, floorplan] : [newScene];
+      });
+      setActiveWorkspaceTab(newSceneId);
+      showToast('Визуализация удалена', 'Создана новая чистая визуализация.', 'info');
+      return;
+    }
+
+    const remainingViz = vizScenes.filter(s => s.id !== sceneId);
+    setScenes(prev => prev.filter(s => s.id !== sceneId));
+
+    if (activeWorkspaceTab === sceneId) {
+      setActiveWorkspaceTab(remainingViz[0].id);
+    }
+    showToast('Визуализация удалена', 'Выбранная визуализация успешно удалена.', 'info');
+  };
+
   // Seating Arrangement Floor Plan
   const [floorPlanElements, setFloorPlanElements] = useState<PlanElement[]>(() => {
     const proj = projects.find(p => p.id === (initialProjectId || projects[0]?.id || ''));
@@ -1176,12 +1247,12 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
   // Active popovers & adjustment floating tools
   const [activeToolPopover, setActiveToolPopover] = useState<'group' | 'layers' | 'flip' | null>(null);
-  const [activeFilterTool, setActiveFilterTool] = useState<'brightness' | 'contrast' | 'saturate' | 'hue' | 'opacity' | 'temp' | 'zoom' | 'recolor' | null>(null);
+  const [activeFilterTool, setActiveFilterTool] = useState<'brightness' | 'contrast' | 'saturate' | 'hue' | 'opacity' | 'temp' | 'zoom' | 'recolor' | 'shadow' | null>(null);
   const [mobileDrawerTab, setMobileDrawerTab] = useState<'library' | 'layers' | null>(null);
   const [isBackdropPopoverOpen, setIsBackdropPopoverOpen] = useState<boolean>(false);
 
-  // Collapsible toolbars states (Right library panel stays open by default)
-  const [isLeftToolbarCollapsed, setIsLeftToolbarCollapsed] = useState<boolean>(true);
+  // Collapsible toolbars states (Left toolbar expanded by default now)
+  const [isLeftToolbarCollapsed, setIsLeftToolbarCollapsed] = useState<boolean>(false);
   const [isRightToolbarCollapsed, setIsRightToolbarCollapsed] = useState<boolean>(false);
   const [isColorZoomToolbarCollapsed, setIsColorZoomToolbarCollapsed] = useState<boolean>(false);
 
@@ -1198,6 +1269,31 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
   const [showCategoryIconManager, setShowCategoryIconManager] = useState<boolean>(false);
   const [itemToPreview, setItemToPreview] = useState<LibraryItem | null>(null);
   const categoryScrollRef = useRef<HTMLDivElement>(null);
+  const adjustedAspectIdsRef = useRef<Set<string>>(new Set());
+
+  // Sync with Admin Cabinet decor library items from IndexedDB / storage
+  const [adminDecorItems, setAdminDecorItems] = useState<any[]>(() => {
+    return getSyncStorageItem('admin_decor_library', []);
+  });
+
+  useEffect(() => {
+    getStorageItem<any[]>('admin_decor_library', []).then(items => {
+      setAdminDecorItems(items);
+    });
+
+    const handleUpdate = () => {
+      getStorageItem<any[]>('admin_decor_library', []).then(items => {
+        setAdminDecorItems(items);
+      });
+    };
+
+    window.addEventListener('storage', handleUpdate);
+    window.addEventListener('admin_library_updated', handleUpdate);
+    return () => {
+      window.removeEventListener('storage', handleUpdate);
+      window.removeEventListener('admin_library_updated', handleUpdate);
+    };
+  }, []);
 
   // Auto-sync selected category when switching between visualization and schema tabs
   useEffect(() => {
@@ -1216,13 +1312,32 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
   const [canvasWidthMm, setCanvasWidthMm] = useState<number>(6500);
   const [canvasHeightMm, setCanvasHeightMm] = useState<number>(4400);
   const [gridVisible, setGridVisible] = useState<boolean>(true);
-  const [humanVisible, setHumanVisible] = useState<boolean>(true);
-  const [humanPos, setHumanPos] = useState<{ x: number; y: number } | null>(null);
+  
+  // Per-scene human host silhouette settings (unlinked between Visualization and Scheme)
+  const activeHumanVisible = activeScene?.humanVisible ?? true;
+  const activeHumanPos = activeScene?.humanPos || null;
+  const activeHumanHeightCm = activeScene?.humanHeightCm || 175;
+
+  const updateActiveSceneHuman = (updates: { humanVisible?: boolean; humanPos?: { x: number; y: number } | null; humanHeightCm?: number }) => {
+    setScenes(prev => prev.map(s => {
+      if (s.id === activeScene.id) {
+        return {
+          ...s,
+          humanVisible: updates.humanVisible !== undefined ? updates.humanVisible : (s.humanVisible ?? true),
+          humanPos: updates.humanPos !== undefined ? (updates.humanPos !== null ? updates.humanPos : undefined) : s.humanPos,
+          humanHeightCm: updates.humanHeightCm !== undefined ? updates.humanHeightCm : (s.humanHeightCm || 175),
+        };
+      }
+      return s;
+    }));
+  };
+
   const [isDraggingHuman, setIsDraggingHuman] = useState<boolean>(false);
   const [activeUnit, setActiveUnit] = useState<'mm' | 'cm' | 'm'>('cm');
 
   // Measurement Tool States
   const [isDrawingMeasurement, setIsDrawingMeasurement] = useState<boolean>(false);
+  const [measureSubMode, setMeasureSubMode] = useState<'auto' | 'manual'>('auto');
   const [measureStartPos, setMeasureStartPos] = useState<{ x: number; y: number } | null>(null);
   const [measureCurrentPos, setMeasureCurrentPos] = useState<{ x: number; y: number } | null>(null);
   const [isMeasuring, setIsMeasuring] = useState<boolean>(false);
@@ -1503,6 +1618,235 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
     recordHistory(updated);
   };
 
+  const isInteractingWithElementRef = useRef(false);
+
+  // Deselect all active tools and selections on empty area click
+  const deselectAllAndTools = () => {
+    setSelectedIds([]);
+    setSelectedId(null);
+    setActiveToolPopover(null);
+    setActiveFilterTool(null);
+    setIsDrawingMeasurement(false);
+    setRotationInputId(null);
+    setEditingMeasurementId(null);
+    setIsBackdropPopoverOpen(false);
+  };
+
+  const handleDeselectIfEmptySpace = (e: React.MouseEvent) => {
+    if (isInteractingWithElementRef.current) return;
+    const target = e.target as HTMLElement;
+    if (
+      target.closest('button') ||
+      target.closest('input') ||
+      target.closest('select') ||
+      target.closest('textarea') ||
+      target.closest('label') ||
+      target.closest('[role="dialog"]') ||
+      target.closest('[data-tool-popover]') ||
+      target.closest('[data-toolbar]')
+    ) {
+      return;
+    }
+    deselectAllAndTools();
+  };
+
+  // Helper to apply automatic width & height measurement lines for a canvas element
+  const applyAutoMeasurements = (el: CanvasElement) => {
+    const wCm = Math.round(el.w);
+    const hCm = Math.round(el.h);
+    const wStr = activeUnit === 'm' ? `${(wCm / 100).toFixed(1)} м` : `${wCm} см`;
+    const hStr = activeUnit === 'm' ? `${(hCm / 100).toFixed(1)} м` : `${hCm} см`;
+
+    const horizY = Math.max(10, Math.round(el.y - 35));
+    const horizX = Math.round(el.x);
+    const vertX = Math.max(10, Math.round(el.x - 35));
+    const vertY = Math.round(el.y);
+
+    const horizElem: CanvasElement = {
+      id: `measurement-${Date.now()}-h`,
+      name: `Ширина: ${wStr}`,
+      type: 'measurement',
+      x: horizX,
+      y: horizY,
+      w: Math.max(20, wCm),
+      h: 30,
+      rotation: 0,
+      exposure: 0, hue: 0, temp: 0, saturate: 100, opacity: 100, price: 0, comment: '', code: 'MEAS-01',
+      caption: wStr,
+      measurementValue: wStr,
+      isLocked: false, isVisible: true, isFlippedH: false, isFlippedV: false, svgMarkup: ''
+    };
+
+    const vertElem: CanvasElement = {
+      id: `measurement-${Date.now()}-v`,
+      name: `Высота: ${hStr}`,
+      type: 'measurement',
+      x: vertX,
+      y: vertY,
+      w: Math.max(20, hCm),
+      h: 30,
+      rotation: 90,
+      exposure: 0, hue: 0, temp: 0, saturate: 100, opacity: 100, price: 0, comment: '', code: 'MEAS-01',
+      caption: hStr,
+      measurementValue: hStr,
+      isLocked: false, isVisible: true, isFlippedH: false, isFlippedV: false, svgMarkup: ''
+    };
+
+    updateActiveSceneElements(prev => [...prev, horizElem, vertElem]);
+    showToast('Автозамер нанесен', `${el.name || 'Объект'}: ${wStr} × ${hStr}`, 'success');
+  };
+
+  const applyAutoMeasurementsForSelection = () => {
+    if (selectedIds.length > 1) {
+      const selectedElements = activeScene.elements.filter(el => selectedIds.includes(el.id) && el.isVisible);
+      if (selectedElements.length === 0) return;
+      const minX = Math.min(...selectedElements.map(el => el.x));
+      const maxX = Math.max(...selectedElements.map(el => el.x + el.w));
+      const minY = Math.min(...selectedElements.map(el => el.y));
+      const maxY = Math.max(...selectedElements.map(el => el.y + el.h));
+      const totalW = Math.round(maxX - minX);
+      const totalH = Math.round(maxY - minY);
+
+      const syntheticElem: CanvasElement = {
+        ...selectedElements[0],
+        x: minX,
+        y: minY,
+        w: totalW,
+        h: totalH,
+        name: 'Группа объектов'
+      };
+      applyAutoMeasurements(syntheticElem);
+    } else if (selectedId) {
+      const elem = activeScene.elements.find(el => el.id === selectedId);
+      if (elem) {
+        applyAutoMeasurements(elem);
+      }
+    } else {
+      showToast('Выберите объект', 'Кликните на объект на холсте для нанесения замеров', 'info');
+    }
+  };
+
+  // Helper for deleting currently selected elements
+  const handleDeleteSelected = () => {
+    if (selectedIds.length > 0) {
+      const count = selectedIds.length;
+      updateActiveSceneElements(els => els.filter(el => !selectedIds.includes(el.id)));
+      setSelectedIds([]);
+      showToast('Удалено', count > 1 ? `Удалено ${count} элементов с холста` : 'Элемент удален с холста', 'info');
+    } else if (selectedId) {
+      updateActiveSceneElements(els => els.filter(el => el.id !== selectedId));
+      setSelectedId(null);
+      showToast('Удалено', 'Элемент удален с холста', 'info');
+    } else {
+      showToast('Удаление', 'Выберите элементы для удаления', 'info');
+    }
+  };
+
+  // Helper for copying/duplicating currently selected elements
+  const handleCopySelected = () => {
+    if (selectedIds.length > 1) {
+      const selectedElements = activeScene.elements.filter(el => selectedIds.includes(el.id) && el.isVisible);
+      if (selectedElements.length === 0) return;
+      const newElements: CanvasElement[] = [];
+      const newIds: string[] = [];
+      selectedElements.forEach(el => {
+        const dupId = `${el.type}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        newIds.push(dupId);
+        newElements.push({
+          ...el,
+          id: dupId,
+          x: Math.min(canvasWidthMm / 10 - el.w, el.x + 20),
+          y: Math.min(canvasHeightMm / 10 - el.h, el.y + 20)
+        });
+      });
+      updateActiveSceneElements(prev => [...prev, ...newElements]);
+      setSelectedIds(newIds);
+      showToast('Копирование группы', `Скопировано ${selectedElements.length} элементов`, 'success');
+    } else if (selectedId) {
+      const elem = activeScene.elements.find(el => el.id === selectedId);
+      if (elem) {
+        const dup = { ...elem, id: `${elem.type}-${Date.now()}`, x: Math.min(canvasWidthMm / 10 - elem.w, elem.x + 20), y: Math.min(canvasHeightMm / 10 - elem.h, elem.y + 20) };
+        updateActiveSceneElements(els => [...els, dup]);
+        setSelectedId(dup.id);
+        showToast('Копирование', 'Элемент продублирован', 'success');
+      }
+    } else {
+      showToast('Выберите элементы', 'Кликните на элемент для копирования', 'info');
+    }
+  };
+
+  // Helper for moving/nudging selected elements with arrow keys
+  const handleNudgeSelected = (dx: number, dy: number) => {
+    if (selectedIds.length > 0) {
+      updateActiveSceneElements(els =>
+        els.map(el => (selectedIds.includes(el.id) && !el.isLocked ? { ...el, x: Math.max(0, Math.min(canvasWidthMm / 10 - el.w, el.x + dx)), y: Math.max(0, Math.min(canvasHeightMm / 10 - el.h, el.y + dy)) } : el))
+      );
+    } else if (selectedId) {
+      updateActiveSceneElements(els =>
+        els.map(el => (el.id === selectedId && !el.isLocked ? { ...el, x: Math.max(0, Math.min(canvasWidthMm / 10 - el.w, el.x + dx)), y: Math.max(0, Math.min(canvasHeightMm / 10 - el.h, el.y + dy)) } : el))
+      );
+    }
+  };
+
+  // Global Keyboard Shortcuts (Delete, Ctrl+C / Cmd+C, Arrow Keys movement)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore keydown if focus is inside an input, textarea, or contenteditable element
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+         target.tagName === 'TEXTAREA' ||
+         target.isContentEditable ||
+         target.closest('input') ||
+         target.closest('textarea'))
+      ) {
+        return;
+      }
+
+      const hasSelection = selectedIds.length > 0 || selectedId !== null;
+
+      // 1. Delete or Backspace key
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (hasSelection) {
+          e.preventDefault();
+          handleDeleteSelected();
+        }
+        return;
+      }
+
+      // 2. Ctrl+C or Cmd+C (also Ctrl+V, Ctrl+D) for copying / duplicating
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C' || e.key === 'v' || e.key === 'V' || e.key === 'd' || e.key === 'D')) {
+        if (hasSelection) {
+          e.preventDefault();
+          handleCopySelected();
+        }
+        return;
+      }
+
+      // 3. Arrow keys for moving objects on the scene
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+        if (hasSelection) {
+          e.preventDefault();
+          const step = e.shiftKey ? 10 : 2;
+          let dx = 0;
+          let dy = 0;
+          if (e.key === 'ArrowLeft') dx = -step;
+          if (e.key === 'ArrowRight') dx = step;
+          if (e.key === 'ArrowUp') dy = -step;
+          if (e.key === 'ArrowDown') dy = step;
+          handleNudgeSelected(dx, dy);
+        }
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [selectedIds, selectedId, activeScene, canvasWidthMm, canvasHeightMm]);
+
   // Dynamic cost summary
   const sceneTotalCost = activeScene.elements.reduce((sum, el) => sum + (el.isVisible ? el.price : 0), 0);
 
@@ -1598,7 +1942,67 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
         default:
           break;
       }
-      baseList = [...custom, ...assetItems];
+
+      // Convert user uploaded items from Admin Cabinet decor library
+      const isItemInCategory = (itemCat: string, selCat: string) => {
+        if (!itemCat || !selCat) return false;
+        const ic = itemCat.toLowerCase().trim();
+        const sc = selCat.toLowerCase().trim();
+
+        if (ic === sc) return true;
+
+        const synonymsMap: Record<string, string[]> = {
+          construction: ['конструкции', 'конструкция', 'arches', 'stands', 'screens', 'арки', 'каркасы', 'стойки'],
+          podiums: ['подиумы', 'подиум', 'сцена', 'тумбы'],
+          textiles: ['текстиль', 'ткани', 'драпировки', 'скатерти'],
+          flowers: ['флористика', 'цветы', 'цветочные композиции', 'гирлянды'],
+          balloons: ['шары', 'аэродизайн', 'воздушные шары'],
+          decor: ['декор', 'аксессуары', 'вазы', 'детали'],
+          sequins: ['пайетки', 'паетку', 'зеркальные панели'],
+          light: ['свет', 'освещение', 'прожекторы', 'свечи'],
+          furniture: ['мебель', 'столы', 'стулья', 'диваны'],
+          tableware: ['сервировка', 'посуда', 'канделябры', 'бокалы'],
+          themes: ['тематика', 'концепт-зоны'],
+          text: ['текст', 'неон', 'вывески', 'буквы'],
+          warehouse: ['склад', 'инвентарь']
+        };
+
+        if (synonymsMap[sc]) {
+          if (synonymsMap[sc].some(syn => ic.includes(syn) || syn.includes(ic))) return true;
+        }
+
+        for (const [id, synonyms] of Object.entries(synonymsMap)) {
+          if (synonyms.includes(sc) || id === sc) {
+            if (ic === id || synonyms.some(syn => ic.includes(syn) || syn.includes(ic))) return true;
+          }
+        }
+
+        return false;
+      };
+
+      const convertedAdminItems: LibraryItem[] = adminDecorItems
+        .filter((item: any) => isItemInCategory(item.category || '', selectedCategory))
+        .map((item: any) => {
+          const isImg = item.imageUrl && (item.imageUrl.startsWith('data:') || item.imageUrl.startsWith('http'));
+          const markup = isImg
+            ? `<img src="${item.imageUrl}" alt="${item.name}" class="w-full h-full object-contain pointer-events-none" />`
+            : item.imageUrl || `<svg viewBox="0 0 100 100" class="w-full h-full"><rect width="100" height="100" fill="#F3E8FF"/><text x="50" y="55" text-anchor="middle" font-size="12" fill="#8C52D0">${item.name}</text></svg>`;
+
+          return {
+            id: item.id,
+            name: item.name,
+            code: item.sku || `SKU-${item.id.slice(-4)}`,
+            category: selectedCategory,
+            price: item.price || 0,
+            width: item.widthCm || 100,
+            height: item.heightCm || 100,
+            svgMarkup: markup,
+            customImage: isImg ? item.imageUrl : undefined,
+            caption: undefined
+          } as LibraryItem;
+        });
+
+      baseList = [...convertedAdminItems, ...custom, ...assetItems];
     }
 
     if (libSearch) {
@@ -1625,12 +2029,14 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
     const defaultH = item.height;
     const isMeasurementItem = item.id === 'schema-shape-measurement' || item.code === 'MEAS-01';
     
+    const extractedImage = item.customImage || (item.svgMarkup && item.svgMarkup.startsWith('<img') ? item.svgMarkup.match(/src="([^"]+)"/)?.[1] : undefined);
+
     // Spawn in Center of Canvas Workspace
     const newEl: CanvasElement = {
       id: `${item.id}-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       name: item.name,
       type: isMeasurementItem ? 'measurement' : item.category,
-      caption: item.caption,
+      caption: isMeasurementItem ? (item.caption || '250 см') : undefined,
       measurementValue: isMeasurementItem ? (item.caption || '250 см') : undefined,
       x: 180,
       y: 100,
@@ -1648,7 +2054,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
       isVisible: true,
       isFlippedH: false,
       isFlippedV: false,
-      svgMarkup: item.svgMarkup
+      svgMarkup: item.svgMarkup,
+      customImage: extractedImage
     };
 
     updateActiveSceneElements(prev => [...prev, newEl]);
@@ -1662,11 +2069,13 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
     const defaultH = item.height;
     const isMeasurementItem = item.id === 'schema-shape-measurement' || item.code === 'MEAS-01';
     
+    const extractedImage = item.customImage || (item.svgMarkup && item.svgMarkup.startsWith('<img') ? item.svgMarkup.match(/src="([^"]+)"/)?.[1] : undefined);
+
     const newEl: CanvasElement = {
       id: `${item.id}-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       name: item.name,
       type: isMeasurementItem ? 'measurement' : item.category,
-      caption: item.caption,
+      caption: isMeasurementItem ? (item.caption || '250 см') : undefined,
       measurementValue: isMeasurementItem ? (item.caption || '250 см') : undefined,
       x: posX,
       y: posY,
@@ -1684,7 +2093,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
       isVisible: true,
       isFlippedH: false,
       isFlippedV: false,
-      svgMarkup: item.svgMarkup
+      svgMarkup: item.svgMarkup,
+      customImage: extractedImage
     };
 
     updateActiveSceneElements(prev => [...prev, newEl]);
@@ -1919,6 +2329,20 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
     try {
       const previewUrl = await captureCanvasPreview();
 
+      const updatedScenes = scenes.map((sc) => {
+        if (sc.id === activeScene.id) {
+          return {
+            ...sc,
+            previewUrl,
+            image: previewUrl,
+            imageUrl: previewUrl,
+          };
+        }
+        return sc;
+      });
+
+      setScenes(updatedScenes);
+
       const estimateItems: EstimateItem[] = (activeScene?.elements || []).map((el) => ({
         id: el.id,
         name: el.name,
@@ -1929,7 +2353,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
         photoUrl: el.customImage || ''
       }));
 
-      onSaveToProject(activeProjectId, previewUrl, estimateItems, sceneTotalCost, scenes, floorPlanElements);
+      onSaveToProject(activeProjectId, previewUrl, estimateItems, sceneTotalCost, updatedScenes, floorPlanElements);
 
       const now = new Date();
       const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -1996,6 +2420,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
   const handleCaptionMouseDown = (e: React.MouseEvent, el: CanvasElement) => {
     e.stopPropagation();
+    isInteractingWithElementRef.current = true;
     handleSelectElement(el.id);
     setActiveAction('move-caption');
     setActiveHandle(null);
@@ -2034,6 +2459,14 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
   const handleCanvasMouseDown = (e: React.MouseEvent, el: CanvasElement) => {
     e.stopPropagation();
+    isInteractingWithElementRef.current = true;
+
+    // Auto-measurement mode trigger on object click
+    if (isDrawingMeasurement && measureSubMode === 'auto') {
+      applyAutoMeasurements(el);
+      setSelectedId(el.id);
+      return;
+    }
 
     // Multi-select with Shift/Ctrl
     if (e.shiftKey || e.ctrlKey || e.metaKey) {
@@ -2582,7 +3015,24 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
       setAlignmentLines([]);
       recordHistory(scenes);
     }
+    setTimeout(() => {
+      isInteractingWithElementRef.current = false;
+    }, 150);
   };
+
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      if (isInteractingWithElementRef.current) {
+        setTimeout(() => {
+          isInteractingWithElementRef.current = false;
+        }, 150);
+      }
+    };
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => {
+      window.removeEventListener('mouseup', handleGlobalMouseUp);
+    };
+  }, []);
 
   useEffect(() => {
     if (!activeAction) return;
@@ -2675,7 +3125,10 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
       setHeaderActions(
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto shrink-0">
           <button
-            onClick={() => setIsAiModalOpen(true)}
+            onClick={() => {
+              deselectAllAndTools();
+              setIsAiModalOpen(true);
+            }}
             style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
             className="flex items-center justify-center gap-1.5 px-3.5 h-9 rounded-full text-white text-xs font-bold hover:opacity-90 transition-all shadow-md shadow-[#582F89]/20 cursor-pointer whitespace-nowrap shrink-0 border border-purple-300/20 active:scale-95"
           >
@@ -3227,7 +3680,10 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
               </button>
 
               <button
-                onClick={() => setIsAiModalOpen(true)}
+                onClick={() => {
+                  deselectAllAndTools();
+                  setIsAiModalOpen(true);
+                }}
                 title="ИИ Генератор макета"
                 aria-label="ИИ макет"
                 style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
@@ -3256,10 +3712,11 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
             <div
               ref={viewportRef}
               onMouseDown={handleViewportMouseDown}
+              onClick={handleDeselectIfEmptySpace}
               className={`relative bg-zinc-950/60 dark:bg-black/40 rounded-3xl overflow-hidden flex items-center justify-center flex-1 h-[380px] sm:h-full min-h-[380px] sm:min-h-0 min-w-0 w-full border border-zinc-200/20 dark:border-zinc-800/20 select-none ${isPanning ? 'cursor-grabbing' : 'cursor-grab'}`}
             >
               {/* Floating Top-Left Scene Tabs Overlay (Matches Reference Screenshot 2 - Touch Friendly) */}
-              <div className="absolute top-1.5 left-1.5 z-20 flex items-center gap-1 bg-white/80 dark:bg-black/50 backdrop-blur-md p-1 rounded-full border border-white/90 dark:border-zinc-800 shadow-md">
+              <div className="absolute top-1.5 left-1.5 z-20 flex items-center gap-1 bg-white/80 dark:bg-black/50 backdrop-blur-md p-1 rounded-full border border-white/90 dark:border-zinc-800 shadow-md" onClick={(e) => e.stopPropagation()}>
                 <button
                   onClick={handleAddNewScene}
                   className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white dark:bg-zinc-800 hover:bg-zinc-100 flex items-center justify-center text-zinc-700 dark:text-zinc-200 transition-all cursor-pointer shadow-xs active:scale-95"
@@ -3305,24 +3762,37 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                             const isSelected = activeWorkspaceTab === scene.id;
                             const displayName = scene.name.startsWith('Визуализация') ? scene.name.replace('Визуализация', 'Виз.') : scene.name;
                             return (
-                              <button
+                              <div
                                 key={scene.id}
                                 onClick={() => {
                                   setActiveWorkspaceTab(scene.id);
                                   setIsVisualizationsDropdownOpen(false);
                                 }}
-                                className={`w-full text-left px-2.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center justify-between cursor-pointer ${
+                                className={`w-full group px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-between cursor-pointer ${
                                   isSelected
                                     ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-xs'
                                     : 'text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'
                                 }`}
                               >
-                                <div className="flex items-center gap-2">
-                                  <Layout className="w-3.5 h-3.5 opacity-70" />
-                                  <span>{displayName}</span>
+                                <div className="flex items-center gap-2 truncate">
+                                  <Layout className="w-3.5 h-3.5 opacity-70 shrink-0" />
+                                  <span className="truncate">{displayName}</span>
                                 </div>
-                                {isSelected && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
-                              </button>
+                                <div className="flex items-center gap-1 shrink-0">
+                                  {isSelected && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
+                                  <button
+                                    onClick={(e) => handleDeleteScene(scene.id, e)}
+                                    className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                                      isSelected
+                                        ? 'text-white/80 hover:text-white hover:bg-white/20'
+                                        : 'text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40'
+                                    }`}
+                                    title="Удалить визуализацию"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
                             );
                           })}
 
@@ -3357,7 +3827,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
               </div>
 
                 {/* FLOATING TOP UNDO/REDO PILL & RIGHT SIDEBAR TOGGLE */}
-                <div className="absolute top-1.5 right-1.5 sm:right-2 z-30 pointer-events-auto flex items-center gap-1.5">
+                <div className="absolute top-1.5 right-1.5 sm:right-2 z-30 pointer-events-auto flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                   {/* Expand Right Sidebar button when collapsed */}
                   {isRightToolbarCollapsed && (
                     <button
@@ -3393,7 +3863,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                 </div>
 
                 {/* FLOATING ACTION TOOLBAR (LEFT POSITION BELOW TOP SCENE TABS) */}
-                <div className="absolute top-13 sm:top-14 left-1.5 z-30 flex flex-col items-start pointer-events-none">
+                <div className="absolute top-13 sm:top-14 left-1.5 z-30 flex flex-col items-start pointer-events-none" onClick={(e) => e.stopPropagation()}>
                   
                   {isLeftToolbarCollapsed ? (
                     /* COLLAPSED SINGLE BUTTON */
@@ -3470,6 +3940,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                       {/* Popover Group / Ungroup */}
                       {activeToolPopover === 'group' && (
                         <div
+                          data-tool-popover="true"
                           className="absolute left-10 sm:left-11 top-0 z-50 bg-white/60 dark:bg-zinc-900/60 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 p-2 rounded-2xl shadow-xl shadow-purple-950/10 flex flex-col gap-1 min-w-[175px] animate-fadeIn select-none backdrop-blur-md"
                         >
                           <div className="flex items-center justify-between px-1 pb-1 border-b border-purple-200/50 dark:border-zinc-800 text-[11px] font-bold text-[#5B3E88] dark:text-purple-300">
@@ -3501,38 +3972,9 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
                     {/* 3. Копировать */}
                     <button
-                      onClick={() => {
-                        if (selectedIds.length > 1) {
-                          const selectedElements = activeScene.elements.filter(el => selectedIds.includes(el.id) && el.isVisible);
-                          const newElements: CanvasElement[] = [];
-                          const newIds: string[] = [];
-                          selectedElements.forEach(el => {
-                            const dupId = `${el.type}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-                            newIds.push(dupId);
-                            newElements.push({
-                              ...el,
-                              id: dupId,
-                              x: Math.min(canvasWidthMm / 10 - el.w, el.x + 30),
-                              y: Math.min(canvasHeightMm / 10 - el.h, el.y + 30)
-                            });
-                          });
-                          updateActiveSceneElements(prev => [...prev, ...newElements]);
-                          setSelectedIds(newIds);
-                          showToast('Копирование группы', `Скопировано ${selectedElements.length} элементов`, 'success');
-                        } else if (selectedId) {
-                          const elem = activeScene.elements.find(el => el.id === selectedId);
-                          if (elem) {
-                            const dup = { ...elem, id: `${elem.type}-${Date.now()}`, x: elem.x + 20, y: elem.y + 20 };
-                            updateActiveSceneElements(els => [...els, dup]);
-                            setSelectedId(dup.id);
-                            showToast('Копирование', 'Элемент продублирован', 'success');
-                          }
-                        } else {
-                          showToast('Выберите элементы', 'Кликните на элемент или нажмите «Выбрать все»', 'info');
-                        }
-                      }}
+                      onClick={handleCopySelected}
                       className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md flex items-center justify-center transition-all cursor-pointer active:scale-95"
-                      title="Копировать"
+                      title="Копировать (Ctrl+C)"
                     >
                       <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
                     </button>
@@ -3559,6 +4001,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                       {/* Popover Layers */}
                       {activeToolPopover === 'layers' && (
                         <div
+                          data-tool-popover="true"
                           className="absolute left-10 sm:left-11 top-0 z-50 bg-white/60 dark:bg-zinc-900/60 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 p-2 rounded-2xl shadow-xl shadow-purple-950/10 flex flex-col gap-1 min-w-[175px] animate-fadeIn select-none backdrop-blur-md"
                         >
                           <div className="flex items-center justify-between px-1 pb-1 border-b border-purple-200/50 dark:border-zinc-800 text-[11px] font-bold text-[#5B3E88] dark:text-purple-300">
@@ -3681,6 +4124,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                       {/* Popover Flip */}
                       {activeToolPopover === 'flip' && (
                         <div
+                          data-tool-popover="true"
                           className="absolute left-10 sm:left-11 top-0 z-50 bg-white/60 dark:bg-zinc-900/60 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 p-2 rounded-2xl shadow-xl shadow-purple-950/10 flex flex-col gap-1 min-w-[175px] animate-fadeIn select-none backdrop-blur-md"
                         >
                           <div className="flex items-center justify-between px-1 pb-1 border-b border-purple-200/50 dark:border-zinc-800 text-[11px] font-bold text-[#5B3E88] dark:text-purple-300">
@@ -3725,94 +4169,127 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                           setActiveToolPopover(null);
                           setActiveFilterTool(null);
                           setRotationInputId(null);
-                          if (!isDrawingMeasurement) {
-                            showToast('Инструмент Замеры', 'Зажмите мышью на холсте и потяните от точки к точке', 'info');
-                          }
                         }}
                         className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
                           isDrawingMeasurement
                             ? 'bg-[var(--lavDeep)] text-white shadow-md ring-2 ring-purple-300'
                             : 'bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md'
                         }`}
-                        title="Замеры (Нанесение размерной стрелки от точки к точке)"
+                        title="Замеры (Автоматический и Ручной режимы)"
                       >
                         <Ruler className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
                       </button>
 
-                      {/* Popover options for Measurement */}
+                      {/* Popover options for Measurement (Auto & Manual) */}
                       {isDrawingMeasurement && (
                         <div
-                          className="absolute left-10 sm:left-11 top-0 z-50 bg-white/60 dark:bg-zinc-900/60 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 p-2.5 rounded-2xl shadow-xl shadow-purple-950/10 flex flex-col gap-1.5 min-w-[195px] animate-fadeIn select-none backdrop-blur-md"
+                          className="absolute left-10 sm:left-11 top-0 z-50 bg-white/95 dark:bg-zinc-900/95 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 p-2.5 rounded-2xl shadow-xl shadow-purple-950/10 flex flex-col gap-2 min-w-[220px] max-w-[250px] animate-fadeIn select-none backdrop-blur-md"
                         >
                           <div className="flex items-center justify-between px-1 pb-1 border-b border-purple-200/50 dark:border-zinc-800 text-[11px] font-bold text-[#5B3E88] dark:text-purple-300">
                             <span className="flex items-center gap-1">
                               <Ruler className="w-3.5 h-3.5" />
-                              Замеры
+                              Инструмент Замеры
                             </span>
+                            <button
+                              onClick={() => setIsDrawingMeasurement(false)}
+                              className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-xs cursor-pointer font-normal"
+                              title="Закрыть"
+                            >
+                              ✕
+                            </button>
                           </div>
 
-                          <p className="text-[10px] text-zinc-600 dark:text-zinc-300 px-1 leading-snug">
-                            Зажмите мышью на холсте и потяните. Автоматически нарисуются стрелочки и редактируемый размер в центре.
-                          </p>
+                          {/* Mode Tabs */}
+                          <div className="grid grid-cols-2 gap-1 p-0.5 bg-zinc-100 dark:bg-zinc-800/80 rounded-xl text-[10px] font-semibold">
+                            <button
+                              type="button"
+                              onClick={() => setMeasureSubMode('auto')}
+                              className={`py-1.5 px-2 rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                                measureSubMode === 'auto'
+                                  ? 'bg-[var(--lavDeep)] text-white shadow-xs'
+                                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                              }`}
+                            >
+                              <Zap className="w-3 h-3" />
+                              <span>Авто</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setMeasureSubMode('manual')}
+                              className={`py-1.5 px-2 rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                                measureSubMode === 'manual'
+                                  ? 'bg-[var(--lavDeep)] text-white shadow-xs'
+                                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                              }`}
+                            >
+                              <Ruler className="w-3 h-3" />
+                              <span>Ручной</span>
+                            </button>
+                          </div>
 
-                          <button
-                            onClick={() => {
-                              const newElem: CanvasElement = {
-                                id: `measurement-${Date.now()}`,
-                                name: `Замер (250 см)`,
-                                type: 'measurement',
-                                x: Math.round(canvasWidthMm / 20 - 100),
-                                y: Math.round(canvasHeightMm / 20 - 15),
-                                w: 200,
-                                h: 30,
-                                rotation: 0,
-                                exposure: 0,
-                                hue: 0,
-                                temp: 0,
-                                saturate: 100,
-                                opacity: 100,
-                                price: 0,
-                                comment: '',
-                                code: 'MEAS-01',
-                                caption: '250 см',
-                                measurementValue: '250 см',
-                                isLocked: false,
-                                isVisible: true,
-                                isFlippedH: false,
-                                isFlippedV: false,
-                                svgMarkup: ''
-                              };
-                              updateActiveSceneElements(prev => [...prev, newElem]);
-                              setSelectedId(newElem.id);
-                              showToast('Замер создан', 'Кликните в центр замера для изменения значения', 'success');
-                            }}
-                            className="w-full px-2 py-1.5 rounded-xl text-xs font-semibold bg-purple-50 dark:bg-purple-900/40 text-[var(--lavDeep)] dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/60 flex items-center gap-1.5 cursor-pointer transition-colors"
-                          >
-                            <Plus className="w-3.5 h-3.5 shrink-0" />
-                            <span>Быстрый замер (250 см)</span>
-                          </button>
+                          {/* Auto Mode Content */}
+                          {measureSubMode === 'auto' && (
+                            <div className="flex flex-col gap-1.5 pt-0.5">
+                              <p className="text-[10px] text-zinc-600 dark:text-zinc-300 px-0.5 leading-snug">
+                                Кликните по любому объекту на холсте для автозамера его ширины и высоты.
+                              </p>
+
+                              {(selectedId || selectedIds.length > 0) && (
+                                <button
+                                  type="button"
+                                  onClick={applyAutoMeasurementsForSelection}
+                                  className="w-full px-2 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white hover:opacity-95 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition-all active:scale-95"
+                                >
+                                  <Zap className="w-3.5 h-3.5" />
+                                  <span>Замерить выделенное</span>
+                                </button>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Manual Mode Content */}
+                          {measureSubMode === 'manual' && (
+                            <div className="flex flex-col gap-1.5 pt-0.5">
+                              <p className="text-[10px] text-zinc-600 dark:text-zinc-300 px-0.5 leading-snug">
+                                Зажмите мышь на холсте и потяните от точки к точке.
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newElem: CanvasElement = {
+                                    id: `measurement-${Date.now()}`,
+                                    name: `Замер (250 см)`,
+                                    type: 'measurement',
+                                    x: Math.round(canvasWidthMm / 20 - 100),
+                                    y: Math.round(canvasHeightMm / 20 - 15),
+                                    w: 200,
+                                    h: 30,
+                                    rotation: 0,
+                                    exposure: 0, hue: 0, temp: 0, saturate: 100, opacity: 100, price: 0, comment: '', code: 'MEAS-01',
+                                    caption: '250 см',
+                                    measurementValue: '250 см',
+                                    isLocked: false, isVisible: true, isFlippedH: false, isFlippedV: false, svgMarkup: ''
+                                  };
+                                  updateActiveSceneElements(prev => [...prev, newElem]);
+                                  setSelectedId(newElem.id);
+                                  showToast('Замер создан', 'Кликните в центр замера для изменения значения', 'success');
+                                }}
+                                className="w-full px-2 py-1.5 rounded-xl text-xs font-semibold bg-purple-50 dark:bg-purple-900/40 text-[var(--lavDeep)] dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/60 flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                              >
+                                <Plus className="w-3.5 h-3.5 shrink-0" />
+                                <span>Быстрый замер (250 см)</span>
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
 
                     {/* 7. Корзина (Удалить) */}
                     <button
-                      onClick={() => {
-                        if (selectedIds.length > 0) {
-                          const count = selectedIds.length;
-                          updateActiveSceneElements(els => els.filter(el => !selectedIds.includes(el.id)));
-                          setSelectedIds([]);
-                          showToast('Удалено', count > 1 ? `Удалено ${count} элементов с холста` : 'Элемент удален с холста', 'info');
-                        } else if (selectedId) {
-                          updateActiveSceneElements(els => els.filter(el => el.id !== selectedId));
-                          setSelectedId(null);
-                          showToast('Удалено', 'Элемент удален с холста', 'info');
-                        } else {
-                          showToast('Удаление', 'Выберите элементы для удаления', 'info');
-                        }
-                      }}
+                      onClick={handleDeleteSelected}
                       className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-rose-500 text-white hover:bg-rose-600 flex items-center justify-center shadow-md cursor-pointer transition-all active:scale-95"
-                      title="Удалить выбранный элемент"
+                      title="Удалить выбранный элемент (Delete / Backspace)"
                     >
                       <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
                     </button>
@@ -3821,7 +4298,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                 </div>
 
                 {/* BOTTOM RIGHT GROUP: Color Correction Tools & Zoom Button */}
-                <div className="absolute bottom-1.5 right-1.5 z-[60] flex flex-col items-end pointer-events-none pr-0.5 pb-0.5">
+                <div className="absolute bottom-1.5 right-1.5 z-[60] flex flex-col items-end pointer-events-none pr-0.5 pb-0.5" onClick={(e) => e.stopPropagation()}>
                   <div className="flex flex-col items-center gap-1.5 pointer-events-auto">
                     {isColorZoomToolbarCollapsed ? (
                       /* COLLAPSED SINGLE BUTTON */
@@ -3853,12 +4330,194 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         {/* POPUP ADJUSTMENT TOOL SLIDER OR ZOOM (Positioned to the left of bottom-right toolbar, semi-transparent & compact) */}
                       {activeFilterTool && (activeFilterTool === 'zoom' || selectedElem) && (
                         <div
+                          data-tool-popover="true"
                           className={`absolute ${
-                            activeFilterTool === 'recolor'
-                              ? 'bottom-full mb-2 right-0 w-64 max-w-[calc(100vw-32px)] p-3 bg-white/60 dark:bg-zinc-900/60'
+                            activeFilterTool === 'recolor' || activeFilterTool === 'shadow'
+                              ? 'right-full mr-2 bottom-0 w-56 sm:w-60 max-w-[calc(100vw-60px)] p-2.5 sm:p-3 bg-white/95 dark:bg-zinc-900/95'
                               : 'bottom-full mb-2 right-0 w-12 sm:w-14 p-2 bg-white/60 dark:bg-zinc-900/60'
                           } z-50 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 rounded-2xl shadow-xl shadow-purple-950/10 flex flex-col items-center gap-1.5 animate-fadeIn pointer-events-auto transition-all select-none backdrop-blur-md`}
                         >
+                          
+                          {/* Shadow Tool Panel */}
+                          {activeFilterTool === 'shadow' && selectedElem && (
+                            <div className="flex flex-col gap-2 w-full text-xs">
+                              {/* Header & Toggle */}
+                              <div className="flex items-center justify-between pb-1 border-b border-zinc-200/60 dark:border-zinc-800/60">
+                                <div className="flex items-center gap-1 font-bold text-zinc-800 dark:text-zinc-100 text-[11px]">
+                                  <Moon className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-purple-400" />
+                                  <span>Тень</span>
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    const currentEnabled = !!selectedElem.shadowEnabled;
+                                    updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? {
+                                      ...item,
+                                      shadowEnabled: !currentEnabled,
+                                      shadowBlur: item.shadowBlur ?? 12,
+                                      shadowOpacity: item.shadowOpacity ?? 50,
+                                      shadowX: item.shadowX ?? 0,
+                                      shadowY: item.shadowY ?? 8,
+                                      shadowColor: item.shadowColor ?? '#000000'
+                                    } : item));
+                                  }}
+                                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
+                                    selectedElem.shadowEnabled
+                                      ? 'bg-emerald-500 text-white shadow-2xs'
+                                      : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300'
+                                  }`}
+                                >
+                                  {selectedElem.shadowEnabled ? 'Включена' : 'Выкл'}
+                                </button>
+                              </div>
+
+                              {selectedElem.shadowEnabled ? (
+                                <>
+                                  {/* Blur / Размытие */}
+                                  <div className="space-y-0.5">
+                                    <div className="flex justify-between text-[10px] font-bold text-zinc-600 dark:text-zinc-300">
+                                      <span>Размытие</span>
+                                      <span className="font-mono text-[var(--lavDeep)] dark:text-purple-300">{selectedElem.shadowBlur ?? 12}px</span>
+                                    </div>
+                                    <input
+                                      type="range"
+                                      min="0"
+                                      max="60"
+                                      value={selectedElem.shadowBlur ?? 12}
+                                      onChange={(e) => {
+                                        const val = parseInt(e.target.value);
+                                        updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, shadowBlur: val } : item));
+                                      }}
+                                      className="w-full accent-[var(--lavDeep)] dark:accent-purple-400 h-1 rounded-lg bg-zinc-200 dark:bg-zinc-700 cursor-pointer"
+                                    />
+                                  </div>
+
+                                  {/* Opacity / Прозрачность */}
+                                  <div className="space-y-0.5">
+                                    <div className="flex justify-between text-[10px] font-bold text-zinc-600 dark:text-zinc-300">
+                                      <span>Прозрачность</span>
+                                      <span className="font-mono text-[var(--lavDeep)] dark:text-purple-300">{selectedElem.shadowOpacity ?? 50}%</span>
+                                    </div>
+                                    <input
+                                      type="range"
+                                      min="0"
+                                      max="100"
+                                      value={selectedElem.shadowOpacity ?? 50}
+                                      onChange={(e) => {
+                                        const val = parseInt(e.target.value);
+                                        updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, shadowOpacity: val } : item));
+                                      }}
+                                      className="w-full accent-[var(--lavDeep)] dark:accent-purple-400 h-1 rounded-lg bg-zinc-200 dark:bg-zinc-700 cursor-pointer"
+                                    />
+                                  </div>
+
+                                  {/* Side-by-side Offset X & Y */}
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div className="space-y-0.5">
+                                      <div className="flex justify-between text-[10px] font-bold text-zinc-600 dark:text-zinc-300">
+                                        <span>Смещение X</span>
+                                        <span className="font-mono text-[var(--lavDeep)] dark:text-purple-300">
+                                          {(selectedElem.shadowX ?? 0) > 0 ? `+${selectedElem.shadowX}` : (selectedElem.shadowX ?? 0)}
+                                        </span>
+                                      </div>
+                                      <input
+                                        type="range"
+                                        min="-40"
+                                        max="40"
+                                        value={selectedElem.shadowX ?? 0}
+                                        onChange={(e) => {
+                                          const val = parseInt(e.target.value);
+                                          updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, shadowX: val } : item));
+                                        }}
+                                        className="w-full accent-[var(--lavDeep)] dark:accent-purple-400 h-1 rounded-lg bg-zinc-200 dark:bg-zinc-700 cursor-pointer"
+                                      />
+                                    </div>
+
+                                    <div className="space-y-0.5">
+                                      <div className="flex justify-between text-[10px] font-bold text-zinc-600 dark:text-zinc-300">
+                                        <span>Смещение Y</span>
+                                        <span className="font-mono text-[var(--lavDeep)] dark:text-purple-300">
+                                          {(selectedElem.shadowY ?? 8) > 0 ? `+${selectedElem.shadowY}` : (selectedElem.shadowY ?? 8)}
+                                        </span>
+                                      </div>
+                                      <input
+                                        type="range"
+                                        min="-40"
+                                        max="40"
+                                        value={selectedElem.shadowY ?? 8}
+                                        onChange={(e) => {
+                                          const val = parseInt(e.target.value);
+                                          updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, shadowY: val } : item));
+                                        }}
+                                        className="w-full accent-[var(--lavDeep)] dark:accent-purple-400 h-1 rounded-lg bg-zinc-200 dark:bg-zinc-700 cursor-pointer"
+                                      />
+                                    </div>
+                                  </div>
+
+                                  {/* Color & Presets combined row */}
+                                  <div className="flex items-center justify-between gap-1 pt-1 border-t border-zinc-100 dark:border-zinc-800">
+                                    <div className="flex items-center gap-1">
+                                      {['#000000', '#27272a', '#3f2e21'].map(preset => (
+                                        <button
+                                          key={preset}
+                                          onClick={() => updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, shadowColor: preset } : item))}
+                                          className={`w-3.5 h-3.5 rounded-full border cursor-pointer transition-transform ${
+                                            (selectedElem.shadowColor || '#000000') === preset ? 'ring-2 ring-[var(--lavDeep)] scale-110' : 'border-zinc-300'
+                                          }`}
+                                          style={{ backgroundColor: preset }}
+                                          title={`Цвет: ${preset}`}
+                                        />
+                                      ))}
+                                      <input
+                                        type="color"
+                                        value={selectedElem.shadowColor || '#000000'}
+                                        onChange={(e) => {
+                                          const val = e.target.value;
+                                          updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, shadowColor: val } : item));
+                                        }}
+                                        className="w-4 h-4 rounded cursor-pointer overflow-hidden p-0 border border-zinc-300 bg-transparent"
+                                        title="Выбрать цвет тени"
+                                      />
+                                    </div>
+
+                                    <div className="flex items-center gap-1">
+                                      <button
+                                        onClick={() => updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? {
+                                          ...item,
+                                          shadowEnabled: true,
+                                          shadowX: 0,
+                                          shadowY: 8,
+                                          shadowBlur: 14,
+                                          shadowOpacity: 40,
+                                          shadowColor: '#000000'
+                                        } : item))}
+                                        className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-[9px] font-bold cursor-pointer transition-colors"
+                                      >
+                                        Мягкий пол
+                                      </button>
+                                      <button
+                                        onClick={() => updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? {
+                                          ...item,
+                                          shadowEnabled: true,
+                                          shadowX: 12,
+                                          shadowY: 10,
+                                          shadowBlur: 10,
+                                          shadowOpacity: 50,
+                                          shadowColor: '#000000'
+                                        } : item))}
+                                        className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-[9px] font-bold cursor-pointer transition-colors"
+                                      >
+                                        Свет
+                                      </button>
+                                    </div>
+                                  </div>
+                                </>
+                              ) : (
+                                <p className="text-[10px] text-zinc-500 dark:text-zinc-400 text-center py-1">
+                                  Нажмите «Включить» для добавления тени.
+                                </p>
+                              )}
+                            </div>
+                          )}
                           
                           {/* Recolor Tool Panel */}
                           {activeFilterTool === 'recolor' && selectedElem && (
@@ -4268,6 +4927,27 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         <Droplet className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
                       </button>
 
+                      {/* 6. Тень (Photoshop-стиль: размытие, прозрачность, смещение) */}
+                      <button
+                        onClick={() => {
+                          setActiveToolPopover(null);
+                          setIsDrawingMeasurement(false);
+                          setRotationInputId(null);
+                          if (!selectedId && activeFilterTool !== 'shadow') {
+                            showToast('Выберите элемент', 'Кликните на элемент для настройки тени', 'info');
+                          }
+                          setActiveFilterTool(prev => prev === 'shadow' ? null : 'shadow');
+                        }}
+                        className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
+                          activeFilterTool === 'shadow'
+                            ? 'bg-[var(--lavDeep)] text-white shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                        }`}
+                        title="Тень (Размытие, прозрачность, смещение X/Y)"
+                      >
+                        <Moon className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
+                      </button>
+
                       {/* 6. Лупа (Масштаб / Приближение с ползунком) */}
                       <button
                         onClick={() => {
@@ -4303,7 +4983,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                       transform: `translate(${panX}px, ${panY}px) scale(${canvasScale * zoomScale})`,
                     }}
                     onMouseDown={(e) => {
-                      if (isDrawingMeasurement) {
+                      if (isDrawingMeasurement && measureSubMode === 'manual') {
                         e.stopPropagation();
                         e.preventDefault();
                         if (canvasContainerRef.current) {
@@ -4344,30 +5024,12 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         console.error('Failed to parse dropped element JSON', err);
                       }
                     }}
-                    onClick={(e) => {
-                      if (e.target === e.currentTarget) {
-                        setSelectedIds([]);
-                        setSelectedId(null);
-                        setActiveToolPopover(null);
-                        setActiveFilterTool(null);
-                        setIsDrawingMeasurement(false);
-                        setRotationInputId(null);
-                      }
-                    }}
+                    onClick={handleDeselectIfEmptySpace}
                   >
                 {/* Backdrop & Grid Clip Layer */}
                 <div
                   className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-auto z-0"
-                  onClick={(e) => {
-                    if (e.target === e.currentTarget) {
-                      setSelectedIds([]);
-                      setSelectedId(null);
-                      setActiveToolPopover(null);
-                      setActiveFilterTool(null);
-                      setIsDrawingMeasurement(false);
-                      setRotationInputId(null);
-                    }
-                  }}
+                  onClick={handleDeselectIfEmptySpace}
                 >
                   {activeScene.backdropType === 'image' && activeScene.backdropImage ? (
                     <img
@@ -4411,6 +5073,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                   const distStr = activeUnit === 'm' ? `${(dist / 100).toFixed(1)} м` : `${dist} см`;
                   const midX = (measureStartPos.x + measureCurrentPos.x) / 2;
                   const midY = (measureStartPos.y + measureCurrentPos.y) / 2;
+                  const currentScale = canvasScale * zoomScale;
+                  const scaleInv = 1 / (currentScale || 1);
 
                   return (
                     <svg className="absolute inset-0 w-full h-full pointer-events-none z-40 overflow-visible">
@@ -4419,12 +5083,12 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         y1={measureStartPos.y}
                         x2={measureCurrentPos.x}
                         y2={measureCurrentPos.y}
-                        stroke="#8C52D0"
-                        strokeWidth="3"
-                        strokeDasharray="4,2"
+                        stroke="#4B5563"
+                        strokeWidth={1.2 * scaleInv}
+                        strokeDasharray={`${4 * scaleInv} ${2 * scaleInv}`}
                       />
-                      <circle cx={measureStartPos.x} cy={measureStartPos.y} r="5" fill="#8C52D0" />
-                      <circle cx={measureCurrentPos.x} cy={measureCurrentPos.y} r="5" fill="#8C52D0" />
+                      <circle cx={measureStartPos.x} cy={measureStartPos.y} r={2.5 * scaleInv} fill="#4B5563" />
+                      <circle cx={measureCurrentPos.x} cy={measureCurrentPos.y} r={2.5 * scaleInv} fill="#4B5563" />
                       
                       <foreignObject
                         x={midX - 50}
@@ -4433,8 +5097,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         height="30"
                         className="overflow-visible"
                       >
-                        <div className="flex items-center justify-center w-full h-full">
-                          <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white text-xs font-bold shadow-lg whitespace-nowrap animate-pulse">
+                        <div className="flex items-center justify-center w-full h-full" style={{ transform: `scale(${scaleInv})`, transformOrigin: 'center center' }}>
+                          <span className="px-2.5 py-0.5 rounded-full bg-zinc-800 text-white text-xs font-bold shadow-md whitespace-nowrap animate-pulse">
                             {distStr}
                           </span>
                         </div>
@@ -4444,88 +5108,96 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                 })()}
 
                 {/* Dynamic Smart Alignment Guides Overlay */}
-                {alignmentLines.length > 0 && (
-                  <svg className="absolute inset-0 w-full h-full pointer-events-none z-35 overflow-visible">
-                    {alignmentLines.map((line, i) => {
-                      const canvasW = canvasWidthMm / 10;
-                      const canvasH = canvasHeightMm / 10;
-                      if (line.type === 'v') {
-                        return (
-                          <g key={`v-${i}-${line.pos}`}>
-                            <line
-                              x1={line.pos}
-                              y1={0}
-                              x2={line.pos}
-                              y2={canvasH}
-                              stroke="#2563EB"
-                              strokeWidth="1.2"
-                              strokeDasharray="3,3"
-                              strokeOpacity="0.95"
-                            />
-                            <circle cx={line.pos} cy="0" r="2.5" fill="#2563EB" />
-                            <circle cx={line.pos} cy={canvasH} r="2.5" fill="#2563EB" />
-                            {line.label && (
-                              <foreignObject
-                                x={line.pos - 35}
-                                y={8}
-                                width="70"
-                                height="20"
-                                className="overflow-visible"
-                              >
-                                <div className="flex justify-center">
-                                  <span className="px-1.5 py-0.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[9px] font-bold shadow-xs whitespace-nowrap">
-                                    {line.label}
-                                  </span>
-                                </div>
-                              </foreignObject>
-                            )}
-                          </g>
-                        );
-                      } else {
-                        return (
-                          <g key={`h-${i}-${line.pos}`}>
-                            <line
-                              x1={0}
-                              y1={line.pos}
-                              x2={canvasW}
-                              y2={line.pos}
-                              stroke="#2563EB"
-                              strokeWidth="1.2"
-                              strokeDasharray="3,3"
-                              strokeOpacity="0.95"
-                            />
-                            <circle cx="0" cy={line.pos} r="2.5" fill="#2563EB" />
-                            <circle cx={canvasW} cy={line.pos} r="2.5" fill="#2563EB" />
-                            {line.label && (
-                              <foreignObject
-                                x={8}
-                                y={line.pos - 10}
-                                width="70"
-                                height="20"
-                                className="overflow-visible"
-                              >
-                                <div className="flex items-center">
-                                  <span className="px-1.5 py-0.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[9px] font-bold shadow-xs whitespace-nowrap">
-                                    {line.label}
-                                  </span>
-                                </div>
-                              </foreignObject>
-                            )}
-                          </g>
-                        );
-                      }
-                    })}
-                  </svg>
-                )}
+                {alignmentLines.length > 0 && (() => {
+                  const currentScale = canvasScale * zoomScale;
+                  const scaleInv = 1 / (currentScale || 1);
+                  const strokeW = 0.85 * scaleInv;
+                  const dashStr = `${3 * scaleInv} ${3 * scaleInv}`;
+                  const dotR = 2 * scaleInv;
+
+                  return (
+                    <svg className="absolute inset-0 w-full h-full pointer-events-none z-35 overflow-visible">
+                      {alignmentLines.map((line, i) => {
+                        const canvasW = canvasWidthMm / 10;
+                        const canvasH = canvasHeightMm / 10;
+                        if (line.type === 'v') {
+                          return (
+                            <g key={`v-${i}-${line.pos}`}>
+                              <line
+                                x1={line.pos}
+                                y1={0}
+                                x2={line.pos}
+                                y2={canvasH}
+                                stroke="#2563EB"
+                                strokeWidth={strokeW}
+                                strokeDasharray={dashStr}
+                                strokeOpacity="0.95"
+                              />
+                              <circle cx={line.pos} cy="0" r={dotR} fill="#2563EB" />
+                              <circle cx={line.pos} cy={canvasH} r={dotR} fill="#2563EB" />
+                              {line.label && (
+                                <foreignObject
+                                  x={line.pos - 35}
+                                  y={8 * scaleInv}
+                                  width="70"
+                                  height="20"
+                                  className="overflow-visible"
+                                >
+                                  <div className="flex justify-center" style={{ transform: `scale(${scaleInv})`, transformOrigin: 'top center' }}>
+                                    <span className="px-1.5 py-0.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[9px] font-bold shadow-xs whitespace-nowrap">
+                                      {line.label}
+                                    </span>
+                                  </div>
+                                </foreignObject>
+                              )}
+                            </g>
+                          );
+                        } else {
+                          return (
+                            <g key={`h-${i}-${line.pos}`}>
+                              <line
+                                x1={0}
+                                y1={line.pos}
+                                x2={canvasW}
+                                y2={line.pos}
+                                stroke="#2563EB"
+                                strokeWidth={strokeW}
+                                strokeDasharray={dashStr}
+                                strokeOpacity="0.95"
+                              />
+                              <circle cx="0" cy={line.pos} r={dotR} fill="#2563EB" />
+                              <circle cx={canvasW} cy={line.pos} r={dotR} fill="#2563EB" />
+                              {line.label && (
+                                <foreignObject
+                                  x={8 * scaleInv}
+                                  y={line.pos - 10}
+                                  width="70"
+                                  height="20"
+                                  className="overflow-visible"
+                                >
+                                  <div className="flex items-center" style={{ transform: `scale(${scaleInv})`, transformOrigin: 'left center' }}>
+                                    <span className="px-1.5 py-0.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[9px] font-bold shadow-xs whitespace-nowrap">
+                                      {line.label}
+                                    </span>
+                                  </div>
+                                </foreignObject>
+                              )}
+                            </g>
+                          );
+                        }
+                      })}
+                    </svg>
+                  );
+                })()}
 
                 {/* Draggable human metric silhouette scale reference (without transform controls) */}
-                {humanVisible && (() => {
+                {activeHumanVisible && (() => {
                   const canvasW = canvasWidthMm / 10;
                   const canvasH = canvasHeightMm / 10;
-                  const humanW = 70;
-                  const humanH = 175; // 175cm = 175px on canvas scale
-                  const activeX = humanPos ? humanPos.x : (canvasW / 2 - humanW / 2);
-                  const activeY = humanPos ? humanPos.y : (canvasH - humanH - 10);
+                  const humanH = activeHumanHeightCm;
+                  const humanW = Math.round(humanH * (70 / 175));
+                  const activeX = activeHumanPos ? activeHumanPos.x : (canvasW / 2 - humanW / 2);
+                  const activeY = activeHumanPos ? activeHumanPos.y : (canvasH - humanH - 10);
 
                   return (
                     <div
@@ -4538,11 +5210,12 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         width: `${humanW}px`,
                         height: `${humanH}px`,
                       }}
-                      title="Силуэт человека (рост 175 см) — зажмите мышью для перемещения по полю"
+                      title={`Силуэт человека (рост ${activeHumanHeightCm} см) — зажмите мышью для перемещения по полю`}
                       onClick={(e) => e.stopPropagation()}
                       onMouseDown={(e) => {
                         e.stopPropagation();
                         e.preventDefault();
+                        isInteractingWithElementRef.current = true;
                         setIsDraggingHuman(true);
                         const startMouseX = e.clientX;
                         const startMouseY = e.clientY;
@@ -4555,7 +5228,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                           const dy = (moveEv.clientY - startMouseY) / currentScale;
                           const nextX = Math.max(-30, Math.min(canvasW - 40, startX + dx));
                           const nextY = Math.max(-30, Math.min(canvasH - 40, startY + dy));
-                          setHumanPos({ x: nextX, y: nextY });
+                          updateActiveSceneHuman({ humanPos: { x: nextX, y: nextY } });
                         };
 
                         const handleMouseUp = () => {
@@ -4624,11 +5297,24 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                             "
                           />
                         </svg>
-                        {/* Небольшая плашка ростовки при наведении */}
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                          <span className="text-[9px] font-bold text-zinc-700 dark:text-zinc-200 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md px-2 py-0.5 rounded-full border border-zinc-200 dark:border-zinc-700 shadow-xs">
-                            175 см
-                          </span>
+                        {/* Interactive height badge */}
+                        <div className="opacity-90 hover:opacity-100 transition-opacity duration-200 pointer-events-auto absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap z-30">
+                          <div className="flex items-center gap-1 text-[10px] font-bold text-zinc-700 dark:text-zinc-200 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md px-2 py-0.5 rounded-full border border-zinc-200 dark:border-zinc-700 shadow-md">
+                            <span>Рост:</span>
+                            <input
+                              type="number"
+                              min={80}
+                              max={250}
+                              value={activeHumanHeightCm}
+                              onChange={(evt) => {
+                                const val = Math.max(50, Math.min(250, Number(evt.target.value) || 175));
+                                updateActiveSceneHuman({ humanHeightCm: val });
+                              }}
+                              onClick={(evt) => evt.stopPropagation()}
+                              className="w-9 text-center font-bold bg-zinc-100 dark:bg-zinc-800 rounded border border-zinc-300 dark:border-zinc-600 px-0.5 py-0 text-[10px] focus:outline-none focus:ring-1 focus:ring-[#8C52D0]"
+                            />
+                            <span>см</span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -4685,73 +5371,109 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                       <div
                         className="w-full h-full relative pointer-events-none select-none"
                         style={{
-                          filter: `brightness(${100 + el.exposure}%) saturate(${el.saturate}%) hue-rotate(${el.hue}deg) sepia(${el.temp > 0 ? el.temp * 0.4 : 0}%)${el.tintColor ? ` url(#element-tint-${el.id})` : ''}`
+                          filter: `brightness(${100 + el.exposure}%) saturate(${el.saturate}%) hue-rotate(${el.hue}deg) sepia(${el.temp > 0 ? el.temp * 0.4 : 0}%)${
+                            el.shadowEnabled
+                              ? ` drop-shadow(${el.shadowX ?? 0}px ${el.shadowY ?? 8}px ${el.shadowBlur ?? 12}px ${hexToRgba(el.shadowColor || '#000000', (el.shadowOpacity ?? 50) / 100)})`
+                              : ''
+                          }${el.tintColor ? ` url(#element-tint-${el.id})` : ''}`
                         }}
                       >
-                        {el.type === 'measurement' ? (
-                          <div className="w-full h-full relative flex items-center justify-center select-none pointer-events-auto">
-                            {/* SVG Dimension Line with Double-Ended Arrows and End Ticks */}
-                            <svg viewBox={`0 0 ${Math.max(40, el.w)} ${Math.max(20, el.h)}`} className="w-full h-full overflow-visible pointer-events-none">
-                              {/* End Ticks */}
-                              <line x1="3" y1="4" x2="3" y2="26" stroke="#8C52D0" strokeWidth="2.5" strokeLinecap="round" />
-                              <line x1={Math.max(30, el.w - 3)} y1="4" x2={Math.max(30, el.w - 3)} y2="26" stroke="#8C52D0" strokeWidth="2.5" strokeLinecap="round" />
-                              
-                              {/* Main Dimension Line */}
-                              <line x1="3" y1="15" x2={Math.max(30, el.w - 3)} y2="15" stroke="#8C52D0" strokeWidth="2.5" />
-                              
-                              {/* Left Arrow Head */}
-                              <polygon points="3,15 14,9 14,21" fill="#8C52D0" />
-                              
-                              {/* Right Arrow Head */}
-                              <polygon points={`${Math.max(30, el.w - 3)},15 ${Math.max(30, el.w - 14)},9 ${Math.max(30, el.w - 14)},21`} fill="#8C52D0" />
-                            </svg>
+                        {el.type === 'measurement' ? (() => {
+                          const currentScale = canvasScale * zoomScale;
+                          const scaleInv = 1 / (currentScale || 1);
+                          const strokeW = 1.1 * scaleInv;
+                          const tickH = 9 * scaleInv;
+                          const centerY = Math.max(10, el.h / 2);
+                          const elW = Math.max(30, el.w);
+                          const leftX = 2 * scaleInv;
+                          const rightX = elW - 2 * scaleInv;
+                          const arrowLen = 7 * scaleInv;
+                          const arrowWidth = 3 * scaleInv;
 
-                            {/* Centered Editable Value Badge */}
-                            <div
-                              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-auto cursor-text"
-                              onMouseDown={(e) => e.stopPropagation()}
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              {editingMeasurementId === el.id ? (
-                                <input
-                                  type="text"
-                                  autoFocus
-                                  value={editingMeasurementValue}
-                                  onChange={(e) => setEditingMeasurementValue(e.target.value)}
-                                  onBlur={() => {
-                                    const val = editingMeasurementValue.trim() || '0 см';
-                                    updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, measurementValue: val, caption: val } : item));
-                                    setEditingMeasurementId(null);
-                                  }}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
+                          return (
+                            <div className="w-full h-full relative flex items-center justify-center select-none pointer-events-auto">
+                              {/* SVG Dimension Line with Double-Ended Arrows and End Ticks */}
+                              <svg viewBox={`0 0 ${elW} ${Math.max(20, el.h)}`} className="w-full h-full overflow-visible pointer-events-none text-zinc-700 dark:text-zinc-200">
+                                {/* End Ticks */}
+                                <line x1={leftX} y1={centerY - tickH} x2={leftX} y2={centerY + tickH} stroke="currentColor" strokeWidth={strokeW} strokeLinecap="round" />
+                                <line x1={rightX} y1={centerY - tickH} x2={rightX} y2={centerY + tickH} stroke="currentColor" strokeWidth={strokeW} strokeLinecap="round" />
+                                
+                                {/* Main Dimension Line */}
+                                <line x1={leftX} y1={centerY} x2={rightX} y2={centerY} stroke="currentColor" strokeWidth={strokeW} />
+                                
+                                {/* Left Arrow Head */}
+                                <polygon points={`${leftX},${centerY} ${leftX + arrowLen},${centerY - arrowWidth} ${leftX + arrowLen},${centerY + arrowWidth}`} fill="currentColor" />
+                                
+                                {/* Right Arrow Head */}
+                                <polygon points={`${rightX},${centerY} ${rightX - arrowLen},${centerY - arrowWidth} ${rightX - arrowLen},${centerY + arrowWidth}`} fill="currentColor" />
+                              </svg>
+
+                              {/* Centered Editable Value Badge */}
+                              <div
+                                className="absolute top-1/2 left-1/2 z-30 pointer-events-auto cursor-text"
+                                style={{ transform: `translate(-50%, -50%) scale(${scaleInv})`, transformOrigin: 'center center' }}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {editingMeasurementId === el.id ? (
+                                  <input
+                                    type="text"
+                                    autoFocus
+                                    value={editingMeasurementValue}
+                                    onChange={(e) => setEditingMeasurementValue(e.target.value)}
+                                    onBlur={() => {
                                       const val = editingMeasurementValue.trim() || '0 см';
                                       updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, measurementValue: val, caption: val } : item));
                                       setEditingMeasurementId(null);
-                                    }
-                                  }}
-                                  className="bg-white dark:bg-zinc-900 text-[#8C52D0] dark:text-purple-300 border-2 border-[#8C52D0] rounded-full px-2.5 py-0.5 text-xs font-extrabold text-center outline-none shadow-xl min-w-[75px]"
-                                />
-                              ) : (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setEditingMeasurementId(el.id);
-                                    setEditingMeasurementValue(el.measurementValue || el.caption || `${el.w} см`);
-                                  }}
-                                  className="px-2.5 py-0.5 rounded-full bg-white dark:bg-zinc-900 text-[#8C52D0] dark:text-purple-300 border-2 border-[#8C52D0] shadow-md hover:bg-purple-50 dark:hover:bg-zinc-800 text-xs font-extrabold transition-all flex items-center gap-1 active:scale-95 whitespace-nowrap cursor-pointer"
-                                  title="Кликните для ввода нужного замера"
-                                >
-                                  <span>{el.measurementValue || el.caption || `${el.w} см`}</span>
-                                </button>
-                              )}
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        const val = editingMeasurementValue.trim() || '0 см';
+                                        updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, measurementValue: val, caption: val } : item));
+                                        setEditingMeasurementId(null);
+                                      }
+                                    }}
+                                    className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border-2 border-zinc-500 dark:border-zinc-400 rounded-full px-2.5 py-0.5 text-xs font-bold text-center outline-none shadow-md min-w-[75px]"
+                                  />
+                                ) : (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditingMeasurementId(el.id);
+                                      setEditingMeasurementValue(el.measurementValue || el.caption || `${el.w} см`);
+                                    }}
+                                    className="px-2.5 py-0.5 rounded-full bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 border border-zinc-400 dark:border-zinc-600 shadow-xs hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-bold transition-all flex items-center gap-1 active:scale-95 whitespace-nowrap cursor-pointer"
+                                    title="Кликните для ввода нужного замера"
+                                  >
+                                    <span>{el.measurementValue || el.caption || `${el.w} см`}</span>
+                                  </button>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ) : el.customImage ? (
+                          );
+                        })() : el.customImage ? (
                           <img
                             src={el.customImage}
                             alt={el.name}
-                            className="w-full h-full object-fill pointer-events-none select-none"
+                            onLoad={(e) => {
+                              const img = e.currentTarget;
+                              if (img.naturalWidth && img.naturalHeight && !el.aspectRatioAdjusted && !adjustedAspectIdsRef.current.has(el.id)) {
+                                adjustedAspectIdsRef.current.add(el.id);
+                                const aspect = img.naturalWidth / img.naturalHeight;
+                                const currentAspect = el.w / el.h;
+                                if (Math.abs(currentAspect - aspect) > 0.02) {
+                                  const newW = Math.max(20, Math.round(el.h * aspect));
+                                  requestAnimationFrame(() => {
+                                    updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, w: newW, aspectRatioAdjusted: true } : item));
+                                  });
+                                } else {
+                                  requestAnimationFrame(() => {
+                                    updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, aspectRatioAdjusted: true } : item));
+                                  });
+                                }
+                              }
+                            }}
+                            className="w-full h-full object-fill pointer-events-none select-none block"
                             referrerPolicy="no-referrer"
                           />
                         ) : (
@@ -4771,7 +5493,14 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                       </div>
 
                       {/* Editable & Draggable Caption Label with Leader Line */}
-                      {el.type !== 'measurement' && (el.caption !== undefined && el.caption !== null) && (() => {
+                      {el.type !== 'measurement' && Boolean(
+                        el.caption &&
+                        el.caption.trim() &&
+                        el.caption !== el.name &&
+                        !el.caption.startsWith('Загружен в') &&
+                        !el.caption.startsWith('Пакетная') &&
+                        !el.caption.includes('каркас для украшения')
+                      ) && (() => {
                         const offX = el.captionOffsetX || 0;
                         const offY = el.captionOffsetY || 0;
                         const hasOffset = Math.hypot(offX, offY) > 3;
@@ -4783,20 +5512,24 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
                         return (
                           <>
-                            {hasOffset && (
-                              <svg className="absolute inset-0 w-full h-full overflow-visible pointer-events-none z-20">
-                                <line
-                                  x1={startX}
-                                  y1={startY}
-                                  x2={endX}
-                                  y2={endY}
-                                  stroke="#8C52D0"
-                                  strokeWidth="1.5"
-                                  strokeDasharray="3,3"
-                                />
-                                <circle cx={startX} cy={startY} r="3" fill="#8C52D0" />
-                              </svg>
-                            )}
+                            {hasOffset && (() => {
+                              const currentScale = canvasScale * zoomScale;
+                              const scaleInv = 1 / (currentScale || 1);
+                              return (
+                                <svg className="absolute inset-0 w-full h-full overflow-visible pointer-events-none z-20">
+                                  <line
+                                    x1={startX}
+                                    y1={startY}
+                                    x2={endX}
+                                    y2={endY}
+                                    stroke="#52525B"
+                                    strokeWidth={0.85 * scaleInv}
+                                    strokeDasharray={`${3 * scaleInv} ${3 * scaleInv}`}
+                                  />
+                                  <circle cx={startX} cy={startY} r={2.5 * scaleInv} fill="#52525B" />
+                                </svg>
+                              );
+                            })()}
 
                             <div
                               className="absolute z-30 pointer-events-auto select-none group/caption cursor-grab active:cursor-grabbing"
@@ -4862,287 +5595,350 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                       })()}
 
                       {/* Dashed Outline for Group Member */}
-                      {selectedIds.length > 1 && selectedIds.includes(el.id) && (
-                        <div className="absolute -inset-1 border border-dashed border-purple-400/80 pointer-events-none rounded-xs drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] z-20" />
-                      )}
+                      {selectedIds.length > 1 && selectedIds.includes(el.id) && (() => {
+                        const currentScale = canvasScale * zoomScale;
+                        const scaleInv = 1 / (currentScale || 1);
+                        return (
+                          <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible z-20">
+                            <rect
+                              x="0"
+                              y="0"
+                              width="100%"
+                              height="100%"
+                              fill="none"
+                              stroke="#C084FC"
+                              strokeWidth={0.85 * scaleInv}
+                              strokeDasharray={`${3 * scaleInv} ${3 * scaleInv}`}
+                            />
+                          </svg>
+                        );
+                      })()}
 
                       {/* Interactive Bounding Box & Handles */}
-                      {isSelected && (
-                        <>
-                          {el.isLocked ? (
-                            /* Pale Gray Dashed Outline for Locked Element */
-                            <div className="absolute -inset-1 border border-dashed border-zinc-400/80 dark:border-zinc-500/80 pointer-events-none rounded-xs drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] z-20" />
-                          ) : (
-                            <>
-                              {/* Thin Purple Dashed Selection Bounding Box */}
-                              <div className="absolute -inset-1 border border-dashed border-purple-500 dark:border-purple-300 pointer-events-none rounded-xs drop-shadow-[0_1px_3px_rgba(0,0,0,0.75)] z-20" />
+                      {isSelected && (() => {
+                        const currentScale = canvasScale * zoomScale;
+                        const scaleInv = 1 / (currentScale || 1);
 
-                              {/* 8 Resizing handles */}
-                              {[
-                                { id: 'tl', cursor: 'nwse-resize', class: 'top-0 left-0 -translate-x-1/2 -translate-y-1/2 rounded-full w-2.5 h-2.5 bg-white border border-purple-600 dark:border-purple-300 shadow-sm' },
-                                { id: 'tr', cursor: 'nesw-resize', class: 'top-0 right-0 translate-x-1/2 -translate-y-1/2 rounded-full w-2.5 h-2.5 bg-white border border-purple-600 dark:border-purple-300 shadow-sm' },
-                                { id: 'bl', cursor: 'nesw-resize', class: 'bottom-0 left-0 -translate-x-1/2 translate-y-1/2 rounded-full w-2.5 h-2.5 bg-white border border-purple-600 dark:border-purple-300 shadow-sm' },
-                                { id: 'br', cursor: 'nwse-resize', class: 'bottom-0 right-0 translate-x-1/2 translate-y-1/2 rounded-full w-2.5 h-2.5 bg-white border border-purple-600 dark:border-purple-300 shadow-sm' },
-                                { id: 't', cursor: 'ns-resize', class: 'top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white border border-purple-600 dark:border-purple-300 shadow-xs' },
-                                { id: 'b', cursor: 'ns-resize', class: 'bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-2 h-2 bg-white border border-purple-600 dark:border-purple-300 shadow-xs' },
-                                { id: 'l', cursor: 'ew-resize', class: 'top-1/2 left-0 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white border border-purple-600 dark:border-purple-300 shadow-xs' },
-                                { id: 'r', cursor: 'ew-resize', class: 'top-1/2 right-0 translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white border border-purple-600 dark:border-purple-300 shadow-xs' }
-                              ].map((handle) => (
+                        return (
+                          <>
+                            {el.isLocked ? (
+                              /* Pale Gray Dashed Outline for Locked Element */
+                              <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible z-20">
+                                <rect
+                                  x="0"
+                                  y="0"
+                                  width="100%"
+                                  height="100%"
+                                  fill="none"
+                                  stroke="#A1A1AA"
+                                  strokeWidth={0.85 * scaleInv}
+                                  strokeDasharray={`${3 * scaleInv} ${3 * scaleInv}`}
+                                />
+                              </svg>
+                            ) : (
+                              <>
+                                {/* Thin Purple Dashed Selection Bounding Box - Snapped to exact outer edges */}
+                                <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible z-20">
+                                  <rect
+                                    x="0"
+                                    y="0"
+                                    width="100%"
+                                    height="100%"
+                                    fill="none"
+                                    stroke="#8C52D0"
+                                    strokeWidth={0.85 * scaleInv}
+                                    strokeDasharray={`${3 * scaleInv} ${3 * scaleInv}`}
+                                  />
+                                </svg>
+
+                                {/* 8 Resizing handles - Fixed screen visual size */}
+                                {[
+                                  { id: 'tl', cursor: 'nwse-resize', pos: { top: 0, left: 0 }, baseTranslate: 'translate(-50%, -50%)', class: 'rounded-full w-2.5 h-2.5 bg-white border border-purple-600 dark:border-purple-300 shadow-sm' },
+                                  { id: 'tr', cursor: 'nesw-resize', pos: { top: 0, right: 0 }, baseTranslate: 'translate(50%, -50%)', class: 'rounded-full w-2.5 h-2.5 bg-white border border-purple-600 dark:border-purple-300 shadow-sm' },
+                                  { id: 'bl', cursor: 'nesw-resize', pos: { bottom: 0, left: 0 }, baseTranslate: 'translate(-50%, 50%)', class: 'rounded-full w-2.5 h-2.5 bg-white border border-purple-600 dark:border-purple-300 shadow-sm' },
+                                  { id: 'br', cursor: 'nwse-resize', pos: { bottom: 0, right: 0 }, baseTranslate: 'translate(50%, 50%)', class: 'rounded-full w-2.5 h-2.5 bg-white border border-purple-600 dark:border-purple-300 shadow-sm' },
+                                  { id: 't', cursor: 'ns-resize', pos: { top: 0, left: '50%' }, baseTranslate: 'translate(-50%, -50%)', class: 'w-2 h-2 bg-white border border-purple-600 dark:border-purple-300 shadow-xs' },
+                                  { id: 'b', cursor: 'ns-resize', pos: { bottom: 0, left: '50%' }, baseTranslate: 'translate(-50%, 50%)', class: 'w-2 h-2 bg-white border border-purple-600 dark:border-purple-300 shadow-xs' },
+                                  { id: 'l', cursor: 'ew-resize', pos: { top: '50%', left: 0 }, baseTranslate: 'translate(-50%, -50%)', class: 'w-2 h-2 bg-white border border-purple-600 dark:border-purple-300 shadow-xs' },
+                                  { id: 'r', cursor: 'ew-resize', pos: { top: '50%', right: 0 }, baseTranslate: 'translate(50%, -50%)', class: 'w-2 h-2 bg-white border border-purple-600 dark:border-purple-300 shadow-xs' }
+                                ].map((handle) => (
+                                  <div
+                                    key={handle.id}
+                                    className={`absolute ${handle.class} z-30 hover:scale-125 transition-transform`}
+                                    style={{
+                                      ...handle.pos,
+                                      cursor: handle.cursor,
+                                      transform: `${handle.baseTranslate} scale(${scaleInv})`,
+                                      transformOrigin: 'center center'
+                                    }}
+                                    onMouseDown={(e) => {
+                                      e.stopPropagation();
+                                      e.preventDefault();
+                                      isInteractingWithElementRef.current = true;
+                                      setActiveAction('resize');
+                                      setActiveHandle(handle.id);
+                                      dragStartRef.current = {
+                                        x: e.clientX,
+                                        y: e.clientY,
+                                        elX: el.x,
+                                        elY: el.y,
+                                        elW: el.w,
+                                        elH: el.h,
+                                        rotation: el.rotation
+                                      };
+                                    }}
+                                  />
+                                ))}
+
+                                {/* Rotation handle line and button - Fixed screen visual size */}
                                 <div
-                                  key={handle.id}
-                                  className={`absolute ${handle.class} z-30 hover:scale-125 transition-transform`}
-                                  style={{ cursor: handle.cursor }}
+                                  className="absolute top-0 left-1/2 bg-purple-500 dark:bg-purple-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] pointer-events-none z-30"
+                                  style={{
+                                    width: `${1.5 * scaleInv}px`,
+                                    height: `${22 * scaleInv}px`,
+                                    transform: 'translate(-50%, -100%)',
+                                    transformOrigin: 'bottom center'
+                                  }}
+                                />
+                                <div
+                                  className="absolute top-0 left-1/2 w-6 h-6 rounded-full bg-white dark:bg-zinc-800 border border-purple-500 dark:border-purple-300 shadow-md flex items-center justify-center hover:bg-purple-50 dark:hover:bg-zinc-700 hover:scale-110 active:scale-95 transition-transform cursor-grab active:cursor-grabbing z-40"
+                                  title="Кликните для ввода точного градуса, или удерживайте для вращения мышью"
+                                  style={{
+                                    transform: `translate(-50%, -100%) translateY(${-22 * scaleInv}px) scale(${scaleInv})`,
+                                    transformOrigin: 'center center'
+                                  }}
                                   onMouseDown={(e) => {
                                     e.stopPropagation();
                                     e.preventDefault();
-                                    setActiveAction('resize');
-                                    setActiveHandle(handle.id);
-                                    dragStartRef.current = {
-                                      x: e.clientX,
-                                      y: e.clientY,
-                                      elX: el.x,
-                                      elY: el.y,
-                                      elW: el.w,
-                                      elH: el.h,
-                                      rotation: el.rotation
-                                    };
-                                  }}
-                                />
-                              ))}
+                                    isInteractingWithElementRef.current = true;
+                                    const targetId = el.id;
+                                    setSelectedId(targetId);
+                                    setActiveAction('rotate');
+                                    
+                                    const startX = e.clientX;
+                                    const startY = e.clientY;
+                                    let isDragging = false;
 
-                              {/* Rotation handle and line */}
-                              <div className="absolute top-0 left-1/2 w-[1px] h-6 bg-purple-500 dark:bg-purple-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] -translate-x-1/2 -translate-y-6 pointer-events-none" />
-                              <div
-                                className="absolute top-0 left-1/2 w-5 h-5 rounded-full bg-white dark:bg-zinc-800 border border-purple-500 dark:border-purple-300 shadow-md -translate-x-1/2 -translate-y-9 flex items-center justify-center hover:bg-purple-50 dark:hover:bg-zinc-700 hover:scale-110 active:scale-95 transition-transform cursor-grab active:cursor-grabbing z-40"
-                                title="Кликните для ввода точного градуса, или удерживайте для вращения мышью"
-                                onMouseDown={(e) => {
-                                  e.stopPropagation();
-                                  e.preventDefault();
-                                  const targetId = el.id;
-                                  setSelectedId(targetId);
-                                  setActiveAction('rotate');
-                                  
-                                  const startX = e.clientX;
-                                  const startY = e.clientY;
-                                  let isDragging = false;
+                                    const rect = canvasContainerRef.current?.getBoundingClientRect();
+                                    let startAngle = 0;
+                                    let startRotation = el.rotation;
+                                    let centerAbsX = 0;
+                                    let centerAbsY = 0;
 
-                                  const rect = canvasContainerRef.current?.getBoundingClientRect();
-                                  let startAngle = 0;
-                                  let startRotation = el.rotation;
-                                  let centerAbsX = 0;
-                                  let centerAbsY = 0;
-
-                                  if (rect) {
-                                    const elCenterX = el.x + el.w / 2;
-                                    const elCenterY = el.y + el.h / 2;
-                                    centerAbsX = rect.left + elCenterX;
-                                    centerAbsY = rect.top + elCenterY;
-                                    startAngle = Math.atan2(e.clientY - centerAbsY, e.clientX - centerAbsX) * (180 / Math.PI);
-                                    rotateStartRef.current = {
-                                      startAngle,
-                                      startRotation,
-                                      centerX: centerAbsX,
-                                      centerY: centerAbsY
-                                    };
-                                  }
-
-                                  const handleMouseMove = (moveEvent: MouseEvent) => {
-                                    const dist = Math.hypot(moveEvent.clientX - startX, moveEvent.clientY - startY);
-                                    if (dist > 3) {
-                                      isDragging = true;
+                                    if (rect) {
+                                      const elCenterX = el.x + el.w / 2;
+                                      const elCenterY = el.y + el.h / 2;
+                                      centerAbsX = rect.left + elCenterX;
+                                      centerAbsY = rect.top + elCenterY;
+                                      startAngle = Math.atan2(e.clientY - centerAbsY, e.clientX - centerAbsX) * (180 / Math.PI);
+                                      rotateStartRef.current = {
+                                        startAngle,
+                                        startRotation,
+                                        centerX: centerAbsX,
+                                        centerY: centerAbsY
+                                      };
                                     }
-                                    if (isDragging) {
-                                      const dx = moveEvent.clientX - centerAbsX;
-                                      const dy = moveEvent.clientY - centerAbsY;
-                                      const currentAngle = Math.atan2(dy, dx) * (180 / Math.PI);
-                                      const angleDiff = currentAngle - startAngle;
-                                      let newRotation = Math.round(startRotation + angleDiff);
 
-                                      if (moveEvent.shiftKey) {
-                                        newRotation = Math.round(newRotation / 15) * 15;
+                                    const handleMouseMove = (moveEvent: MouseEvent) => {
+                                      const dist = Math.hypot(moveEvent.clientX - startX, moveEvent.clientY - startY);
+                                      if (dist > 3) {
+                                        isDragging = true;
                                       }
-                                      if (newRotation > 180) newRotation -= 360;
-                                      if (newRotation < -180) newRotation += 360;
+                                      if (isDragging) {
+                                        const dx = moveEvent.clientX - centerAbsX;
+                                        const dy = moveEvent.clientY - centerAbsY;
+                                        const currentAngle = Math.atan2(dy, dx) * (180 / Math.PI);
+                                        const angleDiff = currentAngle - startAngle;
+                                        let newRotation = Math.round(startRotation + angleDiff);
 
-                                      updateActiveSceneElements(prev => prev.map(item => item.id === targetId ? { ...item, rotation: newRotation } : item));
-                                    }
-                                  };
+                                        if (moveEvent.shiftKey) {
+                                          newRotation = Math.round(newRotation / 15) * 15;
+                                        }
+                                        if (newRotation > 180) newRotation -= 360;
+                                        if (newRotation < -180) newRotation += 360;
 
-                                  const handleMouseUp = () => {
-                                    window.removeEventListener('mousemove', handleMouseMove);
-                                    window.removeEventListener('mouseup', handleMouseUp);
-                                    setActiveAction(null);
-                                    setActiveHandle(null);
+                                        updateActiveSceneElements(prev => prev.map(item => item.id === targetId ? { ...item, rotation: newRotation } : item));
+                                      }
+                                    };
 
-                                    if (!isDragging) {
-                                      // Single click -> toggle exact angle popover immediately
-                                      setRotationInputId(prev => prev === targetId ? null : targetId);
-                                    } else {
-                                      recordHistory(scenes);
-                                    }
-                                  };
+                                    const handleMouseUp = () => {
+                                      window.removeEventListener('mousemove', handleMouseMove);
+                                      window.removeEventListener('mouseup', handleMouseUp);
+                                      setActiveAction(null);
+                                      setActiveHandle(null);
 
-                                  window.addEventListener('mousemove', handleMouseMove);
-                                  window.addEventListener('mouseup', handleMouseUp);
-                                }}
-                              >
-                                <RefreshCw className="w-2.5 h-2.5 text-purple-600 dark:text-purple-300 animate-spin-slow" />
-                              </div>
+                                      if (!isDragging) {
+                                        setRotationInputId(prev => prev === targetId ? null : targetId);
+                                      } else {
+                                        recordHistory(scenes);
+                                      }
+                                    };
 
-                              {/* Floating Exact Rotation Angle Popover */}
-                              {rotationInputId === el.id && (() => {
-                                const isNearTop = el.y < 160;
-                                return (
-                                  <div
-                                    className={`absolute left-1/2 -translate-x-1/2 ${
-                                      isNearTop ? 'top-full mt-4' : '-translate-y-[165px] top-0'
-                                    } z-50 bg-white/95 dark:bg-zinc-900/95 text-zinc-900 dark:text-zinc-100 p-3 rounded-2xl shadow-xl shadow-purple-950/10 border border-white/80 dark:border-zinc-700/80 flex flex-col items-center gap-2 pointer-events-auto min-w-[210px] animate-fadeIn select-none backdrop-blur-md`}
-                                    style={{
-                                      transform: `rotate(${-el.rotation}deg) scaleX(${el.isFlippedH ? -1 : 1}) scaleY(${el.isFlippedV ? -1 : 1}) scale(${1 / ((canvasScale * zoomScale) || 1)})`,
-                                      transformOrigin: isNearTop ? 'top center' : 'bottom center',
-                                      WebkitFontSmoothing: 'antialiased'
-                                    }}
-                                    onMouseDown={(e) => e.stopPropagation()}
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <div className="flex items-center justify-between w-full pb-1 border-b border-purple-200/50 dark:border-zinc-800 text-xs font-bold text-[#5B3E88] dark:text-purple-300">
-                                      <span className="flex items-center gap-1.5">
-                                        <RotateCw className="w-3.5 h-3.5 text-[#5B3E88] dark:text-purple-400 stroke-[2.2]" />
-                                        Угол поворота
-                                      </span>
-                                    </div>
+                                    window.addEventListener('mousemove', handleMouseMove);
+                                    window.addEventListener('mouseup', handleMouseUp);
+                                  }}
+                                >
+                                  <RefreshCw className="w-3 h-3 text-purple-600 dark:text-purple-300 animate-spin-slow" />
+                                </div>
 
-                                    {/* Number Input & Step Buttons */}
-                                    <div className="flex items-center gap-1.5 my-1">
-                                      <button
-                                        onClick={() => {
-                                          const next = ((el.rotation - 15) % 360 + 360) % 360;
-                                          updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, rotation: next } : item));
-                                        }}
-                                        className="px-2.5 py-1 bg-white/50 hover:bg-purple-100/80 dark:bg-zinc-800/60 dark:hover:bg-zinc-700/80 border border-purple-200/60 dark:border-zinc-700 rounded-xl text-xs font-bold text-[#5B3E88] dark:text-purple-300 cursor-pointer transition-colors shadow-xs"
-                                        title="-15°"
-                                      >
-                                        -15°
-                                      </button>
-
-                                      <div className="relative flex items-center">
-                                        <input
-                                          type="number"
-                                          value={el.rotation}
-                                          onChange={(e) => {
-                                            const val = parseInt(e.target.value);
-                                            updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, rotation: isNaN(val) ? 0 : val } : item));
-                                          }}
-                                          className="w-16 px-2 py-1 text-center font-extrabold text-sm bg-white/70 dark:bg-zinc-950/70 border border-purple-300/80 dark:border-purple-600 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:border-[#5B3E88] focus:ring-1 focus:ring-[#5B3E88] shadow-xs"
-                                        />
-                                        <span className="absolute right-2 text-xs font-bold text-[#5B3E88] dark:text-purple-400 pointer-events-none">°</span>
+                                {/* Floating Exact Rotation Angle Popover */}
+                                {rotationInputId === el.id && (() => {
+                                  const isNearTop = el.y < 160;
+                                  return (
+                                    <div
+                                      className={`absolute left-1/2 z-50 bg-white/95 dark:bg-zinc-900/95 text-zinc-900 dark:text-zinc-100 p-3 rounded-2xl shadow-xl shadow-purple-950/10 border border-white/80 dark:border-zinc-700/80 flex flex-col items-center gap-2 pointer-events-auto min-w-[210px] animate-fadeIn select-none backdrop-blur-md`}
+                                      style={{
+                                        top: isNearTop ? '100%' : '0',
+                                        marginTop: isNearTop ? `${16 * scaleInv}px` : undefined,
+                                        transform: `translate(-50%, ${isNearTop ? '0' : '-100%'}) translateY(${isNearTop ? '0' : `${-50 * scaleInv}px`}) rotate(${-el.rotation}deg) scaleX(${el.isFlippedH ? -1 : 1}) scaleY(${el.isFlippedV ? -1 : 1}) scale(${scaleInv})`,
+                                        transformOrigin: isNearTop ? 'top center' : 'bottom center',
+                                        WebkitFontSmoothing: 'antialiased'
+                                      }}
+                                      onMouseDown={(e) => e.stopPropagation()}
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <div className="flex items-center justify-between w-full pb-1 border-b border-purple-200/50 dark:border-zinc-800 text-xs font-bold text-[#5B3E88] dark:text-purple-300">
+                                        <span className="flex items-center gap-1.5">
+                                          <RotateCw className="w-3.5 h-3.5 text-[#5B3E88] dark:text-purple-400 stroke-[2.2]" />
+                                          Угол поворота
+                                        </span>
                                       </div>
 
-                                      <button
-                                        onClick={() => {
-                                          const next = ((el.rotation + 15) % 360 + 360) % 360;
-                                          updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, rotation: next } : item));
-                                        }}
-                                        className="px-2.5 py-1 bg-white/50 hover:bg-purple-100/80 dark:bg-zinc-800/60 dark:hover:bg-zinc-700/80 border border-purple-200/60 dark:border-zinc-700 rounded-xl text-xs font-bold text-[#5B3E88] dark:text-purple-300 cursor-pointer transition-colors shadow-xs"
-                                        title="+15°"
-                                      >
-                                        +15°
-                                      </button>
-                                    </div>
-
-                                    {/* Preset Angle Pills */}
-                                    <div className="flex items-center justify-between w-full gap-1 pt-1.5 border-t border-purple-200/50 dark:border-zinc-800">
-                                      {[0, 45, 90, 180, 270].map((deg) => (
+                                      {/* Number Input & Step Buttons */}
+                                      <div className="flex items-center gap-1.5 my-1">
                                         <button
-                                          key={deg}
                                           onClick={() => {
-                                            updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, rotation: deg } : item));
+                                            const next = ((el.rotation - 15) % 360 + 360) % 360;
+                                            updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, rotation: next } : item));
                                           }}
-                                          className={`px-1.5 py-0.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                                            el.rotation === deg
-                                              ? 'bg-[#5B3E88] text-white shadow-xs'
-                                              : 'bg-white/50 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300 hover:bg-purple-100/80 hover:text-[#5B3E88]'
-                                          }`}
+                                          className="px-2.5 py-1 bg-white/50 hover:bg-purple-100/80 dark:bg-zinc-800/60 dark:hover:bg-zinc-700/80 border border-purple-200/60 dark:border-zinc-700 rounded-xl text-xs font-bold text-[#5B3E88] dark:text-purple-300 cursor-pointer transition-colors shadow-xs"
+                                          title="-15°"
                                         >
-                                          {deg}°
+                                          -15°
                                         </button>
-                                      ))}
+
+                                        <div className="relative flex items-center">
+                                          <input
+                                            type="number"
+                                            value={el.rotation}
+                                            onChange={(e) => {
+                                              const val = parseInt(e.target.value);
+                                              updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, rotation: isNaN(val) ? 0 : val } : item));
+                                            }}
+                                            className="w-16 px-2 py-1 text-center font-extrabold text-sm bg-white/70 dark:bg-zinc-950/70 border border-purple-300/80 dark:border-purple-600 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:border-[#5B3E88] focus:ring-1 focus:ring-[#5B3E88] shadow-xs"
+                                          />
+                                          <span className="absolute right-2 text-xs font-bold text-[#5B3E88] dark:text-purple-400 pointer-events-none">°</span>
+                                        </div>
+
+                                        <button
+                                          onClick={() => {
+                                            const next = ((el.rotation + 15) % 360 + 360) % 360;
+                                            updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, rotation: next } : item));
+                                          }}
+                                          className="px-2.5 py-1 bg-white/50 hover:bg-purple-100/80 dark:bg-zinc-800/60 dark:hover:bg-zinc-700/80 border border-purple-200/60 dark:border-zinc-700 rounded-xl text-xs font-bold text-[#5B3E88] dark:text-purple-300 cursor-pointer transition-colors shadow-xs"
+                                          title="+15°"
+                                        >
+                                          +15°
+                                        </button>
+                                      </div>
+
+                                      {/* Preset Angle Pills */}
+                                      <div className="flex items-center justify-between w-full gap-1 pt-1.5 border-t border-purple-200/50 dark:border-zinc-800">
+                                        {[0, 45, 90, 180, 270].map((deg) => (
+                                          <button
+                                            key={deg}
+                                            onClick={() => {
+                                              updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, rotation: deg } : item));
+                                            }}
+                                            className={`px-1.5 py-0.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                                              el.rotation === deg
+                                                ? 'bg-[#5B3E88] text-white shadow-xs'
+                                                : 'bg-white/50 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300 hover:bg-purple-100/80 hover:text-[#5B3E88]'
+                                            }`}
+                                          >
+                                            {deg}°
+                                          </button>
+                                        ))}
+                                      </div>
                                     </div>
-                                  </div>
-                                );
-                              })()}
-                            </>
-                          )}
+                                  );
+                                })()}
+                              </>
+                            )}
 
-                          {/* FLOATING QUICK TOOLBAR - Translucent glass with 16px blur & sharp clear controls */}
-                          {(() => {
-                            const isRotationOpen = rotationInputId === el.id;
-                            const isNearTop = el.y < 160;
-                            const isNearBottom = (el.y + el.h) > (canvasHeightMm / 10 - 70);
+                            {/* FLOATING QUICK TOOLBAR - Translucent glass with 16px blur & sharp clear controls */}
+                            {(() => {
+                              const isRotationOpen = rotationInputId === el.id;
+                              const isNearTop = el.y < 160;
+                              const isNearBottom = (el.y + el.h) > (canvasHeightMm / 10 - 70);
 
-                            // Anti-collision logic: if rotation popover is open, position toolbar on opposite side
-                            let positionClass = isNearBottom ? 'bottom-[calc(100%+16px)]' : 'top-[calc(100%+16px)]';
-                            if (isRotationOpen) {
-                              positionClass = isNearTop ? 'bottom-[calc(100%+16px)]' : 'top-[calc(100%+16px)]';
-                            }
+                              let isToolbarTop = !isNearBottom;
+                              if (isRotationOpen && !isNearTop) {
+                                isToolbarTop = false;
+                              }
 
-                            return (
-                              <div
-                                className={`absolute left-1/2 -translate-x-1/2 ${positionClass} flex items-center gap-1.5 bg-white/95 dark:bg-zinc-900/95 text-zinc-800 dark:text-zinc-100 px-3.5 py-1.5 rounded-full shadow-lg shadow-purple-950/10 border border-white/80 dark:border-zinc-700/80 z-50 pointer-events-auto select-none backdrop-blur-md`}
-                                style={{
-                                  transform: `rotate(${-el.rotation}deg) scaleX(${el.isFlippedH ? -1 : 1}) scaleY(${el.isFlippedV ? -1 : 1}) scale(${1 / ((canvasScale * zoomScale) || 1)})`,
-                                  transformOrigin: isNearBottom ? 'bottom center' : 'top center',
-                                  WebkitFontSmoothing: 'antialiased'
-                                }}
-                              >
-                                {/* Lock Toggle */}
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, isLocked: !item.isLocked } : item));
+                              return (
+                                <div
+                                  className="absolute left-1/2 flex items-center gap-1.5 bg-white/95 dark:bg-zinc-900/95 text-zinc-800 dark:text-zinc-100 px-3.5 py-1.5 rounded-full shadow-lg shadow-purple-950/10 border border-white/80 dark:border-zinc-700/80 z-50 pointer-events-auto select-none backdrop-blur-md"
+                                  style={{
+                                    top: isToolbarTop ? '100%' : undefined,
+                                    bottom: !isToolbarTop ? '100%' : undefined,
+                                    marginTop: isToolbarTop ? `${14 * scaleInv}px` : undefined,
+                                    marginBottom: !isToolbarTop ? `${14 * scaleInv}px` : undefined,
+                                    transform: `translate(-50%, 0) rotate(${-el.rotation}deg) scaleX(${el.isFlippedH ? -1 : 1}) scaleY(${el.isFlippedV ? -1 : 1}) scale(${scaleInv})`,
+                                    transformOrigin: isToolbarTop ? 'top center' : 'bottom center',
+                                    WebkitFontSmoothing: 'antialiased'
                                   }}
-                                  className="p-1.5 rounded-full hover:bg-amber-500/20 active:scale-90 transition-all cursor-pointer flex items-center justify-center group"
-                                  title={el.isLocked ? "Разблокировать" : "Заблокировать"}
                                 >
-                                  {el.isLocked ? (
-                                    <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400 stroke-[2.3] group-hover:scale-110 transition-transform" />
-                                  ) : (
-                                    <Unlock className="w-4 h-4 text-emerald-600 dark:text-emerald-400 stroke-[2.3] group-hover:scale-110 transition-transform" />
-                                  )}
-                                </button>
+                                  {/* Lock Toggle */}
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, isLocked: !item.isLocked } : item));
+                                    }}
+                                    className="p-1.5 rounded-full hover:bg-amber-500/20 active:scale-90 transition-all cursor-pointer flex items-center justify-center group"
+                                    title={el.isLocked ? "Разблокировать" : "Заблокировать"}
+                                  >
+                                    {el.isLocked ? (
+                                      <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400 stroke-[2.3] group-hover:scale-110 transition-transform" />
+                                    ) : (
+                                      <Unlock className="w-4 h-4 text-emerald-600 dark:text-emerald-400 stroke-[2.3] group-hover:scale-110 transition-transform" />
+                                    )}
+                                  </button>
 
-                                {/* Copy/Duplicate */}
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDuplicateElement(el);
-                                  }}
-                                  className="p-1.5 rounded-full hover:bg-purple-500/20 active:scale-90 transition-all cursor-pointer flex items-center justify-center group"
-                                  title="Копировать"
-                                >
-                                  <Copy className="w-4 h-4 text-[#5B3E88] dark:text-purple-300 stroke-[2.3] group-hover:scale-110 transition-transform" />
-                                </button>
+                                  {/* Copy/Duplicate */}
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDuplicateElement(el);
+                                    }}
+                                    className="p-1.5 rounded-full hover:bg-purple-500/20 active:scale-90 transition-all cursor-pointer flex items-center justify-center group"
+                                    title="Копировать"
+                                  >
+                                    <Copy className="w-4 h-4 text-[#5B3E88] dark:text-purple-300 stroke-[2.3] group-hover:scale-110 transition-transform" />
+                                  </button>
 
-                                <div className="w-[1px] h-4 bg-purple-300/50 dark:bg-zinc-700 mx-0.5 shrink-0" />
+                                  <div className="w-[1px] h-4 bg-purple-300/50 dark:bg-zinc-700 mx-0.5 shrink-0" />
 
-                                {/* Delete/Trash */}
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    updateActiveSceneElements(prev => prev.filter(item => item.id !== el.id));
-                                    setSelectedId(null);
-                                    showToast('Удалено', 'Элемент удален со сцены.', 'info');
-                                  }}
-                                  className="p-1.5 rounded-full hover:bg-rose-500/20 active:scale-90 transition-all cursor-pointer flex items-center justify-center group"
-                                  title="Удалить со сцены"
-                                >
-                                  <Trash2 className="w-4 h-4 text-rose-500 dark:text-rose-400 stroke-[2.3] group-hover:scale-110 transition-transform" />
-                                </button>
-                              </div>
-                            );
-                          })()}
-                        </>
-                      )}
+                                  {/* Delete/Trash */}
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      updateActiveSceneElements(prev => prev.filter(item => item.id !== el.id));
+                                      setSelectedId(null);
+                                      showToast('Удалено', 'Элемент удален со сцены.', 'info');
+                                    }}
+                                    className="p-1.5 rounded-full hover:bg-rose-500/20 active:scale-90 transition-all cursor-pointer flex items-center justify-center group"
+                                    title="Удалить со сцены"
+                                  >
+                                    <Trash2 className="w-4 h-4 text-rose-500 dark:text-rose-400 stroke-[2.3] group-hover:scale-110 transition-transform" />
+                                  </button>
+                                </div>
+                              );
+                            })()}
+                          </>
+                        );
+                      })()}
                     </div>
                   );
                 })}
@@ -5173,6 +5969,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                       onMouseDown={(e) => {
                         e.stopPropagation();
                         e.preventDefault();
+                        isInteractingWithElementRef.current = true;
                         setActiveAction('move-group');
                         setActiveHandle(null);
                         dragGroupStartRef.current = {
@@ -5183,13 +5980,24 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                       }}
                     >
                       {/* Outer Solid Bounding Frame */}
-                      <div className="absolute -inset-1.5 border-2 border-purple-500/90 dark:border-purple-400/90 bg-purple-500/10 rounded-sm shadow-xl pointer-events-none border-dashed" />
+                      <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible z-20">
+                        <rect
+                          x="0"
+                          y="0"
+                          width="100%"
+                          height="100%"
+                          fill="rgba(140, 82, 208, 0.08)"
+                          stroke="#8C52D0"
+                          strokeWidth={0.85 / ((canvasScale * zoomScale) || 1)}
+                          strokeDasharray={`${3 / ((canvasScale * zoomScale) || 1)} ${3 / ((canvasScale * zoomScale) || 1)}`}
+                        />
+                      </svg>
 
                       {/* Corner Resize/Decoration Markers */}
-                      <div className="absolute -top-2 -left-2 w-3.5 h-3.5 bg-white border-2 border-purple-600 rounded-xs shadow-xs pointer-events-none" />
-                      <div className="absolute -top-2 -right-2 w-3.5 h-3.5 bg-white border-2 border-purple-600 rounded-xs shadow-xs pointer-events-none" />
-                      <div className="absolute -bottom-2 -left-2 w-3.5 h-3.5 bg-white border-2 border-purple-600 rounded-xs shadow-xs pointer-events-none" />
-                      <div className="absolute -bottom-2 -right-2 w-3.5 h-3.5 bg-white border-2 border-purple-600 rounded-xs shadow-xs pointer-events-none" />
+                      <div className="absolute top-0 left-0 w-3.5 h-3.5 bg-white border-2 border-purple-600 rounded-xs shadow-xs pointer-events-none" style={{ transform: `translate(-50%, -50%) scale(${1 / ((canvasScale * zoomScale) || 1)})`, transformOrigin: 'center center' }} />
+                      <div className="absolute top-0 right-0 w-3.5 h-3.5 bg-white border-2 border-purple-600 rounded-xs shadow-xs pointer-events-none" style={{ transform: `translate(50%, -50%) scale(${1 / ((canvasScale * zoomScale) || 1)})`, transformOrigin: 'center center' }} />
+                      <div className="absolute bottom-0 left-0 w-3.5 h-3.5 bg-white border-2 border-purple-600 rounded-xs shadow-xs pointer-events-none" style={{ transform: `translate(-50%, 50%) scale(${1 / ((canvasScale * zoomScale) || 1)})`, transformOrigin: 'center center' }} />
+                      <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-white border-2 border-purple-600 rounded-xs shadow-xs pointer-events-none" style={{ transform: `translate(50%, 50%) scale(${1 / ((canvasScale * zoomScale) || 1)})`, transformOrigin: 'center center' }} />
 
                       {/* Badge Count Tag */}
                       <div
@@ -5459,7 +6267,13 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                             <input
                               type="text"
                               placeholder="Подпись..."
-                              value={selectedElem.caption ?? ''}
+                              value={(
+                                selectedElem.caption &&
+                                selectedElem.caption !== selectedElem.name &&
+                                !selectedElem.caption.startsWith('Загружен в') &&
+                                !selectedElem.caption.startsWith('Пакетная') &&
+                                !selectedElem.caption.includes('каркас для украшения')
+                              ) ? selectedElem.caption : ''}
                               onChange={(e) => {
                                 const val = e.target.value;
                                 updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, caption: val } : item));
@@ -5681,9 +6495,9 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                     </button>
 
                     <button
-                      onClick={() => setHumanVisible(!humanVisible)}
+                      onClick={() => updateActiveSceneHuman({ humanVisible: !activeHumanVisible })}
                       className={`px-3 py-1.5 rounded-full font-bold text-xs flex items-center gap-1.5 shadow-md transition-all cursor-pointer active:scale-95 ${
-                        humanVisible
+                        activeHumanVisible
                           ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white border-transparent'
                           : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border border-[#8C52D0]/40 hover:bg-purple-50/50'
                       }`}
@@ -5827,7 +6641,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
       {/* ✨ ИИ ВИЗУАЛИЗАЦИЯ MODAL */}
       <AnimatePresence>
         {isAiModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
             
             {/* Modal Glass Overlay */}
             <motion.div
@@ -6112,7 +6926,11 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                 const reader = new FileReader();
                                 reader.onload = (event) => {
                                   if (event.target?.result) {
-                                    localStorage.setItem(`cat_icon_${cat.id}`, event.target.result as string);
+                                    try {
+                                      localStorage.setItem(`cat_icon_${cat.id}`, event.target.result as string);
+                                    } catch (e) {
+                                      console.warn('Failed to save category icon:', e);
+                                    }
                                     window.dispatchEvent(new Event('cat_icons_updated'));
                                     showToast('Иконка обновлена', `Иконка категории "${cat.title}" сохранена.`, 'success');
                                   }

@@ -10,10 +10,19 @@ export interface EditorSketchCanvasPreviewProps {
   elements?: any[];
   className?: string;
   showHuman?: boolean;
+  hideBanner?: boolean;
 }
 
 // Flatten CATALOG_ASSETS for fast lookup
 const ALL_CATALOG_ITEMS: LibraryItem[] = Object.values(CATALOG_ASSETS).flat();
+
+const hexToRgba = (hex: string = '#000000', alpha: number = 0.5) => {
+  let c = hex.replace('#', '');
+  if (c.length === 3) c = c.split('').map(x => x + x).join('');
+  const num = parseInt(c, 16);
+  if (isNaN(num)) return `rgba(0, 0, 0, ${alpha})`;
+  return `rgba(${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}, ${alpha})`;
+};
 
 /**
  * Resolves the SVG markup or image URL for a given element from scene
@@ -182,19 +191,22 @@ export const EditorSketchCanvasPreview: React.FC<EditorSketchCanvasPreviewProps>
   sceneData = null,
   elements = null,
   className = '',
-  showHuman = true
+  showHuman = false,
+  hideBanner = false
 }) => {
-  // If explicitly uploaded custom photo (and not unsplash placeholder), render real photo
+  // If explicitly provided a preview image or captured canvas screenshot, render the real photo
   if (image && !image.includes('unsplash')) {
     return (
-      <div className={`relative w-full h-full bg-zinc-900 ${className}`}>
-        <img src={image} alt={title} className="w-full h-full object-cover" />
-        <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/85 via-black/45 to-transparent text-white z-20 pointer-events-none">
-          <span className="text-[10px] font-mono tracking-wider opacity-90 block text-purple-200">
-            {title.toUpperCase()}
-          </span>
-          <p className="text-xs font-semibold tracking-tight">{subtitle}</p>
-        </div>
+      <div className={`relative w-full h-full bg-[#f8f9fc] dark:bg-zinc-900 ${className}`}>
+        <img src={image} alt={title} className="w-full h-full object-contain" />
+        {!hideBanner && (
+          <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/85 via-black/45 to-transparent text-white z-20 pointer-events-none">
+            <span className="text-[10px] font-mono tracking-wider opacity-90 block text-purple-200">
+              {title.toUpperCase()}
+            </span>
+            <p className="text-xs font-semibold tracking-tight">{subtitle}</p>
+          </div>
+        )}
       </div>
     );
   }
@@ -207,9 +219,12 @@ export const EditorSketchCanvasPreview: React.FC<EditorSketchCanvasPreviewProps>
 
   const backdropBg = sceneData?.backdropColor || '#f8f9fc';
 
-  // Standard canvas coordinate system (600px width x 360px height)
-  const canvasW = 600;
-  const canvasH = 360;
+  // Standard canvas coordinate system (650px width x 440px height to match MoodboardEditor standard)
+  const canvasW = 650;
+  const canvasH = 440;
+
+  // Only show human figure if explicitly enabled in sceneData AND showHuman prop is true
+  const isHumanVisible = showHuman && !!sceneData?.humanVisible;
 
   return (
     <div
@@ -228,18 +243,6 @@ export const EditorSketchCanvasPreview: React.FC<EditorSketchCanvasPreviewProps>
           </pattern>
         </defs>
         <rect width="100%" height="100%" fill={`url(#preview-grid-maj-${sceneIndex})`} />
-
-        {/* Ground / Horizon Line */}
-        <line x1="0" y1="78%" x2="100%" y2="78%" stroke="#94a3b8" strokeWidth="1.2" strokeDasharray="4 4" />
-
-        {/* Top Scale Ruler */}
-        <line x1="15%" y1="7%" x2="85%" y2="7%" stroke="#cbd5e1" strokeWidth="1" />
-        <line x1="15%" y1="5%" x2="15%" y2="9%" stroke="#cbd5e1" strokeWidth="1" />
-        <line x1="50%" y1="5%" x2="50%" y2="9%" stroke="#cbd5e1" strokeWidth="1" />
-        <line x1="85%" y1="5%" x2="85%" y2="9%" stroke="#cbd5e1" strokeWidth="1" />
-        <text x="50%" y="5.5%" textAnchor="middle" fill="#64748b" fontSize="9" fontFamily="monospace" fontWeight="bold">
-          6.00 м
-        </text>
       </svg>
 
       {/* Render Canvas Elements Container */}
@@ -254,13 +257,16 @@ export const EditorSketchCanvasPreview: React.FC<EditorSketchCanvasPreviewProps>
           const isFlippedH = !!el.isFlippedH;
           const isFlippedV = !!el.isFlippedV;
 
-          // CSS Percentages relative to canvas coordinate space (600 x 360)
           const leftPct = (elX / canvasW) * 100;
           const topPct = (elY / canvasH) * 100;
           const widthPct = (elW / canvasW) * 100;
           const heightPct = (elH / canvasH) * 100;
 
           const svgContent = getElementSvgMarkup(el);
+
+          const shadowFilter = el.shadowEnabled
+            ? ` drop-shadow(${el.shadowX ?? 0}px ${el.shadowY ?? 8}px ${el.shadowBlur ?? 12}px ${hexToRgba(el.shadowColor || '#000000', (el.shadowOpacity ?? 50) / 100)})`
+            : '';
 
           return (
             <div
@@ -272,7 +278,8 @@ export const EditorSketchCanvasPreview: React.FC<EditorSketchCanvasPreviewProps>
                 width: `${widthPct}%`,
                 height: `${heightPct}%`,
                 opacity: opacity,
-                transform: `rotate(${rotation}deg) scaleX(${isFlippedH ? -1 : 1}) scaleY(${isFlippedV ? -1 : 1})`
+                transform: `rotate(${rotation}deg) scaleX(${isFlippedH ? -1 : 1}) scaleY(${isFlippedV ? -1 : 1})`,
+                filter: `brightness(${100 + (el.exposure || 0)}%) saturate(${el.saturate ?? 100}%) hue-rotate(${el.hue || 0}deg) sepia(${el.temp > 0 ? el.temp * 0.4 : 0}%)${shadowFilter}`
               }}
             >
               {el.imageUrl ? (
@@ -293,35 +300,50 @@ export const EditorSketchCanvasPreview: React.FC<EditorSketchCanvasPreviewProps>
         })}
       </div>
 
-      {/* Human Metric Scale Silhouette ("Человеческий элемент") */}
-      {showHuman && (
-        <svg className="absolute inset-0 w-full h-full z-20 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
-          {/* Human Silhouette placed on floor baseline on left side */}
-          <g transform="translate(30, 155) scale(0.85)">
-            {/* Person silhouette */}
+      {/* Human Metric Scale Silhouette ONLY if sceneData specifically enabled it */}
+      {isHumanVisible && (
+        <div
+          className="absolute z-20 pointer-events-none flex flex-col items-center"
+          style={{
+            left: `${((sceneData?.humanPos?.x || 50) / canvasW) * 100}%`,
+            top: `${((sceneData?.humanPos?.y || 200) / canvasH) * 100}%`,
+            width: `${((Math.round((sceneData?.humanHeightCm || 175) * (70 / 175))) / canvasW) * 100}%`,
+            height: `${((sceneData?.humanHeightCm || 175) / canvasH) * 100}%`,
+          }}
+        >
+          <svg viewBox="0 0 100 240" className="w-full h-full drop-shadow-[0_4px_12px_rgba(0,0,0,0.25)]">
             <path
-              d="M 25 15 C 31 15 35 11 35 5 C 35 -1 31 -5 25 -5 C 19 -5 15 -1 15 5 C 15 11 19 15 25 15 Z M 16 22 L 8 65 L 17 65 L 21 38 L 23 100 L 28 100 L 29 45 L 30 100 L 35 100 L 37 38 L 41 65 L 50 65 L 42 22 C 37 18 21 18 16 22 Z"
-              fill="#818cf8"
-              opacity="0.85"
+              fill="#C0D4E5"
+              fillOpacity="0.88"
+              stroke="#8CA8C2"
+              strokeWidth="1"
+              strokeLinejoin="round"
+              fillRule="evenodd"
+              d="
+                M 50 10 C 43 10 36 15 36 25 C 35 32 38 42 34 48 C 29 50 22 55 20 62
+                C 17 71 18 80 15 88 C 13 94 17 101 22 102 C 28 103 33 97 36 88
+                C 37 83 36 74 38 68 C 37 82 34 100 22 162 C 20 166 23 168 28 168
+                L 42 168 L 43 232 C 42 236 47 238 49 238 C 50 238 50 234 49 228
+                L 48 172 L 52 172 L 51 228 C 50 234 50 238 51 238 C 53 238 58 236 57 232
+                L 58 168 L 72 168 C 77 168 80 166 78 162 C 66 100 63 82 62 68
+                C 64 74 63 83 64 88 C 67 97 72 103 78 102 C 83 101 87 94 85 88
+                C 82 80 83 71 80 62 C 78 55 71 50 66 48 C 62 42 65 32 64 25
+                C 64 15 57 10 50 10 Z
+              "
             />
-            {/* Height dimension guide line */}
-            <line x1="58" y1="-5" x2="58" y2="100" stroke="#6366f1" strokeWidth="1" strokeDasharray="2 2" />
-            <line x1="53" y1="-5" x2="63" y2="-5" stroke="#6366f1" strokeWidth="1" />
-            <line x1="53" y1="100" x2="63" y2="100" stroke="#6366f1" strokeWidth="1" />
-            <text x="65" y="52" fill="#4f46e5" fontSize="10" fontFamily="sans-serif" fontWeight="bold">
-              1.70м
-            </text>
-          </g>
-        </svg>
+          </svg>
+        </div>
       )}
 
       {/* Bottom Title & Subtitle Banner */}
-      <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/85 via-black/50 to-transparent text-white z-30 pointer-events-none">
-        <span className="text-[10px] font-mono tracking-wider opacity-90 block text-purple-200">
-          {title.toUpperCase()}
-        </span>
-        <p className="text-xs font-semibold tracking-tight">{subtitle}</p>
-      </div>
+      {!hideBanner && (
+        <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/85 via-black/50 to-transparent text-white z-30 pointer-events-none">
+          <span className="text-[10px] font-mono tracking-wider opacity-90 block text-purple-200">
+            {title.toUpperCase()}
+          </span>
+          <p className="text-xs font-semibold tracking-tight">{subtitle}</p>
+        </div>
+      )}
     </div>
   );
 };

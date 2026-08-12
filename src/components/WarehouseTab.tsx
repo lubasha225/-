@@ -222,8 +222,12 @@ export default function WarehouseTab({
 
   // Custom categories state
   const [customCategories, setCustomCategories] = useState<CategoryItem[]>(() => {
-    const saved = localStorage.getItem('pop_warehouse_categories');
-    return saved ? JSON.parse(saved) : DEFAULT_WAREHOUSE_CATEGORIES;
+    try {
+      const saved = localStorage.getItem('pop_warehouse_categories');
+      return saved ? JSON.parse(saved) : DEFAULT_WAREHOUSE_CATEGORIES;
+    } catch (e) {
+      return DEFAULT_WAREHOUSE_CATEGORIES;
+    }
   });
 
   // Adding/Editing categories state

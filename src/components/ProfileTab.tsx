@@ -28,7 +28,11 @@ export default function ProfileTab({ showToast }: ProfileTabProps) {
       reader.onloadend = () => {
         const base64String = reader.result as string;
         setLogoUrl(base64String);
-        localStorage.setItem('fleur_studio_logo', base64String);
+        try {
+          localStorage.setItem('fleur_studio_logo', base64String);
+        } catch (e) {
+          console.warn('Failed to save logo:', e);
+        }
         window.dispatchEvent(new Event('storage'));
         showToast('Логотип загружен', 'Аватар / логотип бренда успешно обновлен.', 'success');
       };
@@ -45,13 +49,17 @@ export default function ProfileTab({ showToast }: ProfileTabProps) {
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem('fleur_studio_name', studioName);
-    localStorage.setItem('fleur_user_name', ownerName);
-    localStorage.setItem('fleur_user_email', email);
-    localStorage.setItem('fleur_studio_tagline', tagline);
-    localStorage.setItem('fleur_studio_phone', phone);
-    localStorage.setItem('fleur_studio_website', website);
-    localStorage.setItem('fleur_studio_location', location);
+    try {
+      localStorage.setItem('fleur_studio_name', studioName);
+      localStorage.setItem('fleur_user_name', ownerName);
+      localStorage.setItem('fleur_user_email', email);
+      localStorage.setItem('fleur_studio_tagline', tagline);
+      localStorage.setItem('fleur_studio_phone', phone);
+      localStorage.setItem('fleur_studio_website', website);
+      localStorage.setItem('fleur_studio_location', location);
+    } catch (e) {
+      console.warn('Failed to save profile fields:', e);
+    }
     window.dispatchEvent(new Event('storage'));
     showToast('Профиль сохранен', 'Все настройки бренда и контакты успешно обновлены.', 'success');
   };

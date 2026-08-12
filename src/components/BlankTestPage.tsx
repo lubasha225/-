@@ -971,12 +971,12 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
                   setIsNotificationsOpen(!isNotificationsOpen);
                   setHasNotifications(false);
                 }}
-                className="p-1.5 rounded-full bg-white/80 dark:bg-zinc-800/80 border border-zinc-200/60 dark:border-zinc-700/60 hover:bg-purple-50 dark:hover:bg-purple-950/50 hover:border-[#8C52D0] text-zinc-600 dark:text-zinc-300 hover:text-[#8C52D0] transition-all cursor-pointer relative shadow-2xs"
+                className="w-10 h-10 rounded-full bg-white/80 dark:bg-zinc-800/80 border border-zinc-200/60 dark:border-zinc-700/60 hover:bg-purple-50 dark:hover:bg-purple-950/50 hover:border-[#8C52D0] text-zinc-600 dark:text-zinc-300 hover:text-[#8C52D0] transition-all cursor-pointer relative shadow-2xs flex items-center justify-center"
                 title="Уведомления проекта"
               >
-                <Bell className="w-4 h-4" />
+                <Bell className="w-5 h-5" />
                 {hasNotifications && (
-                  <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-zinc-900 animate-pulse" />
+                  <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-white dark:ring-zinc-900 animate-pulse" />
                 )}
               </button>
 
@@ -989,7 +989,7 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
                       initial={{ opacity: 0, y: 8, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                      className="fixed top-16 right-3 left-3 sm:left-auto sm:right-0 sm:absolute sm:top-full sm:mt-2 sm:w-80 bg-white/75 dark:bg-zinc-900/80 backdrop-blur-xl border border-white/70 dark:border-zinc-800/70 rounded-[24px] shadow-2xl p-4 z-50 space-y-3"
+                      className="fixed top-18 right-3 left-3 sm:left-auto sm:right-0 sm:absolute sm:top-full sm:mt-2 sm:w-80 bg-white/75 dark:bg-zinc-900/80 backdrop-blur-xl border border-white/70 dark:border-zinc-800/70 rounded-[24px] shadow-2xl p-4 z-50 space-y-3"
                     >
                       <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-2">
                         <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">

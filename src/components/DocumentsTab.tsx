@@ -64,64 +64,108 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
 
   // ИП Requisites State
   const [ipData, setIpData] = useState(() => {
-    const saved = localStorage.getItem('fleur_decorator_ip');
-    return saved
-      ? JSON.parse(saved)
-      : {
-          name: 'ИП Иванов Иван Иванович',
-          inn: '772812345678',
-          ogrnip: '320774600123456',
-          phone: '+7 (999) 456-78-90',
-          email: 'denis@fleur-decor.ru',
-          address: 'г. Москва, ул. Вавилова, д. 15, оф. 402',
-          bankName: 'ПАО Сбербанк',
-          bik: '044525225',
-          account: '40802810138000012345',
-          taxSystem: 'УСН «Доходы» (6%)',
-          vatRate: '22%'
-        };
+    try {
+      const saved = localStorage.getItem('fleur_decorator_ip');
+      return saved ? JSON.parse(saved) : {
+        name: 'ИП Иванов Иван Иванович',
+        inn: '772812345678',
+        ogrnip: '320774600123456',
+        phone: '+7 (999) 456-78-90',
+        email: 'denis@fleur-decor.ru',
+        address: 'г. Москва, ул. Вавилова, д. 15, оф. 402',
+        bankName: 'ПАО Сбербанк',
+        bik: '044525225',
+        account: '40802810138000012345',
+        taxSystem: 'УСН «Доходы» (6%)',
+        vatRate: '22%'
+      };
+    } catch (e) {
+      return {
+        name: 'ИП Иванов Иван Иванович',
+        inn: '772812345678',
+        ogrnip: '320774600123456',
+        phone: '+7 (999) 456-78-90',
+        email: 'denis@fleur-decor.ru',
+        address: 'г. Москва, ул. Вавилова, д. 15, оф. 402',
+        bankName: 'ПАО Сбербанк',
+        bik: '044525225',
+        account: '40802810138000012345',
+        taxSystem: 'УСН «Доходы» (6%)',
+        vatRate: '22%'
+      };
+    }
   });
 
   // ООО Requisites State
   const [oooData, setOooData] = useState(() => {
-    const saved = localStorage.getItem('fleur_decorator_ooo');
-    return saved
-      ? JSON.parse(saved)
-      : {
-          name: 'ООО «Флёр Деко Студио»',
-          inn: '7728987654',
-          kpp: '772801001',
-          ogrn: '1207700987654',
-          signatoryName: 'Иванов Иван Иванович',
-          signatoryPosition: 'Генеральный директор',
-          phone: '+7 (495) 123-45-67',
-          email: 'info@fleur-decor.ru',
-          address: 'г. Москва, Пресненская наб., д. 12, этаж 35',
-          bankName: 'АО «Альфа-Банк»',
-          bik: '044525593',
-          account: '40702810901230009988',
-          taxSystem: 'УСН «Доходы» (6%)',
-          vatRate: '22%'
-        };
+    try {
+      const saved = localStorage.getItem('fleur_decorator_ooo');
+      return saved ? JSON.parse(saved) : {
+        name: 'ООО «Флёр Деко Студио»',
+        inn: '7728987654',
+        kpp: '772801001',
+        ogrn: '1207700987654',
+        signatoryName: 'Иванов Иван Иванович',
+        signatoryPosition: 'Генеральный директор',
+        phone: '+7 (495) 123-45-67',
+        email: 'info@fleur-decor.ru',
+        address: 'г. Москва, Пресненская наб., д. 12, этаж 35',
+        bankName: 'АО «Альфа-Банк»',
+        bik: '044525593',
+        account: '40702810901230009988',
+        taxSystem: 'УСН «Доходы» (6%)',
+        vatRate: '22%'
+      };
+    } catch (e) {
+      return {
+        name: 'ООО «Флёр Деко Студио»',
+        inn: '7728987654',
+        kpp: '772801001',
+        ogrn: '1207700987654',
+        signatoryName: 'Иванов Иван Иванович',
+        signatoryPosition: 'Генеральный директор',
+        phone: '+7 (495) 123-45-67',
+        email: 'info@fleur-decor.ru',
+        address: 'г. Москва, Пресненская наб., д. 12, этаж 35',
+        bankName: 'АО «Альфа-Банк»',
+        bik: '044525593',
+        account: '40702810901230009988',
+        taxSystem: 'УСН «Доходы» (6%)',
+        vatRate: '22%'
+      };
+    }
   });
 
   // Самозанятый Requisites State
   const [selfEmployedData, setSelfEmployedData] = useState(() => {
-    const saved = localStorage.getItem('fleur_decorator_self');
-    return saved
-      ? JSON.parse(saved)
-      : {
-          fullName: 'Иванов Иван Иванович',
-          inn: '772812345678',
-          phone: '+7 (999) 456-78-90',
-          email: 'denis@fleur-decor.ru',
-          address: 'г. Москва, ул. Ленина, д. 10, кв. 45',
-          bankName: 'ПАО Сбербанк',
-          bik: '044525225',
-          bankAccount: '40817810500001234567',
-          taxSystem: 'НПД (Налог на профессиональный доход)',
-          vatRate: 'Без НДС'
-        };
+    try {
+      const saved = localStorage.getItem('fleur_decorator_self');
+      return saved ? JSON.parse(saved) : {
+        fullName: 'Иванов Иван Иванович',
+        inn: '772812345678',
+        phone: '+7 (999) 456-78-90',
+        email: 'denis@fleur-decor.ru',
+        address: 'г. Москва, ул. Ленина, д. 10, кв. 45',
+        bankName: 'ПАО Сбербанк',
+        bik: '044525225',
+        bankAccount: '40817810500001234567',
+        taxSystem: 'НПД (Налог на профессиональный доход)',
+        vatRate: 'Без НДС'
+      };
+    } catch (e) {
+      return {
+        fullName: 'Иванов Иван Иванович',
+        inn: '772812345678',
+        phone: '+7 (999) 456-78-90',
+        email: 'denis@fleur-decor.ru',
+        address: 'г. Москва, ул. Ленина, д. 10, кв. 45',
+        bankName: 'ПАО Сбербанк',
+        bik: '044525225',
+        bankAccount: '40817810500001234567',
+        taxSystem: 'НПД (Налог на профессиональный доход)',
+        vatRate: 'Без НДС'
+      };
+    }
   });
 
   // Modal preview template state

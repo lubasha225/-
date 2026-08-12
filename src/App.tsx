@@ -43,7 +43,8 @@ import {
   X,
   FlaskConical,
   MoreHorizontal,
-  Maximize2
+  Maximize2,
+  ShieldCheck
 } from 'lucide-react';
 
 import { Project, WarehouseItem, Task, DocumentItem, ImageItem, ProjectStatus, EstimateItem } from './types';
@@ -65,6 +66,7 @@ import BlankTestPage from './components/BlankTestPage';
 import StatisticsTab from './components/StatisticsTab';
 import SidebarStatisticsWidget from './components/SidebarStatisticsWidget';
 import DetailedCalendarTab from './components/DetailedCalendarTab';
+import AdminCabinetTab from './components/AdminCabinetTab';
 
 export default function App() {
   // Theme state
@@ -81,25 +83,37 @@ export default function App() {
   });
 
   // Main active tab state
-  const [activeTab, setActiveTab] = useState<'projects' | 'projectCard' | 'testCard' | 'testPage' | 'warehouse' | 'images' | 'documents' | 'profile' | 'moodboard' | 'calendar' | 'statistics' | 'settings'>('projects');
+  const [activeTab, setActiveTab] = useState<'projects' | 'projectCard' | 'testCard' | 'testPage' | 'warehouse' | 'images' | 'documents' | 'profile' | 'moodboard' | 'calendar' | 'statistics' | 'settings' | 'admin'>('projects');
 
   // Right sidebar tab state (calendar & tasks combined vs statistics)
   const [rightSidebarTab, setRightSidebarTab] = useState<'calendar' | 'statistics'>('calendar');
 
   // Core database states with local persistence
   const [projects, setProjects] = useState<Project[]>(() => {
-    const saved = localStorage.getItem('pop_projects');
-    return saved ? JSON.parse(saved) : initialProjects;
+    try {
+      const saved = localStorage.getItem('pop_projects');
+      return saved ? JSON.parse(saved) : initialProjects;
+    } catch (e) {
+      return initialProjects;
+    }
   });
 
   const [warehouseItems, setWarehouseItems] = useState<WarehouseItem[]>(() => {
-    const saved = localStorage.getItem('pop_warehouse');
-    return saved ? JSON.parse(saved) : initialWarehouseItems;
+    try {
+      const saved = localStorage.getItem('pop_warehouse');
+      return saved ? JSON.parse(saved) : initialWarehouseItems;
+    } catch (e) {
+      return initialWarehouseItems;
+    }
   });
 
   const [tasks, setTasks] = useState<Task[]>(() => {
-    const saved = localStorage.getItem('pop_tasks');
-    return saved ? JSON.parse(saved) : initialTasks;
+    try {
+      const saved = localStorage.getItem('pop_tasks');
+      return saved ? JSON.parse(saved) : initialTasks;
+    } catch (e) {
+      return initialTasks;
+    }
   });
 
   // Global Project Tasks and Notes state synchronized with project modals
@@ -326,19 +340,35 @@ export default function App() {
 
   // Synchronize localStorage
   useEffect(() => {
-    localStorage.setItem('pop_projects', JSON.stringify(projects));
+    try {
+      localStorage.setItem('pop_projects', JSON.stringify(projects));
+    } catch (e) {
+      console.warn('Failed to save projects to localStorage:', e);
+    }
   }, [projects]);
 
   useEffect(() => {
-    localStorage.setItem('pop_warehouse', JSON.stringify(warehouseItems));
+    try {
+      localStorage.setItem('pop_warehouse', JSON.stringify(warehouseItems));
+    } catch (e) {
+      console.warn('Failed to save warehouse to localStorage:', e);
+    }
   }, [warehouseItems]);
 
   useEffect(() => {
-    localStorage.setItem('pop_tasks', JSON.stringify(tasks));
+    try {
+      localStorage.setItem('pop_tasks', JSON.stringify(tasks));
+    } catch (e) {
+      console.warn('Failed to save tasks to localStorage:', e);
+    }
   }, [tasks]);
 
   useEffect(() => {
-    localStorage.setItem('pop_project_tasks_v2', JSON.stringify(globalProjectTasksNotes));
+    try {
+      localStorage.setItem('pop_project_tasks_v2', JSON.stringify(globalProjectTasksNotes));
+    } catch (e) {
+      console.warn('Failed to save project tasks to localStorage:', e);
+    }
   }, [globalProjectTasksNotes]);
 
   useEffect(() => {
@@ -788,7 +818,7 @@ export default function App() {
         }}
         aria-label="Навигация"
         title="Открыть меню навигации"
-        className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-gradient-to-br from-[#8C52D0] to-[#582F89] hover:opacity-95 text-white transition-all cursor-pointer shadow-md border border-white/20 shrink-0"
+        className="w-9 h-9 rounded-full flex items-center justify-center bg-gradient-to-br from-[#8C52D0] to-[#582F89] hover:opacity-95 text-white transition-all cursor-pointer shadow-md border border-white/20 shrink-0"
       >
         {isMobileNavOpen ? (
           <X className="w-4.5 h-4.5 text-white stroke-[2.5] shrink-0" />
@@ -849,6 +879,7 @@ export default function App() {
                   { value: 'images', label: 'Мои изображения', icon: <ImageIcon className="w-4 h-4" /> },
                   { value: 'documents', label: 'Мои документы', icon: <FileText className="w-4 h-4" /> },
                   { value: 'profile', label: 'Профиль бренда', icon: <User className="w-4 h-4" /> },
+                  { value: 'admin', label: 'Кабинет админа', icon: <ShieldCheck className="w-4 h-4" /> },
                   { value: 'settings', label: 'Настройки', icon: <Settings className="w-4 h-4" /> }
                 ].map((item) => {
                   const isSelected = activeTab === item.value;
@@ -893,11 +924,11 @@ export default function App() {
         }}
         aria-label="Уведомления"
         title="Уведомления"
-        className="w-9 h-9 sm:w-10 sm:h-10 rounded-full glass-panel flex items-center justify-center text-[var(--ink)] hover:text-[var(--lavDeep)] hover:bg-white/90 dark:hover:bg-zinc-800 transition-all shadow-xs cursor-pointer relative"
+        className="w-9 h-9 rounded-full glass-panel flex items-center justify-center text-[var(--ink)] hover:text-[var(--lavDeep)] hover:bg-white/90 dark:hover:bg-zinc-800 transition-all shadow-xs cursor-pointer relative shrink-0"
       >
-        <Bell className="w-4 h-4 text-[var(--ink)] dark:text-zinc-200" />
+        <Bell className="w-4.5 h-4.5 text-[var(--ink)] dark:text-zinc-200" />
         {unreadNotificationsCount > 0 && (
-          <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[var(--warn)] shadow-xs ring-2 ring-white dark:ring-zinc-900" />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[var(--warn)] shadow-xs ring-2 ring-white dark:ring-zinc-900" />
         )}
       </button>
 
@@ -909,7 +940,7 @@ export default function App() {
               initial={{ opacity: 0, y: 8, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 8, scale: 0.95 }}
-              className="fixed top-16 right-3 left-3 sm:left-auto sm:right-0 sm:absolute sm:top-full sm:mt-2 sm:w-80 bg-white/75 dark:bg-zinc-900/80 backdrop-blur-xl border border-white/70 dark:border-zinc-800/70 rounded-[24px] shadow-2xl p-4 z-40 space-y-3"
+              className="fixed top-18 right-3 left-3 sm:left-auto sm:right-0 sm:absolute sm:top-full sm:mt-2 sm:w-80 bg-white/75 dark:bg-zinc-900/80 backdrop-blur-xl border border-white/70 dark:border-zinc-800/70 rounded-[24px] shadow-2xl p-4 z-40 space-y-3"
             >
               <div className="flex justify-between items-center pb-2 border-b border-[var(--glass-edge)]">
                 <span className="text-xs font-semibold text-[var(--ink)]">События клиентов</span>
@@ -952,7 +983,7 @@ export default function App() {
     const isStatsMode = activeTab === 'statistics' || (isHeaderCalendarOpen && headerMenuTab === 'statistics');
 
     return (
-      <div className="relative">
+      <div className="lg:hidden relative">
         <button
           onClick={() => {
             setIsHeaderCalendarOpen(!isHeaderCalendarOpen);
@@ -960,16 +991,16 @@ export default function App() {
           }}
           aria-label="Календарь и Статистика"
           title="Календарь и Статистика"
-          className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full glass-panel flex items-center justify-center transition-all shadow-xs cursor-pointer ${
+          className={`w-9 h-9 rounded-full glass-panel flex items-center justify-center transition-all shadow-xs cursor-pointer shrink-0 ${
             isCurrentActive
               ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white'
               : 'text-[var(--ink)] hover:text-[var(--lavDeep)] hover:bg-white/90 dark:hover:bg-zinc-800'
           }`}
         >
           {isStatsMode ? (
-            <TrendingUp className={`w-4 h-4 shrink-0 ${isCurrentActive ? 'text-white' : 'text-[var(--ink)] dark:text-zinc-200'}`} />
+            <TrendingUp className={`w-4.5 h-4.5 shrink-0 ${isCurrentActive ? 'text-white' : 'text-[var(--ink)] dark:text-zinc-200'}`} />
           ) : (
-            <Calendar className={`w-4 h-4 shrink-0 ${isCurrentActive ? 'text-white' : 'text-[var(--ink)] dark:text-zinc-200'}`} />
+            <Calendar className={`w-4.5 h-4.5 shrink-0 ${isCurrentActive ? 'text-white' : 'text-[var(--ink)] dark:text-zinc-200'}`} />
           )}
         </button>
 
@@ -981,7 +1012,7 @@ export default function App() {
                 initial={{ opacity: 0, y: 8, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                className="fixed top-16 right-3 left-3 sm:left-auto sm:right-0 sm:absolute sm:top-full sm:mt-2 sm:w-80 bg-white/75 dark:bg-zinc-900/80 backdrop-blur-xl border border-white/70 dark:border-zinc-800/70 rounded-[24px] shadow-2xl p-4 z-40 space-y-3"
+                className="fixed top-18 right-3 left-3 sm:left-auto sm:right-0 sm:absolute sm:top-full sm:mt-2 sm:w-80 bg-white/75 dark:bg-zinc-900/80 backdrop-blur-xl border border-white/70 dark:border-zinc-800/70 rounded-[24px] shadow-2xl p-4 z-40 space-y-3"
               >
                 {/* Header Switcher: Calendar | Statistics */}
                 <div className="flex bg-zinc-100 dark:bg-zinc-800/80 p-1 rounded-xl gap-1 border border-zinc-200/60 dark:border-zinc-700/60">
@@ -1211,6 +1242,7 @@ export default function App() {
             { key: 'images', label: 'Мои изображения', icon: <ImageIcon className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'documents', label: 'Мои документы', icon: <FileText className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'profile', label: 'Профиль бренда', icon: <User className="w-[17px] h-[17px] shrink-0" /> },
+            { key: 'admin', label: 'Кабинет админа', icon: <ShieldCheck className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'settings', label: 'Настройки', icon: <Settings className="w-[17px] h-[17px] shrink-0" /> }
           ].map((tab) => {
             const isSelected = activeTab === tab.key;
@@ -1341,7 +1373,7 @@ export default function App() {
         <main className={`flex-1 relative flex flex-col min-w-0 ${
           activeTab === 'moodboard'
             ? 'p-2 sm:p-3 space-y-1.5 h-full overflow-hidden'
-            : 'px-3 sm:px-6 pt-2 pb-6 space-y-4 h-full overflow-y-auto overflow-x-hidden'
+            : 'px-3 sm:px-6 pt-5 sm:pt-8 pb-6 space-y-4 h-full overflow-y-auto overflow-x-hidden'
         }`}>
           
           {/* MAIN PANEL TOP NAVBAR HEADER (ALL PAGES) */}
@@ -1382,9 +1414,10 @@ export default function App() {
                   {activeTab === 'projects' && !selectedProject && (
                     <button
                       onClick={() => setIsNewProjOpen(true)}
-                      className="hidden sm:flex bg-gradient-to-r from-[#8C52D0] to-[#582F89] hover:opacity-95 text-white rounded-full px-3.5 sm:px-4 py-1.5 text-xs font-semibold shadow-md transition-all items-center gap-1.5 cursor-pointer"
+                      style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                      className="hidden sm:flex text-white rounded-full px-3.5 sm:px-4 h-9 text-xs font-semibold shadow-xs hover:shadow-md hover:opacity-95 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 items-center justify-center gap-1.5 cursor-pointer shrink-0"
                     >
-                      <Plus className="w-3.5 h-3.5" />
+                      <Plus className="w-3.5 h-3.5 shrink-0" />
                       <span>Новый проект</span>
                     </button>
                   )}
@@ -1392,9 +1425,10 @@ export default function App() {
                   {activeTab === 'warehouse' && (
                     <button
                       onClick={() => setIsWarehouseAdding(true)}
-                      className="hidden sm:flex bg-gradient-to-r from-[#8C52D0] to-[#582F89] hover:opacity-95 text-white rounded-full px-3.5 sm:px-4 py-1.5 text-xs font-semibold shadow-md transition-all items-center gap-1.5 cursor-pointer"
+                      style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                      className="hidden sm:flex text-white rounded-full px-3.5 sm:px-4 h-9 text-xs font-semibold shadow-xs hover:shadow-md hover:opacity-95 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 items-center justify-center gap-1.5 cursor-pointer shrink-0"
                     >
-                      <Plus className="w-3.5 h-3.5" />
+                      <Plus className="w-3.5 h-3.5 shrink-0" />
                       <span>Новый товар</span>
                     </button>
                   )}
@@ -2342,6 +2376,21 @@ export default function App() {
                   transition={{ duration: 0.3 }}
                 >
                   <ProfileTab
+                    showToast={showToast}
+                  />
+                </motion.div>
+              )}
+
+              {/* ADMIN CABINET TAB */}
+              {activeTab === 'admin' && (
+                <motion.div
+                  key="admin-tab"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <AdminCabinetTab
                     showToast={showToast}
                   />
                 </motion.div>

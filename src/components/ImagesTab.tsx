@@ -42,8 +42,12 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
   
   // Custom categories state
   const [customCategories, setCustomCategories] = useState<CategoryItem[]>(() => {
-    const saved = localStorage.getItem('pop_image_categories');
-    return saved ? JSON.parse(saved) : DEFAULT_CATEGORIES;
+    try {
+      const saved = localStorage.getItem('pop_image_categories');
+      return saved ? JSON.parse(saved) : DEFAULT_CATEGORIES;
+    } catch (e) {
+      return DEFAULT_CATEGORIES;
+    }
   });
 
   // Adding/Editing categories state
@@ -54,7 +58,11 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
 
   // Persist categories
   useEffect(() => {
-    localStorage.setItem('pop_image_categories', JSON.stringify(customCategories));
+    try {
+      localStorage.setItem('pop_image_categories', JSON.stringify(customCategories));
+    } catch (e) {
+      console.warn('Failed to save image categories:', e);
+    }
   }, [customCategories]);
 
   const handleCategoryChange = (imgId: string, newCategory: string) => {

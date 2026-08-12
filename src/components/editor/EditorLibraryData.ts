@@ -8,6 +8,7 @@ export interface LibraryItem {
   height: number;
   svgMarkup: string;
   caption?: string;
+  customImage?: string;
 }
 
 export const CATALOG_CATEGORIES = [
@@ -33,13 +34,13 @@ export const CATALOG_ASSETS: Record<string, LibraryItem[]> = {
       height: 220,
       svgMarkup: `
         <svg viewBox="0 0 100 100" class="w-full h-full text-violet-400 dark:text-violet-300">
-          <circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="4" fill="none" stroke-dasharray="1 1" opacity="0.3" />
-          <circle cx="50" cy="50" r="43" stroke="currentColor" stroke-width="2.5" fill="none" opacity="0.8" />
+          <circle cx="50" cy="50" r="48" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="1 1" opacity="0.3" />
+          <circle cx="50" cy="50" r="46" stroke="currentColor" stroke-width="2.5" fill="none" opacity="0.8" />
           <!-- Small foliage/flower accents -->
-          <path d="M10 50 Q15 45 20 50 Z" fill="#6E8276" />
-          <path d="M80 30 Q85 25 90 30 Z" fill="#6E8276" />
-          <circle cx="15" cy="48" r="4" fill="#E2D4F0" />
-          <circle cx="85" cy="28" r="4" fill="#E2D4F0" />
+          <path d="M5 50 Q10 45 15 50 Z" fill="#6E8276" />
+          <path d="M85 25 Q90 20 95 25 Z" fill="#6E8276" />
+          <circle cx="10" cy="48" r="4" fill="#E2D4F0" />
+          <circle cx="90" cy="23" r="4" fill="#E2D4F0" />
         </svg>
       `
     },
@@ -53,9 +54,9 @@ export const CATALOG_ASSETS: Record<string, LibraryItem[]> = {
       height: 270,
       svgMarkup: `
         <svg viewBox="0 0 100 140" class="w-full h-full text-zinc-400 dark:text-zinc-500">
-          <path d="M15 135 L15 65 Q15 25 50 15 Q85 25 85 65 L85 135" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" fill="none" opacity="0.9" />
-          <path d="M25 135 L25 70 Q25 35 50 25 Q75 35 75 70 L75 135" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.5" />
-          <path d="M42 15 L50 5 L58 15" stroke="currentColor" stroke-width="3" stroke-linecap="round" fill="none" />
+          <path d="M3 138 L3 65 Q3 15 50 3 Q97 15 97 65 L97 138" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" fill="none" opacity="0.9" />
+          <path d="M15 138 L15 70 Q15 25 50 15 Q85 25 85 70 L85 138" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.5" />
+          <path d="M42 12 L50 3 L58 12" stroke="currentColor" stroke-width="3" stroke-linecap="round" fill="none" />
         </svg>
       `
     },
@@ -69,8 +70,8 @@ export const CATALOG_ASSETS: Record<string, LibraryItem[]> = {
       height: 240,
       svgMarkup: `
         <svg viewBox="0 0 140 100" class="w-full h-full text-amber-800/80">
-          <rect x="15" y="15" width="110" height="80" stroke="currentColor" stroke-width="5" fill="none" rx="2" />
-          <rect x="23" y="23" width="94" height="72" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 3" fill="none" opacity="0.6" />
+          <rect x="3" y="3" width="134" height="94" stroke="currentColor" stroke-width="5" fill="none" rx="2" />
+          <rect x="13" y="13" width="114" height="84" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 3" fill="none" opacity="0.6" />
         </svg>
       `
     },
@@ -84,9 +85,9 @@ export const CATALOG_ASSETS: Record<string, LibraryItem[]> = {
       height: 220,
       svgMarkup: `
         <svg viewBox="0 0 100 100" class="w-full h-full text-amber-700/70">
-          <polygon points="50,5 90,28 90,72 50,95 10,72 10,28" stroke="currentColor" stroke-width="4.5" fill="none" stroke-linejoin="round" />
-          <path d="M10 28 Q15 20 20 28 Z" fill="#6E8276" />
-          <circle cx="15" cy="26" r="3" fill="#FFF" />
+          <polygon points="50,2 98,26 98,74 50,98 2,74 2,26" stroke="currentColor" stroke-width="4.5" fill="none" stroke-linejoin="round" />
+          <path d="M2 26 Q7 18 12 26 Z" fill="#6E8276" />
+          <circle cx="7" cy="24" r="3" fill="#FFF" />
         </svg>
       `
     },
@@ -100,8 +101,8 @@ export const CATALOG_ASSETS: Record<string, LibraryItem[]> = {
       height: 240,
       svgMarkup: `
         <svg viewBox="0 0 100 120" class="w-full h-full text-violet-500">
-          <path d="M20 115 L20 45 Q20 15 50 15 Q80 15 80 45 L80 115" stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none" style="filter: drop-shadow(0 0 4px #C08EF4)" />
-          <path d="M30 115 L30 50 Q30 25 50 25 Q70 25 70 50 L70 115" stroke="#F472B6" stroke-width="2.5" stroke-linecap="round" fill="none" style="filter: drop-shadow(0 0 3px #F472B6)" />
+          <path d="M3 118 L3 45 Q3 3 50 3 Q97 3 97 45 L97 118" stroke="currentColor" stroke-width="5" stroke-linecap="round" fill="none" style="filter: drop-shadow(0 0 4px #C08EF4)" />
+          <path d="M18 118 L18 52 Q18 18 50 18 Q82 18 82 52 L82 118" stroke="#F472B6" stroke-width="3.5" stroke-linecap="round" fill="none" style="filter: drop-shadow(0 0 3px #F472B6)" />
         </svg>
       `
     }
