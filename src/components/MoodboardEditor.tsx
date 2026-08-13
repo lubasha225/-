@@ -64,7 +64,8 @@ import {
   ZoomIn,
   Pipette,
   Bell,
-  Moon,
+  CheckCircle2,
+  FolderPlus,
   ArrowLeft,
   Pencil,
   Undo2,
@@ -94,6 +95,26 @@ import {
 import { Project, EstimateItem } from '../types';
 import { CATALOG_ASSETS, LibraryItem } from './editor/EditorLibraryData';
 import FloorPlanSchema, { PlanElement } from './editor/FloorPlanSchema';
+
+// Custom SVG icon for Shadow tool (drop shadow effect)
+export const ShadowToolIcon = ({ className = "w-3.5 h-3.5 sm:w-4 sm:h-4" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="8" y="8" width="13" height="13" rx="2.5" fill="currentColor" opacity="0.35" stroke="none" />
+    <rect x="8" y="8" width="13" height="13" rx="2.5" stroke="currentColor" strokeWidth="1" strokeDasharray="2 2" opacity="0.5" />
+    <rect x="3" y="3" width="13" height="13" rx="2.5" />
+  </svg>
+);
+
+// Custom SVG icon for Opacity / Transparency tool (checkered transparency pattern)
+export const OpacityToolIcon = ({ className = "w-3.5 h-3.5 sm:w-4 sm:h-4" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="4" />
+    <line x1="3" y1="12" x2="21" y2="12" strokeWidth="1.2" opacity="0.4" />
+    <line x1="12" y1="3" x2="12" y2="21" strokeWidth="1.2" opacity="0.4" />
+    <rect x="3" y="3" width="9" height="9" rx="1" fill="currentColor" opacity="0.45" stroke="none" />
+    <rect x="12" y="12" width="9" height="9" rx="1" fill="currentColor" opacity="0.45" stroke="none" />
+  </svg>
+);
 
 interface MoodboardEditorProps {
   projects: Project[];
@@ -1343,6 +1364,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
   const [isMeasuring, setIsMeasuring] = useState<boolean>(false);
   const [editingMeasurementId, setEditingMeasurementId] = useState<string | null>(null);
   const [editingMeasurementValue, setEditingMeasurementValue] = useState<string>('');
+  const [areMeasurementsVisible, setAreMeasurementsVisible] = useState<boolean>(true);
 
   // Dynamic scaling state for canvas auto-fit
   const [canvasScale, setCanvasScale] = useState<number>(1);
@@ -1371,6 +1393,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
   const [aiPrompt, setAiPrompt] = useState<string>('');
   const [isAiGenerating, setIsAiGenerating] = useState<boolean>(false);
   const [aiGeneratingProgress, setAiGeneratingProgress] = useState<number>(0);
+  const [isAiResultModalOpen, setIsAiResultModalOpen] = useState<boolean>(false);
+  const [aiGeneratedResultUrl, setAiGeneratedResultUrl] = useState<string | null>(null);
 
   // General references
   const canvasContainerRef = useRef<HTMLDivElement>(null);
@@ -1436,6 +1460,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
           updateActiveSceneElements(prev => [...prev, newElem]);
           setSelectedId(newElem.id);
+          setAreMeasurementsVisible(true);
           showToast('Замер нанесен', `Длина: ${valStr}. Кликните в центр для изменения.`, 'success');
         }
       }
@@ -1660,7 +1685,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
     const horizY = Math.max(10, Math.round(el.y - 35));
     const horizX = Math.round(el.x);
     const vertX = Math.max(10, Math.round(el.x - 35));
-    const vertY = Math.round(el.y);
+    const vertY = Math.round(el.y - 15);
 
     const horizElem: CanvasElement = {
       id: `measurement-${Date.now()}-h`,
@@ -1693,6 +1718,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
     };
 
     updateActiveSceneElements(prev => [...prev, horizElem, vertElem]);
+    setAreMeasurementsVisible(true);
     showToast('Автозамер нанесен', `${el.name || 'Объект'}: ${wStr} × ${hStr}`, 'success');
   };
 
@@ -2231,52 +2257,117 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
     e.target.value = '';
   };
 
-  // AI Background simulation
+  // AI Background & Photorealistic Render simulation
   const handleStartAiGeneration = () => {
-    if (!aiPrompt.trim()) {
-      showToast('Запрос пуст', 'Пожалуйста, опишите словами желаемый интерьер.', 'warn');
-      return;
-    }
     setIsAiGenerating(true);
-    setAiGeneratingProgress(10);
+    setAiGeneratingProgress(15);
     
     const interval = setInterval(() => {
       setAiGeneratingProgress(prev => {
-        if (prev >= 90) {
+        if (prev >= 92) {
           clearInterval(interval);
-          return 90;
+          return 92;
         }
-        return prev + 20;
+        return prev + 18;
       });
-    }, 450);
+    }, 400);
 
-    setTimeout(() => {
+    setTimeout(async () => {
       clearInterval(interval);
       setAiGeneratingProgress(100);
       
-      // Select standard photo based on prompt
-      const text = aiPrompt.toLowerCase();
-      let selectedBg = 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=1200'; // fallback banquet
+      const hasCustomBackdrop = activeScene.backdropType === 'image' && Boolean(activeScene.backdropImage);
       
-      if (text.includes('лофт') || text.includes('кирпич')) {
-        selectedBg = 'https://images.unsplash.com/photo-1536376072261-38c75010e6c9?auto=format&fit=crop&q=80&w=1200';
-      } else if (text.includes('дворец') || text.includes('классик') || text.includes('белый')) {
-        selectedBg = 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&q=80&w=1200';
-      } else if (text.includes('лес') || text.includes('природа') || text.includes('зелен')) {
-        selectedBg = 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&q=80&w=1200';
-      } else if (text.includes('пляж') || text.includes('море') || text.includes('песок')) {
-        selectedBg = 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=1200';
+      // Clean vacant white room with plain white walls and clean floor (no decorations or furniture)
+      const vacantWhiteRoomBg = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1200';
+      
+      let finalBg = hasCustomBackdrop ? activeScene.backdropImage : vacantWhiteRoomBg;
+
+      if (!hasCustomBackdrop && aiPrompt.trim()) {
+        const text = aiPrompt.toLowerCase();
+        if (text.includes('лофт') || text.includes('кирпич')) {
+          finalBg = 'https://images.unsplash.com/photo-1536376072261-38c75010e6c9?auto=format&fit=crop&q=80&w=1200';
+        } else if (text.includes('дворец') || text.includes('классик') || text.includes('белый')) {
+          finalBg = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1200';
+        } else if (text.includes('лес') || text.includes('природа') || text.includes('зелен')) {
+          finalBg = 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&q=80&w=1200';
+        } else if (text.includes('пляж') || text.includes('море') || text.includes('песок')) {
+          finalBg = 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=1200';
+        }
       }
 
-      handleCanvasBackdropChange('image', selectedBg);
-      if (onAddAiImage) {
-        onAddAiImage(selectedBg, aiPrompt, currentProject?.name || 'Основной проект');
+      // Capture the composition snapshot from canvas or fallback to background URL
+      let capturedResultUrl = '';
+      try {
+        capturedResultUrl = await captureCanvasPreview();
+      } catch (e) {
+        capturedResultUrl = finalBg;
       }
+
+      // DO NOT CHANGE the editor's canvas backdrop!
+      // The canvas background in the editor remains untouched as requested.
+
+      const renderResultUrl = (capturedResultUrl && !capturedResultUrl.includes('unsplash')) 
+        ? capturedResultUrl 
+        : finalBg;
+
+      setAiGeneratedResultUrl(renderResultUrl);
       setIsAiGenerating(false);
       setIsAiModalOpen(false);
-      setAiPrompt('');
-      showToast('ИИ генерация завершена', 'Фон обновлен и автоматически сохранен в «Мои изображения» в раздел ИИ.', 'success');
-    }, 2400);
+      setIsAiResultModalOpen(true);
+      showToast('3D-рендер готов', 'Нажмите «Сохранить в карточку проекта», чтобы добавить макет в проект.', 'success');
+    }, 2200);
+  };
+
+  const handleSaveGeneratedToProject = () => {
+    if (!aiGeneratedResultUrl || !activeProjectId) return;
+
+    // Update scene image / previewUrl with the generated render
+    const updatedScenes = scenes.map((sc) => {
+      if (sc.id === activeScene.id) {
+        return {
+          ...sc,
+          previewUrl: aiGeneratedResultUrl,
+          image: aiGeneratedResultUrl,
+          imageUrl: aiGeneratedResultUrl,
+        };
+      }
+      return sc;
+    });
+
+    setScenes(updatedScenes);
+
+    const estimateItems: EstimateItem[] = (activeScene?.elements || []).map((el) => ({
+      id: el.id,
+      name: el.name,
+      category: el.type,
+      quantity: 1,
+      price: el.price,
+      comment: el.comment || 'Сгенерировано в 2D арках',
+      photoUrl: el.customImage || ''
+    }));
+
+    // Save directly to project card
+    onSaveToProject(activeProjectId, aiGeneratedResultUrl, estimateItems, sceneTotalCost, updatedScenes, floorPlanElements);
+
+    // Also add to My Images -> AI category
+    if (onAddAiImage) {
+      onAddAiImage(aiGeneratedResultUrl, aiPrompt || 'Фотореалистичный 3D-рендер', currentProject?.name || 'Основной проект');
+    }
+
+    showToast('Сохранено в проект', 'Визуализация успешно добавлена в карточку проекта.', 'success');
+    setIsAiResultModalOpen(false);
+  };
+
+  const handleDownloadGeneratedResult = () => {
+    if (!aiGeneratedResultUrl) return;
+    const link = document.createElement('a');
+    link.href = aiGeneratedResultUrl;
+    link.download = `3d-render-${currentProject?.name || 'project'}-${Date.now()}.jpg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('Скачивание', 'Сохранение визуализации на ваш компьютер...', 'info');
   };
 
   // Saving & Autosave States
@@ -4170,14 +4261,19 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                           setActiveFilterTool(null);
                           setRotationInputId(null);
                         }}
-                        className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
+                        className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 relative ${
                           isDrawingMeasurement
                             ? 'bg-[var(--lavDeep)] text-white shadow-md ring-2 ring-purple-300'
+                            : !areMeasurementsVisible
+                            ? 'bg-zinc-200/80 dark:bg-zinc-800/80 text-zinc-400 dark:text-zinc-500 hover:bg-white hover:shadow-md'
                             : 'bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md'
                         }`}
-                        title="Замеры (Автоматический и Ручной режимы)"
+                        title={areMeasurementsVisible ? "Замеры (Автоматический и Ручной режимы)" : "Замеры на холсте выключены (Нажмите для включения)"}
                       >
                         <Ruler className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
+                        {!areMeasurementsVisible && (
+                          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-500 border border-white dark:border-zinc-900" title="Замеры скрыты" />
+                        )}
                       </button>
 
                       {/* Popover options for Measurement (Auto & Manual) */}
@@ -4188,15 +4284,30 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                           <div className="flex items-center justify-between px-1 pb-1 border-b border-purple-200/50 dark:border-zinc-800 text-[11px] font-bold text-[#5B3E88] dark:text-purple-300">
                             <span className="flex items-center gap-1">
                               <Ruler className="w-3.5 h-3.5" />
-                              Инструмент Замеры
+                              Замеры
                             </span>
-                            <button
-                              onClick={() => setIsDrawingMeasurement(false)}
-                              className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-xs cursor-pointer font-normal"
-                              title="Закрыть"
-                            >
-                              ✕
-                            </button>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => setAreMeasurementsVisible(prev => !prev)}
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
+                                  areMeasurementsVisible
+                                    ? 'bg-emerald-500 text-white shadow-2xs'
+                                    : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300'
+                                }`}
+                                title={areMeasurementsVisible ? 'Скрыть замеры на холсте' : 'Показать замеры на холсте'}
+                              >
+                                {areMeasurementsVisible ? 'Включены' : 'Выкл'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setIsDrawingMeasurement(false)}
+                                className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-xs cursor-pointer font-normal p-0.5"
+                                title="Закрыть"
+                              >
+                                ✕
+                              </button>
+                            </div>
                           </div>
 
                           {/* Mode Tabs */}
@@ -4272,6 +4383,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                   };
                                   updateActiveSceneElements(prev => [...prev, newElem]);
                                   setSelectedId(newElem.id);
+                                  setAreMeasurementsVisible(true);
                                   showToast('Замер создан', 'Кликните в центр замера для изменения значения', 'success');
                                 }}
                                 className="w-full px-2 py-1.5 rounded-xl text-xs font-semibold bg-purple-50 dark:bg-purple-900/40 text-[var(--lavDeep)] dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/60 flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
@@ -4344,7 +4456,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                               {/* Header & Toggle */}
                               <div className="flex items-center justify-between pb-1 border-b border-zinc-200/60 dark:border-zinc-800/60">
                                 <div className="flex items-center gap-1 font-bold text-zinc-800 dark:text-zinc-100 text-[11px]">
-                                  <Moon className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-purple-400" />
+                                  <ShadowToolIcon className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-purple-400" />
                                   <span>Тень</span>
                                 </div>
                                 <button
@@ -4924,7 +5036,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         }`}
                         title="Прозрачность"
                       >
-                        <Droplet className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
+                        <OpacityToolIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       </button>
 
                       {/* 6. Тень (Photoshop-стиль: размытие, прозрачность, смещение) */}
@@ -4945,7 +5057,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         }`}
                         title="Тень (Размытие, прозрачность, смещение X/Y)"
                       >
-                        <Moon className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
+                        <ShadowToolIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       </button>
 
                       {/* 6. Лупа (Масштаб / Приближение с ползунком) */}
@@ -5324,6 +5436,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                 {/* Draggable Active Elements */}
                 {activeScene.elements.map((el, idx) => {
                   if (!el.isVisible) return null;
+                  if (el.type === 'measurement' && !areMeasurementsVisible) return null;
                   const isSelected = el.id === selectedId;
                   
                   return (
@@ -5342,6 +5455,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         width: `${el.w}px`,
                         height: `${el.h}px`,
                         transform: `rotate(${el.rotation}deg) scaleX(${el.isFlippedH ? -1 : 1}) scaleY(${el.isFlippedV ? -1 : 1})`,
+                        transformOrigin: el.type === 'measurement' ? '0 50%' : 'center center',
                         opacity: el.opacity / 100
                       }}
                     >
@@ -6587,6 +6701,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
             )}
             {activeScene.elements.map((el) => {
               if (!el.isVisible) return null;
+              if (el.type === 'measurement' && !areMeasurementsVisible) return null;
               return (
                 <div
                   key={el.id}
@@ -6597,6 +6712,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                     width: `${el.w}px`,
                     height: `${el.h}px`,
                     transform: `rotate(${el.rotation}deg) scaleX(${el.isFlippedH ? -1 : 1})`,
+                    transformOrigin: el.type === 'measurement' ? '0 50%' : 'center center',
                     opacity: el.opacity / 100
                   }}
                   dangerouslySetInnerHTML={{ __html: el.svgMarkup }}
@@ -6619,7 +6735,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
               </tr>
             </thead>
             <tbody>
-              {activeScene.elements.map((el) => (
+              {activeScene.elements.filter(el => el.type !== 'measurement').map((el) => (
                 <tr key={el.id} className="border-b border-zinc-200">
                   <td className="py-2.5 px-3 font-semibold">{el.name}</td>
                   <td className="py-2.5 px-3 text-zinc-500">{el.type}</td>
@@ -6657,21 +6773,31 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
               initial={{ scale: 0.95, y: 15, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, y: 15, opacity: 0 }}
-              className="relative w-full max-w-lg bg-white/70 dark:bg-zinc-900/75 backdrop-blur-2xl rounded-3xl border border-white/80 dark:border-zinc-700/80 shadow-2xl p-6 overflow-hidden z-10"
+              className="relative w-full max-w-md bg-white/80 dark:bg-zinc-900/85 backdrop-blur-2xl rounded-[28px] border border-white/80 dark:border-zinc-700/80 shadow-2xl p-5 sm:p-6 overflow-hidden z-10 space-y-4"
               style={{
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
               }}
             >
               
-              <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-[var(--lavDeep)]" />
-                  <h3 className="font-extrabold text-[var(--ink)] text-base">ИИ-Визуализация интерьера</h3>
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-zinc-200/60 dark:border-zinc-800/60 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 bg-[var(--lavenderSoft)] rounded-xl shrink-0">
+                    <Sparkles className="w-5 h-5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-zinc-900 dark:text-zinc-100 text-base leading-tight">
+                      ИИ-Визуализация концепта
+                    </h3>
+                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-normal">
+                      Фотореалистичный 3D-макет с физикой света и теней
+                    </p>
+                  </div>
                 </div>
                 <button
                   onClick={() => setIsAiModalOpen(false)}
-                  className="p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-[var(--faint)]"
+                  className="p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 transition-colors cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -6680,73 +6806,226 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
               {/* Progress loader */}
               {isAiGenerating ? (
                 <div className="py-8 text-center space-y-4">
-                  <RefreshCw className="w-8 h-8 text-[var(--lavDeep)] animate-spin mx-auto" />
+                  <div className="relative w-12 h-12 mx-auto flex items-center justify-center">
+                    <RefreshCw className="w-10 h-10 text-[var(--lavDeep)] animate-spin" />
+                    <Sparkles className="w-4 h-4 text-purple-400 absolute inset-0 m-auto animate-pulse" />
+                  </div>
                   <div className="space-y-1">
-                    <p className="text-sm font-bold text-[var(--ink)]">ИИ Генерирует фон...</p>
-                    <p className="text-xs text-[var(--faint)]">Создаем фотореалистичное пространство по вашему описанию.</p>
+                    <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Нейросеть рендерит макет...</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed max-w-xs mx-auto">
+                      {activeScene.backdropType === 'image' && activeScene.backdropImage
+                        ? 'Интегрируем декорации напрямую в ваш загруженный фон помещения.'
+                        : 'Моделируем светлый интерьер помещения и рассчитываем глубокие мягкие тени.'}
+                    </p>
                   </div>
                   
-                  {/* Visual Progress percentage slider line */}
-                  <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-2 rounded-full overflow-hidden max-w-xs mx-auto">
-                    <div
-                      className="bg-gradient-to-r from-[var(--lavDeep)] to-[var(--lavenderAccent)] h-full transition-all duration-300"
-                      style={{ width: `${aiGeneratingProgress}%` }}
-                    />
+                  {/* Visual Progress percentage bar */}
+                  <div className="space-y-1 max-w-xs mx-auto">
+                    <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-2 rounded-full overflow-hidden">
+                      <div
+                        className="bg-gradient-to-r from-[var(--lavDeep)] to-[var(--lavenderAccent)] h-full transition-all duration-300"
+                        style={{ width: `${aiGeneratingProgress}%` }}
+                      />
+                    </div>
+                    <p className="text-[10px] font-mono font-bold text-[var(--lavDeep)] dark:text-purple-300 text-right">
+                      {aiGeneratingProgress}%
+                    </p>
                   </div>
                 </div>
               ) : (
-                <div className="space-y-5 pt-4">
+                <div className="space-y-4 pt-1">
                   
-                  {/* OPTION A: UPLOAD OWN REAL PHOTO */}
-                  <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-950/20 border border-zinc-200/50 space-y-2.5">
-                    <span className="text-[10px] uppercase tracking-wider font-extrabold text-zinc-400 block">Вариант А</span>
-                    <h4 className="text-xs font-bold text-[var(--ink)]">Загрузить фон реального проекта</h4>
-                    <p className="text-[11px] text-[var(--faint)]">Используйте фотографию реального пустого зала ресторана, предоставленную клиентом, чтобы наложить вашу арку прямо в интерьер.</p>
-                    
-                    <label className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950/40 hover:border-[var(--lavDeep)] cursor-pointer transition-all text-xs font-bold text-[var(--lavDeep)]">
-                      <FileImage className="w-4 h-4" />
-                      <span>Выбрать фото зала</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          handleUploadCanvasBackdrop(e);
-                          setIsAiModalOpen(false);
-                        }}
-                        className="hidden"
-                      />
-                    </label>
-                  </div>
+                  {/* BACKGROUND STATUS CARD */}
+                  {(() => {
+                    const hasCustomBg = activeScene.backdropType === 'image' && Boolean(activeScene.backdropImage);
+                    const defaultBgPreview = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=300';
+                    const displayImage = hasCustomBg ? activeScene.backdropImage : defaultBgPreview;
 
-                  {/* OPTION B: WRITE PROMPT TO SIMULATE GENERATOR */}
-                  <div className="p-4 rounded-2xl bg-[var(--lavenderSoft)] dark:bg-[var(--lavDeep)]/10 border border-[var(--lavBorder)] dark:border-[var(--lavDeep)]/30 space-y-3">
-                    <span className="text-[10px] uppercase tracking-wider font-extrabold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] block">Вариант Б</span>
-                    <h4 className="text-xs font-bold text-[var(--ink)]">Сгенерировать подходящий фон ИИ</h4>
-                    <p className="text-[11px] text-[var(--faint)]">Опишите стиль банкетного зала или локации. Нейросеть смоделирует идеальный интерьер для презентации вашего концепта.</p>
-                    
-                    <div className="space-y-1.5">
-                      <input
-                        type="text"
-                        value={aiPrompt}
-                        onChange={(e) => setAiPrompt(e.target.value)}
-                        placeholder="Например: классический белый зал с колоннами, кирпичный лофт со свечами..."
-                        className="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs text-[var(--ink)] placeholder:text-[var(--faint)] focus:outline-none"
-                      />
+                    return (
+                      <div className="p-3.5 bg-white/50 dark:bg-zinc-900/40 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60 flex items-center gap-3">
+                        <div className="w-14 h-14 rounded-xl overflow-hidden border border-zinc-200/80 dark:border-zinc-700/80 shrink-0 bg-zinc-100 dark:bg-zinc-800 relative">
+                          <img
+                            src={displayImage}
+                            alt="Фон"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+
+                        <div className="flex-1 min-w-0 space-y-0.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                              {hasCustomBg ? 'Ваш загруженный фон' : 'Пустой светлый белый зал'}
+                            </span>
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${
+                              hasCustomBg
+                                ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20'
+                                : 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20'
+                            }`}>
+                              {hasCustomBg ? 'Свой фон' : 'По умолчанию'}
+                            </span>
+                          </div>
+
+                          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-normal leading-tight">
+                            {hasCustomBg
+                              ? 'Генерация произойдет с использованием вашего собственного загруженного фона.'
+                              : 'Фон не загружен — композиция будет помещена в пустой светлый белый зал без сторонней мебели и декораций.'}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* PRESET PROMPT SUGGESTIONS */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center text-[10px] font-extrabold uppercase text-zinc-400 tracking-wider">
+                      <span>Стиль освещения и атмосфера</span>
+                      <span className="text-zinc-400 font-normal">Необязательно</span>
                     </div>
 
-                    <button
-                      onClick={handleStartAiGeneration}
-                      style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
-                      className="w-full py-2.5 rounded-full text-white text-xs font-bold hover:opacity-90 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-[#582F89]/20 active:scale-95"
-                    >
-                      <Wand2 className="w-3.5 h-3.5 text-white fill-white" />
-                      <span>Сгенерировать интерьер</span>
-                    </button>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        '☀️ Естественный дневной свет',
+                        '🕯 Вечерний свет и свечи',
+                        '✨ Панорамные окна',
+                        '🌿 Мягкий рассеянный свет'
+                      ].map(preset => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => setAiPrompt(preset)}
+                          className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all cursor-pointer border ${
+                            aiPrompt === preset
+                              ? 'bg-[var(--lavenderSoft)] text-[var(--lavDeep)] dark:text-purple-300 border-[var(--lavDeep)]'
+                              : 'bg-zinc-100/80 dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-300 border-zinc-200/60 dark:border-zinc-700/60 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                          }`}
+                        >
+                          {preset}
+                        </button>
+                      ))}
+                    </div>
+
+                    <input
+                      type="text"
+                      value={aiPrompt}
+                      onChange={(e) => setAiPrompt(e.target.value)}
+                      placeholder="Например: добавив естественные тени и теплое свечение..."
+                      className="w-full px-3 py-2 rounded-xl bg-white/80 dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:border-[var(--lavDeep)]"
+                    />
                   </div>
+
+                  {/* NOTICE BOX */}
+                  <div className="p-3 bg-emerald-500/10 dark:bg-emerald-950/30 rounded-2xl border border-emerald-500/20 text-xs text-emerald-900 dark:text-emerald-200 font-normal leading-relaxed flex items-start gap-2">
+                    <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                    <p className="text-[11px]">
+                      Нейросеть сбалансирует контрасты, добавит реалистичные тени от композиции на пол и сгенерирует готовый фото-рендер.
+                    </p>
+                  </div>
+
+                  {/* GENERATE PRIMARY BUTTON */}
+                  <button
+                    onClick={handleStartAiGeneration}
+                    style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                    className="w-full py-3 rounded-full text-white text-xs sm:text-sm font-semibold hover:opacity-90 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-[#582F89]/20 active:scale-95"
+                  >
+                    <Wand2 className="w-4 h-4 text-white fill-white" />
+                    <span>Сгенерировать реалистичный рендер</span>
+                  </button>
 
                 </div>
               )}
 
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* 🌟 ИИ ВИЗУАЛИЗАЦИЯ RESULT PREVIEW MODAL */}
+      <AnimatePresence>
+        {isAiResultModalOpen && aiGeneratedResultUrl && (
+          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 sm:p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsAiResultModalOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-md"
+            />
+
+            <motion.div
+              initial={{ scale: 0.95, y: 15, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.95, y: 15, opacity: 0 }}
+              className="relative w-full max-w-2xl bg-white dark:bg-zinc-900 rounded-[28px] border border-zinc-200 dark:border-zinc-800 shadow-2xl p-5 sm:p-6 overflow-hidden z-10 space-y-4 max-h-[90vh] flex flex-col"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3 shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 bg-[var(--lavenderSoft)] rounded-xl shrink-0">
+                    <Sparkles className="w-5 h-5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-zinc-900 dark:text-zinc-100 text-base sm:text-lg leading-tight">
+                      Результат ИИ-визуализации
+                    </h3>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 font-normal">
+                      Готовый фотореалистичный 3D-макет с физикой света и теней
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsAiResultModalOpen(false)}
+                  className="p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Generated Image Box */}
+              <div className="relative flex-1 min-h-0 bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 group flex items-center justify-center p-2">
+                <img
+                  src={aiGeneratedResultUrl}
+                  alt="Результат визуализации"
+                  className="w-full h-full max-h-[50vh] sm:max-h-[55vh] object-contain rounded-xl"
+                />
+                <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-bold text-white flex items-center gap-1.5 border border-white/20 shadow-md">
+                  <Sparkles className="w-3.5 h-3.5 text-purple-300" />
+                  <span>3D Фотореализм</span>
+                </div>
+              </div>
+
+              {/* Info notice */}
+              <div className="p-3 bg-emerald-500/10 dark:bg-emerald-950/30 rounded-2xl border border-emerald-500/20 text-xs text-emerald-900 dark:text-emerald-200 font-normal leading-relaxed flex items-center justify-between gap-2 shrink-0">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span>
+                    {activeScene.backdropType === 'image' && activeScene.backdropImage
+                      ? 'Визуализация создана на базе вашего загруженного фона помещения.'
+                      : 'Визуализация размещена в светлом белом зале без сторонних декораций.'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row items-center justify-end gap-2.5 pt-2 border-t border-zinc-100 dark:border-zinc-800 shrink-0">
+                {/* Secondary Outline: Скачать */}
+                <button
+                  onClick={handleDownloadGeneratedResult}
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-full border border-[var(--lavDeep)] text-[var(--lavDeep)] dark:text-purple-300 hover:bg-[var(--lavenderSoft)] text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                >
+                  <Download className="w-4 h-4 text-[var(--lavDeep)] dark:text-purple-300" />
+                  <span>Скачать</span>
+                </button>
+
+                {/* Primary Gradient: Сохранить в карточку проекта */}
+                <button
+                  onClick={handleSaveGeneratedToProject}
+                  style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-full text-white text-xs sm:text-sm font-semibold hover:opacity-90 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-[#582F89]/20 active:scale-95"
+                >
+                  <FolderPlus className="w-4 h-4 text-white" />
+                  <span>Сохранить в карточку проекта</span>
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

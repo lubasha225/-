@@ -15,7 +15,8 @@ import {
   Zap,
   FolderKanban,
   Award,
-  Maximize2
+  Maximize2,
+  MoreHorizontal
 } from 'lucide-react';
 import {
   AreaChart,
@@ -255,80 +256,149 @@ export default function StatisticsTab({ projects, showToast }: StatisticsTabProp
         </div>
       </div>
 
-      {/* Top Metric Cards (Pastel Tone Theme) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
-        {/* Metric 1 - Soft Pastel Lavender */}
-        <div className="bg-[#F3F0FF] dark:bg-purple-950/30 backdrop-blur-md rounded-[28px] border border-[#DDD6FE]/60 dark:border-purple-800/40 p-5 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-semibold text-purple-800/70 dark:text-purple-300/80 uppercase tracking-wider">ОБЩАЯ ВЫРУЧКА</span>
-            <div className="p-2 bg-purple-200/60 dark:bg-purple-900/50 rounded-xl">
-              <DollarSign className="w-5 h-5 text-purple-700 dark:text-purple-300" />
+      {/* Top Metric Cards (Pastel Tone Theme - 2 columns on mobile, 4 on desktop) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 md:gap-4">
+        {/* Metric 1 - Soft Periwinkle/Indigo (ОБЩАЯ ВЫРУЧКА) */}
+        <div className="relative overflow-hidden bg-[#b8c6fa]/70 dark:bg-indigo-950/60 backdrop-blur-md p-3 sm:p-3.5 md:p-4 rounded-[22px] flex flex-col justify-between border border-[#9cb1f8]/80 dark:border-indigo-800/40 shadow-xs hover:shadow-md transition-all duration-300 group">
+          {/* Background Large Cut-off Decorative Icon */}
+          <DollarSign className="absolute -right-4 -bottom-4 sm:-right-5 sm:-bottom-5 w-20 h-20 sm:w-28 sm:h-28 lg:w-32 lg:h-32 text-indigo-950/15 dark:text-white/10 pointer-events-none select-none -rotate-12 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6" />
+
+          {/* Header Row: Icon Left, Dots Right */}
+          <div className="relative z-10 flex items-center justify-between gap-2 mb-1">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-indigo-900/10 dark:bg-white/10 flex items-center justify-center text-indigo-900 dark:text-indigo-200 shrink-0">
+              <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </div>
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-indigo-900/10 dark:bg-white/10 flex items-center justify-center text-indigo-900/70 dark:text-indigo-200/70">
+              <MoreHorizontal className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-purple-950 dark:text-purple-100 tracking-tight">
-              {(totalRevenue / 1000).toLocaleString('ru-RU')} тыс. ₽
-            </div>
-            <div className="flex items-center gap-1 text-xs text-purple-700 dark:text-purple-300 mt-1 font-medium">
-              <ArrowUpRight className="w-3.5 h-3.5" />
-              <span>+18.4% к прошлому периоду</span>
-            </div>
+
+          {/* Title */}
+          <span className="relative z-10 text-[10px] sm:text-xs font-semibold text-indigo-950/80 dark:text-indigo-200/90 tracking-wide uppercase truncate mb-0.5">
+            Общая выручка
+          </span>
+
+          {/* Large Number */}
+          <div className="relative z-10 my-0.5 flex items-baseline gap-1 flex-wrap">
+            <span className="text-lg sm:text-2xl lg:text-3xl font-extrabold text-indigo-950 dark:text-white tracking-tight leading-none">
+              {(totalRevenue / 1000).toLocaleString('ru-RU')}
+            </span>
+            <span className="text-[10px] sm:text-xs font-bold text-indigo-900/80 dark:text-indigo-300">
+              тыс. ₽
+            </span>
+          </div>
+
+          {/* Bottom Row: Trend label */}
+          <div className="relative z-10 flex items-center gap-1 mt-1 pt-0.5 text-[10px] sm:text-[11px] font-medium text-indigo-900/80 dark:text-indigo-300/80 truncate">
+            <ArrowUpRight className="w-3 h-3 shrink-0" />
+            <span className="truncate">+18.4% к прошлому</span>
           </div>
         </div>
 
-        {/* Metric 2 - Soft Pastel Mint */}
-        <div className="bg-[#ECFDF5] dark:bg-emerald-950/30 backdrop-blur-md rounded-[28px] border border-[#A7F3D0]/60 dark:border-emerald-800/40 p-5 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-semibold text-emerald-800/70 dark:text-emerald-300/80 uppercase tracking-wider">ЧИСТАЯ ПРИБЫЛЬ</span>
-            <div className="p-2 bg-emerald-200/60 dark:bg-emerald-900/50 rounded-xl">
-              <TrendingUp className="w-5 h-5 text-emerald-700 dark:text-emerald-300" />
+        {/* Metric 2 - Soft Mint (ЧИСТАЯ ПРИБЫЛЬ) */}
+        <div className="relative overflow-hidden bg-[#d8f2b2]/70 dark:bg-emerald-950/60 backdrop-blur-md p-3 sm:p-3.5 md:p-4 rounded-[22px] flex flex-col justify-between border border-[#c3e895]/80 dark:border-emerald-800/40 shadow-xs hover:shadow-md transition-all duration-300 group">
+          {/* Background Large Cut-off Decorative Icon */}
+          <TrendingUp className="absolute -right-4 -bottom-4 sm:-right-5 sm:-bottom-5 w-20 h-20 sm:w-28 sm:h-28 lg:w-32 lg:h-32 text-emerald-950/15 dark:text-white/10 pointer-events-none select-none -rotate-12 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6" />
+
+          {/* Header Row: Icon Left, Dots Right */}
+          <div className="relative z-10 flex items-center justify-between gap-2 mb-1">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-emerald-900/10 dark:bg-white/10 flex items-center justify-center text-emerald-900 dark:text-emerald-200 shrink-0">
+              <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </div>
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-emerald-900/10 dark:bg-white/10 flex items-center justify-center text-emerald-900/70 dark:text-emerald-200/70">
+              <MoreHorizontal className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-emerald-950 dark:text-emerald-100 tracking-tight">
-              {(netProfit / 1000).toLocaleString('ru-RU')} тыс. ₽
-            </div>
-            <div className="flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-300 mt-1 font-medium">
-              <ArrowUpRight className="w-3.5 h-3.5" />
-              <span>Рентабельность ~ 42%</span>
-            </div>
+
+          {/* Title */}
+          <span className="relative z-10 text-[10px] sm:text-xs font-semibold text-emerald-950/80 dark:text-emerald-200/90 tracking-wide uppercase truncate mb-0.5">
+            Чистая прибыль
+          </span>
+
+          {/* Large Number */}
+          <div className="relative z-10 my-0.5 flex items-baseline gap-1 flex-wrap">
+            <span className="text-lg sm:text-2xl lg:text-3xl font-extrabold text-emerald-950 dark:text-white tracking-tight leading-none">
+              {(netProfit / 1000).toLocaleString('ru-RU')}
+            </span>
+            <span className="text-[10px] sm:text-xs font-bold text-emerald-900/80 dark:text-emerald-300">
+              тыс. ₽
+            </span>
+          </div>
+
+          {/* Bottom Row: Trend label */}
+          <div className="relative z-10 flex items-center gap-1 mt-1 pt-0.5 text-[10px] sm:text-[11px] font-medium text-emerald-900/80 dark:text-emerald-300/80 truncate">
+            <ArrowUpRight className="w-3 h-3 shrink-0" />
+            <span className="truncate">Рентабельность ~ 42%</span>
           </div>
         </div>
 
-        {/* Metric 3 - Soft Pastel Sky */}
-        <div className="bg-[#F0FDFA] dark:bg-teal-950/30 backdrop-blur-md rounded-[28px] border border-[#BAE6FD]/60 dark:border-teal-800/40 p-5 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-semibold text-teal-800/70 dark:text-teal-300/80 uppercase tracking-wider">АКТИВНЫЕ ПРОЕКТЫ</span>
-            <div className="p-2 bg-teal-200/60 dark:bg-teal-900/50 rounded-xl">
-              <FolderKanban className="w-5 h-5 text-teal-700 dark:text-teal-300" />
+        {/* Metric 3 - Soft Teal (АКТИВНЫЕ ПРОЕКТЫ) */}
+        <div className="relative overflow-hidden bg-[#a4e5d9]/70 dark:bg-teal-950/60 backdrop-blur-md p-3 sm:p-3.5 md:p-4 rounded-[22px] flex flex-col justify-between border border-[#83d4c3]/80 dark:border-teal-800/40 shadow-xs hover:shadow-md transition-all duration-300 group">
+          {/* Background Large Cut-off Decorative Icon */}
+          <FolderKanban className="absolute -right-4 -bottom-4 sm:-right-5 sm:-bottom-5 w-20 h-20 sm:w-28 sm:h-28 lg:w-32 lg:h-32 text-teal-950/15 dark:text-white/10 pointer-events-none select-none -rotate-12 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6" />
+
+          {/* Header Row: Icon Left, Dots Right */}
+          <div className="relative z-10 flex items-center justify-between gap-2 mb-1">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-teal-900/10 dark:bg-white/10 flex items-center justify-center text-teal-900 dark:text-teal-200 shrink-0">
+              <FolderKanban className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </div>
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-teal-900/10 dark:bg-white/10 flex items-center justify-center text-teal-900/70 dark:text-teal-200/70">
+              <MoreHorizontal className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-teal-950 dark:text-teal-100 tracking-tight">
-              {projects.length} смет
-            </div>
-            <div className="flex items-center gap-1 text-xs text-teal-700 dark:text-teal-300 mt-1 font-medium">
-              <span>{projects.filter(p => p.status === 'progress').length} в монтаже · {projects.filter(p => p.status === 'approved').length} закрыто</span>
-            </div>
+
+          {/* Title */}
+          <span className="relative z-10 text-[10px] sm:text-xs font-semibold text-teal-950/80 dark:text-teal-200/90 tracking-wide uppercase truncate mb-0.5">
+            Активные проекты
+          </span>
+
+          {/* Large Number */}
+          <div className="relative z-10 my-0.5 flex items-baseline gap-1 flex-wrap">
+            <span className="text-lg sm:text-2xl lg:text-3xl font-extrabold text-teal-950 dark:text-white tracking-tight leading-none">
+              {projects.length}
+            </span>
+            <span className="text-[10px] sm:text-xs font-bold text-teal-900/80 dark:text-teal-300">
+              смет
+            </span>
+          </div>
+
+          {/* Bottom Row: Trend label */}
+          <div className="relative z-10 flex items-center gap-1 mt-1 pt-0.5 text-[10px] sm:text-[11px] font-medium text-teal-900/80 dark:text-teal-300/80 truncate">
+            <span className="truncate">{projects.filter(p => p.status === 'progress').length} в монтаже · {projects.filter(p => p.status === 'approved').length} зак.</span>
           </div>
         </div>
 
-        {/* Metric 4 - Soft Pastel Rose */}
-        <div className="bg-[#FFF1F2] dark:bg-rose-950/30 backdrop-blur-md rounded-[28px] border border-[#FBCFE8]/60 dark:border-rose-800/40 p-5 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-semibold text-rose-800/70 dark:text-rose-300/80 uppercase tracking-wider">КОНВЕРСИЯ СОГЛАСОВАНИЙ</span>
-            <div className="p-2 bg-rose-200/60 dark:bg-rose-900/50 rounded-xl">
-              <Award className="w-5 h-5 text-rose-700 dark:text-rose-300" />
+        {/* Metric 4 - Soft Coral/Rose (КОНВЕРСИЯ СОГЛАСОВАНИЙ) */}
+        <div className="relative overflow-hidden bg-[#f8c5c8]/70 dark:bg-rose-950/60 backdrop-blur-md p-3 sm:p-3.5 md:p-4 rounded-[22px] flex flex-col justify-between border border-[#f4a8ac]/80 dark:border-rose-800/40 shadow-xs hover:shadow-md transition-all duration-300 group">
+          {/* Background Large Cut-off Decorative Icon */}
+          <Award className="absolute -right-4 -bottom-4 sm:-right-5 sm:-bottom-5 w-20 h-20 sm:w-28 sm:h-28 lg:w-32 lg:h-32 text-rose-950/15 dark:text-white/10 pointer-events-none select-none -rotate-12 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6" />
+
+          {/* Header Row: Icon Left, Dots Right */}
+          <div className="relative z-10 flex items-center justify-between gap-2 mb-1">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-rose-900/10 dark:bg-white/10 flex items-center justify-center text-rose-900 dark:text-rose-200 shrink-0">
+              <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </div>
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-rose-900/10 dark:bg-white/10 flex items-center justify-center text-rose-900/70 dark:text-rose-200/70">
+              <MoreHorizontal className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-rose-950 dark:text-rose-100 tracking-tight">
+
+          {/* Title */}
+          <span className="relative z-10 text-[10px] sm:text-xs font-semibold text-rose-950/80 dark:text-rose-200/90 tracking-wide uppercase truncate mb-0.5">
+            Конверсия
+          </span>
+
+          {/* Large Number */}
+          <div className="relative z-10 my-0.5 flex items-baseline gap-1 flex-wrap">
+            <span className="text-lg sm:text-2xl lg:text-3xl font-extrabold text-rose-950 dark:text-white tracking-tight leading-none">
               78.5%
-            </div>
-            <div className="flex items-center gap-1 text-xs text-rose-700 dark:text-rose-300 mt-1 font-medium">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Высокая лояльность заказчиков</span>
-            </div>
+            </span>
+          </div>
+
+          {/* Bottom Row: Trend label */}
+          <div className="relative z-10 flex items-center gap-1 mt-1 pt-0.5 text-[10px] sm:text-[11px] font-medium text-rose-900/80 dark:text-rose-300/80 truncate">
+            <CheckCircle2 className="w-3 h-3 shrink-0" />
+            <span className="truncate">Высокая лояльность</span>
           </div>
         </div>
       </div>
