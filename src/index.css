@@ -9,6 +9,11 @@
 }
 
 :root {
+  --primary-grad-from: #8C52D0;
+  --primary-grad-to: #582F89;
+  --primary-accent: #8C52D0;
+  --primary-deep: #582F89;
+
   --ink: #1C1824;
   --soft: #423C4F;
   --faint: #6A6375;
@@ -107,38 +112,7 @@ body {
   scrollbar-width: none;
 }
 
-/* Default Classic Background */
-body.bg-default {
-  background:
-    radial-gradient(1100px 600px at 0% 0%, var(--bg1) 0, transparent 55%),
-    radial-gradient(900px 600px at 100% 100%, var(--bg2) 0, transparent 55%),
-    linear-gradient(145deg, var(--bg3), var(--bg2) 60%, var(--bg3)) !important;
-  background-attachment: fixed !important;
-}
-
-/* Subly Aurora Background (Pastel mesh gradient with soft ambient glows like screenshot) */
-body.bg-aurora {
-  background-color: #F5F4F9 !important;
-  background-image: 
-    radial-gradient(at 0% 0%, rgba(216, 180, 254, 0.5) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(254, 215, 215, 0.55) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(254, 240, 138, 0.35) 0px, transparent 50%),
-    radial-gradient(at 0% 100%, rgba(186, 230, 253, 0.5) 0px, transparent 50%),
-    radial-gradient(at 50% 35%, rgba(233, 213, 255, 0.4) 0px, transparent 55%) !important;
-  background-attachment: fixed !important;
-}
-
-.dark body.bg-aurora,
-body.dark.bg-aurora {
-  background-color: #0C0A10 !important;
-  background-image: 
-    radial-gradient(at 0% 0%, rgba(126, 34, 206, 0.32) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(159, 18, 57, 0.22) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(180, 83, 9, 0.18) 0px, transparent 50%),
-    radial-gradient(at 0% 100%, rgba(14, 116, 144, 0.22) 0px, transparent 50%),
-    radial-gradient(at 50% 35%, rgba(88, 28, 135, 0.25) 0px, transparent 55%) !important;
-  background-attachment: fixed !important;
-}
+/* Dynamic background handling is managed via themeConfig.ts applyBgPresetStyle */
 
 /* Glass Panels with blur and matte finish */
 .glass-panel {
@@ -264,17 +238,17 @@ body.dark.bg-aurora {
   scrollbar-color: rgba(255, 255, 255, 0.15) rgba(255, 255, 255, 0.02);
 }
 
-/* Custom plum gradient button styling from #8C52D0 to #582F89 */
-.btn-plum {
-  background: linear-gradient(135deg, #8C52D0 0%, #582F89 100%) !important;
+/* Custom gradient button styling using active color scheme variables */
+.btn-plum, .btn-primary {
+  background: linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%) !important;
   color: #FFFFFF !important;
   border-radius: 9999px !important;
   transition: all 0.3s ease !important;
 }
 
-.btn-plum:hover {
-  background: linear-gradient(135deg, #985DE0 0%, #63369A 100%) !important;
-  box-shadow: 0 4px 15px -3px rgba(140, 82, 208, 0.4) !important;
+.btn-plum:hover, .btn-primary:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 4px 15px -3px var(--primary-accent, rgba(140, 82, 208, 0.4)) !important;
   opacity: 0.95;
 }
 

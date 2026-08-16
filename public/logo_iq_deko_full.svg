@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 180" width="100%" height="100%">
+  <defs>
+    <clipPath id="qClipFull">
+      <path d="M 85 10 C 125 10 155 40 155 80 C 155 102 144 121 129 134 C 117 144 102 150 85 150 C 45 150 15 120 15 80 C 15 40 45 10 85 10 Z" />
+    </clipPath>
+  </defs>
+
+  <!-- ICON MARK -->
+  <g id="iconMark">
+    <!-- Top Left Orange Arc/Circle -->
+    <circle cx="45" cy="32" r="32" fill="#FFA100" />
+
+    <!-- Main Q Body with colorful segments -->
+    <g clip-path="url(#qClipFull)">
+      <!-- Top-Right Cyan Segment -->
+      <path d="M 85 10 L 155 10 L 155 80 Z" fill="#00C4EE" />
+      
+      <!-- Right Purple Segment -->
+      <path d="M 85 80 L 155 10 L 155 150 Z" fill="#6A1BEE" />
+      
+      <!-- Top-Left & Center Violet Segment -->
+      <path d="M 15 10 L 85 10 L 85 80 L 15 150 Z" fill="#B32BD9" />
+      
+      <!-- Bottom-Left Blue Segment -->
+      <path d="M 15 80 L 85 80 L 15 150 Z" fill="#0082F6" />
+    </g>
+
+    <!-- Bottom Right Pink Dot -->
+    <circle cx="140" cy="136" r="19" fill="#FF538A" />
+
+    <!-- Center White Sparkle -->
+    <path d="M 85 43 Q 85 80 48 80 Q 85 80 85 117 Q 85 80 122 80 Q 85 80 85 43 Z" fill="#FFFFFF" />
+  </g>
+
+  <!-- TEXT "IQ DECO" -->
+  <g fill="currentColor" text-anchor="start" dominant-baseline="central">
+    <text x="185" y="90" font-family="'Plus Jakarta Sans', system-ui, -apple-system, sans-serif" font-weight="800" font-size="92" letter-spacing="-2">IQ</text>
+    <text x="305" y="90" font-family="'Plus Jakarta Sans', system-ui, -apple-system, sans-serif" font-weight="500" font-size="92" letter-spacing="0">DECO</text>
+  </g>
+</svg>

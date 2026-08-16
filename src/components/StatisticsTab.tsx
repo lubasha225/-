@@ -137,24 +137,8 @@ export default function StatisticsTab({ projects, showToast }: StatisticsTabProp
 
   return (
     <div className="space-y-6 animate-fadeIn pb-8">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white/60 dark:bg-zinc-900/40 p-4 sm:p-5 rounded-[28px] border border-[var(--glass-edge)] backdrop-blur-md">
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-[var(--lavenderSoft)] rounded-xl">
-              <TrendingUp className="w-5 h-5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-              Статистика и аналитика
-            </h1>
-          </div>
-          <p className="text-xs sm:text-sm font-normal text-zinc-700 dark:text-zinc-300 leading-relaxed mt-1">
-            Наглядный финансовый учет, конверсия смет и структура расходов студии
-          </p>
-        </div>
-
-        {/* Controls: Period selector + Custom month/range pickers + Export button */}
-        <div className="flex items-center gap-2.5 flex-wrap">
+      {/* Controls: Period selector + Custom month/range pickers + Export button */}
+      <div className="flex items-center justify-end gap-2.5 flex-wrap">
           {/* Main Mode Toggles */}
           <div className="flex bg-white/80 dark:bg-zinc-800/80 p-1 rounded-full border border-zinc-200/80 dark:border-zinc-700/80 shadow-2xs flex-wrap">
             <button
@@ -254,7 +238,6 @@ export default function StatisticsTab({ projects, showToast }: StatisticsTabProp
             <span>Экспорт</span>
           </button>
         </div>
-      </div>
 
       {/* Top Metric Cards (Pastel Tone Theme - 2 columns on mobile, 4 on desktop) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 md:gap-4">

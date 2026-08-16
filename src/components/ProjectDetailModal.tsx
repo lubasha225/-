@@ -997,31 +997,31 @@ export default function ProjectDetailModal({
             <h1 className="text-xl sm:text-2xl font-black tracking-tight text-stone-900 dark:text-stone-50 truncate max-w-full">
               {project.name}
             </h1>
-            <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full bg-purple-100/90 dark:bg-purple-950/60 text-[#582F89] dark:text-purple-200 border border-purple-200/80 dark:border-purple-800/60 shadow-2xs shrink-0">
-              <span className="w-2 h-2 rounded-full bg-[#8C52D0]" /> {steps[project.currentStep]?.toUpperCase()}
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full bg-purple-100/90 dark:bg-purple-950/60 text-[var(--lavDeep)] dark:text-purple-200 border border-purple-200/80 dark:border-purple-800/60 shadow-2xs shrink-0">
+              <span className="w-2 h-2 rounded-full bg-[var(--primary-accent)]" /> {steps[project.currentStep]?.toUpperCase()}
             </span>
           </div>
 
           {/* Client & Project Info */}
           <div className="flex flex-wrap items-center gap-y-2 gap-x-3 text-xs text-stone-600 dark:text-stone-400 w-full min-w-0">
             <span className="flex items-center gap-1.5 font-medium text-stone-800 dark:text-stone-200 shrink-0">
-              <User className="w-3.5 h-3.5 text-[#8C52D0]" /> Клиент: <strong className="font-bold text-stone-900 dark:text-stone-100">{project.clientName}</strong>
+              <User className="w-3.5 h-3.5 text-[var(--primary-accent)]" /> Клиент: <strong className="font-bold text-stone-900 dark:text-stone-100">{project.clientName}</strong>
             </span>
             <span className="text-stone-300 dark:text-stone-700 hidden sm:inline">•</span>
-            <a href={`tel:${project.clientPhone || briefValues["ТЕЛЕФОН"] || '+7 905 123 45 67'}`} className="flex items-center gap-1.5 font-medium text-stone-700 dark:text-stone-300 hover:text-[#8C52D0] transition-colors shrink-0">
-              <Phone className="w-3.5 h-3.5 text-[#8C52D0]" /> {project.clientPhone || briefValues["ТЕЛЕФОН"] || '+7 905 123 45 67'}
+            <a href={`tel:${project.clientPhone || briefValues["ТЕЛЕФОН"] || '+7 905 123 45 67'}`} className="flex items-center gap-1.5 font-medium text-stone-700 dark:text-stone-300 hover:text-[var(--primary-accent)] transition-colors shrink-0">
+              <Phone className="w-3.5 h-3.5 text-[var(--primary-accent)]" /> {project.clientPhone || briefValues["ТЕЛЕФОН"] || '+7 905 123 45 67'}
             </a>
             <span className="text-stone-300 dark:text-stone-700 hidden sm:inline">•</span>
-            <a href={`mailto:${project.clientEmail || 'socolova.design@mail.ru'}`} className="flex items-center gap-1.5 font-medium text-stone-700 dark:text-stone-300 hover:text-[#8C52D0] transition-colors truncate max-w-[220px]">
-              <Mail className="w-3.5 h-3.5 text-[#8C52D0] shrink-0" /> {project.clientEmail || 'socolova.design@mail.ru'}
+            <a href={`mailto:${project.clientEmail || 'socolova.design@mail.ru'}`} className="flex items-center gap-1.5 font-medium text-stone-700 dark:text-stone-300 hover:text-[var(--primary-accent)] transition-colors truncate max-w-[220px]">
+              <Mail className="w-3.5 h-3.5 text-[var(--primary-accent)] shrink-0" /> {project.clientEmail || 'socolova.design@mail.ru'}
             </a>
             <span className="text-stone-300 dark:text-stone-700 hidden sm:inline">•</span>
             <span className="flex items-center gap-1.5 text-stone-700 dark:text-stone-300 shrink-0">
-              <Calendar className="w-3.5 h-3.5 text-[#8C52D0]" /> {project.date}
+              <Calendar className="w-3.5 h-3.5 text-[var(--primary-accent)]" /> {project.date}
             </span>
             <span className="text-stone-300 dark:text-stone-700 hidden sm:inline">•</span>
             <span className="flex items-center gap-1.5 text-stone-700 dark:text-stone-300 shrink-0">
-              <MapPin className="w-3.5 h-3.5 text-[#8C52D0]" /> {project.venue}
+              <MapPin className="w-3.5 h-3.5 text-[var(--primary-accent)]" /> {project.venue}
             </span>
           </div>
         </div>
@@ -1035,7 +1035,7 @@ export default function ProjectDetailModal({
               showToast('Ссылка отправлена клиенту', `Ссылка для клиента ${project.clientName} скопирована в буфер обмена: ${briefUrl}`, 'success');
             }}
             className="h-9 px-5 text-white rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all duration-300 hover:shadow-lg hover:opacity-95 active:scale-[0.98] cursor-pointer shrink-0 shadow-md flex-1 sm:flex-none"
-            style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+            style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
           >
             <Share2 className="w-3.5 h-3.5" /> Отправить клиенту
           </button>
@@ -1077,18 +1077,18 @@ export default function ProjectDetailModal({
                     onClick={() => setActiveTab(tab.id as any)}
                     className={`flex items-center justify-between gap-1.5 px-3 py-2.5 rounded-2xl transition-all duration-200 cursor-pointer min-w-0 ${
                       isActive
-                        ? 'border border-[#8C52D0] dark:border-purple-400 text-[#582F89] dark:text-purple-200 bg-purple-50/50 dark:bg-purple-950/30 shadow-[0_0_12px_rgba(140,82,208,0.25)]'
-                        : 'border border-stone-200/80 dark:border-zinc-800 text-[#1B0D22] dark:text-zinc-300 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100/70 dark:hover:bg-zinc-800/50'
+                        ? 'border border-[var(--primary-accent)] dark:border-purple-400 text-[var(--lavDeep)] dark:text-purple-200 bg-purple-50/50 dark:bg-purple-950/30 shadow-[0_0_12px_rgba(140,82,208,0.25)]'
+                        : 'border border-stone-200/80 dark:border-zinc-800 text-[var(--ink)] dark:text-zinc-300 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100/70 dark:hover:bg-zinc-800/50'
                     }`}
                   >
                     <div className="flex items-center gap-2 min-w-0 truncate">
-                      <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#8C52D0]' : 'text-stone-500 dark:text-stone-400'}`} />
+                      <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[var(--primary-accent)]' : 'text-stone-500 dark:text-stone-400'}`} />
                       <span className="text-[14px] font-normal leading-tight truncate">
                         {tab.label}
                       </span>
                     </div>
                     <span className={`text-[14px] px-2 py-0.5 rounded-full font-bold shrink-0 ${
-                      isActive ? 'bg-purple-100 dark:bg-purple-950 text-[#582F89] dark:text-purple-200' : tab.badgeColor
+                      isActive ? 'bg-purple-100 dark:bg-purple-950 text-[var(--lavDeep)] dark:text-purple-200' : tab.badgeColor
                     }`}>
                       {tab.badge}
                     </span>
@@ -1116,12 +1116,12 @@ export default function ProjectDetailModal({
                     onClick={() => setActiveTab(tab.id as any)}
                     className={`w-full flex items-center justify-between gap-2 p-2.5 rounded-full text-[14px] transition-all duration-300 text-left cursor-pointer ${
                       isActive
-                        ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-xs'
-                        : 'text-[#1B0D22] dark:text-zinc-300 hover:bg-stone-200/60 dark:hover:bg-zinc-800'
+                        ? 'bg-gradient-to-r from-[var(--primary-grad-from)] to-[var(--primary-grad-to)] text-white shadow-xs'
+                        : 'text-[var(--ink)] dark:text-zinc-300 hover:bg-stone-200/60 dark:hover:bg-zinc-800'
                     }`}
                   >
                     <span className="flex items-center gap-2">
-                      <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-[#582F89] dark:text-purple-400'}`} />
+                      <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-[var(--lavDeep)] dark:text-purple-400'}`} />
                       <span className="font-normal">{tab.label}</span>
                     </span>
                     <span className={`text-[14px] px-2.5 py-0.5 rounded-full font-bold ${tab.badgeColor}`}>
@@ -1137,8 +1137,8 @@ export default function ProjectDetailModal({
             <div className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-[var(--glass-edge)] rounded-3xl p-4 space-y-3.5 shadow-sm transition-all duration-300">
               {/* Header */}
               <div className="flex items-center justify-between pb-2 border-b border-stone-100 dark:border-zinc-800/80 gap-2">
-                <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#582F89] dark:text-purple-300 flex items-center gap-1.5">
-                  <Receipt className="w-4 h-4 text-[#8C52D0]" />
+                <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--lavDeep)] dark:text-purple-300 flex items-center gap-1.5">
+                  <Receipt className="w-4 h-4 text-[var(--primary-accent)]" />
                   Чек-лист
                 </span>
                 <span className="text-[12px] font-medium text-purple-700 dark:text-purple-300 bg-purple-100/70 dark:bg-purple-900/50 px-2.5 py-0.5 rounded-full">
@@ -1151,9 +1151,9 @@ export default function ProjectDetailModal({
                 {/* 1. СТОИМОСТЬ */}
                 <div className="flex items-center justify-between">
                   <span className="text-stone-500 dark:text-stone-400 text-[12px] font-normal flex items-center gap-1.5">
-                    <Wallet className="w-3.5 h-3.5 text-[#8C52D0]" /> Стоимость:
+                    <Wallet className="w-3.5 h-3.5 text-[var(--primary-accent)]" /> Стоимость:
                   </span>
-                  <span className="font-mono font-black text-base text-[#582F89] dark:text-purple-200">
+                  <span className="font-mono font-black text-base text-[var(--lavDeep)] dark:text-purple-200">
                     {finalPrice.toLocaleString('ru')} ₽
                   </span>
                 </div>
@@ -1221,7 +1221,7 @@ export default function ProjectDetailModal({
                             isCompleted
                               ? 'bg-emerald-600 text-white shadow-xs'
                               : isCurrent
-                              ? 'bg-[#582F89] text-white shadow-md ring-2 ring-purple-300 dark:ring-purple-900'
+                              ? 'bg-[var(--lavDeep)] text-white shadow-md ring-2 ring-purple-300 dark:ring-purple-900'
                               : 'bg-stone-200 dark:bg-zinc-800 text-stone-400 group-hover:text-stone-600'
                           }`}
                         >
@@ -1230,7 +1230,7 @@ export default function ProjectDetailModal({
 
                         {/* 3. СНИЗУ ПОДПИСЬ */}
                         <span className={`block text-xs sm:text-sm font-bold transition-colors truncate w-full mt-1 ${
-                          isCurrent ? 'text-[#582F89] dark:text-purple-300' : isCompleted ? 'text-stone-800 dark:text-stone-200' : 'text-stone-400 group-hover:text-stone-600'
+                          isCurrent ? 'text-[var(--lavDeep)] dark:text-purple-300' : isCompleted ? 'text-stone-800 dark:text-stone-200' : 'text-stone-400 group-hover:text-stone-600'
                         }`}>
                           {label}
                         </span>
@@ -1255,7 +1255,7 @@ export default function ProjectDetailModal({
               <section className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-[var(--glass-edge)] rounded-3xl overflow-hidden shadow-sm w-full min-w-0">
                 <div className="bg-[#F0EBF9]/80 dark:bg-[#20152B]/80 backdrop-blur-md border-b border-[#D8C7F0] dark:border-[#3D2554] px-4 sm:px-5 py-3.5 flex justify-between items-center flex-wrap gap-2.5 w-full min-w-0">
                   <div className="flex items-center gap-2 min-w-0">
-                    <Clipboard className="w-4 h-4 text-[#582F89] shrink-0" />
+                    <Clipboard className="w-4 h-4 text-[var(--lavDeep)] shrink-0" />
                     <div className="min-w-0">
                       <h2 className="font-bold text-sm text-stone-900 dark:text-stone-100 truncate">Анкета и Бриф проекта</h2>
                       <p className="text-[10px] text-stone-400 truncate">
@@ -1278,7 +1278,7 @@ export default function ProjectDetailModal({
                       <span
                         className="absolute inset-0 rounded-full pointer-events-none p-[1px]"
                         style={{
-                          background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)',
+                          background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)',
                           WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
                           WebkitMaskComposite: 'xor',
                           maskComposite: 'exclude',
@@ -1287,15 +1287,15 @@ export default function ProjectDetailModal({
                       <Send className="w-3.5 h-3.5 stroke-[2.2] relative z-10 shrink-0" style={{ stroke: 'url(#purple-gradient-send-btn)' }} />
                       <span
                         className="bg-clip-text text-transparent relative z-10"
-                        style={{ backgroundImage: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                        style={{ backgroundImage: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
                       >
                         Отправить бриф
                       </span>
                       <svg width="0" height="0" className="absolute w-0 h-0 pointer-events-none">
                         <defs>
                           <linearGradient id="purple-gradient-send-btn" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stopColor="#8C52D0" />
-                            <stop offset="100%" stopColor="#582F89" />
+                            <stop offset="0%" stopColor="var(--primary-grad-from)" />
+                            <stop offset="100%" stopColor="var(--primary-grad-to)" />
                           </linearGradient>
                         </defs>
                       </svg>
@@ -1323,8 +1323,8 @@ export default function ProjectDetailModal({
                     {/* SECTION 1: CLIENT FIELDS */}
                     <div className="space-y-3">
                       <div className="flex items-center gap-2 border-b border-purple-100 dark:border-purple-950/60 pb-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#8C52D0] shrink-0" />
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-[#582F89] dark:text-purple-300">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[var(--primary-accent)] shrink-0" />
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--lavDeep)] dark:text-purple-300">
                           Поля клиента
                         </h3>
                         <span className="text-[10px] font-semibold text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-950/80 px-2 py-0.5 rounded-full">
@@ -1342,8 +1342,8 @@ export default function ProjectDetailModal({
                               key={field.key}
                               className={`p-2.5 rounded-xl border border-l-2 text-left transition-all flex flex-col justify-between shadow-2xs ${
                                 isEmpty
-                                  ? 'border-dashed border-purple-300/80 border-l-[#8C52D0] dark:border-purple-900/40 dark:border-l-purple-500/70 bg-purple-50/30 dark:bg-zinc-900/40'
-                                  : 'border-purple-200/60 border-l-[#8C52D0] dark:border-zinc-800 dark:border-l-purple-500/70 bg-purple-50/10 dark:bg-zinc-900/60'
+                                  ? 'border-dashed border-purple-300/80 border-l-[var(--primary-accent)] dark:border-purple-900/40 dark:border-l-purple-500/70 bg-purple-50/30 dark:bg-zinc-900/40'
+                                  : 'border-purple-200/60 border-l-[var(--primary-accent)] dark:border-zinc-800 dark:border-l-purple-500/70 bg-purple-50/10 dark:bg-zinc-900/60'
                               }`}
                             >
                               <div className="flex items-center justify-between gap-1 mb-1.5">
@@ -1358,9 +1358,9 @@ export default function ProjectDetailModal({
                                   value={val === "(требует заполнения)" ? "" : val}
                                   onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                                   placeholder=""
-                                  className={`w-full text-[15px] font-semibold rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] resize-none ${
+                                  className={`w-full text-[15px] font-semibold rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--primary-accent)] resize-none ${
                                     isEmpty
-                                      ? 'bg-purple-50/50 text-[#582F89] italic font-medium border-purple-200/60 dark:bg-zinc-900/90 dark:text-purple-300/80 dark:border-zinc-800'
+                                      ? 'bg-purple-50/50 text-[var(--lavDeep)] italic font-medium border-purple-200/60 dark:bg-zinc-900/90 dark:text-purple-300/80 dark:border-zinc-800'
                                       : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
                                   }`}
                                 />
@@ -1370,9 +1370,9 @@ export default function ProjectDetailModal({
                                   value={val === "(требует заполнения)" ? "" : val}
                                   onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                                   placeholder=""
-                                  className={`w-full text-[15px] font-semibold rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] ${
+                                  className={`w-full text-[15px] font-semibold rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--primary-accent)] ${
                                     isEmpty
-                                      ? 'bg-purple-50/50 text-[#582F89] italic font-medium border-purple-200/60 dark:bg-zinc-900/90 dark:text-purple-300/80 dark:border-zinc-800'
+                                      ? 'bg-purple-50/50 text-[var(--lavDeep)] italic font-medium border-purple-200/60 dark:bg-zinc-900/90 dark:text-purple-300/80 dark:border-zinc-800'
                                       : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
                                   }`}
                                 />
@@ -1438,7 +1438,7 @@ export default function ProjectDetailModal({
                                   value={val === "(требует заполнения)" ? "" : val}
                                   onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                                   placeholder=""
-                                  className={`w-full text-[15px] font-semibold rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] resize-none ${
+                                  className={`w-full text-[15px] font-semibold rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--primary-accent)] resize-none ${
                                     isEmpty
                                       ? 'bg-zinc-100/50 text-zinc-600 italic font-medium border-zinc-200 dark:bg-zinc-900/80 dark:text-zinc-400 dark:border-zinc-800'
                                       : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
@@ -1450,7 +1450,7 @@ export default function ProjectDetailModal({
                                   value={val === "(требует заполнения)" ? "" : val}
                                   onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                                   placeholder=""
-                                  className={`w-full text-[15px] font-semibold rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] ${
+                                  className={`w-full text-[15px] font-semibold rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--primary-accent)] ${
                                     isEmpty
                                       ? 'bg-zinc-100/50 text-zinc-600 italic font-medium border-zinc-200 dark:bg-zinc-900/80 dark:text-zinc-400 dark:border-zinc-800'
                                       : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
@@ -1465,7 +1465,7 @@ export default function ProjectDetailModal({
                         {isAddingCustomField ? (
                           <div className="p-2.5 rounded-xl border border-l-2 border-dashed border-purple-300 border-l-stone-400 dark:border-zinc-800 dark:border-l-zinc-600 bg-purple-50/30 dark:bg-zinc-900/30 text-left flex flex-col justify-between gap-2 shadow-2xs">
                             <div className="flex items-center justify-between gap-1">
-                              <span className="text-[9px] uppercase tracking-wider font-bold text-[#582F89] dark:text-purple-300">
+                              <span className="text-[9px] uppercase tracking-wider font-bold text-[var(--lavDeep)] dark:text-purple-300">
                                 Новое поле декоратора
                               </span>
                             </div>
@@ -1485,7 +1485,7 @@ export default function ProjectDetailModal({
                                   showToast('Поле добавлено', `Добавлено новое поле: ${keyUpper}`, 'success');
                                 }
                               }}
-                              className="w-full text-xs font-semibold rounded-lg px-2 py-1 border border-purple-200 dark:border-purple-800 bg-white dark:bg-zinc-900 text-stone-800 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-[#8C52D0]"
+                              className="w-full text-xs font-semibold rounded-lg px-2 py-1 border border-purple-200 dark:border-purple-800 bg-white dark:bg-zinc-900 text-stone-800 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-[var(--primary-accent)]"
                             />
                             <div className="flex items-center gap-1.5 pt-0.5">
                               <button
@@ -1500,7 +1500,7 @@ export default function ProjectDetailModal({
                                   }
                                 }}
                                 className="flex-1 py-1 px-2 text-white rounded-full text-[11px] font-bold transition-all cursor-pointer hover:opacity-95"
-                                style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                                style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
                               >
                                 Сохранить
                               </button>
@@ -1518,10 +1518,10 @@ export default function ProjectDetailModal({
                         ) : (
                           <button
                             onClick={() => setIsAddingCustomField(true)}
-                            className="p-3 rounded-xl border border-l-2 border-dashed border-stone-300 border-l-stone-400 dark:border-zinc-700 hover:border-[#8C52D0] dark:hover:border-[#8C52D0] bg-stone-50/40 dark:bg-zinc-900/30 hover:bg-purple-50/40 dark:hover:bg-purple-950/20 text-stone-500 hover:text-[#582F89] dark:text-stone-400 dark:hover:text-purple-300 text-xs font-semibold transition-all duration-300 flex flex-col items-center justify-center gap-1.5 min-h-[82px] cursor-pointer group"
+                            className="p-3 rounded-xl border border-l-2 border-dashed border-stone-300 border-l-stone-400 dark:border-zinc-700 hover:border-[var(--primary-accent)] dark:hover:border-[var(--primary-accent)] bg-stone-50/40 dark:bg-zinc-900/30 hover:bg-purple-50/40 dark:hover:bg-purple-950/20 text-stone-500 hover:text-[var(--lavDeep)] dark:text-stone-400 dark:hover:text-purple-300 text-xs font-semibold transition-all duration-300 flex flex-col items-center justify-center gap-1.5 min-h-[82px] cursor-pointer group"
                           >
                             <div className="w-6 h-6 rounded-full bg-stone-200/80 dark:bg-zinc-800 group-hover:bg-purple-200 dark:group-hover:bg-purple-900/60 flex items-center justify-center transition-colors">
-                              <Plus className="w-3.5 h-3.5 text-stone-600 dark:text-stone-300 group-hover:text-[#582F89] dark:group-hover:text-purple-200" />
+                              <Plus className="w-3.5 h-3.5 text-stone-600 dark:text-stone-300 group-hover:text-[var(--lavDeep)] dark:group-hover:text-purple-200" />
                             </div>
                             <span className="text-[11px] font-bold">+ Добавить поле</span>
                           </button>
@@ -1532,8 +1532,8 @@ export default function ProjectDetailModal({
                     {/* BOTTOM LEGEND AT THE VERY BOTTOM OF BRIEF CARD */}
                     <div className="pt-4 border-t border-stone-200/60 dark:border-zinc-800/80 flex items-center justify-between flex-wrap gap-2 text-xs">
                       <div className="flex items-center gap-4 flex-wrap">
-                        <span className="inline-flex items-center gap-1.5 text-xs text-[#582F89] dark:text-purple-300 font-semibold bg-purple-100/90 dark:bg-purple-950/70 px-3 py-1 rounded-full border border-purple-200/70 dark:border-purple-800/50">
-                          <span className="w-2.5 h-2.5 rounded-full bg-[#8C52D0] shadow-xs" /> Заполняет клиент
+                        <span className="inline-flex items-center gap-1.5 text-xs text-[var(--lavDeep)] dark:text-purple-300 font-semibold bg-purple-100/90 dark:bg-purple-950/70 px-3 py-1 rounded-full border border-purple-200/70 dark:border-purple-800/50">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[var(--primary-accent)] shadow-xs" /> Заполняет клиент
                         </span>
                         <span className="inline-flex items-center gap-1.5 text-xs text-stone-600 dark:text-stone-300 font-semibold bg-stone-100 dark:bg-zinc-800 px-3 py-1 rounded-full border border-stone-200 dark:border-zinc-700">
                           <span className="w-2.5 h-2.5 rounded-full bg-stone-400 dark:bg-zinc-400 shadow-xs" /> Декоратор
@@ -1553,7 +1553,7 @@ export default function ProjectDetailModal({
               <section className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-[var(--glass-edge)] rounded-3xl overflow-hidden shadow-sm">
                 <div className="bg-[#F0EBF9]/80 dark:bg-[#20152B]/80 backdrop-blur-md border-b border-[#D8C7F0] dark:border-[#3D2554] px-5 py-3.5 flex justify-between items-center flex-wrap gap-2">
                   <div className="flex items-center gap-2">
-                    <Palette className="w-4 h-4 text-[#582F89]" />
+                    <Palette className="w-4 h-4 text-[var(--lavDeep)]" />
                     <h2 className="font-bold text-sm text-stone-900 dark:text-stone-100">Дизайн & Визуализация</h2>
                   </div>
                   <button
@@ -1561,11 +1561,11 @@ export default function ProjectDetailModal({
                       showToast('Редактор дизайна', 'Переход в встроенный графический редактор...', 'info');
                       if (onOpenEditor) onOpenEditor();
                     }}
-                    style={{ border: '1px solid #8C52D0' }}
-                    className="bg-transparent px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all duration-300 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] hover:bg-[#8C52D0]/10"
+                    style={{ border: '1px solid var(--primary-accent)' }}
+                    className="bg-transparent px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all duration-300 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] hover:bg-[var(--primary-accent)]/10"
                   >
-                    <SlidersHorizontal className="w-3 h-3 text-[#8C52D0]" />
-                    <span className="bg-gradient-to-r from-[#8C52D0] to-[#582F89] bg-clip-text text-transparent font-semibold">Редактор</span>
+                    <SlidersHorizontal className="w-3 h-3 text-[var(--primary-accent)]" />
+                    <span className="bg-gradient-to-r from-[var(--primary-grad-from)] to-[var(--primary-grad-to)] bg-clip-text text-transparent font-semibold">Редактор</span>
                   </button>
                 </div>
 
@@ -1577,7 +1577,7 @@ export default function ProjectDetailModal({
                     <button
                       type="button"
                       onClick={() => setVizIndex((prev) => (prev === 0 ? visualizations.length - 1 : prev - 1))}
-                      className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full border border-[#8C52D0] bg-white/90 dark:bg-zinc-900/90 text-[#582F89] dark:text-purple-300 shadow-md flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-[#F0EBF9] dark:hover:bg-[#20152B] active:scale-95 cursor-pointer"
+                      className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full border border-[var(--primary-accent)] bg-white/90 dark:bg-zinc-900/90 text-[var(--lavDeep)] dark:text-purple-300 shadow-md flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-[#F0EBF9] dark:hover:bg-[#20152B] active:scale-95 cursor-pointer"
                       title="Предыдущая визуализация"
                     >
                       <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
@@ -1586,7 +1586,7 @@ export default function ProjectDetailModal({
                     <button
                       type="button"
                       onClick={() => setVizIndex((prev) => (prev === visualizations.length - 1 ? 0 : prev + 1))}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full border border-[#8C52D0] bg-white/90 dark:bg-zinc-900/90 text-[#582F89] dark:text-purple-300 shadow-md flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-[#F0EBF9] dark:hover:bg-[#20152B] active:scale-95 cursor-pointer"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full border border-[var(--primary-accent)] bg-white/90 dark:bg-zinc-900/90 text-[var(--lavDeep)] dark:text-purple-300 shadow-md flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-[#F0EBF9] dark:hover:bg-[#20152B] active:scale-95 cursor-pointer"
                       title="Следующая визуализация"
                     >
                       <ChevronRight className="w-5 h-5 stroke-[2.5]" />
@@ -1611,7 +1611,7 @@ export default function ProjectDetailModal({
                       className="w-full flex-1 flex items-center justify-center my-1 px-1 cursor-pointer group"
                       title="Нажмите, чтобы развернуть эскиз во весь экран"
                     >
-                      <div className="aspect-square w-full max-w-[280px] sm:max-w-[300px] overflow-hidden rounded-2xl border border-stone-200/80 dark:border-zinc-800 shadow-xs relative transition-all duration-300 group-hover:shadow-md group-hover:border-[#8C52D0]">
+                      <div className="aspect-square w-full max-w-[280px] sm:max-w-[300px] overflow-hidden rounded-2xl border border-stone-200/80 dark:border-zinc-800 shadow-xs relative transition-all duration-300 group-hover:shadow-md group-hover:border-[var(--primary-accent)]">
                         <div ref={modalSketchRef} className="w-full h-full">
                           <EditorSketchCanvasPreview
                             title={visualizations[vizIndex % visualizations.length]?.title}
@@ -1632,7 +1632,7 @@ export default function ProjectDetailModal({
                               showToast('Редактор визуализации', `Переход в редактор: ${visualizations[vizIndex % visualizations.length]?.title}`, 'info');
                               if (onOpenEditor) onOpenEditor();
                             }}
-                            style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                            style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
                             className="rounded-full px-3.5 py-1.5 text-xs font-bold text-white flex items-center gap-1.5 cursor-pointer shadow-lg hover:scale-105 transition-all"
                           >
                             <Edit2 className="w-3.5 h-3.5 text-white" />

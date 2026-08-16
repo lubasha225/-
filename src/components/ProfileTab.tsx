@@ -6,12 +6,12 @@ interface ProfileTabProps {
 }
 
 export default function ProfileTab({ showToast }: ProfileTabProps) {
-  const [studioName, setStudioName] = useState(() => localStorage.getItem('fleur_studio_name') || 'Студия «Флёр»');
+  const [studioName, setStudioName] = useState(() => localStorage.getItem('fleur_studio_name') || 'Студия «IQ Deko»');
   const [ownerName, setOwnerName] = useState(() => localStorage.getItem('fleur_user_name') || 'Денис С.');
   const [tagline, setTagline] = useState(() => localStorage.getItem('fleur_studio_tagline') || 'премиальный декор и концептуальная флористика');
   const [email, setEmail] = useState(() => localStorage.getItem('fleur_user_email') || 'denis@fleur-decor.ru');
   const [phone, setPhone] = useState(() => localStorage.getItem('fleur_studio_phone') || '+7 (999) 456-78-90');
-  const [website, setWebsite] = useState(() => localStorage.getItem('fleur_studio_website') || 'www.fleur-decor.ru');
+  const [website, setWebsite] = useState(() => localStorage.getItem('fleur_studio_website') || 'www.iq-deko.ru');
   const [location, setLocation] = useState(() => localStorage.getItem('fleur_studio_location') || 'Москва, Пресненская наб. 12');
   const [logoUrl, setLogoUrl] = useState<string | null>(() => {
     return localStorage.getItem('fleur_studio_logo') || null;

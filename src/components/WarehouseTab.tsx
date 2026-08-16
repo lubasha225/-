@@ -217,6 +217,10 @@ export default function WarehouseTab({
   const [editingQtyId, setEditingQtyId] = useState<string | null>(null);
   const [tempQty, setTempQty] = useState<string>('');
 
+  // Inline Item Name Editing States
+  const [editingNameId, setEditingNameId] = useState<string | null>(null);
+  const [tempName, setTempName] = useState<string>('');
+
   // Delete item state
   const [deletingItem, setDeletingItem] = useState<{ id: string; name: string } | null>(null);
 
@@ -272,24 +276,27 @@ export default function WarehouseTab({
   };
 
   // Rename category
-  const handleRenameCategorySubmit = (e: React.FormEvent, key: string) => {
-    e.preventDefault();
-    if (!editingCategoryName.trim()) {
+  const handleRenameCategorySubmit = (e?: React.FormEvent, key?: string) => {
+    if (e) e.preventDefault();
+    const targetKey = key || editingCategoryKey;
+    if (!targetKey) return;
+
+    const newLabel = editingCategoryName.trim();
+    if (!newLabel) {
       setEditingCategoryKey(null);
       return;
     }
-    const oldCat = customCategories.find(c => c.key === key);
-    const oldLabel = oldCat ? oldCat.label : key;
-    const newLabel = editingCategoryName.trim();
+    const oldCat = customCategories.find(c => c.key === targetKey);
+    const oldLabel = oldCat ? oldCat.label : targetKey;
 
     const updatedCategories = customCategories.map(cat => 
-      cat.key === key ? { ...cat, label: newLabel } : cat
+      cat.key === targetKey ? { ...cat, label: newLabel } : cat
     );
     setCustomCategories(updatedCategories);
 
     // Update existing items with old category name or key
     const updatedItems = items.map(item => {
-      if (item.category === key || item.category === oldLabel) {
+      if (item.category === targetKey || item.category === oldLabel) {
         return { ...item, category: newLabel };
       }
       return item;
@@ -297,7 +304,28 @@ export default function WarehouseTab({
     onUpdateItems(updatedItems);
 
     setEditingCategoryKey(null);
-    showToast('Категория изменена', 'Название категории успешно обновлено.', 'success');
+    showToast('Категория изменена', `Название категории успешно обновлено на «${newLabel}».`, 'success');
+  };
+
+  // Save modified item name
+  const handleSaveName = (itemId: string) => {
+    const newName = tempName.trim();
+    if (!newName) {
+      showToast('Ошибка наименования', 'Название товара не может быть пустым.', 'warn');
+      setEditingNameId(null);
+      return;
+    }
+
+    const updated = items.map(item => {
+      if (item.id === itemId) {
+        return { ...item, name: newName };
+      }
+      return item;
+    });
+
+    onUpdateItems(updated);
+    setEditingNameId(null);
+    showToast('Товар переименован', `Новое название: «${newName}».`, 'success');
   };
 
   // Delete category
@@ -455,24 +483,38 @@ export default function WarehouseTab({
                 <form
                   key={cat.key}
                   onSubmit={(e) => handleRenameCategorySubmit(e, cat.key)}
-                  className="flex items-center gap-1 bg-white dark:bg-zinc-800 px-3 py-1 rounded-full border border-[var(--lavenderAccent)] shrink-0"
+                  className="flex items-center gap-1 bg-white dark:bg-zinc-800 px-3 py-1 rounded-full border border-[var(--lavenderAccent)] shrink-0 shadow-xs"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <input
                     type="text"
                     value={editingCategoryName}
                     onChange={(e) => setEditingCategoryName(e.target.value)}
-                    className="text-xs bg-transparent text-[var(--ink)] focus:outline-none w-20 font-semibold"
+                    className="text-xs bg-transparent text-[var(--ink)] focus:outline-none w-24 sm:w-28 font-semibold"
                     autoFocus
-                    onBlur={() => setEditingCategoryKey(null)}
                     onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleRenameCategorySubmit(undefined, cat.key);
+                      }
                       if (e.key === 'Escape') setEditingCategoryKey(null);
                     }}
                   />
-                  <button type="submit" className="text-green-500 hover:text-green-600 transition-colors cursor-pointer">
+                  <button
+                    type="submit"
+                    onMouseDown={(e) => e.preventDefault()}
+                    className="text-emerald-500 hover:text-emerald-600 transition-colors cursor-pointer p-0.5 rounded-full hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                    title="Сохранить новое название"
+                  >
                     <Check className="w-3.5 h-3.5" />
                   </button>
-                  <button type="button" onClick={() => setEditingCategoryKey(null)} className="text-rose-500 hover:text-rose-600 transition-colors cursor-pointer">
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => setEditingCategoryKey(null)}
+                    className="text-rose-500 hover:text-rose-600 transition-colors cursor-pointer p-0.5 rounded-full hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                    title="Отмена"
+                  >
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </form>
@@ -567,7 +609,7 @@ export default function WarehouseTab({
         </div>
 
         {/* Row 2: Search Input and View Mode Switcher */}
-        <div className="flex items-center justify-between gap-3 bg-white/40 dark:bg-zinc-900/60 p-2 rounded-2xl border border-[var(--glass-edge)]">
+        <div className="flex items-center justify-between gap-3 bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md p-2 rounded-full border border-zinc-200/50 dark:border-zinc-800/40 shadow-xs">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
             <input
@@ -575,7 +617,7 @@ export default function WarehouseTab({
               placeholder="Поиск по инвентарю..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-1.5 rounded-xl text-xs bg-white/70 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700/80 text-[var(--ink)] placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none focus:border-[var(--lavenderAccent)] w-full transition-colors shadow-2xs"
+              className="pl-9 pr-4 py-1.5 rounded-full text-xs bg-white/70 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700/80 text-[var(--ink)] placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none focus:border-[var(--lavenderAccent)] w-full transition-colors shadow-2xs"
             />
           </div>
 
@@ -907,6 +949,7 @@ export default function WarehouseTab({
                         />
                         <button
                           type="button"
+                          onMouseDown={(e) => e.preventDefault()}
                           onClick={() => handleSaveQty(item.id)}
                           className="p-1 text-emerald-400 hover:text-emerald-500 rounded-full cursor-pointer transition-colors"
                         >
@@ -936,9 +979,54 @@ export default function WarehouseTab({
                   <div className="p-4 flex-1 flex flex-col justify-between min-h-0 bg-white/[0.01] dark:bg-zinc-900/[0.01]">
                     {/* Title and Description */}
                     <div className="space-y-1 min-h-0">
-                      <h4 className="font-medium text-[14px] sm:text-[15px] text-[var(--ink)] leading-snug tracking-tight line-clamp-2 hover:text-[var(--lavDeep)] transition-colors duration-300">
-                        {item.name}
-                      </h4>
+                      {editingNameId === item.id ? (
+                        <div className="flex items-center gap-1.5 py-0.5" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="text"
+                            className="w-full px-2 py-1 text-xs bg-white dark:bg-zinc-900 border border-[var(--lavenderAccent)] rounded-lg font-medium focus:outline-none text-[var(--ink)]"
+                            value={tempName}
+                            onChange={(e) => setTempName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSaveName(item.id);
+                              if (e.key === 'Escape') setEditingNameId(null);
+                            }}
+                            autoFocus
+                          />
+                          <button
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => handleSaveName(item.id)}
+                            className="p-1 text-emerald-500 hover:text-emerald-600 rounded-full bg-emerald-500/10 shrink-0 cursor-pointer"
+                            title="Сохранить название"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => setEditingNameId(null)}
+                            className="p-1 text-rose-500 hover:text-rose-600 rounded-full bg-rose-500/10 shrink-0 cursor-pointer"
+                            title="Отмена"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div 
+                          className="flex items-start justify-between gap-1 group/name cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingNameId(item.id);
+                            setTempName(item.name);
+                          }}
+                          title="Нажмите для переименования товара"
+                        >
+                          <h4 className="font-medium text-[14px] sm:text-[15px] text-[var(--ink)] leading-snug tracking-tight line-clamp-2 group-hover/name:text-[var(--lavDeep)] dark:group-hover/name:text-[var(--lavenderAccent)] transition-colors duration-300 flex-1">
+                            {item.name}
+                          </h4>
+                          <Pencil className="w-3 h-3 text-zinc-300 dark:text-zinc-600 group-hover/name:text-[var(--lavDeep)] dark:group-hover/name:text-[var(--lavenderAccent)] transition-colors shrink-0 mt-0.5" />
+                        </div>
+                      )}
                       <p className="text-xs sm:text-xs text-zinc-500 dark:text-zinc-400 font-light leading-snug line-clamp-2">
                         {item.description || 'Классический элемент оформления для создания великолепных свадебных концепций.'}
                       </p>
@@ -963,6 +1051,7 @@ export default function WarehouseTab({
                             />
                             <button
                               type="button"
+                              onMouseDown={(e) => e.preventDefault()}
                               onClick={() => handleSavePrice(item.id)}
                               className="p-1 text-emerald-500 hover:text-emerald-600 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 shrink-0 cursor-pointer"
                             >
@@ -1037,11 +1126,54 @@ export default function WarehouseTab({
                   {/* Right part - Details */}
                   <div className="flex-1 min-w-0 flex flex-col justify-between p-3 sm:p-4 h-full w-full">
                     <div className="space-y-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <h4 className="font-bold text-[14px] sm:text-[15px] text-[var(--ink)] leading-snug tracking-tight line-clamp-2 group-hover:text-[var(--lavDeep)] dark:group-hover:text-[var(--lavenderAccent)] transition-colors duration-300" title={item.name}>
-                          {item.name}
-                        </h4>
-                      </div>
+                      {editingNameId === item.id ? (
+                        <div className="flex items-center gap-1.5 py-0.5" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="text"
+                            className="w-full px-2 py-1 text-xs bg-white dark:bg-zinc-900 border border-[var(--lavenderAccent)] rounded-lg font-medium focus:outline-none text-[var(--ink)]"
+                            value={tempName}
+                            onChange={(e) => setTempName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSaveName(item.id);
+                              if (e.key === 'Escape') setEditingNameId(null);
+                            }}
+                            autoFocus
+                          />
+                          <button
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => handleSaveName(item.id)}
+                            className="p-1 text-emerald-500 hover:text-emerald-600 rounded-full bg-emerald-500/10 shrink-0 cursor-pointer"
+                            title="Сохранить название"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => setEditingNameId(null)}
+                            className="p-1 text-rose-500 hover:text-rose-600 rounded-full bg-rose-500/10 shrink-0 cursor-pointer"
+                            title="Отмена"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div 
+                          className="flex items-start justify-between gap-1 group/name cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingNameId(item.id);
+                            setTempName(item.name);
+                          }}
+                          title="Нажмите для переименования товара"
+                        >
+                          <h4 className="font-bold text-[14px] sm:text-[15px] text-[var(--ink)] leading-snug tracking-tight line-clamp-2 group-hover/name:text-[var(--lavDeep)] dark:group-hover/name:text-[var(--lavenderAccent)] transition-colors duration-300 flex-1">
+                            {item.name}
+                          </h4>
+                          <Pencil className="w-3 h-3 text-zinc-300 dark:text-zinc-600 group-hover/name:text-[var(--lavDeep)] dark:group-hover/name:text-[var(--lavenderAccent)] transition-colors shrink-0 mt-0.5" />
+                        </div>
+                      )}
                       
                       <p className="text-xs text-zinc-500 dark:text-zinc-400 font-light leading-snug line-clamp-1 sm:line-clamp-2 mt-0.5">
                         {item.description || 'Классический элемент оформления для создания великолепных свадебных концепций.'}
@@ -1064,6 +1196,7 @@ export default function WarehouseTab({
                             />
                             <button
                               type="button"
+                              onMouseDown={(e) => e.preventDefault()}
                               onClick={() => handleSaveQty(item.id)}
                               className="p-1 text-emerald-500 hover:text-emerald-600 rounded-full bg-emerald-500/10 shrink-0 cursor-pointer animate-scaleIn"
                             >
@@ -1105,6 +1238,7 @@ export default function WarehouseTab({
                             />
                             <button
                               type="button"
+                              onMouseDown={(e) => e.preventDefault()}
                               onClick={() => handleSavePrice(item.id)}
                               className="p-1 text-emerald-500 hover:text-emerald-600 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 shrink-0 cursor-pointer"
                             >

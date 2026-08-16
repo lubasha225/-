@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, ReactNode, useCallback } from 'react';
+import { COLOR_SCHEMES, BG_PRESETS, applyColorSchemeVariables, applyBgPresetStyle } from './lib/themeConfig';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   FolderKanban,
@@ -76,10 +77,13 @@ export default function App() {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
 
-  // Background style state (Subly Aurora vs Classic)
-  const [bgTheme, setBgTheme] = useState<'aurora' | 'default'>(() => {
-    const saved = localStorage.getItem('bg_theme');
-    return (saved as 'aurora' | 'default') || 'aurora';
+  // Color Scheme & Background Preset states
+  const [colorSchemeId, setColorSchemeId] = useState<string>(() => {
+    return localStorage.getItem('color_scheme_id') || 'blackberry';
+  });
+
+  const [bgPresetId, setBgPresetId] = useState<string>(() => {
+    return localStorage.getItem('bg_preset_id') || 'bg-blackberry-gradient-1';
   });
 
   // Main active tab state
@@ -308,6 +312,24 @@ export default function App() {
     return localStorage.getItem('fleur_user_email') || 'denis@fleur-decor.ru';
   });
 
+  // App Platform Logo state (sync with Admin Panel)
+  const [appLogoUrl, setAppLogoUrl] = useState<string>(() => {
+    return localStorage.getItem('app_custom_logo') || '/logo_iq_deko.svg';
+  });
+
+  useEffect(() => {
+    const syncAppLogo = () => {
+      setAppLogoUrl(localStorage.getItem('app_custom_logo') || '/logo_iq_deko.svg');
+    };
+    window.addEventListener('storage', syncAppLogo);
+    window.addEventListener('app_logo_updated', syncAppLogo);
+    syncAppLogo();
+    return () => {
+      window.removeEventListener('storage', syncAppLogo);
+      window.removeEventListener('app_logo_updated', syncAppLogo);
+    };
+  }, []);
+
   useEffect(() => {
     const syncProfile = () => {
       setBrandLogoUrl(localStorage.getItem('fleur_studio_logo') || null);
@@ -413,6 +435,9 @@ export default function App() {
 
   useEffect(() => {
     localStorage.setItem('theme', theme);
+    localStorage.setItem('color_scheme_id', colorSchemeId);
+    localStorage.setItem('bg_preset_id', bgPresetId);
+
     const root = window.document.documentElement;
     if (theme === 'dark') {
       root.classList.add('dark');
@@ -421,18 +446,13 @@ export default function App() {
       root.classList.remove('dark');
       document.body.classList.remove('dark-theme');
     }
-  }, [theme]);
 
-  useEffect(() => {
-    localStorage.setItem('bg_theme', bgTheme);
-    if (bgTheme === 'aurora') {
-      document.body.classList.add('bg-aurora');
-      document.body.classList.remove('bg-default');
-    } else {
-      document.body.classList.add('bg-default');
-      document.body.classList.remove('bg-aurora');
-    }
-  }, [bgTheme]);
+    const scheme = COLOR_SCHEMES.find(s => s.id === colorSchemeId) || COLOR_SCHEMES[5];
+    const preset = BG_PRESETS.find(p => p.id === bgPresetId) || BG_PRESETS[0];
+
+    applyColorSchemeVariables(scheme, theme === 'dark');
+    applyBgPresetStyle(preset, theme === 'dark');
+  }, [theme, colorSchemeId, bgPresetId]);
 
   // Toast triggering utility
   const showToast = useCallback((title: string, message: string, type: 'success' | 'info' | 'warn' = 'success') => {
@@ -818,7 +838,8 @@ export default function App() {
         }}
         aria-label="Навигация"
         title="Открыть меню навигации"
-        className="w-9 h-9 rounded-full flex items-center justify-center bg-gradient-to-br from-[#8C52D0] to-[#582F89] hover:opacity-95 text-white transition-all cursor-pointer shadow-md border border-white/20 shrink-0"
+        style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
+        className="w-9 h-9 rounded-full flex items-center justify-center hover:opacity-95 text-white transition-all cursor-pointer shadow-md border border-white/20 shrink-0"
       >
         {isMobileNavOpen ? (
           <X className="w-4.5 h-4.5 text-white stroke-[2.5] shrink-0" />
@@ -850,15 +871,19 @@ export default function App() {
             >
               {/* Header */}
               <div className="flex items-center justify-between pb-4 border-b border-zinc-200/60 dark:border-zinc-800/80 mb-4">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#8C52D0] to-[#582F89] flex items-center justify-center text-white font-bold text-sm shadow-xs">
-                    Ф
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Навигация</h3>
-                    <p className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400">Студия Декора</p>
-                  </div>
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden bg-white/40 dark:bg-zinc-800/40 p-1 border border-zinc-200/50 dark:border-zinc-700/50 shadow-xs">
+                  <img
+                    src={appLogoUrl}
+                    alt="IQ DECO"
+                    className="w-full h-full object-contain"
+                  />
                 </div>
+                <div>
+                  <h3 className="text-base font-black text-zinc-900 dark:text-zinc-100 tracking-tight leading-tight">IQ DECO</h3>
+                  <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mt-0.5">сервис для декораторов</p>
+                </div>
+              </div>
                 <button
                   onClick={() => setIsMobileNavOpen(false)}
                   className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer"
@@ -891,19 +916,20 @@ export default function App() {
                         setActiveTab(item.value as any);
                         setIsMobileNavOpen(false);
                       }}
+                      style={isSelected ? { borderLeft: '4px solid var(--primary-accent)', background: 'linear-gradient(to right, var(--lavenderSoft) 0%, transparent 100%)' } : undefined}
                       className={`w-[calc(100%+40px)] -mx-5 px-5 py-2.5 text-xs transition-all flex items-center justify-between cursor-pointer ${
                         isSelected
-                          ? 'border-l-4 border-[#8C52D0] dark:border-[#C084FC] bg-gradient-to-r from-[#F3E8FF] via-[#E9D5FF]/60 to-transparent dark:from-[#582F89]/85 dark:via-[#8C52D0]/40 dark:to-transparent text-[#4C1D95] dark:text-purple-100 font-semibold'
+                          ? 'text-[var(--primary-deep)] dark:text-[var(--lavenderAccent)] font-semibold'
                           : 'text-zinc-800 dark:text-zinc-200 hover:bg-white/60 dark:hover:bg-zinc-800/60 font-medium'
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <span className={isSelected ? 'text-[#8C52D0] dark:text-[#C084FC]' : 'text-[#8C52D0] dark:text-purple-400'}>
+                        <span className={isSelected ? 'text-[var(--primary-accent)]' : 'text-[var(--soft)]'}>
                           {item.icon}
                         </span>
                         <span>{item.label}</span>
                       </div>
-                      {isSelected && <Check className="w-4 h-4 text-[#8C52D0] dark:text-[#C084FC] stroke-[2.5]" />}
+                      {isSelected && <Check className="w-4 h-4 text-[var(--primary-accent)] stroke-[2.5]" />}
                     </button>
                   );
                 })}
@@ -993,9 +1019,10 @@ export default function App() {
           title="Календарь и Статистика"
           className={`w-9 h-9 rounded-full glass-panel flex items-center justify-center transition-all shadow-xs cursor-pointer shrink-0 ${
             isCurrentActive
-              ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white'
+              ? 'text-white'
               : 'text-[var(--ink)] hover:text-[var(--lavDeep)] hover:bg-white/90 dark:hover:bg-zinc-800'
           }`}
+          style={isCurrentActive ? { background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' } : undefined}
         >
           {isStatsMode ? (
             <TrendingUp className={`w-4.5 h-4.5 shrink-0 ${isCurrentActive ? 'text-white' : 'text-[var(--ink)] dark:text-zinc-200'}`} />
@@ -1021,7 +1048,7 @@ export default function App() {
                     onClick={() => setHeaderMenuTab('calendar')}
                     className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                       headerMenuTab === 'calendar'
-                        ? 'bg-white dark:bg-zinc-700 text-[#8C52D0] dark:text-purple-300 shadow-xs'
+                        ? 'bg-white dark:bg-zinc-700 text-[var(--primary-accent)] shadow-xs'
                         : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
                     }`}
                   >
@@ -1033,7 +1060,7 @@ export default function App() {
                     onClick={() => setHeaderMenuTab('statistics')}
                     className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                       headerMenuTab === 'statistics'
-                        ? 'bg-white dark:bg-zinc-700 text-[#8C52D0] dark:text-purple-300 shadow-xs'
+                        ? 'bg-white dark:bg-zinc-700 text-[var(--primary-accent)] shadow-xs'
                         : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
                     }`}
                   >
@@ -1094,7 +1121,8 @@ export default function App() {
                         setActiveTab('calendar');
                         setIsHeaderCalendarOpen(false);
                       }}
-                      className="w-full py-2 rounded-xl bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white text-xs font-semibold shadow-xs hover:opacity-95 cursor-pointer transition-all flex items-center justify-center gap-1.5"
+                      style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
+                      className="w-full py-2 rounded-xl text-white text-xs font-semibold shadow-xs hover:opacity-95 cursor-pointer transition-all flex items-center justify-center gap-1.5"
                     >
                       <span>Перейти в Календарь</span>
                       <ChevronRight className="w-3.5 h-3.5" />
@@ -1136,7 +1164,7 @@ export default function App() {
                       </div>
                       <div className="col-span-2 p-3 rounded-xl bg-white/60 dark:bg-zinc-800/60 border border-[var(--glass-edge)] space-y-1">
                         <span className="text-[10px] text-[var(--soft)] font-medium block">Общий бюджет проектов</span>
-                        <span className="text-base font-bold text-[#8C52D0] dark:text-purple-300">
+                        <span className="text-base font-bold text-[var(--primary-accent)]">
                           {projects.reduce((acc, p) => acc + (p.totalCost || 0), 0).toLocaleString('ru-RU')} ₽
                         </span>
                       </div>
@@ -1148,7 +1176,8 @@ export default function App() {
                         setActiveTab('statistics');
                         setIsHeaderCalendarOpen(false);
                       }}
-                      className="w-full py-2 rounded-xl bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white text-xs font-semibold shadow-xs hover:opacity-95 cursor-pointer transition-all flex items-center justify-center gap-1.5"
+                      style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
+                      className="w-full py-2 rounded-xl text-white text-xs font-semibold shadow-xs hover:opacity-95 cursor-pointer transition-all flex items-center justify-center gap-1.5"
                     >
                       <span>Перейти к Статистике</span>
                       <ChevronRight className="w-3.5 h-3.5" />
@@ -1167,22 +1196,30 @@ export default function App() {
     <div className="flex relative w-screen h-screen overflow-hidden bg-transparent font-sans transition-colors duration-300">
       
       {/* Background Decorative Abstract Soft Spheres/Blobs for Glassmorphism */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10 select-none">
-        {/* Top Lilac Sphere */}
-        <div className="absolute top-[2%] left-[8%] w-[32vw] h-[32vw] max-w-[480px] max-h-[480px] rounded-full bg-[var(--lavBorder)]/35 dark:bg-[var(--lavDeep)]/20 blur-[60px] animate-float-slow" />
-        {/* Pearl Sphere right next to it for a visible transition */}
-        <div className="absolute top-[5%] left-[32%] w-[28vw] h-[28vw] max-w-[420px] max-h-[420px] rounded-full bg-[#EBE7F1]/65 dark:bg-white/10 blur-[50px] animate-float-medium" />
-        {/* Pale Sand Sphere */}
-        <div className="absolute top-[10%] right-[12%] w-[30vw] h-[30vw] max-w-[460px] max-h-[460px] rounded-full bg-[#FAF2E5]/50 dark:bg-zinc-800/10 blur-[55px] animate-float-diagonal" />
-        {/* Small Pearl Core for a high-contrast central gleam */}
-        <div className="absolute top-[16%] left-[25%] w-[18vw] h-[18vw] max-w-[240px] max-h-[240px] rounded-full bg-white/55 dark:bg-white/5 blur-[35px] animate-float-slow" />
-        {/* Mid-right lilac-purple accent */}
-        <div className="absolute top-[28%] right-[25%] w-[22vw] h-[22vw] max-w-[320px] max-h-[320px] rounded-full bg-purple-200/30 dark:bg-purple-950/15 blur-[45px] animate-float-orbit" />
-        {/* Soft bottom-left Turquoise/Lavender Sphere */}
-        <div className="absolute bottom-[12%] left-[15%] w-[36vw] h-[36vw] max-w-[550px] max-h-[550px] rounded-full bg-sky-200/20 dark:bg-indigo-950/10 blur-[75px] animate-float-diagonal" />
-        {/* Soft bottom-right Sand/Pearl Sphere */}
-        <div className="absolute bottom-[5%] right-[5%] w-[28vw] h-[28vw] max-w-[420px] max-h-[420px] rounded-full bg-[#FAF4EA]/45 dark:bg-zinc-800/10 blur-[65px] animate-float-medium" />
-      </div>
+      {(() => {
+        const activePreset = BG_PRESETS.find(p => p.id === bgPresetId);
+        if (activePreset?.type === 'pastel' || activePreset?.type === 'classic') {
+          return null;
+        }
+        return (
+          <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10 select-none">
+            {/* Top Primary Accent Sphere */}
+            <div className="absolute top-[2%] left-[8%] w-[32vw] h-[32vw] max-w-[480px] max-h-[480px] rounded-full bg-[var(--bg-spot-1)]/20 dark:bg-[var(--bg-spot-1)]/15 blur-[60px] animate-float-slow" />
+            {/* Complementary Color 1 Sphere */}
+            <div className="absolute top-[5%] left-[32%] w-[28vw] h-[28vw] max-w-[420px] max-h-[420px] rounded-full bg-[var(--bg-spot-2)]/25 dark:bg-[var(--bg-spot-2)]/15 blur-[50px] animate-float-medium" />
+            {/* Complementary Color 2 Sphere */}
+            <div className="absolute top-[10%] right-[12%] w-[30vw] h-[30vw] max-w-[460px] max-h-[460px] rounded-full bg-[var(--bg-spot-3)]/25 dark:bg-[var(--bg-spot-3)]/15 blur-[55px] animate-float-diagonal" />
+            {/* Small Central White Gleam */}
+            <div className="absolute top-[16%] left-[25%] w-[18vw] h-[18vw] max-w-[240px] max-h-[240px] rounded-full bg-white/50 dark:bg-white/10 blur-[35px] animate-float-slow" />
+            {/* Mid-right Complementary Color 3 Sphere */}
+            <div className="absolute top-[28%] right-[25%] w-[22vw] h-[22vw] max-w-[320px] max-h-[320px] rounded-full bg-[var(--bg-spot-4)]/20 dark:bg-[var(--bg-spot-4)]/15 blur-[45px] animate-float-orbit" />
+            {/* Soft bottom-left Complementary Color 1 Sphere */}
+            <div className="absolute bottom-[12%] left-[15%] w-[36vw] h-[36vw] max-w-[550px] max-h-[550px] rounded-full bg-[var(--bg-spot-2)]/20 dark:bg-[var(--bg-spot-2)]/12 blur-[75px] animate-float-diagonal" />
+            {/* Soft bottom-right Complementary Color 2 Sphere */}
+            <div className="absolute bottom-[5%] right-[5%] w-[28vw] h-[28vw] max-w-[420px] max-h-[420px] rounded-full bg-[var(--bg-spot-3)]/20 dark:bg-[var(--bg-spot-3)]/12 blur-[65px] animate-float-medium" />
+          </div>
+        );
+      })()}
 
       {/* Toast alert system */}
       <Toast toast={toast} onClose={() => setToast(null)} />
@@ -1196,39 +1233,47 @@ export default function App() {
       >
         {/* Unified Sidebar Header */}
         {isLeftSidebarExpanded ? (
-          <div className="flex items-center justify-between w-full min-h-[36px]">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[var(--lavDeep)] to-[var(--lavenderAccent)] flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-sm">
-                Ф
+          <div className="flex items-center justify-between w-full pb-3 border-b border-zinc-200/50 dark:border-zinc-800/50 mb-1">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden bg-white/50 dark:bg-zinc-800/50 p-1 border border-zinc-200/60 dark:border-zinc-700/60 shadow-xs">
+                <img
+                  src={appLogoUrl}
+                  alt="IQ DECO"
+                  className="w-full h-full object-contain"
+                />
               </div>
               <div className="min-w-0">
-                <span className="font-semibold text-[var(--ink)] text-[14px] tracking-tight leading-tight block">Флёр Деко</span>
-                <span className="text-[10px] text-[var(--faint)] leading-none mt-0.5 block">премиум</span>
+                <span className="font-black text-[var(--ink)] text-base sm:text-lg tracking-tight leading-none block">IQ DECO</span>
+                <span className="text-xs font-medium text-[var(--faint)] leading-tight mt-1 block">сервис для декораторов</span>
               </div>
             </div>
             <button
               onClick={() => setIsLeftSidebarExpanded(false)}
               title="Свернуть боковое меню"
-              className="w-7 h-7 rounded-full hover:bg-white/20 dark:hover:bg-black/20 flex items-center justify-center text-[var(--soft)] hover:text-[var(--ink)] cursor-pointer"
+              className="w-7 h-7 rounded-full hover:bg-white/20 dark:hover:bg-black/20 flex items-center justify-center text-[var(--soft)] hover:text-[var(--ink)] cursor-pointer shrink-0"
             >
-              <ChevronsLeft className="w-3.5 h-3.5 text-[var(--soft)]" />
+              <ChevronsLeft className="w-4 h-4 text-[var(--soft)]" />
             </button>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-3 w-full">
             <div
               onClick={() => setIsLeftSidebarExpanded(true)}
-              title="Флёр Деко · премиальный декор"
-              className="w-8 h-8 rounded-xl bg-gradient-to-br from-[var(--lavDeep)] to-[var(--lavenderAccent)] flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-sm cursor-pointer hover:scale-105 transition-transform"
+              title="IQ DECO · сервис для декораторов"
+              className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 cursor-pointer hover:scale-105 transition-transform overflow-hidden bg-white/50 dark:bg-zinc-800/50 p-1 border border-zinc-200/60 dark:border-zinc-700/60 shadow-xs"
             >
-              Ф
+              <img
+                src={appLogoUrl}
+                alt="IQ DECO"
+                className="w-full h-full object-contain"
+              />
             </div>
             <button
               onClick={() => setIsLeftSidebarExpanded(true)}
               title="Развернуть боковое меню"
               className="w-7 h-7 rounded-full hover:bg-white/20 dark:hover:bg-black/20 flex items-center justify-center text-[var(--soft)] hover:text-[var(--lavDeep)] transition-all cursor-pointer"
             >
-              <ChevronsRight className="w-3.5 h-3.5" />
+              <ChevronsRight className="w-4 h-4" />
             </button>
           </div>
         )}
@@ -1254,17 +1299,18 @@ export default function App() {
                   setActiveTab(tab.key as any);
                 }}
                 title={!isLeftSidebarExpanded ? tab.label : undefined}
+                style={isSelected ? { borderLeft: '4px solid var(--primary-accent)', background: 'linear-gradient(to right, var(--lavenderSoft) 0%, transparent 100%)' } : undefined}
                 className={`flex items-center text-[14px] transition-all cursor-pointer ${
                   isLeftSidebarExpanded
                     ? isSelected
-                      ? '-mx-4 px-4 py-2.5 w-[calc(100%+32px)] justify-start border-l-4 border-[#8C52D0] dark:border-[#C084FC] bg-gradient-to-r from-[#F3E8FF] via-[#E9D5FF]/60 to-transparent dark:from-[#582F89]/85 dark:via-[#8C52D0]/40 dark:to-transparent text-[#4C1D95] dark:text-purple-100 font-semibold gap-2.5'
+                      ? '-mx-4 px-4 py-2.5 w-[calc(100%+32px)] justify-start text-[var(--primary-deep)] dark:text-[var(--lavenderAccent)] font-semibold gap-2.5'
                       : 'px-3 py-2 w-full justify-start text-[var(--soft)] dark:text-zinc-300 hover:text-[var(--ink)] hover:bg-white/40 dark:hover:bg-zinc-800/40 rounded-xl font-normal gap-2.5'
                     : isSelected
-                      ? '-mx-1.5 px-1.5 py-2 w-[calc(100%+12px)] justify-center border-l-4 border-[#8C52D0] dark:border-[#C084FC] bg-gradient-to-r from-[#F3E8FF] via-[#E9D5FF]/60 to-transparent dark:from-[#582F89]/85 dark:via-[#8C52D0]/40 dark:to-transparent text-[#4C1D95] dark:text-purple-100 font-semibold'
+                      ? '-mx-1.5 px-1.5 py-2 w-[calc(100%+12px)] justify-center text-[var(--primary-deep)] dark:text-[var(--lavenderAccent)] font-semibold'
                       : 'p-1.5 w-8 h-8 justify-center text-[var(--soft)] dark:text-zinc-300 hover:text-[var(--ink)] hover:bg-white/40 dark:hover:bg-zinc-800/40 rounded-xl font-normal'
                 }`}
               >
-                <span className={isSelected ? 'text-[#8C52D0] dark:text-[#C084FC]' : ''}>
+                <span className={isSelected ? 'text-[var(--primary-accent)]' : ''}>
                   {tab.icon}
                 </span>
                 {isLeftSidebarExpanded && <span>{tab.label}</span>}
@@ -1403,6 +1449,7 @@ export default function App() {
                     {activeTab === 'images' && 'Галерея'}
                     {activeTab === 'documents' && 'Мои документы'}
                     {activeTab === 'profile' && 'Профиль бренда'}
+                    {activeTab === 'admin' && 'Кабинет админа'}
                     {activeTab === 'settings' && 'Настройки'}
                     {activeTab === 'testPage' && (selectedProject ? selectedProject.name : 'Тестовая страница')}
                   </h1>
@@ -1414,7 +1461,7 @@ export default function App() {
                   {activeTab === 'projects' && !selectedProject && (
                     <button
                       onClick={() => setIsNewProjOpen(true)}
-                      style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                      style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
                       className="hidden sm:flex text-white rounded-full px-3.5 sm:px-4 h-9 text-xs font-semibold shadow-xs hover:shadow-md hover:opacity-95 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 items-center justify-center gap-1.5 cursor-pointer shrink-0"
                     >
                       <Plus className="w-3.5 h-3.5 shrink-0" />
@@ -1425,7 +1472,7 @@ export default function App() {
                   {activeTab === 'warehouse' && (
                     <button
                       onClick={() => setIsWarehouseAdding(true)}
-                      style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                      style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
                       className="hidden sm:flex text-white rounded-full px-3.5 sm:px-4 h-9 text-xs font-semibold shadow-xs hover:shadow-md hover:opacity-95 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 items-center justify-center gap-1.5 cursor-pointer shrink-0"
                     >
                       <Plus className="w-3.5 h-3.5 shrink-0" />
@@ -1458,10 +1505,12 @@ export default function App() {
                   <p className="text-[var(--soft)] text-sm font-normal leading-relaxed">
                     {activeTab === 'projects' && !selectedProject && 'Создавайте макеты, открывайте сметный калькулятор и возвращайтесь к ним в любой момент.'}
                     {activeTab === 'calendar' && 'График монтажей, сдачи проектов, выездов команды и встреч с клиентами.'}
+                    {activeTab === 'statistics' && 'Наглядный финансовый учет, конверсия смет и структура расходов студии.'}
                     {activeTab === 'warehouse' && 'Каталог вашего декора, флористики и оборудования. Учет остатков и задействованных в проектах позиций.'}
                     {activeTab === 'images' && 'Ваша галерея загруженных референсов, сгенерированных ИИ фонов, элементов флористики и декора для оформления.'}
                     {activeTab === 'documents' && 'Реквизиты, на кого оформляется договор, шаблоны договора и акта. Только автоматическая генерация и печать, оплата не принимается в сервисе.'}
                     {activeTab === 'profile' && 'Настройки реквизитов и контактов студии для формирования коммерческих предложений.'}
+                    {activeTab === 'admin' && 'Управление библиотекой декора, иконками инструментов, категориями и логотипом приложения.'}
                     {activeTab === 'settings' && 'Управление параметрами оформления и цветовой темой интерфейса.'}
                   </p>
 
@@ -1469,7 +1518,8 @@ export default function App() {
                   {activeTab === 'projects' && !selectedProject && (
                     <button
                       onClick={() => setIsNewProjOpen(true)}
-                      className="sm:hidden w-full bg-gradient-to-r from-[#8C52D0] to-[#582F89] hover:opacity-95 text-white rounded-full px-4 py-2.5 text-xs font-semibold shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                      style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
+                      className="sm:hidden w-full hover:opacity-95 text-white rounded-full px-4 py-2.5 text-xs font-semibold shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <Plus className="w-4 h-4" /> Новый проект
                     </button>
@@ -1478,7 +1528,8 @@ export default function App() {
                   {activeTab === 'warehouse' && (
                     <button
                       onClick={() => setIsWarehouseAdding(true)}
-                      className="sm:hidden w-full bg-gradient-to-r from-[#8C52D0] to-[#582F89] hover:opacity-95 text-white rounded-full px-4 py-2.5 text-xs font-semibold shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                      style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
+                      className="sm:hidden w-full hover:opacity-95 text-white rounded-full px-4 py-2.5 text-xs font-semibold shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <Plus className="w-4 h-4" /> Новый товар
                     </button>
@@ -1679,7 +1730,7 @@ export default function App() {
                             onClick={() => setProjectFilter(pill.key as any)}
                             className={`rounded-full text-xs font-semibold tracking-tight transition-all duration-200 cursor-pointer flex items-center gap-1 shrink-0 whitespace-nowrap ${
                               isActive
-                                ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-xs px-2.5 py-1'
+                                ? 'bg-gradient-to-r from-[var(--primary-grad-from)] to-[var(--primary-grad-to)] text-white shadow-xs px-2.5 py-1'
                                 : 'bg-transparent text-[var(--soft)] hover:text-[var(--ink)] hover:bg-black/5 dark:hover:bg-white/5 border border-transparent px-2 py-1'
                             }`}
                           >
@@ -1697,7 +1748,7 @@ export default function App() {
                     </div>
 
                     {/* Row 2: Search Input, Sorting Select, and View Mode Switcher */}
-                    <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 bg-white/80 dark:bg-zinc-900/80 p-1.5 rounded-2xl sm:rounded-full border border-[var(--glass-edge)] shadow-2xs">
+                    <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md p-2 rounded-full border border-zinc-200/50 dark:border-zinc-800/40 shadow-xs">
                       <div className="flex flex-1 items-center gap-2 max-w-xl w-full sm:w-auto">
                         <div className="relative flex-1">
                           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
@@ -1922,7 +1973,7 @@ export default function App() {
                                         setSelectedProject(p);
                                         setActiveTab('projectCard');
                                       }}
-                                      style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                                      style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
                                       className="flex-1 text-white rounded-full py-1.5 sm:py-2 text-xs font-semibold shadow-xs hover:shadow-md hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 cursor-pointer flex items-center justify-center gap-1"
                                     >
                                       <FolderKanban className="w-3.5 h-3.5 shrink-0" />
@@ -1933,11 +1984,16 @@ export default function App() {
                                         setSelectedProject(p);
                                         setActiveTab('moodboard');
                                       }}
-                                      style={{ border: '1px solid #8C52D0' }}
-                                      className="flex-1 bg-transparent text-[#8C52D0] rounded-full py-1.5 sm:py-2 text-xs font-semibold hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 cursor-pointer flex items-center justify-center gap-1 hover:bg-[#8C52D0]/10"
+                                      style={{ border: '1px solid var(--primary-accent)' }}
+                                      className="flex-1 bg-transparent rounded-full py-1.5 sm:py-2 text-xs font-semibold hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 cursor-pointer flex items-center justify-center gap-1 hover:bg-[var(--primary-accent)]/10"
                                     >
-                                      <Palette className="w-3.5 h-3.5 shrink-0 text-[#8C52D0]" />
-                                      <span className="bg-gradient-to-r from-[#8C52D0] to-[#582F89] bg-clip-text text-transparent font-semibold">Редактор</span>
+                                      <Palette className="w-3.5 h-3.5 shrink-0 text-[var(--primary-accent)]" />
+                                      <span
+                                        style={{ backgroundImage: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
+                                        className="bg-clip-text text-transparent font-semibold"
+                                      >
+                                        Редактор
+                                      </span>
                                     </button>
                                   </>
                                 )}
@@ -2141,7 +2197,7 @@ export default function App() {
                                           setSelectedProject(p);
                                           setActiveTab('projectCard');
                                         }}
-                                        style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                                        style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
                                         className="flex-1 sm:flex-initial text-white rounded-full px-4 sm:px-5 py-1.5 sm:py-2 text-xs font-semibold shadow-xs hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-1.5"
                                       >
                                         <FolderKanban className="w-3.5 h-3.5 shrink-0" />
@@ -2152,11 +2208,16 @@ export default function App() {
                                           setSelectedProject(p);
                                           setActiveTab('moodboard');
                                         }}
-                                        style={{ border: '1px solid #8C52D0' }}
-                                        className="flex-1 sm:flex-initial bg-transparent text-[#8C52D0] rounded-full px-4 sm:px-4 py-1.5 sm:py-2 text-xs font-semibold hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-1.5 hover:bg-[#8C52D0]/10"
+                                        style={{ border: '1px solid var(--primary-accent)' }}
+                                        className="flex-1 sm:flex-initial bg-transparent rounded-full px-4 sm:px-4 py-1.5 sm:py-2 text-xs font-semibold hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-1.5 hover:bg-[var(--primary-accent)]/10"
                                       >
-                                        <Palette className="w-3.5 h-3.5 shrink-0 text-[#8C52D0]" />
-                                        <span className="bg-gradient-to-r from-[#8C52D0] to-[#582F89] bg-clip-text text-transparent font-semibold">Редактор</span>
+                                        <Palette className="w-3.5 h-3.5 shrink-0 text-[var(--primary-accent)]" />
+                                        <span
+                                          style={{ backgroundImage: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
+                                          className="bg-clip-text text-transparent font-semibold"
+                                        >
+                                          Редактор
+                                        </span>
                                       </button>
                                     </>
                                   )}
@@ -2408,8 +2469,10 @@ export default function App() {
                   <SettingsTab
                     theme={theme}
                     toggleTheme={toggleTheme}
-                    bgTheme={bgTheme}
-                    setBgTheme={setBgTheme}
+                    colorSchemeId={colorSchemeId}
+                    setColorSchemeId={setColorSchemeId}
+                    bgPresetId={bgPresetId}
+                    setBgPresetId={setBgPresetId}
                     showToast={showToast}
                   />
                 </motion.div>
@@ -2437,9 +2500,10 @@ export default function App() {
                 <div className="flex bg-zinc-100 dark:bg-zinc-800/80 p-0.5 rounded-full border border-zinc-200/80 dark:border-zinc-700/80 text-[11px] font-medium">
                   <button
                     onClick={() => setRightSidebarTab('calendar')}
+                    style={rightSidebarTab === 'calendar' ? { background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' } : undefined}
                     className={`flex items-center gap-1.5 px-3 py-1 rounded-full transition-all cursor-pointer ${
                       rightSidebarTab === 'calendar'
-                        ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white font-semibold shadow-xs'
+                        ? 'text-white font-semibold shadow-xs'
                         : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
                     }`}
                   >
@@ -2448,9 +2512,10 @@ export default function App() {
                   </button>
                   <button
                     onClick={() => setRightSidebarTab('statistics')}
+                    style={rightSidebarTab === 'statistics' ? { background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' } : undefined}
                     className={`flex items-center gap-1.5 px-3 py-1 rounded-full transition-all cursor-pointer ${
                       rightSidebarTab === 'statistics'
-                        ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white font-semibold shadow-xs'
+                        ? 'text-white font-semibold shadow-xs'
                         : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
                     }`}
                   >
@@ -2530,7 +2595,7 @@ export default function App() {
                         }
 
                         if (isSelected) {
-                          bgStyle = 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white font-bold shadow-xs';
+                          bgStyle = 'text-white font-bold shadow-xs';
                           textStyle = 'text-white';
                         }
 
@@ -2538,11 +2603,12 @@ export default function App() {
                           <div
                             key={idx}
                             onClick={() => day.currentMonth && setSelectedCalendarDay(day.num)}
+                            style={isSelected ? { background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' } : undefined}
                             className={`calendar-day-cell relative cursor-pointer w-8 h-8 mx-auto rounded-full transition-all flex flex-col items-center justify-center hover:scale-105 ${bgStyle} ${textStyle}`}
                           >
                             {day.num}
                             {hasEvent && !isSelected && (
-                              <span className={`w-1 h-1 rounded-full absolute bottom-1 ${dotStyle || 'bg-[#8C52D0]'}`} />
+                              <span className={`w-1 h-1 rounded-full absolute bottom-1 ${dotStyle || 'bg-[var(--primary-accent)]'}`} />
                             )}
                           </div>
                         );
@@ -2562,9 +2628,10 @@ export default function App() {
                       <div className="flex bg-zinc-100 dark:bg-zinc-800/80 p-0.5 rounded-full border border-zinc-200/80 dark:border-zinc-700/80 text-[10px]">
                         <button
                           onClick={() => setSidebarTaskFilter('date')}
+                          style={sidebarTaskFilter === 'date' ? { backgroundColor: 'var(--primary-accent)' } : undefined}
                           className={`px-2.5 py-0.5 rounded-full font-semibold transition-all cursor-pointer ${
                             sidebarTaskFilter === 'date'
-                              ? 'bg-[#8C52D0] text-white shadow-2xs'
+                              ? 'text-white shadow-2xs'
                               : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
                           }`}
                           title={`Записи на ${selectedCalendarDay} ${monthNamesGenitive[calendarMonth]}`}
@@ -2573,9 +2640,10 @@ export default function App() {
                         </button>
                         <button
                           onClick={() => setSidebarTaskFilter('all')}
+                          style={sidebarTaskFilter === 'all' ? { backgroundColor: 'var(--primary-accent)' } : undefined}
                           className={`px-2.5 py-0.5 rounded-full font-semibold transition-all cursor-pointer ${
                             sidebarTaskFilter === 'all'
-                              ? 'bg-[#8C52D0] text-white shadow-2xs'
+                              ? 'text-white shadow-2xs'
                               : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
                           }`}
                           title="Показать все записи"
@@ -2756,9 +2824,10 @@ export default function App() {
                   setIsRightSidebarExpanded(true);
                 }}
                 title={`Календарь и задачи (${tasks.filter(t => !t.completed).length} активных)`}
+                style={isRightSidebarExpanded && rightSidebarTab === 'calendar' ? { background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' } : undefined}
                 className={`relative w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer ${
                   isRightSidebarExpanded && rightSidebarTab === 'calendar'
-                    ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-md'
+                    ? 'text-white shadow-md'
                     : 'bg-white/30 dark:bg-zinc-800/60 hover:bg-[var(--lavenderSoft)] dark:hover:bg-zinc-700 text-[var(--soft)] hover:text-[var(--lavDeep)]'
                 }`}
               >
@@ -2777,9 +2846,10 @@ export default function App() {
                   setIsRightSidebarExpanded(true);
                 }}
                 title="Статистика и отчеты"
+                style={isRightSidebarExpanded && rightSidebarTab === 'statistics' ? { background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' } : undefined}
                 className={`w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer ${
                   isRightSidebarExpanded && rightSidebarTab === 'statistics'
-                    ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-md'
+                    ? 'text-white shadow-md'
                     : 'bg-white/30 dark:bg-zinc-800/60 hover:bg-[var(--lavenderSoft)] dark:hover:bg-zinc-700 text-[var(--soft)] hover:text-[var(--lavDeep)]'
                 }`}
               >

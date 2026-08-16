@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <clipPath id="qClip">
+      <path d="M 100 15 C 145 15 180 50 180 95 C 180 120 168 142 150 157 C 137 168 119 175 100 175 C 55 175 20 140 20 95 C 20 50 55 15 100 15 Z" />
+    </clipPath>
+  </defs>
+
+  <!-- Top Left Orange Arc/Circle -->
+  <circle cx="55" cy="40" r="38" fill="#FFA100" />
+
+  <!-- Main Q Body with colorful segments -->
+  <g clip-path="url(#qClip)">
+    <!-- Top-Right Cyan Segment -->
+    <path d="M 100 15 L 180 15 L 180 95 Z" fill="#00C4EE" />
+    
+    <!-- Right Purple Segment -->
+    <path d="M 100 95 L 180 15 L 180 175 Z" fill="#6A1BEE" />
+    
+    <!-- Top-Left & Center Violet Segment -->
+    <path d="M 20 15 L 100 15 L 100 95 L 20 175 Z" fill="#B32BD9" />
+    
+    <!-- Bottom-Left Blue Segment -->
+    <path d="M 20 95 L 100 95 L 20 175 Z" fill="#0082F6" />
+  </g>
+
+  <!-- Bottom Right Pink Dot (the tail dot of Q) -->
+  <circle cx="162" cy="158" r="22" fill="#FF538A" />
+
+  <!-- Center White Sparkle/4-point Star -->
+  <path d="M 100 52 Q 100 95 57 95 Q 100 95 100 138 Q 100 95 143 95 Q 100 95 100 52 Z" fill="#FFFFFF" />
+</svg>

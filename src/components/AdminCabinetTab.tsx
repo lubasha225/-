@@ -170,7 +170,7 @@ const CategoryIconDisplay: React.FC<{
   catId: string;
   catTitle: string;
   className?: string;
-}> = ({ catId, catTitle, className = "w-5 h-5 text-[#8C52D0] dark:text-purple-400" }) => {
+}> = ({ catId, catTitle, className = "w-5 h-5 text-[var(--primary-accent)] dark:text-purple-400" }) => {
   const [customIcon, setCustomIcon] = useState<string | null>(() => {
     return localStorage.getItem(`cat_icon_${catId}`) || null;
   });
@@ -204,6 +204,15 @@ const CategoryIconDisplay: React.FC<{
   }, [iconSrc]);
 
   if (!imgError && iconSrc) {
+    if (customIcon) {
+      return (
+        <img
+          src={customIcon}
+          alt={catTitle}
+          className={`w-5 h-5 object-contain shrink-0 transition-transform group-hover:scale-110 ${className}`}
+        />
+      );
+    }
     return (
       <div
         style={{
@@ -216,7 +225,7 @@ const CategoryIconDisplay: React.FC<{
           maskRepeat: 'no-repeat',
           WebkitMaskRepeat: 'no-repeat',
         }}
-        className={`w-5 h-5 bg-[#8C52D0] dark:bg-purple-400 shrink-0 transition-transform group-hover:scale-110 ${className}`}
+        className={`w-5 h-5 bg-[var(--primary-accent)] dark:bg-purple-400 shrink-0 transition-transform group-hover:scale-110 ${className}`}
         role="img"
         aria-label={catTitle}
       />
@@ -243,7 +252,24 @@ const CategoryIconDisplay: React.FC<{
 };
 
 export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
-  const [adminTab, setAdminTab] = useState<'library' | 'icons' | 'categories' | 'backup'>('library');
+  const [adminTab, setAdminTab] = useState<'library' | 'icons' | 'categories' | 'logo' | 'backup'>('library');
+
+  // App Logo State
+  const [appLogo, setAppLogo] = useState<string>(() => {
+    return localStorage.getItem('app_custom_logo') || '/logo_iq_deko.svg';
+  });
+
+  useEffect(() => {
+    const handleLogoSync = () => {
+      setAppLogo(localStorage.getItem('app_custom_logo') || '/logo_iq_deko.svg');
+    };
+    window.addEventListener('storage', handleLogoSync);
+    window.addEventListener('app_logo_updated', handleLogoSync);
+    return () => {
+      window.removeEventListener('storage', handleLogoSync);
+      window.removeEventListener('app_logo_updated', handleLogoSync);
+    };
+  }, []);
 
   // Icons state
   const [toolIcons, setToolIcons] = useState<ToolIconItem[]>(() => {
@@ -474,6 +500,29 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
     localStorage.removeItem(`cat_icon_${catId}`);
     window.dispatchEvent(new Event('cat_icons_updated'));
     showToast('Иконка сброшена', `Иконка категории «${catTitle}» возвращена к стандартной.`, 'info');
+  };
+
+  // Handlers for App Platform Logo
+  const handleUploadAppLogo = (file: File) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        const result = e.target.result as string;
+        localStorage.setItem('app_custom_logo', result);
+        setAppLogo(result);
+        window.dispatchEvent(new Event('app_logo_updated'));
+        showToast('Логотип обновлен', 'Новый логотип приложения (SVG/PNG) успешно загружен!', 'success');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleResetAppLogo = () => {
+    localStorage.removeItem('app_custom_logo');
+    setAppLogo('/logo_iq_deko.svg');
+    window.dispatchEvent(new Event('app_logo_updated'));
+    showToast('Сброс логотипа', 'Восстановлен оригинальный логотип IQ DECO.', 'info');
   };
 
   // Handlers for Files Upload inside Opened Category (Single upload with Modal / Batch upload with red badge)
@@ -766,7 +815,7 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
                 Кабинет администратора
               </h1>
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#8C52D0]/10 text-[#8C52D0] dark:text-purple-300 border border-[#8C52D0]/20">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[var(--primary-accent)]/10 text-[var(--primary-accent)] dark:text-purple-300 border border-[var(--primary-accent)]/20">
                 ADMIN V2
               </span>
             </div>
@@ -779,9 +828,9 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
         {/* Action Button */}
         <button
           onClick={handleExportBackup}
-          className="bg-transparent border border-zinc-300 dark:border-zinc-700 hover:border-[#8C52D0] rounded-full px-4 py-2 text-xs font-semibold text-zinc-800 dark:text-zinc-200 flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0"
+          className="bg-transparent border border-zinc-300 dark:border-zinc-700 hover:border-[var(--primary-accent)] rounded-full px-4 py-2 text-xs font-semibold text-zinc-800 dark:text-zinc-200 flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0"
         >
-          <Download className="w-3.5 h-3.5 text-[#8C52D0]" />
+          <Download className="w-3.5 h-3.5 text-[var(--primary-accent)]" />
           <span>Скачать бэкап JSON</span>
         </button>
       </div>
@@ -792,6 +841,7 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
           { key: 'library', label: 'Библиотека редактора', icon: <Package className="w-4 h-4" />, count: decorItems.length },
           { key: 'icons', label: 'Иконки инструментов', icon: <Palette className="w-4 h-4" />, count: toolIcons.length },
           { key: 'categories', label: 'Категории каталога', icon: <Tag className="w-4 h-4" />, count: libraryCategories.length },
+          { key: 'logo', label: 'Логотип приложения', icon: <Sparkles className="w-4 h-4" /> },
           { key: 'backup', label: 'Резервные копии', icon: <FileJson className="w-4 h-4" /> }
         ].map(tab => {
           const isActive = adminTab === tab.key;
@@ -807,7 +857,7 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                   ? 'text-white shadow-md'
                   : 'bg-white/40 dark:bg-zinc-900/30 text-zinc-700 dark:text-zinc-300 hover:bg-white/60 dark:hover:bg-zinc-800/50 border border-zinc-200/50 dark:border-zinc-800/40'
               }`}
-              style={isActive ? { background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' } : undefined}
+              style={isActive ? { background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' } : undefined}
             >
               <span>{tab.icon}</span>
               <span>{tab.label}</span>
@@ -855,13 +905,13 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                         value={categorySearch}
                         onChange={e => setCategorySearch(e.target.value)}
                         placeholder="Поиск категории..."
-                        className="w-full pl-8 pr-3 py-1.5 rounded-full text-xs bg-white/60 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#8C52D0]/40"
+                        className="w-full pl-8 pr-3 py-1.5 rounded-full text-xs bg-white/60 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40"
                       />
                     </div>
 
                     <button
                       onClick={() => setIsAddCategoryModalOpen(true)}
-                      style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                      style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
                       className="rounded-full px-4 py-1.5 text-white font-semibold text-xs flex items-center gap-1.5 shadow-md hover:opacity-90 transition-all cursor-pointer shrink-0"
                     >
                       <Plus className="w-3.5 h-3.5" />
@@ -882,7 +932,7 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                     return (
                       <div
                         key={cat.id}
-                        className="group relative bg-white/60 dark:bg-zinc-800/40 border border-zinc-200/60 dark:border-zinc-700/50 rounded-2xl p-4 transition-all hover:border-[#8C52D0]/50 hover:shadow-md flex flex-col justify-between gap-3"
+                        className="group relative bg-white/60 dark:bg-zinc-800/40 border border-zinc-200/60 dark:border-zinc-700/50 rounded-2xl p-4 transition-all hover:border-[var(--primary-accent)]/50 hover:shadow-md flex flex-col justify-between gap-3"
                       >
                         {/* Top Row: Icon + Title + Count */}
                         <div
@@ -890,15 +940,15 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                           className="flex items-start gap-3 cursor-pointer"
                         >
                           <div className="p-2.5 bg-[var(--lavenderSoft)] rounded-xl shrink-0 group-hover:scale-105 transition-transform">
-                            <CategoryIconDisplay catId={cat.id} catTitle={cat.title} className="w-6 h-6 text-[#8C52D0] dark:text-[#C084FC]" />
+                            <CategoryIconDisplay catId={cat.id} catTitle={cat.title} className="w-6 h-6 text-[var(--primary-accent)] dark:text-[#C084FC]" />
                           </div>
 
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center justify-between gap-1">
-                              <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 truncate group-hover:text-[#8C52D0] transition-colors">
+                              <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 truncate group-hover:text-[var(--primary-accent)] transition-colors">
                                 {cat.title}
                               </h3>
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#8C52D0]/10 text-[#8C52D0] dark:text-purple-300 shrink-0">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--primary-accent)]/10 text-[var(--primary-accent)] dark:text-purple-300 shrink-0">
                                 {itemCount} файл.
                               </span>
                             </div>
@@ -914,7 +964,7 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                           <div className="flex items-center gap-1.5">
                             <label
                               title="Загрузить пользовательскую иконку для этой категории (SVG / PNG)"
-                              className="px-2.5 py-1 rounded-full border border-[#8C52D0]/30 hover:bg-[#8C52D0]/10 text-[#8C52D0] dark:text-purple-300 text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1"
+                              className="px-2.5 py-1 rounded-full border border-[var(--primary-accent)]/30 hover:bg-[var(--primary-accent)]/10 text-[var(--primary-accent)] dark:text-purple-300 text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1"
                             >
                               <Upload className="w-3 h-3" />
                               <span>{hasCustomIcon ? 'Иконка ✓' : 'Иконка'}</span>
@@ -944,7 +994,7 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                           {/* Open Category Button */}
                           <button
                             onClick={() => handleOpenCategory(cat)}
-                            className="px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-700/80 hover:bg-[#8C52D0] hover:text-white dark:hover:bg-[#8C52D0] text-zinc-700 dark:text-zinc-200 text-xs font-semibold transition-all cursor-pointer flex items-center gap-1"
+                            className="px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-700/80 hover:bg-[var(--primary-accent)] hover:text-white dark:hover:bg-[var(--primary-accent)] text-zinc-700 dark:text-zinc-200 text-xs font-semibold transition-all cursor-pointer flex items-center gap-1"
                           >
                             <span>Открыть</span>
                             <FolderOpen className="w-3.5 h-3.5" />
@@ -976,7 +1026,7 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                     </button>
 
                     <div className="p-2.5 bg-[var(--lavenderSoft)] rounded-xl shrink-0">
-                      <CategoryIconDisplay catId={openedCategory.id} catTitle={openedCategory.title} className="w-6 h-6 text-[#8C52D0] dark:text-[#C084FC]" />
+                      <CategoryIconDisplay catId={openedCategory.id} catTitle={openedCategory.title} className="w-6 h-6 text-[var(--primary-accent)] dark:text-[#C084FC]" />
                     </div>
 
                     <div>
@@ -984,7 +1034,7 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                         <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
                           Категория: {openedCategory.title}
                         </h2>
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#8C52D0]/10 text-[#8C52D0] dark:text-purple-300">
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[var(--primary-accent)]/10 text-[var(--primary-accent)] dark:text-purple-300">
                           {openedCategoryFiles.length} файл(ов)
                         </span>
                       </div>
@@ -999,7 +1049,7 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                     {/* Button 1: Upload Category Icon */}
                     <label
                       title="Загрузить / изменить иконку категории"
-                      className="px-3.5 py-2 rounded-full border border-[#8C52D0]/40 bg-white/50 dark:bg-zinc-800/50 hover:bg-[#8C52D0]/10 text-[#8C52D0] dark:text-purple-300 text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5"
+                      className="px-3.5 py-2 rounded-full border border-[var(--primary-accent)]/40 bg-white/50 dark:bg-zinc-800/50 hover:bg-[var(--primary-accent)]/10 text-[var(--primary-accent)] dark:text-purple-300 text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5"
                     >
                       <Upload className="w-3.5 h-3.5" />
                       <span>Изменить иконку</span>
@@ -1017,7 +1067,7 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
 
                     {/* Button 2: Primary Upload Files to Category */}
                     <label
-                      style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                      style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
                       className="rounded-full px-4 py-2 text-white font-semibold text-xs flex items-center gap-1.5 shadow-md hover:opacity-90 transition-all cursor-pointer"
                     >
                       <UploadCloud className="w-4 h-4" />
@@ -1053,12 +1103,12 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                   }}
                   className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all ${
                     isDraggingOver
-                      ? 'border-[#8C52D0] bg-[#8C52D0]/10'
+                      ? 'border-[var(--primary-accent)] bg-[var(--primary-accent)]/10'
                       : 'border-zinc-300/80 dark:border-zinc-700/80 bg-white/30 dark:bg-zinc-800/20'
                   }`}
                 >
                   <div className="flex flex-col items-center gap-2">
-                    <div className="p-3 bg-[var(--lavenderSoft)] rounded-full text-[#8C52D0]">
+                    <div className="p-3 bg-[var(--lavenderSoft)] rounded-full text-[var(--primary-accent)]">
                       <UploadCloud className="w-6 h-6" />
                     </div>
                     <p className="text-xs sm:text-sm font-semibold text-zinc-800 dark:text-zinc-200">
@@ -1079,7 +1129,7 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                       value={fileSearch}
                       onChange={e => setFileSearch(e.target.value)}
                       placeholder={`Поиск объектов в «${openedCategory.title}»...`}
-                      className="w-full pl-8 pr-3 py-1.5 rounded-full text-xs bg-white/60 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#8C52D0]/40"
+                      className="w-full pl-8 pr-3 py-1.5 rounded-full text-xs bg-white/60 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40"
                     />
                   </div>
                 </div>
@@ -1095,7 +1145,7 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                           className={`group bg-white/70 dark:bg-zinc-800/50 border rounded-2xl p-2.5 flex flex-col justify-between hover:shadow-md transition-all ${
                             isUnnamed
                               ? 'border-2 border-rose-500 bg-rose-500/5 dark:border-rose-500/80 dark:bg-rose-950/20'
-                              : 'border-zinc-200/60 dark:border-zinc-700/50 hover:border-[#8C52D0]/50'
+                              : 'border-zinc-200/60 dark:border-zinc-700/50 hover:border-[var(--primary-accent)]/50'
                           }`}
                         >
                           {/* Thumbnail */}
@@ -1194,13 +1244,13 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                     value={iconSearch}
                     onChange={e => setIconSearch(e.target.value)}
                     placeholder="Поиск инструмента..."
-                    className="w-full pl-8 pr-3 py-1.5 rounded-full text-xs bg-white/60 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#8C52D0]/40"
+                    className="w-full pl-8 pr-3 py-1.5 rounded-full text-xs bg-white/60 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40"
                   />
                 </div>
 
                 <button
                   onClick={() => setIsAddIconModalOpen(true)}
-                  style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                  style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
                   className="rounded-full px-4 py-1.5 text-white font-semibold text-xs flex items-center gap-1.5 shadow-md hover:opacity-90 transition-all cursor-pointer shrink-0"
                 >
                   <Plus className="w-3.5 h-3.5" />
@@ -1217,14 +1267,14 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
               ).map(icon => (
                 <div
                   key={icon.id}
-                  className="p-3.5 rounded-2xl bg-white/60 dark:bg-zinc-800/40 border border-zinc-200/60 dark:border-zinc-700/50 flex items-center justify-between gap-3 hover:border-[#8C52D0]/40 transition-all"
+                  className="p-3.5 rounded-2xl bg-white/60 dark:bg-zinc-800/40 border border-zinc-200/60 dark:border-zinc-700/50 flex items-center justify-between gap-3 hover:border-[var(--primary-accent)]/40 transition-all"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-[var(--lavenderSoft)] flex items-center justify-center shrink-0 border border-[#8C52D0]/20 p-2 overflow-hidden">
+                    <div className="w-10 h-10 rounded-xl bg-[var(--lavenderSoft)] flex items-center justify-center shrink-0 border border-[var(--primary-accent)]/20 p-2 overflow-hidden">
                       {icon.customIconUrl ? (
                         <img src={icon.customIconUrl} alt={icon.toolName} className="w-full h-full object-contain" />
                       ) : (
-                        <Sliders className="w-5 h-5 text-[#8C52D0] dark:text-[#C084FC]" />
+                        <Sliders className="w-5 h-5 text-[var(--primary-accent)] dark:text-[#C084FC]" />
                       )}
                     </div>
                     <div className="min-w-0">
@@ -1277,7 +1327,7 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
 
             <button
               onClick={() => setIsAddCategoryModalOpen(true)}
-              style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+              style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
               className="rounded-full px-4 py-2 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-md hover:opacity-90 transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4" />
@@ -1295,7 +1345,7 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="p-2.5 bg-[var(--lavenderSoft)] rounded-xl shrink-0">
-                      <CategoryIconDisplay catId={cat.id} catTitle={cat.title} className="w-5 h-5 text-[#8C52D0] dark:text-[#C084FC]" />
+                      <CategoryIconDisplay catId={cat.id} catTitle={cat.title} className="w-5 h-5 text-[var(--primary-accent)] dark:text-[#C084FC]" />
                     </div>
                     <div className="min-w-0">
                       <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">
@@ -1308,7 +1358,7 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-[#8C52D0]/10 text-[#8C52D0] dark:text-purple-300">
+                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-[var(--primary-accent)]/10 text-[var(--primary-accent)] dark:text-purple-300">
                       {count} об.
                     </span>
                     <button
@@ -1326,7 +1376,107 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
         </div>
       )}
 
-      {/* 6. TAB 4: BACKUP & RESTORE */}
+      {/* TAB 4: APP LOGO MANAGEMENT */}
+      {adminTab === 'logo' && (
+        <motion.div
+          key="logo-management"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[28px] sm:rounded-[32px] border border-zinc-200/50 dark:border-zinc-800/40 shadow-xs p-5 sm:p-6 space-y-6"
+        >
+          {/* Header */}
+          <div className="flex items-center gap-3.5 pb-4 border-b border-zinc-200/40 dark:border-zinc-800/40">
+            <div className="p-2 bg-[var(--lavenderSoft)] rounded-xl shrink-0">
+              <Sparkles className="w-5 h-5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
+            </div>
+            <div>
+              <h3 className="text-base sm:text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+                Логотип и брендинг приложения
+              </h3>
+              <p className="text-xs sm:text-sm font-normal text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                Загрузите фирменный логотип платформы в формате SVG или PNG для отображения в боковом меню и шапке приложения
+              </p>
+            </div>
+          </div>
+
+          {/* Grid Preview Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Light Preview */}
+            <div className="p-4 rounded-2xl bg-white border border-zinc-200/80 shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-zinc-700">Отображение в светлой теме</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
+                  {localStorage.getItem('app_custom_logo') ? 'Пользовательский' : 'Стандартный'}
+                </span>
+              </div>
+              <div className="h-24 rounded-xl bg-zinc-50 border border-zinc-200/60 p-4 flex items-center justify-center">
+                <img src={appLogo} alt="App Logo Light Preview" className="max-h-16 max-w-full object-contain" />
+              </div>
+            </div>
+
+            {/* Dark Preview */}
+            <div className="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-zinc-200">Отображение в тёмной теме</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-300">
+                  {localStorage.getItem('app_custom_logo') ? 'Пользовательский' : 'Стандартный'}
+                </span>
+              </div>
+              <div className="h-24 rounded-xl bg-zinc-950 border border-zinc-800 p-4 flex items-center justify-center">
+                <img src={appLogo} alt="App Logo Dark Preview" className="max-h-16 max-w-full object-contain" />
+              </div>
+            </div>
+          </div>
+
+          {/* Upload Controls */}
+          <div className="p-5 rounded-2xl bg-white/60 dark:bg-zinc-800/40 border border-zinc-200/60 dark:border-zinc-700/50 space-y-4">
+            <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              Загрузить новый файл логотипа (SVG / PNG)
+            </h4>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <label className="flex-1 cursor-pointer">
+                <div className="px-5 py-3.5 rounded-2xl border-2 border-dashed border-[var(--primary-accent)]/40 hover:border-[var(--primary-accent)] bg-[var(--lavenderSoft)]/30 dark:bg-purple-950/20 text-[var(--primary-accent)] dark:text-purple-300 text-xs font-semibold transition-all flex items-center justify-center gap-2">
+                  <Upload className="w-4 h-4" />
+                  <span>Выбрать логотип в формате SVG или PNG</span>
+                </div>
+                <input
+                  type="file"
+                  accept="image/svg+xml,image/png,image/jpeg"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      handleUploadAppLogo(e.target.files[0]);
+                    }
+                  }}
+                />
+              </label>
+
+              {localStorage.getItem('app_custom_logo') && (
+                <button
+                  type="button"
+                  onClick={handleResetAppLogo}
+                  className="px-4 py-3.5 rounded-2xl border border-rose-300 dark:border-rose-800/60 hover:bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Сбросить логотип</span>
+                </button>
+              )}
+            </div>
+
+            {/* Notice Box per AGENTS_md instructions */}
+            <div className="p-3.5 bg-emerald-500/10 dark:bg-emerald-950/30 rounded-2xl border border-emerald-500/20 text-xs text-emerald-900 dark:text-emerald-200 font-normal leading-relaxed flex items-start gap-2.5">
+              <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+              <div>
+                <strong>Поддержка форматов:</strong> Рекомендуется загружать файлы <strong>SVG</strong> для маштабируемой векторной четкости на Retina-экранах или <strong>PNG</strong> с прозрачным фоном. Логотип сразу же обновится в боковом меню и во всём приложении.
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* TAB 5: BACKUP & RESTORE */}
       {adminTab === 'backup' && (
         <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[28px] border border-zinc-200/50 dark:border-zinc-800/40 shadow-xs p-5 sm:p-6 space-y-4">
           <h2 className="text-base sm:text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
@@ -1339,7 +1489,7 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
           <div className="pt-2 flex flex-wrap gap-3">
             <button
               onClick={handleExportBackup}
-              style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+              style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
               className="rounded-full px-5 py-2.5 text-white font-semibold text-xs flex items-center gap-2 shadow-md hover:opacity-90 transition-all cursor-pointer"
             >
               <Download className="w-4 h-4" />
@@ -1384,7 +1534,7 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                     value={newCatTitle}
                     onChange={e => setNewCatTitle(e.target.value)}
                     placeholder="Например: Фотозоны"
-                    className="w-full px-4 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#8C52D0]/40"
+                    className="w-full px-4 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40"
                   />
                 </div>
 
@@ -1397,7 +1547,7 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                     value={newCatDesc}
                     onChange={e => setNewCatDesc(e.target.value)}
                     placeholder="Краткое описание содержимого"
-                    className="w-full px-4 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#8C52D0]/40"
+                    className="w-full px-4 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40"
                   />
                 </div>
 
@@ -1411,7 +1561,7 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                   </button>
                   <button
                     type="submit"
-                    style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                    style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
                     className="px-5 py-2 rounded-full text-xs font-semibold text-white shadow-md hover:opacity-90"
                   >
                     Создать
@@ -1523,7 +1673,7 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                     ФАЙЛ ИЗОБРАЖЕНИЯ
                   </label>
                   <div className="flex items-center gap-3">
-                    <label className="px-4 py-2 rounded-xl border border-[#8C52D0]/40 text-[#8C52D0] dark:text-purple-300 text-xs font-semibold cursor-pointer hover:bg-[#8C52D0]/10 flex items-center gap-1.5">
+                    <label className="px-4 py-2 rounded-xl border border-[var(--primary-accent)]/40 text-[var(--primary-accent)] dark:text-purple-300 text-xs font-semibold cursor-pointer hover:bg-[var(--primary-accent)]/10 flex items-center gap-1.5">
                       <Upload className="w-3.5 h-3.5" />
                       <span>Выбрать файл</span>
                       <input
@@ -1559,7 +1709,7 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                   </button>
                   <button
                     type="submit"
-                    style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                    style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
                     className="px-5 py-2 rounded-full text-xs font-semibold text-white shadow-md hover:opacity-90"
                   >
                     Сохранить объект
@@ -1612,7 +1762,7 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                   <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal block mb-1">
                     ФАЙЛ ИКОНКИ (SVG или PNG)
                   </label>
-                  <label className="px-4 py-2 rounded-xl border border-[#8C52D0]/40 text-[#8C52D0] dark:text-purple-300 text-xs font-semibold cursor-pointer hover:bg-[#8C52D0]/10 flex items-center justify-center gap-2">
+                  <label className="px-4 py-2 rounded-xl border border-[var(--primary-accent)]/40 text-[var(--primary-accent)] dark:text-purple-300 text-xs font-semibold cursor-pointer hover:bg-[var(--primary-accent)]/10 flex items-center justify-center gap-2">
                     <Upload className="w-4 h-4" />
                     <span>Загрузить SVG/PNG</span>
                     <input
@@ -1648,7 +1798,7 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                   </button>
                   <button
                     type="submit"
-                    style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                    style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
                     className="px-5 py-2 rounded-full text-xs font-semibold text-white shadow-md hover:opacity-90"
                   >
                     Сохранить иконку
@@ -1758,7 +1908,7 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                   </button>
                   <button
                     type="submit"
-                    style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                    style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
                     className="px-5 py-2 rounded-full text-xs font-semibold text-white shadow-md hover:opacity-90 cursor-pointer"
                   >
                     Сохранить изменения
@@ -1810,7 +1960,7 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                     value={singleUploadName}
                     onChange={e => setSingleUploadName(e.target.value)}
                     placeholder="Например: Арка золотая полукруглая"
-                    className="w-full px-4 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#8C52D0]/40"
+                    className="w-full px-4 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40"
                   />
                 </div>
 
@@ -1824,7 +1974,7 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                       value={singleUploadPrice}
                       onChange={e => setSingleUploadPrice(e.target.value)}
                       placeholder="Например: 1500"
-                      className="w-full px-4 py-2 pr-8 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#8C52D0]/40"
+                      className="w-full px-4 py-2 pr-8 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40"
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-zinc-400">₽</span>
                   </div>
@@ -1840,7 +1990,7 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                   </button>
                   <button
                     type="submit"
-                    style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                    style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
                     className="px-5 py-2 rounded-full text-xs font-semibold text-white shadow-md hover:opacity-90 transition-all cursor-pointer"
                   >
                     Сохранить файл
@@ -1876,7 +2026,7 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
 
               <button
                 onClick={handleSaveCategoryChanges}
-                style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
                 className="px-5 py-1.5 text-white text-xs font-semibold rounded-full shadow-md hover:opacity-90 transition-all cursor-pointer flex items-center gap-1.5"
               >
                 <Check className="w-3.5 h-3.5" />
