@@ -2492,6 +2492,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
   const [rotationInputId, setRotationInputId] = useState<string | null>(null);
 
   const rotateClickStartRef = useRef({ x: 0, y: 0, time: 0 });
+  const isCaptionDraggingRef = useRef<boolean>(false);
 
   const dragCaptionStartRef = useRef<{
     mouseX: number;
@@ -2512,6 +2513,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
   const handleCaptionMouseDown = (e: React.MouseEvent, el: CanvasElement) => {
     e.stopPropagation();
     isInteractingWithElementRef.current = true;
+    isCaptionDraggingRef.current = false;
     handleSelectElement(el.id);
     setActiveAction('move-caption');
     setActiveHandle(null);
@@ -2635,6 +2637,10 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
       const currentScale = canvasScale * zoomScale;
       const rawDx = (e.clientX - dragCaptionStartRef.current.mouseX) / currentScale;
       const rawDy = (e.clientY - dragCaptionStartRef.current.mouseY) / currentScale;
+
+      if (Math.hypot(rawDx, rawDy) > 3) {
+        isCaptionDraggingRef.current = true;
+      }
 
       const rotRad = (dragCaptionStartRef.current.elementRotation * Math.PI) / 180;
       const localDx = rawDx * Math.cos(rotRad) + rawDy * Math.sin(rotRad);
@@ -5438,12 +5444,12 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                   if (!el.isVisible) return null;
                   if (el.type === 'measurement' && !areMeasurementsVisible) return null;
                   const isSelected = el.id === selectedId;
-                  
+
                   return (
-                    <div
-                      key={el.id}
-                      onMouseDown={(e) => handleCanvasMouseDown(e, el)}
-                      onClick={(e) => e.stopPropagation()}
+                    <React.Fragment key={el.id}>
+                      <div
+                        onMouseDown={(e) => handleCanvasMouseDown(e, el)}
+                        onClick={(e) => e.stopPropagation()}
                       className={`absolute group transition-shadow ${
                         el.isLocked ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'
                       } ${
@@ -5606,8 +5612,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         )}
                       </div>
 
-                      {/* Editable & Draggable Caption Label with Leader Line */}
-                      {el.type !== 'measurement' && Boolean(
+                      {/* Editable & Draggable Caption Label with Leader Line (ONLY IN SCHEMA MODE) */}
+                      {activeWorkspaceTab === 'floorplan' && el.type !== 'measurement' && Boolean(
                         el.caption &&
                         el.caption.trim() &&
                         el.caption !== el.name &&
@@ -5672,20 +5678,24 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                     }
                                   }}
                                   onMouseDown={(e) => e.stopPropagation()}
-                                  className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border-2 border-[#8C52D0] rounded-lg px-2 py-0.5 text-[11px] font-bold text-center outline-none shadow-md min-w-[70px]"
+                                  className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border border-[#8C52D0] rounded-full h-5.5 sm:h-6 px-2 text-[10px] sm:text-[11px] font-semibold text-center outline-none shadow-xs min-w-[60px]"
                                 />
                               ) : (
-                                <div className="relative group/badge flex items-center">
+                                <div className="relative group/badge flex items-center gap-1">
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
+                                      if (isCaptionDraggingRef.current) {
+                                        isCaptionDraggingRef.current = false;
+                                        return;
+                                      }
                                       setEditingCaptionId(el.id);
                                       setEditingCaptionText(el.caption || '');
                                     }}
-                                    className="px-2.5 py-1 rounded-full bg-white/95 dark:bg-zinc-900/95 hover:bg-white dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-purple-300 dark:border-purple-700 hover:border-[#8C52D0] dark:hover:border-purple-400 shadow-md text-[11px] font-bold transition-all flex items-center gap-1.5 whitespace-nowrap active:scale-95 cursor-pointer"
+                                    className="h-5.5 sm:h-6 px-2 py-0.5 rounded-full bg-white/95 dark:bg-zinc-900/95 hover:bg-white dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-purple-300/80 dark:border-purple-700 hover:border-[#8C52D0] dark:hover:border-purple-400 shadow-xs text-[10px] sm:text-[11px] font-semibold transition-all flex items-center gap-1 whitespace-nowrap active:scale-95 cursor-pointer"
                                     title="Зажмите и перетащите для перемещения подписи. Кликните для редактирования."
                                   >
-                                    <Move className="w-2.5 h-2.5 text-[#8C52D0] opacity-70 group-hover/caption:opacity-100 shrink-0" />
+                                    <Move className="w-2.5 h-2.5 text-[#8C52D0] opacity-80 group-hover/caption:opacity-100 shrink-0" />
                                     <span>{el.caption || 'Подпись...'}</span>
                                   </button>
 
@@ -5695,7 +5705,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                         e.stopPropagation();
                                         updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, captionOffsetX: 0, captionOffsetY: 0 } : item));
                                       }}
-                                      className="ml-1 p-1 rounded-full bg-white/90 dark:bg-zinc-800/90 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 border border-zinc-200 dark:border-zinc-700 transition-colors shadow-xs"
+                                      className="w-5 h-5 sm:w-5.5 sm:h-5.5 rounded-full bg-white/90 dark:bg-zinc-800/90 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 border border-zinc-200 dark:border-zinc-700 transition-colors shadow-xs flex items-center justify-center shrink-0 cursor-pointer"
                                       title="Сбросить положение подписи"
                                     >
                                       <X className="w-2.5 h-2.5" />
@@ -5895,79 +5905,66 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                   <RefreshCw className="w-3 h-3 text-purple-600 dark:text-purple-300 animate-spin-slow" />
                                 </div>
 
-                                {/* Floating Exact Rotation Angle Popover */}
+                                {/* Floating Exact Rotation Angle Popover - Single Compact Horizontal Row */}
                                 {rotationInputId === el.id && (() => {
-                                  const isNearTop = el.y < 160;
+                                  // Determine if element's top position is near the top edge of the canvas (less than 50mm/px space)
+                                  const rad = (el.rotation || 0) * Math.PI / 180;
+                                  const cos = Math.cos(rad);
+                                  const sin = Math.sin(rad);
+                                  const halfW = el.w / 2;
+                                  const halfH = el.h / 2;
+                                  const localCorners = [
+                                    { x: -halfW, y: -halfH },
+                                    { x: halfW, y: -halfH },
+                                    { x: halfW, y: halfH },
+                                    { x: -halfW, y: halfH }
+                                  ];
+                                  const rotatedYCorners = localCorners.map(pt => (pt.x * sin) + (pt.y * cos));
+                                  const centerAbsY = el.y + halfH;
+                                  const boxMinY = centerAbsY + Math.min(...rotatedYCorners);
+
+                                  const isNearTop = boxMinY < 50 || el.y < 50;
+
                                   return (
                                     <div
-                                      className={`absolute left-1/2 z-50 bg-white/95 dark:bg-zinc-900/95 text-zinc-900 dark:text-zinc-100 p-3 rounded-2xl shadow-xl shadow-purple-950/10 border border-white/80 dark:border-zinc-700/80 flex flex-col items-center gap-2 pointer-events-auto min-w-[210px] animate-fadeIn select-none backdrop-blur-md`}
+                                      className="absolute left-1/2 z-50 bg-white/95 dark:bg-zinc-900/95 text-zinc-900 dark:text-zinc-100 px-3 h-8 sm:h-9 rounded-full shadow-lg shadow-purple-950/10 border border-white/80 dark:border-zinc-700/80 flex items-center gap-1.5 pointer-events-auto animate-fadeIn select-none backdrop-blur-md"
                                       style={{
-                                        top: isNearTop ? '100%' : '0',
-                                        marginTop: isNearTop ? `${16 * scaleInv}px` : undefined,
-                                        transform: `translate(-50%, ${isNearTop ? '0' : '-100%'}) translateY(${isNearTop ? '0' : `${-50 * scaleInv}px`}) rotate(${-el.rotation}deg) scaleX(${el.isFlippedH ? -1 : 1}) scaleY(${el.isFlippedV ? -1 : 1}) scale(${scaleInv})`,
+                                        top: 0,
+                                        transform: `translate(-50%, -100%) translateY(${isNearTop ? `${36 * scaleInv}px` : `${-48 * scaleInv}px`}) rotate(${-el.rotation}deg) scaleX(${el.isFlippedH ? -1 : 1}) scaleY(${el.isFlippedV ? -1 : 1}) scale(${scaleInv})`,
                                         transformOrigin: isNearTop ? 'top center' : 'bottom center',
                                         WebkitFontSmoothing: 'antialiased'
                                       }}
                                       onMouseDown={(e) => e.stopPropagation()}
                                       onClick={(e) => e.stopPropagation()}
                                     >
-                                      <div className="flex items-center justify-between w-full pb-1 border-b border-purple-200/50 dark:border-zinc-800 text-xs font-bold text-[#5B3E88] dark:text-purple-300">
-                                        <span className="flex items-center gap-1.5">
-                                          <RotateCw className="w-3.5 h-3.5 text-[#5B3E88] dark:text-purple-400 stroke-[2.2]" />
-                                          Угол поворота
-                                        </span>
+                                      {/* Manual Number Input Box */}
+                                      <div className="relative flex items-center shrink-0">
+                                        <input
+                                          type="number"
+                                          value={el.rotation}
+                                          onChange={(e) => {
+                                            const val = parseInt(e.target.value);
+                                            updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, rotation: isNaN(val) ? 0 : val } : item));
+                                          }}
+                                          className="w-12 text-center font-extrabold text-xs bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full py-0.5 pr-3 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#8C52D0] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                        />
+                                        <span className="absolute right-1.5 text-[10px] font-bold text-[#8C52D0] dark:text-purple-400 pointer-events-none">°</span>
                                       </div>
 
-                                      {/* Number Input & Step Buttons */}
-                                      <div className="flex items-center gap-1.5 my-1">
-                                        <button
-                                          onClick={() => {
-                                            const next = ((el.rotation - 15) % 360 + 360) % 360;
-                                            updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, rotation: next } : item));
-                                          }}
-                                          className="px-2.5 py-1 bg-white/50 hover:bg-purple-100/80 dark:bg-zinc-800/60 dark:hover:bg-zinc-700/80 border border-purple-200/60 dark:border-zinc-700 rounded-xl text-xs font-bold text-[#5B3E88] dark:text-purple-300 cursor-pointer transition-colors shadow-xs"
-                                          title="-15°"
-                                        >
-                                          -15°
-                                        </button>
+                                      <div className="w-[1px] h-3.5 bg-zinc-200 dark:bg-zinc-700 shrink-0 mx-0.5" />
 
-                                        <div className="relative flex items-center">
-                                          <input
-                                            type="number"
-                                            value={el.rotation}
-                                            onChange={(e) => {
-                                              const val = parseInt(e.target.value);
-                                              updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, rotation: isNaN(val) ? 0 : val } : item));
-                                            }}
-                                            className="w-16 px-2 py-1 text-center font-extrabold text-sm bg-white/70 dark:bg-zinc-950/70 border border-purple-300/80 dark:border-purple-600 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:border-[#5B3E88] focus:ring-1 focus:ring-[#5B3E88] shadow-xs"
-                                          />
-                                          <span className="absolute right-2 text-xs font-bold text-[#5B3E88] dark:text-purple-400 pointer-events-none">°</span>
-                                        </div>
-
-                                        <button
-                                          onClick={() => {
-                                            const next = ((el.rotation + 15) % 360 + 360) % 360;
-                                            updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, rotation: next } : item));
-                                          }}
-                                          className="px-2.5 py-1 bg-white/50 hover:bg-purple-100/80 dark:bg-zinc-800/60 dark:hover:bg-zinc-700/80 border border-purple-200/60 dark:border-zinc-700 rounded-xl text-xs font-bold text-[#5B3E88] dark:text-purple-300 cursor-pointer transition-colors shadow-xs"
-                                          title="+15°"
-                                        >
-                                          +15°
-                                        </button>
-                                      </div>
-
-                                      {/* Preset Angle Pills */}
-                                      <div className="flex items-center justify-between w-full gap-1 pt-1.5 border-t border-purple-200/50 dark:border-zinc-800">
-                                        {[0, 45, 90, 180, 270].map((deg) => (
+                                      {/* Quick Preset Angles: 0, 45, 90 */}
+                                      <div className="flex items-center gap-1 shrink-0">
+                                        {[0, 45, 90].map((deg) => (
                                           <button
                                             key={deg}
                                             onClick={() => {
                                               updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, rotation: deg } : item));
                                             }}
-                                            className={`px-1.5 py-0.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                                            className={`px-2 py-0.5 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
                                               el.rotation === deg
-                                                ? 'bg-[#5B3E88] text-white shadow-xs'
-                                                : 'bg-white/50 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300 hover:bg-purple-100/80 hover:text-[#5B3E88]'
+                                                ? 'bg-[#8C52D0] text-white shadow-xs'
+                                                : 'bg-zinc-100 dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-300 hover:bg-purple-100/80 hover:text-[#8C52D0]'
                                             }`}
                                           >
                                             {deg}°
@@ -5979,83 +5976,119 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                 })()}
                               </>
                             )}
-
-                            {/* FLOATING QUICK TOOLBAR - Translucent glass with 16px blur & sharp clear controls */}
-                            {(() => {
-                              const isRotationOpen = rotationInputId === el.id;
-                              const isNearTop = el.y < 160;
-                              const isNearBottom = (el.y + el.h) > (canvasHeightMm / 10 - 70);
-
-                              let isToolbarTop = !isNearBottom;
-                              if (isRotationOpen && !isNearTop) {
-                                isToolbarTop = false;
-                              }
-
-                              return (
-                                <div
-                                  className="absolute left-1/2 flex items-center gap-1.5 bg-white/95 dark:bg-zinc-900/95 text-zinc-800 dark:text-zinc-100 px-3.5 py-1.5 rounded-full shadow-lg shadow-purple-950/10 border border-white/80 dark:border-zinc-700/80 z-50 pointer-events-auto select-none backdrop-blur-md"
-                                  style={{
-                                    top: isToolbarTop ? '100%' : undefined,
-                                    bottom: !isToolbarTop ? '100%' : undefined,
-                                    marginTop: isToolbarTop ? `${14 * scaleInv}px` : undefined,
-                                    marginBottom: !isToolbarTop ? `${14 * scaleInv}px` : undefined,
-                                    transform: `translate(-50%, 0) rotate(${-el.rotation}deg) scaleX(${el.isFlippedH ? -1 : 1}) scaleY(${el.isFlippedV ? -1 : 1}) scale(${scaleInv})`,
-                                    transformOrigin: isToolbarTop ? 'top center' : 'bottom center',
-                                    WebkitFontSmoothing: 'antialiased'
-                                  }}
-                                >
-                                  {/* Lock Toggle */}
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, isLocked: !item.isLocked } : item));
-                                    }}
-                                    className="p-1.5 rounded-full hover:bg-amber-500/20 active:scale-90 transition-all cursor-pointer flex items-center justify-center group"
-                                    title={el.isLocked ? "Разблокировать" : "Заблокировать"}
-                                  >
-                                    {el.isLocked ? (
-                                      <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400 stroke-[2.3] group-hover:scale-110 transition-transform" />
-                                    ) : (
-                                      <Unlock className="w-4 h-4 text-emerald-600 dark:text-emerald-400 stroke-[2.3] group-hover:scale-110 transition-transform" />
-                                    )}
-                                  </button>
-
-                                  {/* Copy/Duplicate */}
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleDuplicateElement(el);
-                                    }}
-                                    className="p-1.5 rounded-full hover:bg-purple-500/20 active:scale-90 transition-all cursor-pointer flex items-center justify-center group"
-                                    title="Копировать"
-                                  >
-                                    <Copy className="w-4 h-4 text-[#5B3E88] dark:text-purple-300 stroke-[2.3] group-hover:scale-110 transition-transform" />
-                                  </button>
-
-                                  <div className="w-[1px] h-4 bg-purple-300/50 dark:bg-zinc-700 mx-0.5 shrink-0" />
-
-                                  {/* Delete/Trash */}
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      updateActiveSceneElements(prev => prev.filter(item => item.id !== el.id));
-                                      setSelectedId(null);
-                                      showToast('Удалено', 'Элемент удален со сцены.', 'info');
-                                    }}
-                                    className="p-1.5 rounded-full hover:bg-rose-500/20 active:scale-90 transition-all cursor-pointer flex items-center justify-center group"
-                                    title="Удалить со сцены"
-                                  >
-                                    <Trash2 className="w-4 h-4 text-rose-500 dark:text-rose-400 stroke-[2.3] group-hover:scale-110 transition-transform" />
-                                  </button>
-                                </div>
-                              );
-                            })()}
                           </>
                         );
                       })()}
                     </div>
-                  );
-                })}
+
+                    {/* UNROTATED FLOATING QUICK TOOLBAR (Canvas Level - Always Horizontal & Below/Above Bounding Box) */}
+                    {isSelected && selectedIds.length === 1 && (() => {
+                      const rad = (el.rotation || 0) * Math.PI / 180;
+                      const cos = Math.cos(rad);
+                      const sin = Math.sin(rad);
+
+                      const halfW = el.w / 2;
+                      const halfH = el.h / 2;
+
+                      const localCorners = [
+                        { x: -halfW, y: -halfH },
+                        { x: halfW, y: -halfH },
+                        { x: halfW, y: halfH },
+                        { x: -halfW, y: halfH }
+                      ];
+
+                      const rotatedYCorners = localCorners.map(pt => (pt.x * sin) + (pt.y * cos));
+
+                      const centerAbsX = el.x + halfW;
+                      const centerAbsY = el.y + halfH;
+
+                      const boxMinY = centerAbsY + Math.min(...rotatedYCorners);
+                      const boxMaxY = centerAbsY + Math.max(...rotatedYCorners);
+
+                      const currentScale = canvasScale * zoomScale;
+                      const scaleInv = 1 / (currentScale || 1);
+
+                      const canvasMaxY = canvasHeightMm / 10;
+                      const toolbarHeight = 44 * scaleInv;
+
+                      // Check if placing below boxMaxY overflows bottom canvas boundary
+                      const overflowBottom = (boxMaxY + toolbarHeight + 16 * scaleInv) > canvasMaxY;
+                      // Check if placing above boxMinY overflows top canvas boundary
+                      const overflowTop = (boxMinY - toolbarHeight - 16 * scaleInv) < 0;
+
+                      // Default: ALWAYS show below. Move to top ONLY if it overflows bottom AND has space at top.
+                      let showBelow = true;
+                      if (overflowBottom && !overflowTop) {
+                        showBelow = false;
+                      }
+
+                      const targetY = showBelow ? boxMaxY : boxMinY;
+
+                      // Extra vertical offset: 16px below boxMaxY, or -38px above boxMinY (so it stays clear of rotation handle)
+                      const gapPx = (showBelow ? 16 : -38) * scaleInv;
+
+                      return (
+                        <div
+                          className="absolute z-50 pointer-events-auto select-none flex items-center gap-1.5 bg-white/95 dark:bg-zinc-900/95 text-zinc-800 dark:text-zinc-100 px-3 h-8 sm:h-9 rounded-full shadow-lg shadow-purple-950/10 border border-white/80 dark:border-zinc-700/80 backdrop-blur-md"
+                          style={{
+                            left: `${centerAbsX}px`,
+                            top: `${targetY}px`,
+                            transform: `translate(-50%, ${showBelow ? '0%' : '-100%'}) translateY(${gapPx}px) scale(${scaleInv})`,
+                            transformOrigin: showBelow ? 'top center' : 'bottom center',
+                            WebkitFontSmoothing: 'antialiased'
+                          }}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {/* Lock Toggle */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, isLocked: !item.isLocked } : item));
+                            }}
+                            className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-full hover:bg-amber-500/20 active:scale-90 transition-all cursor-pointer flex items-center justify-center shrink-0 group"
+                            title={el.isLocked ? "Разблокировать" : "Заблокировать"}
+                          >
+                            {el.isLocked ? (
+                              <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600 dark:text-amber-400 stroke-[2.3] group-hover:scale-110 transition-transform" />
+                            ) : (
+                              <Unlock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600 dark:text-emerald-400 stroke-[2.3] group-hover:scale-110 transition-transform" />
+                            )}
+                          </button>
+
+                          {/* Copy/Duplicate */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDuplicateElement(el);
+                            }}
+                            className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-full hover:bg-purple-500/20 active:scale-90 transition-all cursor-pointer flex items-center justify-center shrink-0 group"
+                            title="Копировать"
+                          >
+                            <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#5B3E88] dark:text-purple-300 stroke-[2.3] group-hover:scale-110 transition-transform" />
+                          </button>
+
+                          <div className="w-[1px] h-3.5 sm:h-4 bg-purple-300/50 dark:bg-zinc-700 mx-0.5 shrink-0" />
+
+                          {/* Delete/Trash */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateActiveSceneElements(prev => prev.filter(item => item.id !== el.id));
+                              setSelectedId(null);
+                              showToast('Удалено', 'Элемент удален со сцены.', 'info');
+                            }}
+                            className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-full hover:bg-rose-500/20 active:scale-90 transition-all cursor-pointer flex items-center justify-center shrink-0 group"
+                            title="Удалить со сцены"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-rose-500 dark:text-rose-400 stroke-[2.3] group-hover:scale-110 transition-transform" />
+                          </button>
+                        </div>
+                      );
+                    })()}
+                  </React.Fragment>
+                );
+              })}
 
                 {/* MULTI-SELECT GROUP BOUNDING BOX */}
                 {selectedIds.length > 1 && (() => {
@@ -6373,29 +6406,6 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                             className="w-11 sm:w-14 text-center font-bold text-xs bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full px-1 py-0.5 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#5B3E88] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                           />
                         </div>
-                        {selectedElem && (
-                          <div className="flex items-center gap-1 pl-1.5 border-l border-zinc-200 dark:border-zinc-700">
-                            <span className="hidden sm:inline-block text-[11px] font-extrabold text-zinc-600 dark:text-zinc-300 whitespace-nowrap">
-                              Подпись:
-                            </span>
-                            <input
-                              type="text"
-                              placeholder="Подпись..."
-                              value={(
-                                selectedElem.caption &&
-                                selectedElem.caption !== selectedElem.name &&
-                                !selectedElem.caption.startsWith('Загружен в') &&
-                                !selectedElem.caption.startsWith('Пакетная') &&
-                                !selectedElem.caption.includes('каркас для украшения')
-                              ) ? selectedElem.caption : ''}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, caption: val } : item));
-                              }}
-                              className="w-20 sm:w-28 text-center font-bold text-xs bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full px-2 py-0.5 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#8C52D0]"
-                            />
-                          </div>
-                        )}
                       </div>
                     ) : (
                       <div className="flex items-center gap-1">
