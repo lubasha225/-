@@ -3701,7 +3701,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
   };
 
   return (
-    <div className="flex-1 min-h-0 min-w-0 h-full pb-0.5 print:pb-0 grid grid-cols-1 md:grid-cols-12 gap-1.5 sm:gap-3 print:hidden" onMouseMove={handleCanvasMouseMove} onMouseUp={handleCanvasMouseUp}>
+    <div className="flex-1 min-h-0 min-w-0 h-full pb-0.5 print:pb-0 grid grid-cols-1 landscape:md:grid-cols-12 xl:grid-cols-12 gap-1.5 sm:gap-3 print:hidden" onMouseMove={handleCanvasMouseMove} onMouseUp={handleCanvasMouseUp}>
       {/* Hidden File Input for Backdrop Image Upload */}
       <input
         type="file"
@@ -3713,7 +3713,9 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
       
       {/* LEFT COLUMN: ACTIVE WORKSPACE & HEADER */}
       <div className={`flex flex-col gap-1 sm:gap-2.5 h-full min-h-0 min-w-0 transition-all duration-300 ${
-        isRightToolbarCollapsed ? 'md:col-span-12' : 'md:col-span-7 lg:col-span-8'
+        isRightToolbarCollapsed
+          ? 'col-span-1 landscape:md:col-span-12 xl:col-span-12'
+          : 'col-span-1 landscape:md:col-span-7 xl:col-span-8'
       }`}>
 
         {/* TOP EDITOR HEADER BAR - WITH ELEGANT PADDING */}
@@ -3792,7 +3794,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
               </button>
 
               {mobileNavButton && (
-                <div className="md:hidden shrink-0">
+                <div className="landscape:md:hidden xl:hidden shrink-0">
                   {mobileNavButton}
                 </div>
               )}
@@ -3929,7 +3931,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                   {isRightToolbarCollapsed && (
                     <button
                       onClick={() => setIsRightToolbarCollapsed(false)}
-                      className="px-3.5 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-md hover:opacity-90 flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer active:scale-95 animate-fadeIn"
+                      className="hidden landscape:md:flex xl:flex px-3.5 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-md hover:opacity-90 items-center gap-1.5 text-xs font-bold transition-all cursor-pointer active:scale-95 animate-fadeIn"
                       title="Развернуть боковую панель (Библиотека и элементы)"
                     >
                       <BookOpen className="w-3.5 h-3.5 text-white shrink-0" />
@@ -6327,9 +6329,9 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                       )}
                     </AnimatePresence>
 
-                    {/* FLOATING PILL BAR WITH 2 TABS WHEN CLOSED (MOBILE ONLY) */}
+                    {/* FLOATING PILL BAR WITH 2 TABS WHEN CLOSED (MOBILE & TABLET PORTRAIT) */}
                     {!mobileDrawerTab && (
-                      <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-30 pointer-events-auto flex md:hidden items-center justify-center">
+                      <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-30 pointer-events-auto flex landscape:md:hidden xl:hidden items-center justify-center">
                         <div className="p-1 bg-white/85 dark:bg-zinc-900/85 backdrop-blur-md rounded-full border border-white/80 dark:border-zinc-700/60 shadow-lg flex items-center gap-1.5 text-xs">
                           <button
                             onClick={() => {
@@ -6637,9 +6639,9 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
           })()}
         </div>
 
-        {/* RIGHT COLUMN: CONTROL SIDE PANEL (30% WIDTH) - DESKTOP & TABLET */}
+        {/* RIGHT COLUMN: CONTROL SIDE PANEL - DESKTOP & TABLET LANDSCAPE */}
         {!isRightToolbarCollapsed && (
-          <div className="hidden md:flex md:col-span-5 lg:col-span-4 flex-col bg-white/70 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-xs backdrop-blur-md h-full min-h-0 min-w-0 transition-all duration-300 animate-fadeIn">
+          <div className="hidden landscape:md:flex xl:flex landscape:md:col-span-5 xl:col-span-4 flex-col bg-white/70 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-xs backdrop-blur-md h-full min-h-0 min-w-0 transition-all duration-300 animate-fadeIn">
             
             {/* TAB BAR SELECTORS WITH COLLAPSE BUTTON */}
             <div className="p-1.5 bg-zinc-100/90 dark:bg-zinc-900/60 rounded-full m-3 mb-0 flex items-center gap-1 border border-zinc-200/60 dark:border-zinc-800/60 shrink-0">
