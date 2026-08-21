@@ -21,6 +21,7 @@ export interface BgPreset {
   previewCss: string;
   lightBg: string;
   darkBg: string;
+  hideBlobs?: boolean;
   spots?: {
     s1: string;
     s2: string;
@@ -145,6 +146,17 @@ export const COLOR_SCHEMES: ColorScheme[] = [
 ];
 
 export const BG_PRESETS: BgPreset[] = [
+  // Чистый серый градиент без пятен (Универсальный 5-й пресет для всех тем)
+  {
+    id: 'bg-pure-grey-gradient',
+    name: 'Серый градиент (Без пятен)',
+    type: 'gradient',
+    hideBlobs: true,
+    previewCss: 'linear-gradient(145deg, #8E8E93 0%, #3A3A3C 100%)',
+    lightBg: 'linear-gradient(145deg, #FAFAFC 0%, #EEEEF2 50%, #DFE1E6 100%)',
+    darkBg: 'linear-gradient(145deg, #323236 0%, #202024 50%, #111114 100%)',
+  },
+
   // Ежевика (Blackberry / Purple) Presets
   {
     id: 'bg-blackberry-gradient-1',
@@ -471,6 +483,44 @@ export const BG_PRESETS: BgPreset[] = [
     previewCss: '#F4F2F7',
     lightBg: '#F4F2F7',
     darkBg: '#08020F',
+  },
+
+  // Графит / Монохром (Graphite / Monochrome Grey Gradient) Presets
+  {
+    id: 'bg-graphite-gradient',
+    name: 'Серый градиент (Без акцентов)',
+    schemeId: 'graphite',
+    type: 'gradient',
+    previewCss: 'linear-gradient(145deg, #71717A 0%, #27272A 100%)',
+    lightBg: 'linear-gradient(145deg, #F4F4F5 0%, #E4E4E7 50%, #D4D4D8 100%)',
+    darkBg: 'linear-gradient(145deg, #27272A 0%, #18181B 50%, #09090B 100%)',
+  },
+  {
+    id: 'bg-graphite-deep',
+    name: 'Графитовая глубина',
+    schemeId: 'graphite',
+    type: 'gradient',
+    previewCss: 'radial-gradient(at 0% 0%, #52525B 0px, transparent 60%), radial-gradient(at 100% 100%, #18181B 0px, transparent 60%), #27272A',
+    lightBg: 'radial-gradient(at 0% 0%, rgba(212, 212, 216, 0.7) 0px, transparent 60%), radial-gradient(at 100% 100%, rgba(161, 161, 170, 0.5) 0px, transparent 60%), #F4F4F5',
+    darkBg: 'radial-gradient(at 0% 0%, rgba(63, 63, 70, 0.7) 0px, transparent 60%), radial-gradient(at 100% 100%, rgba(24, 24, 27, 0.9) 0px, transparent 60%), #09090B',
+  },
+  {
+    id: 'bg-graphite-enhancing',
+    name: 'Монохромный контраст',
+    schemeId: 'graphite',
+    type: 'enhancing',
+    previewCss: 'linear-gradient(135deg, #52525B 0%, #18181B 100%)',
+    lightBg: 'linear-gradient(135deg, #E4E4E7 0%, #D4D4D8 100%)',
+    darkBg: 'linear-gradient(135deg, #27272A 0%, #09090B 100%)',
+  },
+  {
+    id: 'bg-graphite-pastel',
+    name: 'Пастельный серый (Монохром)',
+    schemeId: 'graphite',
+    type: 'pastel',
+    previewCss: '#E4E4E7',
+    lightBg: '#F4F4F5',
+    darkBg: '#121214',
   },
 
   // Classic Universal Preset

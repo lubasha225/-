@@ -278,50 +278,52 @@ const CategoryIcon: React.FC<{
           maskRepeat: 'no-repeat',
           WebkitMaskRepeat: 'no-repeat',
         }}
-        className="w-5 h-5 bg-[#8C52D0] dark:bg-[var(--lavenderAccent)] transition-transform group-hover:scale-110 shrink-0"
+        className="w-5 h-5 bg-[var(--lavDeep)] dark:bg-[var(--lavenderAccent)] transition-transform group-hover:scale-110 shrink-0"
         role="img"
         aria-label={cat.title}
       />
     );
   }
 
+  const iconClass = "w-5 h-5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]";
+
   // Fallback to default Lucide icons
   switch (cat.id) {
-    case 'favorites': return <Heart className={`w-5 h-5 ${isSelected ? 'fill-[#8C52D0] text-[#8C52D0]' : 'text-[#8C52D0] fill-[#8C52D0]'}`} />;
-    case 'warehouse': return <Box className="w-5 h-5 text-[#8C52D0]" />;
-    case 'construction': return <Layers className="w-5 h-5 text-[#8C52D0]" />;
-    case 'podiums': return <Columns className="w-5 h-5 text-[#8C52D0]" />;
-    case 'textiles': return <AlignLeft className="w-5 h-5 text-[#8C52D0]" />;
-    case 'flowers': return <Flower2 className="w-5 h-5 text-[#8C52D0]" />;
-    case 'balloons': return <CircleDot className="w-5 h-5 text-[#8C52D0]" />;
-    case 'decor': return <Compass className="w-5 h-5 text-[#8C52D0]" />;
-    case 'sequins': return <Sparkles className="w-5 h-5 text-[#8C52D0]" />;
-    case 'light': return <Lightbulb className="w-5 h-5 text-[#8C52D0]" />;
-    case 'furniture': return <TableIcon className="w-5 h-5 text-[#8C52D0]" />;
-    case 'tableware': return <Utensils className="w-5 h-5 text-[#8C52D0]" />;
-    case 'themes': return <Palette className="w-5 h-5 text-[#8C52D0]" />;
-    case 'text': return <Type className="w-5 h-5 text-[#8C52D0]" />;
+    case 'favorites': return <Heart className={`w-5 h-5 ${isSelected ? 'fill-[var(--lavDeep)] text-[var(--lavDeep)] dark:fill-[var(--lavenderAccent)] dark:text-[var(--lavenderAccent)]' : 'text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]'}`} />;
+    case 'warehouse': return <Box className={iconClass} />;
+    case 'construction': return <Layers className={iconClass} />;
+    case 'podiums': return <Columns className={iconClass} />;
+    case 'textiles': return <AlignLeft className={iconClass} />;
+    case 'flowers': return <Flower2 className={iconClass} />;
+    case 'balloons': return <CircleDot className={iconClass} />;
+    case 'decor': return <Compass className={iconClass} />;
+    case 'sequins': return <Sparkles className={iconClass} />;
+    case 'light': return <Lightbulb className={iconClass} />;
+    case 'furniture': return <TableIcon className={iconClass} />;
+    case 'tableware': return <Utensils className={iconClass} />;
+    case 'themes': return <Palette className={iconClass} />;
+    case 'text': return <Type className={iconClass} />;
     // Legacy & Schema categories
-    case 'arches': return <Layers className="w-5 h-5 text-[#8C52D0]" />;
-    case 'stands': return <Columns className="w-5 h-5 text-[#8C52D0]" />;
-    case 'tables': return <TableIcon className="w-5 h-5 text-[#8C52D0]" />;
-    case 'screens': return <GridIcon className="w-5 h-5 text-[#8C52D0]" />;
-    case 'compositions': return <Sparkles className="w-5 h-5 text-[#8C52D0]" />;
-    case 'vases': return <Tag className="w-5 h-5 text-[#8C52D0]" />;
-    case 'details': return <Compass className="w-5 h-5 text-[#8C52D0]" />;
-    case 'schema_furniture': return <Bookmark className="w-5 h-5 text-[#8C52D0]" />;
-    case 'schema_podiums': return <Columns className="w-5 h-5 text-[#8C52D0]" />;
-    case 'schema_compositions': return <GridIcon className="w-5 h-5 text-[#8C52D0]" />;
-    case 'schema_balloons': return <CircleDot className="w-5 h-5 text-[#8C52D0]" />;
-    case 'schema_flowers': return <Flower2 className="w-5 h-5 text-[#8C52D0]" />;
-    case 'schema_textiles': return <AlignLeft className="w-5 h-5 text-[#8C52D0]" />;
-    case 'schema_neon': return <Type className="w-5 h-5 text-[#8C52D0]" />;
-    case 'schema_light': return <Lightbulb className="w-5 h-5 text-[#8C52D0]" />;
-    case 'schema_electricity': return <Zap className="w-5 h-5 text-[#8C52D0]" />;
-    case 'schema_pathways': return <AlignJustify className="w-5 h-5 text-[#8C52D0]" />;
-    case 'schema_shapes': return <Shapes className="w-5 h-5 text-[#8C52D0]" />;
-    case 'schema_entrance_exit': return <DoorOpen className="w-5 h-5 text-[#8C52D0]" />;
-    default: return <Tag className="w-5 h-5 text-[#8C52D0]" />;
+    case 'arches': return <Layers className={iconClass} />;
+    case 'stands': return <Columns className={iconClass} />;
+    case 'tables': return <TableIcon className={iconClass} />;
+    case 'screens': return <GridIcon className={iconClass} />;
+    case 'compositions': return <Sparkles className={iconClass} />;
+    case 'vases': return <Tag className={iconClass} />;
+    case 'details': return <Compass className={iconClass} />;
+    case 'schema_furniture': return <Bookmark className={iconClass} />;
+    case 'schema_podiums': return <Columns className={iconClass} />;
+    case 'schema_compositions': return <GridIcon className={iconClass} />;
+    case 'schema_balloons': return <CircleDot className={iconClass} />;
+    case 'schema_flowers': return <Flower2 className={iconClass} />;
+    case 'schema_textiles': return <AlignLeft className={iconClass} />;
+    case 'schema_neon': return <Type className={iconClass} />;
+    case 'schema_light': return <Lightbulb className={iconClass} />;
+    case 'schema_electricity': return <Zap className={iconClass} />;
+    case 'schema_pathways': return <AlignJustify className={iconClass} />;
+    case 'schema_shapes': return <Shapes className={iconClass} />;
+    case 'schema_entrance_exit': return <DoorOpen className={iconClass} />;
+    default: return <Tag className={iconClass} />;
   }
 };
 
@@ -543,7 +545,7 @@ const SCHEMA_LIBRARY_ITEMS: LibraryItem[] = [
     width: 85,
     height: 45,
     caption: "Буквы",
-    svgMarkup: `<svg viewBox="0 0 85 45" class="w-full h-full"><rect x="4" y="4" width="77" height="37" rx="5" fill="#F8FAFC" stroke="#8C52D0" stroke-width="2"/><text x="42.5" y="28" font-family="sans-serif" font-size="16" font-weight="800" fill="#8C52D0" text-anchor="middle" letter-spacing="3">A &amp; B</text></svg>`
+    svgMarkup: `<svg viewBox="0 0 85 45" class="w-full h-full"><rect x="4" y="4" width="77" height="37" rx="5" fill="#F8FAFC" stroke="var(--lavDeep, #8C52D0)" stroke-width="2"/><text x="42.5" y="28" font-family="sans-serif" font-size="16" font-weight="800" fill="var(--lavDeep, #8C52D0)" text-anchor="middle" letter-spacing="3">A &amp; B</text></svg>`
   },
   {
     id: "schema-neon-flex",
@@ -1097,18 +1099,18 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
   const [activeSidebarTab, setActiveSidebarTab] = useState<'library' | 'layers'>('library');
 
   // Selected Project and Data binding
-  const [activeProjectId, setActiveProjectId] = useState<string>(initialProjectId || projects[0]?.id || '');
+  const [activeProjectId, setActiveProjectId] = useState<string>(initialProjectId || '');
 
   useEffect(() => {
-    if (initialProjectId) {
-      setActiveProjectId(initialProjectId);
+    if (initialProjectId !== undefined) {
+      setActiveProjectId(initialProjectId || '');
     }
   }, [initialProjectId]);
   const currentProject = projects.find(p => p.id === activeProjectId);
 
   // Core Scenes for the 2D collage workspace
   const [scenes, setScenes] = useState<EditorScene[]>(() => {
-    const proj = projects.find(p => p.id === (initialProjectId || projects[0]?.id || ''));
+    const proj = activeProjectId ? projects.find(p => p.id === activeProjectId) : (initialProjectId ? projects.find(p => p.id === initialProjectId) : null);
     let baseScenes = (proj?.scenesData && proj.scenesData.length > 0)
       ? [...proj.scenesData]
       : [
@@ -1196,51 +1198,48 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
   // Seating Arrangement Floor Plan
   const [floorPlanElements, setFloorPlanElements] = useState<PlanElement[]>(() => {
-    const proj = projects.find(p => p.id === (initialProjectId || projects[0]?.id || ''));
+    const proj = activeProjectId ? projects.find(p => p.id === activeProjectId) : (initialProjectId ? projects.find(p => p.id === initialProjectId) : null);
     return proj?.floorPlanData || [];
   });
 
   // Track loaded project ID to re-sync canvas scenes when changing active project
-  const loadedProjectIdRef = useRef<string | null>(initialProjectId || projects[0]?.id || null);
+  const loadedProjectIdRef = useRef<string | null>(initialProjectId || null);
 
   useEffect(() => {
-    if (!activeProjectId) return;
     if (loadedProjectIdRef.current !== activeProjectId) {
-      loadedProjectIdRef.current = activeProjectId;
+      loadedProjectIdRef.current = activeProjectId || null;
       setIsLeftToolbarCollapsed(true);
       setIsRightToolbarCollapsed(false);
-      const proj = projects.find(p => p.id === activeProjectId);
-      if (proj) {
-        let loadedScenes = (proj.scenesData && proj.scenesData.length > 0)
-          ? [...proj.scenesData]
-          : [
-              {
-                id: 'scene-1',
-                name: 'Визуализация 1',
-                elements: [],
-                backdropImage: '',
-                backdropColor: '#F3F4F6',
-                backdropType: 'color'
-              }
-            ];
-        if (!loadedScenes.some(s => s.id === 'floorplan')) {
-          loadedScenes.push({
-            id: 'floorplan',
-            name: 'Схема расстановки',
-            elements: [],
-            backdropImage: '',
-            backdropColor: '#F3F4F6',
-            backdropType: 'color'
-          });
-        }
-        setScenes(loadedScenes);
-        setActiveWorkspaceTab(prev => (loadedScenes.some(s => s.id === prev)) ? prev : loadedScenes[0].id);
+      const proj = activeProjectId ? projects.find(p => p.id === activeProjectId) : null;
+      let loadedScenes = (proj?.scenesData && proj.scenesData.length > 0)
+        ? [...proj.scenesData]
+        : [
+            {
+              id: 'scene-1',
+              name: 'Визуализация 1',
+              elements: [],
+              backdropImage: '',
+              backdropColor: '#F3F4F6',
+              backdropType: 'color'
+            }
+          ];
+      if (!loadedScenes.some(s => s.id === 'floorplan')) {
+        loadedScenes.push({
+          id: 'floorplan',
+          name: 'Схема расстановки',
+          elements: [],
+          backdropImage: '',
+          backdropColor: '#F3F4F6',
+          backdropType: 'color'
+        });
+      }
+      setScenes(loadedScenes);
+      setActiveWorkspaceTab(prev => (loadedScenes.some(s => s.id === prev)) ? prev : loadedScenes[0].id);
 
-        if (proj.floorPlanData) {
-          setFloorPlanElements(proj.floorPlanData);
-        } else {
-          setFloorPlanElements([]);
-        }
+      if (proj?.floorPlanData) {
+        setFloorPlanElements(proj.floorPlanData);
+      } else {
+        setFloorPlanElements([]);
       }
     }
   }, [activeProjectId, projects]);
@@ -1268,6 +1267,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
   // Active popovers & adjustment floating tools
   const [activeToolPopover, setActiveToolPopover] = useState<'group' | 'layers' | 'flip' | null>(null);
+  const [showQuickLayerMenu, setShowQuickLayerMenu] = useState<boolean>(false);
   const [activeFilterTool, setActiveFilterTool] = useState<'brightness' | 'contrast' | 'saturate' | 'hue' | 'opacity' | 'temp' | 'zoom' | 'recolor' | 'shadow' | null>(null);
   const [mobileDrawerTab, setMobileDrawerTab] = useState<'library' | 'layers' | null>(null);
   const [isBackdropPopoverOpen, setIsBackdropPopoverOpen] = useState<boolean>(false);
@@ -2012,7 +2012,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
           const isImg = item.imageUrl && (item.imageUrl.startsWith('data:') || item.imageUrl.startsWith('http'));
           const markup = isImg
             ? `<img src="${item.imageUrl}" alt="${item.name}" class="w-full h-full object-contain pointer-events-none" />`
-            : item.imageUrl || `<svg viewBox="0 0 100 100" class="w-full h-full"><rect width="100" height="100" fill="#F3E8FF"/><text x="50" y="55" text-anchor="middle" font-size="12" fill="#8C52D0">${item.name}</text></svg>`;
+            : item.imageUrl || `<svg viewBox="0 0 100 100" class="w-full h-full"><rect width="100" height="100" fill="#F3E8FF"/><text x="50" y="55" text-anchor="middle" font-size="12" fill="var(--lavDeep, #8C52D0)">${item.name}</text></svg>`;
 
           return {
             id: item.id,
@@ -3226,10 +3226,10 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
               deselectAllAndTools();
               setIsAiModalOpen(true);
             }}
-            style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
-            className="flex items-center justify-center gap-1.5 px-3.5 h-9 rounded-full text-white text-xs font-bold hover:opacity-90 transition-all shadow-md shadow-[#582F89]/20 cursor-pointer whitespace-nowrap shrink-0 border border-purple-300/20 active:scale-95"
+            style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
+            className="flex items-center justify-center gap-1.5 px-3.5 h-9 rounded-full text-white text-xs font-semibold hover:opacity-90 transition-all shadow-xs cursor-pointer whitespace-nowrap shrink-0 active:scale-95"
           >
-            <Sparkles className="w-3.5 h-3.5 shrink-0 text-white fill-white animate-pulse" />
+            <Sparkles className="w-3.5 h-3.5 shrink-0 text-white fill-white" />
             <span className="whitespace-nowrap">ИИ макет</span>
           </button>
           
@@ -3239,12 +3239,12 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
             title="Автосохранение каждые 5 мин. Нажмите для ручного сохранения."
             className={`flex items-center justify-center gap-1.5 px-3.5 h-9 rounded-full text-xs font-semibold transition-all shadow-xs cursor-pointer whitespace-nowrap shrink-0 border ${
               isSaving
-                ? 'bg-purple-50 dark:bg-purple-950/40 border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300'
+                ? 'bg-[var(--lavenderSoft)] border-[var(--lavenderAccent)]/40 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]'
                 : 'bg-white dark:bg-zinc-900 hover:bg-zinc-50 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-200'
             }`}
           >
             {isSaving ? (
-              <Loader2 className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 animate-spin shrink-0" />
+              <Loader2 className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] animate-spin shrink-0" />
             ) : (
               <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
             )}
@@ -3324,7 +3324,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         }}
                         className={`w-full py-2 px-1 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer border group ${
                           isSelected
-                            ? 'bg-[#EAE4F8] text-[#5B3E88] border-[#D4C5ED] dark:bg-purple-950 dark:text-purple-200 dark:border-purple-800 shadow-xs'
+                            ? 'bg-[var(--lavenderSoft)] text-[var(--lavDeep)] border-[var(--lavenderAccent)]/40 dark:text-[var(--lavenderAccent)] shadow-xs'
                             : 'bg-transparent hover:bg-white/70 dark:hover:bg-zinc-800/70 border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
                         }`}
                         title={cat.title}
@@ -3333,7 +3333,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                           <CategoryIcon cat={cat} isSelected={isSelected} />
                         </div>
                         <span className={`text-[10px] leading-tight text-center truncate max-w-full px-0.5 tracking-tight ${
-                          isSelected ? 'font-bold text-[#5B3E88] dark:text-purple-200' : 'font-medium text-zinc-600 dark:text-zinc-400'
+                          isSelected ? 'font-bold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]' : 'font-medium text-zinc-600 dark:text-zinc-400'
                         }`}>
                           {cat.title}
                         </span>
@@ -3349,7 +3349,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                 <div className="pt-1 border-t border-zinc-200/60 dark:border-zinc-800 mt-0.5 w-full flex justify-center">
                   <button
                     onClick={() => setShowCategoryIconManager(true)}
-                    className="w-full py-1.5 px-0.5 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer bg-white/60 dark:bg-zinc-800/60 text-zinc-400 hover:text-[#5B3E88] dark:hover:text-purple-300 hover:bg-white dark:hover:bg-zinc-800 border border-transparent hover:border-purple-200/50"
+                    className="w-full py-1.5 px-0.5 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer bg-white/60 dark:bg-zinc-800/60 text-zinc-400 hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] hover:bg-white dark:hover:bg-zinc-800 border border-transparent hover:border-[var(--lavenderAccent)]/30"
                     title="Управление иконками категорий (папка /public/category-icons/)"
                   >
                     <Sliders className="w-4 h-4 mb-0.5" />
@@ -3372,7 +3372,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                           e.dataTransfer.effectAllowed = 'copy';
                         }}
                         onClick={() => setItemToPreview(item)}
-                        className="group relative aspect-square w-full rounded-2xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-[#5B3E88] hover:shadow-md cursor-grab active:cursor-grabbing transition-all p-1.5 flex items-center justify-center overflow-hidden"
+                        className="group relative aspect-square w-full rounded-2xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-[var(--lavenderAccent)] hover:shadow-md cursor-grab active:cursor-grabbing transition-all p-1.5 flex items-center justify-center overflow-hidden"
                         title={`${item.name} (нажмите для просмотра или перетащите на холст)`}
                       >
                         {/* Overlay Header Mini Actions */}
@@ -3389,7 +3389,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                               e.stopPropagation();
                               setItemToPreview(item);
                             }}
-                            className="p-1 rounded-full bg-[#EAE4F8] dark:bg-purple-950 text-[#5B3E88] dark:text-purple-300 hover:scale-110 transition-transform cursor-pointer pointer-events-auto shadow-2xs"
+                            className="p-1 rounded-full bg-[var(--lavenderSoft)] text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:scale-110 transition-transform cursor-pointer pointer-events-auto shadow-2xs"
                             title="Открыть просмотр и добавить"
                           >
                             <Plus className="w-3 h-3" />
@@ -3419,23 +3419,28 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
         )}
 
         {/* TAB 2: SCENE ELEMENTS / LAYERS LIST */}
-        {targetTab === 'layers' && (
+        {targetTab === 'layers' && (() => {
+          // Filter out measurements — measurements are auxiliary tools and shouldn't appear in elements list or price
+          const decorElements = activeScene.elements.filter(el => el.type !== 'measurement');
+          const totalDecorPrice = decorElements.reduce((sum, item) => sum + (item.price || 0), 0);
+
+          return (
           <div className="flex flex-col gap-2 flex-1 min-h-0 min-w-0 overflow-x-hidden">
             <div className="flex items-center justify-between px-1 shrink-0">
-              <span className="text-xs font-bold text-zinc-500">Слои декора ({activeScene.elements.length})</span>
+              <span className="text-xs font-bold text-zinc-500">Слои декора ({decorElements.length})</span>
               <span className="text-[10px] text-zinc-400">Перетащите для порядка</span>
             </div>
 
             <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 min-h-0">
-              {activeScene.elements.length === 0 ? (
+              {decorElements.length === 0 ? (
                 <div className="py-12 text-center text-xs text-zinc-400 space-y-2">
                   <Box className="w-6 h-6 mx-auto text-zinc-300 dark:text-zinc-700" />
                   <p>На сцене пока нет декораций.</p>
                   <p className="text-[10px] text-zinc-400">Выберите элемент из Библиотеки слева для размещения.</p>
                 </div>
               ) : (
-                [...activeScene.elements].reverse().map((el, revIdx) => {
-                  const actualIdx = activeScene.elements.length - 1 - revIdx;
+                [...decorElements].reverse().map((el, revIdx) => {
+                  const actualIdx = activeScene.elements.findIndex(item => item.id === el.id);
                   const isExpanded = expandedElementId === el.id;
                   const isDraggingThis = draggedLayerIdx === actualIdx;
                   const isDragOverThis = dragOverLayerIdx === actualIdx;
@@ -3474,7 +3479,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                       }}
                       className={`rounded-2xl border transition-all overflow-hidden ${
                         isDragOverThis
-                          ? 'border-[#5B3E88] dark:border-purple-400 border-2 bg-purple-50/80 dark:bg-purple-950/50 scale-[1.01]'
+                          ? 'border-[var(--lavDeep)] dark:border-[var(--lavenderAccent)] border-2 bg-[var(--lavenderSoft)] scale-[1.01]'
                           : isDraggingThis
                           ? 'opacity-40 border-dashed border-zinc-400'
                           : el.id === selectedId
@@ -3679,23 +3684,24 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
             {/* Total Cost Summary Card in bottom of Layers tab */}
             {activeWorkspaceTab !== 'floorplan' && (
               <div className="pt-2 border-t border-zinc-200/80 dark:border-zinc-800 shrink-0 mt-auto">
-                <div className="p-3 rounded-2xl bg-[#EAE4F8]/80 dark:bg-purple-950/60 border border-[#D4C5ED]/80 dark:border-purple-800/60 flex items-center justify-between shadow-2xs">
+                <div className="p-3 rounded-2xl bg-[var(--lavenderSoft)] border border-[var(--lavenderAccent)]/30 flex items-center justify-between shadow-2xs">
                   <div className="flex flex-col">
                     <span className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                      Итого элементов ({activeScene.elements.length})
+                      Итого элементов ({decorElements.length})
                     </span>
                     <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
                       Общая стоимость
                     </span>
                   </div>
-                  <span className="text-sm font-black text-[#5B3E88] dark:text-purple-300 font-mono">
-                    {activeScene.elements.reduce((sum, item) => sum + (item.price || 0), 0).toLocaleString('ru')} ₽
+                  <span className="text-sm font-black text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] font-mono">
+                    {totalDecorPrice.toLocaleString('ru')} ₽
                   </span>
                 </div>
               </div>
             )}
           </div>
-        )}
+          );
+        })()}
       </>
     );
   };
@@ -3755,13 +3761,13 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                 aria-label="Сохранить проект"
                 className={`h-9 sm:h-10 px-3 sm:px-3.5 rounded-full flex items-center gap-2 shadow-xs shrink-0 cursor-pointer transition-all border font-semibold text-xs active:scale-95 ${
                   isSaving
-                    ? 'bg-purple-50 dark:bg-purple-950/40 border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300'
+                    ? 'bg-[var(--lavenderSoft)] border-[var(--lavenderAccent)]/40 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]'
                     : 'bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border-emerald-200/80 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-300'
                 }`}
               >
                 {isSaving ? (
                   <>
-                    <Loader2 className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 animate-spin shrink-0" />
+                    <Loader2 className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] animate-spin shrink-0" />
                     <span className="hidden sm:inline">Сохранение...</span>
                     <span className="sm:hidden text-[11px]">Сохранение</span>
                   </>
@@ -3785,10 +3791,10 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                 }}
                 title="ИИ Генератор макета"
                 aria-label="ИИ макет"
-                style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
-                className="h-9 sm:h-10 px-3.5 sm:px-4 rounded-full text-white flex items-center gap-1.5 shadow-md shadow-[#582F89]/20 cursor-pointer shrink-0 hover:opacity-90 active:scale-95 transition-all border border-purple-300/20 font-bold text-xs"
+                style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
+                className="h-9 sm:h-10 px-3.5 sm:px-4 rounded-full text-white flex items-center gap-1.5 shadow-xs cursor-pointer shrink-0 hover:opacity-90 active:scale-95 transition-all font-semibold text-xs"
               >
-                <Sparkles className="w-3.5 h-3.5 text-white fill-white shrink-0 animate-pulse drop-shadow-[0_0_6px_rgba(255,255,255,0.8)]" />
+                <Sparkles className="w-3.5 h-3.5 text-white fill-white shrink-0" />
                 <span className="hidden sm:inline">ИИ макет</span>
                 <span className="sm:hidden text-[11px]">ИИ</span>
               </button>
@@ -3827,9 +3833,9 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                 <div className="relative">
                   <button
                     onClick={() => setIsVisualizationsDropdownOpen(!isVisualizationsDropdownOpen)}
-                    className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                       activeWorkspaceTab !== 'floorplan'
-                        ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-md'
+                        ? 'bg-[var(--lavenderSoft)] text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] border border-[var(--lavenderAccent)]/40 shadow-xs'
                         : 'bg-white/80 dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-200 hover:bg-white dark:hover:bg-zinc-700'
                     }`}
                   >
@@ -3854,7 +3860,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                           transition={{ duration: 0.15 }}
                           className="absolute left-0 top-full mt-1.5 w-52 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl border border-zinc-200/80 dark:border-zinc-700/80 rounded-2xl shadow-xl p-1.5 z-[90] overflow-hidden"
                         >
-                          <div className="text-[10px] uppercase font-extrabold tracking-wider text-zinc-400 px-2.5 py-1">
+                          <div className="text-[10px] uppercase font-semibold tracking-wider text-zinc-400 px-2.5 py-1">
                             Созданные визуализации
                           </div>
                           {scenes.filter(s => s.id !== 'floorplan').map((scene) => {
@@ -3869,7 +3875,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                 }}
                                 className={`w-full group px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-between cursor-pointer ${
                                   isSelected
-                                    ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-xs'
+                                    ? 'bg-[var(--lavenderSoft)] text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] shadow-xs border border-[var(--lavenderAccent)]/30'
                                     : 'text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'
                                 }`}
                               >
@@ -3883,7 +3889,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                     onClick={(e) => handleDeleteScene(scene.id, e)}
                                     className={`p-1 rounded-lg transition-colors cursor-pointer ${
                                       isSelected
-                                        ? 'text-white/80 hover:text-white hover:bg-white/20'
+                                        ? 'text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:bg-white/40'
                                         : 'text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40'
                                     }`}
                                     title="Удалить визуализацию"
@@ -3899,7 +3905,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
                           <button
                             onClick={handleAddNewScene}
-                            className="w-full text-left px-2.5 py-2 rounded-xl text-xs font-semibold text-[#8C52D0] dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 transition-all flex items-center gap-2 cursor-pointer"
+                            className="w-full text-left px-2.5 py-2 rounded-xl text-xs font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:bg-[var(--lavenderSoft)] transition-all flex items-center gap-2 cursor-pointer"
                           >
                             <Plus className="w-3.5 h-3.5" />
                             <span>Новая визуализация</span>
@@ -3915,9 +3921,9 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                     setActiveWorkspaceTab('floorplan');
                     setSelectedId(null);
                   }}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                     activeWorkspaceTab === 'floorplan'
-                      ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-md'
+                      ? 'bg-[var(--lavenderSoft)] text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] border border-[var(--lavenderAccent)]/40 shadow-xs'
                       : 'bg-white/80 dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-200 hover:bg-white dark:hover:bg-zinc-700 shadow-xs'
                   }`}
                 >
@@ -3931,7 +3937,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                   {isRightToolbarCollapsed && (
                     <button
                       onClick={() => setIsRightToolbarCollapsed(false)}
-                      className="hidden landscape:md:flex xl:flex px-3.5 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-md hover:opacity-90 items-center gap-1.5 text-xs font-bold transition-all cursor-pointer active:scale-95 animate-fadeIn"
+                      style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
+                      className="hidden landscape:md:flex xl:flex px-3.5 py-1.5 sm:py-2 rounded-full text-white shadow-xs hover:opacity-90 items-center gap-1.5 text-xs font-semibold transition-all cursor-pointer active:scale-95 animate-fadeIn"
                       title="Развернуть боковую панель (Библиотека и элементы)"
                     >
                       <BookOpen className="w-3.5 h-3.5 text-white shrink-0" />
@@ -3944,7 +3951,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                     <button
                       onClick={handleUndo}
                       disabled={historyIndex <= 0}
-                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md flex items-center justify-center transition-all cursor-pointer disabled:opacity-30 disabled:hover:shadow-none active:scale-95"
+                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:bg-white hover:shadow-md flex items-center justify-center transition-all cursor-pointer disabled:opacity-30 disabled:hover:shadow-none active:scale-95"
                       title="Отменить действие (Undo)"
                     >
                       <RotateCcw className="w-3.5 h-3.5 stroke-[2.2]" />
@@ -3953,7 +3960,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                     <button
                       onClick={handleRedo}
                       disabled={historyIndex >= history.length - 1}
-                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md flex items-center justify-center transition-all cursor-pointer disabled:opacity-30 disabled:hover:shadow-none active:scale-95"
+                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:bg-white hover:shadow-md flex items-center justify-center transition-all cursor-pointer disabled:opacity-30 disabled:hover:shadow-none active:scale-95"
                       title="Повторить действие (Redo)"
                     >
                       <RotateCw className="w-3.5 h-3.5 stroke-[2.2]" />
@@ -3969,7 +3976,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                     <div className="p-1 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md shadow-lg border border-white/80 dark:border-zinc-700/60 flex flex-col items-center pointer-events-auto animate-fadeIn">
                       <button
                         onClick={() => setIsLeftToolbarCollapsed(false)}
-                        className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white hover:opacity-90 flex items-center justify-center shadow-md cursor-pointer transition-all active:scale-95"
+                        style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
+                        className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full text-white hover:opacity-90 flex items-center justify-center shadow-xs cursor-pointer transition-all active:scale-95"
                         title="Развернуть инструменты редактирования"
                       >
                         <Sliders className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
@@ -4010,7 +4018,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
                           selectedIds.length > 1
                             ? 'bg-[var(--lavDeep)] text-white shadow-md'
-                            : 'bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:bg-white hover:shadow-md'
                         }`}
                         title="Выбрать все на холсте (общая рамка)"
                       >
@@ -4029,7 +4037,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
                           activeToolPopover === 'group'
                             ? 'bg-[var(--lavDeep)] text-white shadow-md'
-                            : 'bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:bg-white hover:shadow-md'
                         }`}
                         title="Группировка элементов"
                       >
@@ -4042,7 +4050,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                           data-tool-popover="true"
                           className="absolute left-10 sm:left-11 top-0 z-50 bg-white/60 dark:bg-zinc-900/60 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 p-2 rounded-2xl shadow-xl shadow-purple-950/10 flex flex-col gap-1 min-w-[175px] animate-fadeIn select-none backdrop-blur-md"
                         >
-                          <div className="flex items-center justify-between px-1 pb-1 border-b border-purple-200/50 dark:border-zinc-800 text-[11px] font-bold text-[#5B3E88] dark:text-purple-300">
+                          <div className="flex items-center justify-between px-1 pb-1 border-b border-[var(--lavenderAccent)]/30 dark:border-zinc-800 text-[11px] font-bold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">
                             <span>Группировка</span>
                           </div>
                           <button
@@ -4050,9 +4058,9 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                               handleGroupSelectedElements();
                               setActiveToolPopover(null);
                             }}
-                            className="w-full px-2.5 py-1.5 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-purple-100/80 dark:hover:bg-purple-900/40 hover:text-[var(--lavDeep)] dark:hover:text-purple-300 flex items-center gap-2 cursor-pointer transition-colors"
+                            className="w-full px-2.5 py-1.5 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-[var(--lavenderSoft)] hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] flex items-center gap-2 cursor-pointer transition-colors"
                           >
-                            <Group className="w-4 h-4 text-[var(--lavDeep)] dark:text-purple-400" />
+                            <Group className="w-4 h-4 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                             <span>Сгруппировать</span>
                           </button>
                           <button
@@ -4060,9 +4068,9 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                               handleUngroupSelectedElements();
                               setActiveToolPopover(null);
                             }}
-                            className="w-full px-2.5 py-1.5 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-purple-100/80 dark:hover:bg-purple-900/40 hover:text-[var(--lavDeep)] dark:hover:text-purple-300 flex items-center gap-2 cursor-pointer transition-colors"
+                            className="w-full px-2.5 py-1.5 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-[var(--lavenderSoft)] hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] flex items-center gap-2 cursor-pointer transition-colors"
                           >
-                            <Ungroup className="w-4 h-4 text-[var(--lavDeep)] dark:text-purple-400" />
+                            <Ungroup className="w-4 h-4 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                             <span>Разгруппировать</span>
                           </button>
                         </div>
@@ -4072,7 +4080,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                     {/* 3. Копировать */}
                     <button
                       onClick={handleCopySelected}
-                      className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md flex items-center justify-center transition-all cursor-pointer active:scale-95"
+                      className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:bg-white hover:shadow-md flex items-center justify-center transition-all cursor-pointer active:scale-95"
                       title="Копировать (Ctrl+C)"
                     >
                       <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
@@ -4090,7 +4098,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
                           activeToolPopover === 'layers'
                             ? 'bg-[var(--lavDeep)] text-white shadow-md'
-                            : 'bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:bg-white hover:shadow-md'
                         }`}
                         title="Слои элементов"
                       >
@@ -4103,7 +4111,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                           data-tool-popover="true"
                           className="absolute left-10 sm:left-11 top-0 z-50 bg-white/60 dark:bg-zinc-900/60 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 p-2 rounded-2xl shadow-xl shadow-purple-950/10 flex flex-col gap-1 min-w-[175px] animate-fadeIn select-none backdrop-blur-md"
                         >
-                          <div className="flex items-center justify-between px-1 pb-1 border-b border-purple-200/50 dark:border-zinc-800 text-[11px] font-bold text-[#5B3E88] dark:text-purple-300">
+                          <div className="flex items-center justify-between px-1 pb-1 border-b border-[var(--lavenderAccent)]/30 dark:border-zinc-800 text-[11px] font-bold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">
                             <span>Порядок слоев</span>
                           </div>
                           <button
@@ -4123,9 +4131,9 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                               } else showToast('Выберите элемент', 'Кликните на элемент', 'info');
                               setActiveToolPopover(null);
                             }}
-                            className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/40 hover:text-[var(--lavDeep)] dark:hover:text-purple-300 flex items-center gap-2 cursor-pointer transition-colors"
+                            className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-[var(--lavenderSoft)] hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] flex items-center gap-2 cursor-pointer transition-colors"
                           >
-                            <ArrowUpToLine className="w-4 h-4 text-[var(--lavDeep)] dark:text-purple-400" />
+                            <ArrowUpToLine className="w-4 h-4 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                             <span>На самый верх</span>
                           </button>
 
@@ -4146,9 +4154,9 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                               } else showToast('Выберите элемент', 'Кликните на элемент', 'info');
                               setActiveToolPopover(null);
                             }}
-                            className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/40 hover:text-[var(--lavDeep)] dark:hover:text-purple-300 flex items-center gap-2 cursor-pointer transition-colors"
+                            className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-[var(--lavenderSoft)] hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] flex items-center gap-2 cursor-pointer transition-colors"
                           >
-                            <ArrowUp className="w-4 h-4 text-[var(--lavDeep)] dark:text-purple-400" />
+                            <ArrowUp className="w-4 h-4 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                             <span>Поднять выше</span>
                           </button>
 
@@ -4169,9 +4177,9 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                               } else showToast('Выберите элемент', 'Кликните на элемент', 'info');
                               setActiveToolPopover(null);
                             }}
-                            className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/40 hover:text-[var(--lavDeep)] dark:hover:text-purple-300 flex items-center gap-2 cursor-pointer transition-colors"
+                            className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-[var(--lavenderSoft)] hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] flex items-center gap-2 cursor-pointer transition-colors"
                           >
-                            <ArrowDown className="w-4 h-4 text-[var(--lavDeep)] dark:text-purple-400" />
+                            <ArrowDown className="w-4 h-4 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                             <span>Опустить ниже</span>
                           </button>
 
@@ -4192,9 +4200,9 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                               } else showToast('Выберите элемент', 'Кликните на элемент', 'info');
                               setActiveToolPopover(null);
                             }}
-                            className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-900/40 hover:text-[var(--lavDeep)] dark:hover:text-purple-300 flex items-center gap-2 cursor-pointer transition-colors"
+                            className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-[var(--lavenderSoft)] hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] flex items-center gap-2 cursor-pointer transition-colors"
                           >
-                            <ArrowDownToLine className="w-4 h-4 text-[var(--lavDeep)] dark:text-purple-400" />
+                            <ArrowDownToLine className="w-4 h-4 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                             <span>На самый низ</span>
                           </button>
                         </div>
@@ -4213,7 +4221,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
                           activeToolPopover === 'flip'
                             ? 'bg-[var(--lavDeep)] text-white shadow-md'
-                            : 'bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:bg-white hover:shadow-md'
                         }`}
                         title="Отразить элемент"
                       >
@@ -4226,7 +4234,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                           data-tool-popover="true"
                           className="absolute left-10 sm:left-11 top-0 z-50 bg-white/60 dark:bg-zinc-900/60 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 p-2 rounded-2xl shadow-xl shadow-purple-950/10 flex flex-col gap-1 min-w-[175px] animate-fadeIn select-none backdrop-blur-md"
                         >
-                          <div className="flex items-center justify-between px-1 pb-1 border-b border-purple-200/50 dark:border-zinc-800 text-[11px] font-bold text-[#5B3E88] dark:text-purple-300">
+                          <div className="flex items-center justify-between px-1 pb-1 border-b border-[var(--lavenderAccent)]/30 dark:border-zinc-800 text-[11px] font-bold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">
                             <span>Отражение</span>
                           </div>
                           <button
@@ -4237,9 +4245,9 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                               } else showToast('Выберите элемент', 'Кликните на элемент', 'info');
                               setActiveToolPopover(null);
                             }}
-                            className="w-full px-2.5 py-1.5 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-purple-100/80 dark:hover:bg-purple-900/40 hover:text-[var(--lavDeep)] dark:hover:text-purple-300 flex items-center gap-2 cursor-pointer transition-colors"
+                            className="w-full px-2.5 py-1.5 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-[var(--lavenderSoft)] hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] flex items-center gap-2 cursor-pointer transition-colors"
                           >
-                            <FlipHorizontal className="w-4 h-4 text-[var(--lavDeep)] dark:text-purple-400" />
+                            <FlipHorizontal className="w-4 h-4 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                             <span>По горизонтали</span>
                           </button>
 
@@ -4251,9 +4259,9 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                               } else showToast('Выберите элемент', 'Кликните на элемент', 'info');
                               setActiveToolPopover(null);
                             }}
-                            className="w-full px-2.5 py-1.5 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-purple-100/80 dark:hover:bg-purple-900/40 hover:text-[var(--lavDeep)] dark:hover:text-purple-300 flex items-center gap-2 cursor-pointer transition-colors"
+                            className="w-full px-2.5 py-1.5 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-[var(--lavenderSoft)] hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] flex items-center gap-2 cursor-pointer transition-colors"
                           >
-                            <FlipVertical className="w-4 h-4 text-[var(--lavDeep)] dark:text-purple-400" />
+                            <FlipVertical className="w-4 h-4 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                             <span>По вертикали</span>
                           </button>
                         </div>
@@ -4271,10 +4279,10 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         }}
                         className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 relative ${
                           isDrawingMeasurement
-                            ? 'bg-[var(--lavDeep)] text-white shadow-md ring-2 ring-purple-300'
+                            ? 'bg-[var(--lavDeep)] text-white shadow-md ring-2 ring-[var(--lavenderAccent)]/60'
                             : !areMeasurementsVisible
                             ? 'bg-zinc-200/80 dark:bg-zinc-800/80 text-zinc-400 dark:text-zinc-500 hover:bg-white hover:shadow-md'
-                            : 'bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:bg-white hover:shadow-md'
                         }`}
                         title={areMeasurementsVisible ? "Замеры (Автоматический и Ручной режимы)" : "Замеры на холсте выключены (Нажмите для включения)"}
                       >
@@ -4289,7 +4297,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         <div
                           className="absolute left-10 sm:left-11 top-0 z-50 bg-white/95 dark:bg-zinc-900/95 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 p-2.5 rounded-2xl shadow-xl shadow-purple-950/10 flex flex-col gap-2 min-w-[220px] max-w-[250px] animate-fadeIn select-none backdrop-blur-md"
                         >
-                          <div className="flex items-center justify-between px-1 pb-1 border-b border-purple-200/50 dark:border-zinc-800 text-[11px] font-bold text-[#5B3E88] dark:text-purple-300">
+                          <div className="flex items-center justify-between px-1 pb-1 border-b border-[var(--lavenderAccent)]/30 dark:border-zinc-800 text-[11px] font-bold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">
                             <span className="flex items-center gap-1">
                               <Ruler className="w-3.5 h-3.5" />
                               Замеры
@@ -4357,7 +4365,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                 <button
                                   type="button"
                                   onClick={applyAutoMeasurementsForSelection}
-                                  className="w-full px-2 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white hover:opacity-95 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition-all active:scale-95"
+                                  style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
+                                  className="w-full px-2 py-1.5 rounded-xl text-xs font-semibold text-white hover:opacity-95 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition-all active:scale-95"
                                 >
                                   <Zap className="w-3.5 h-3.5" />
                                   <span>Замерить выделенное</span>
@@ -4394,7 +4403,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                   setAreMeasurementsVisible(true);
                                   showToast('Замер создан', 'Кликните в центр замера для изменения значения', 'success');
                                 }}
-                                className="w-full px-2 py-1.5 rounded-xl text-xs font-semibold bg-purple-50 dark:bg-purple-900/40 text-[var(--lavDeep)] dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/60 flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                                className="w-full px-2 py-1.5 rounded-xl text-xs font-semibold bg-[var(--lavenderSoft)] text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:opacity-90 flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
                               >
                                 <Plus className="w-3.5 h-3.5 shrink-0" />
                                 <span>Быстрый замер (250 см)</span>
@@ -4425,7 +4434,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                       <div className="p-1 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md shadow-lg border border-white/80 dark:border-zinc-700/60 flex flex-col items-center pointer-events-auto animate-fadeIn">
                         <button
                           onClick={() => setIsColorZoomToolbarCollapsed(false)}
-                          className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white hover:opacity-90 flex items-center justify-center shadow-md cursor-pointer transition-all active:scale-95"
+                          style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
+                          className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full text-white hover:opacity-90 flex items-center justify-center shadow-xs cursor-pointer transition-all active:scale-95"
                           title="Развернуть настройки цвета и масштаба"
                         >
                           <Palette className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
@@ -4799,7 +4809,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                               {zoomScale !== 1 && (
                                 <button
                                   onClick={() => { setZoomScale(1); setPanX(0); setPanY(0); }}
-                                  className="text-[9px] font-bold text-zinc-400 hover:text-[#5B3E88] dark:hover:text-purple-300 underline cursor-pointer"
+                                  className="text-[9px] font-bold text-zinc-400 hover:text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:hover:text-purple-300 underline cursor-pointer"
                                   title="Сбросить масштаб (100%)"
                                 >
                                   Сброс
@@ -4935,7 +4945,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
                           activeFilterTool === 'recolor'
                             ? 'bg-[var(--lavDeep)] text-white shadow-md'
-                            : 'bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 hover:bg-white hover:shadow-md'
                         }`}
                         title="Замена цвета (Выбор точного тона HEX или палитры)"
                       >
@@ -4956,7 +4966,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
                           activeFilterTool === 'brightness'
                             ? 'bg-[var(--lavDeep)] text-white shadow-md'
-                            : 'bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 hover:bg-white hover:shadow-md'
                         }`}
                         title="Яркость (Экспозиция)"
                       >
@@ -4977,7 +4987,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
                           activeFilterTool === 'hue'
                             ? 'bg-[var(--lavDeep)] text-white shadow-md'
-                            : 'bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 hover:bg-white hover:shadow-md'
                         }`}
                         title="Оттенок (Тон)"
                       >
@@ -4998,7 +5008,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
                           activeFilterTool === 'temp'
                             ? 'bg-[var(--lavDeep)] text-white shadow-md'
-                            : 'bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 hover:bg-white hover:shadow-md'
                         }`}
                         title="Теплота (Температура)"
                       >
@@ -5019,7 +5029,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
                           activeFilterTool === 'saturate'
                             ? 'bg-[var(--lavDeep)] text-white shadow-md'
-                            : 'bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 hover:bg-white hover:shadow-md'
                         }`}
                         title="Насыщенность"
                       >
@@ -5040,7 +5050,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
                           activeFilterTool === 'opacity'
                             ? 'bg-[var(--lavDeep)] text-white shadow-md'
-                            : 'bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 hover:bg-white hover:shadow-md'
                         }`}
                         title="Прозрачность"
                       >
@@ -5061,7 +5071,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
                           activeFilterTool === 'shadow'
                             ? 'bg-[var(--lavDeep)] text-white shadow-md'
-                            : 'bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 hover:bg-white hover:shadow-md'
                         }`}
                         title="Тень (Размытие, прозрачность, смещение X/Y)"
                       >
@@ -5079,7 +5089,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 border-t border-zinc-200/60 dark:border-zinc-700/60 pt-0.5 mt-0.5 ${
                           activeFilterTool === 'zoom'
                             ? 'bg-[var(--lavDeep)] text-white shadow-md'
-                            : 'bg-white/90 dark:bg-zinc-800/90 text-[#5B3E88] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 hover:bg-white hover:shadow-md'
                         }`}
                         title="Масштаб холста (Приближение/Отдаление)"
                       >
@@ -5431,7 +5441,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                 updateActiveSceneHuman({ humanHeightCm: val });
                               }}
                               onClick={(evt) => evt.stopPropagation()}
-                              className="w-9 text-center font-bold bg-zinc-100 dark:bg-zinc-800 rounded border border-zinc-300 dark:border-zinc-600 px-0.5 py-0 text-[10px] focus:outline-none focus:ring-1 focus:ring-[#8C52D0]"
+                              className="w-9 text-center font-bold bg-zinc-100 dark:bg-zinc-800 rounded border border-zinc-300 dark:border-zinc-600 px-0.5 py-0 text-[10px] focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)]"
                             />
                             <span>см</span>
                           </div>
@@ -5680,7 +5690,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                     }
                                   }}
                                   onMouseDown={(e) => e.stopPropagation()}
-                                  className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border border-[#8C52D0] rounded-full h-5.5 sm:h-6 px-2 text-[10px] sm:text-[11px] font-semibold text-center outline-none shadow-xs min-w-[60px]"
+                                  className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border border-[var(--lavDeep)] dark:border-[var(--lavenderAccent)] rounded-full h-5.5 sm:h-6 px-2 text-[10px] sm:text-[11px] font-semibold text-center outline-none shadow-xs min-w-[60px]"
                                 />
                               ) : (
                                 <div className="relative group/badge flex items-center gap-1">
@@ -5694,10 +5704,10 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                       setEditingCaptionId(el.id);
                                       setEditingCaptionText(el.caption || '');
                                     }}
-                                    className="h-5.5 sm:h-6 px-2 py-0.5 rounded-full bg-white/95 dark:bg-zinc-900/95 hover:bg-white dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-purple-300/80 dark:border-purple-700 hover:border-[#8C52D0] dark:hover:border-purple-400 shadow-xs text-[10px] sm:text-[11px] font-semibold transition-all flex items-center gap-1 whitespace-nowrap active:scale-95 cursor-pointer"
+                                    className="h-5.5 sm:h-6 px-2 py-0.5 rounded-full bg-white/95 dark:bg-zinc-900/95 hover:bg-white dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-[var(--lavenderAccent)]/60 hover:border-[var(--lavDeep)] dark:hover:border-[var(--lavenderAccent)] shadow-xs text-[10px] sm:text-[11px] font-semibold transition-all flex items-center gap-1 whitespace-nowrap active:scale-95 cursor-pointer"
                                     title="Зажмите и перетащите для перемещения подписи. Кликните для редактирования."
                                   >
-                                    <Move className="w-2.5 h-2.5 text-[#8C52D0] opacity-80 group-hover/caption:opacity-100 shrink-0" />
+                                    <Move className="w-2.5 h-2.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] opacity-80 group-hover/caption:opacity-100 shrink-0" />
                                     <span>{el.caption || 'Подпись...'}</span>
                                   </button>
 
@@ -5732,7 +5742,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                               width="100%"
                               height="100%"
                               fill="none"
-                              stroke="#C084FC"
+                              stroke="var(--lavenderAccent, #C084FC)"
                               strokeWidth={0.85 * scaleInv}
                               strokeDasharray={`${3 * scaleInv} ${3 * scaleInv}`}
                             />
@@ -5771,7 +5781,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                     width="100%"
                                     height="100%"
                                     fill="none"
-                                    stroke="#8C52D0"
+                                    stroke="var(--lavDeep, #8C52D0)"
                                     strokeWidth={0.85 * scaleInv}
                                     strokeDasharray={`${3 * scaleInv} ${3 * scaleInv}`}
                                   />
@@ -5779,14 +5789,14 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
                                 {/* 8 Resizing handles - Fixed screen visual size */}
                                 {[
-                                  { id: 'tl', cursor: 'nwse-resize', pos: { top: 0, left: 0 }, baseTranslate: 'translate(-50%, -50%)', class: 'rounded-full w-2.5 h-2.5 bg-white border border-purple-600 dark:border-purple-300 shadow-sm' },
-                                  { id: 'tr', cursor: 'nesw-resize', pos: { top: 0, right: 0 }, baseTranslate: 'translate(50%, -50%)', class: 'rounded-full w-2.5 h-2.5 bg-white border border-purple-600 dark:border-purple-300 shadow-sm' },
-                                  { id: 'bl', cursor: 'nesw-resize', pos: { bottom: 0, left: 0 }, baseTranslate: 'translate(-50%, 50%)', class: 'rounded-full w-2.5 h-2.5 bg-white border border-purple-600 dark:border-purple-300 shadow-sm' },
-                                  { id: 'br', cursor: 'nwse-resize', pos: { bottom: 0, right: 0 }, baseTranslate: 'translate(50%, 50%)', class: 'rounded-full w-2.5 h-2.5 bg-white border border-purple-600 dark:border-purple-300 shadow-sm' },
-                                  { id: 't', cursor: 'ns-resize', pos: { top: 0, left: '50%' }, baseTranslate: 'translate(-50%, -50%)', class: 'w-2 h-2 bg-white border border-purple-600 dark:border-purple-300 shadow-xs' },
-                                  { id: 'b', cursor: 'ns-resize', pos: { bottom: 0, left: '50%' }, baseTranslate: 'translate(-50%, 50%)', class: 'w-2 h-2 bg-white border border-purple-600 dark:border-purple-300 shadow-xs' },
-                                  { id: 'l', cursor: 'ew-resize', pos: { top: '50%', left: 0 }, baseTranslate: 'translate(-50%, -50%)', class: 'w-2 h-2 bg-white border border-purple-600 dark:border-purple-300 shadow-xs' },
-                                  { id: 'r', cursor: 'ew-resize', pos: { top: '50%', right: 0 }, baseTranslate: 'translate(50%, -50%)', class: 'w-2 h-2 bg-white border border-purple-600 dark:border-purple-300 shadow-xs' }
+                                  { id: 'tl', cursor: 'nwse-resize', pos: { top: 0, left: 0 }, baseTranslate: 'translate(-50%, -50%)', class: 'rounded-full w-2.5 h-2.5 bg-white border border-[var(--lavDeep)] dark:border-[var(--lavenderAccent)] shadow-sm' },
+                                  { id: 'tr', cursor: 'nesw-resize', pos: { top: 0, right: 0 }, baseTranslate: 'translate(50%, -50%)', class: 'rounded-full w-2.5 h-2.5 bg-white border border-[var(--lavDeep)] dark:border-[var(--lavenderAccent)] shadow-sm' },
+                                  { id: 'bl', cursor: 'nesw-resize', pos: { bottom: 0, left: 0 }, baseTranslate: 'translate(-50%, 50%)', class: 'rounded-full w-2.5 h-2.5 bg-white border border-[var(--lavDeep)] dark:border-[var(--lavenderAccent)] shadow-sm' },
+                                  { id: 'br', cursor: 'nwse-resize', pos: { bottom: 0, right: 0 }, baseTranslate: 'translate(50%, 50%)', class: 'rounded-full w-2.5 h-2.5 bg-white border border-[var(--lavDeep)] dark:border-[var(--lavenderAccent)] shadow-sm' },
+                                  { id: 't', cursor: 'ns-resize', pos: { top: 0, left: '50%' }, baseTranslate: 'translate(-50%, -50%)', class: 'w-2 h-2 bg-white border border-[var(--lavDeep)] dark:border-[var(--lavenderAccent)] shadow-xs' },
+                                  { id: 'b', cursor: 'ns-resize', pos: { bottom: 0, left: '50%' }, baseTranslate: 'translate(-50%, 50%)', class: 'w-2 h-2 bg-white border border-[var(--lavDeep)] dark:border-[var(--lavenderAccent)] shadow-xs' },
+                                  { id: 'l', cursor: 'ew-resize', pos: { top: '50%', left: 0 }, baseTranslate: 'translate(-50%, -50%)', class: 'w-2 h-2 bg-white border border-[var(--lavDeep)] dark:border-[var(--lavenderAccent)] shadow-xs' },
+                                  { id: 'r', cursor: 'ew-resize', pos: { top: '50%', right: 0 }, baseTranslate: 'translate(50%, -50%)', class: 'w-2 h-2 bg-white border border-[var(--lavDeep)] dark:border-[var(--lavenderAccent)] shadow-xs' }
                                 ].map((handle) => (
                                   <div
                                     key={handle.id}
@@ -5818,7 +5828,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
                                 {/* Rotation handle line and button - Fixed screen visual size */}
                                 <div
-                                  className="absolute top-0 left-1/2 bg-purple-500 dark:bg-purple-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] pointer-events-none z-30"
+                                  className="absolute top-0 left-1/2 bg-[var(--lavDeep)] dark:bg-[var(--lavenderAccent)] drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] pointer-events-none z-30"
                                   style={{
                                     width: `${1.5 * scaleInv}px`,
                                     height: `${22 * scaleInv}px`,
@@ -5827,7 +5837,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                   }}
                                 />
                                 <div
-                                  className="absolute top-0 left-1/2 w-6 h-6 rounded-full bg-white dark:bg-zinc-800 border border-purple-500 dark:border-purple-300 shadow-md flex items-center justify-center hover:bg-purple-50 dark:hover:bg-zinc-700 hover:scale-110 active:scale-95 transition-transform cursor-grab active:cursor-grabbing z-40"
+                                  className="absolute top-0 left-1/2 w-6.5 h-6.5 rounded-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-[var(--lavDeep)] dark:border-[var(--lavenderAccent)] shadow-md flex items-center justify-center hover:bg-[var(--lavenderSoft)] dark:hover:bg-zinc-800 hover:scale-110 active:scale-95 transition-transform cursor-grab active:cursor-grabbing z-40"
                                   title="Кликните для ввода точного градуса, или удерживайте для вращения мышью"
                                   style={{
                                     transform: `translate(-50%, -100%) translateY(${-22 * scaleInv}px) scale(${scaleInv})`,
@@ -5904,36 +5914,30 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                     window.addEventListener('mouseup', handleMouseUp);
                                   }}
                                 >
-                                  <RefreshCw className="w-3 h-3 text-purple-600 dark:text-purple-300 animate-spin-slow" />
+                                  <RefreshCw className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                                 </div>
 
                                 {/* Floating Exact Rotation Angle Popover - Single Compact Horizontal Row */}
                                 {rotationInputId === el.id && (() => {
-                                  // Determine if element's top position is near the top edge of the canvas (less than 50mm/px space)
                                   const rad = (el.rotation || 0) * Math.PI / 180;
                                   const cos = Math.cos(rad);
-                                  const sin = Math.sin(rad);
-                                  const halfW = el.w / 2;
                                   const halfH = el.h / 2;
-                                  const localCorners = [
-                                    { x: -halfW, y: -halfH },
-                                    { x: halfW, y: -halfH },
-                                    { x: halfW, y: halfH },
-                                    { x: -halfW, y: halfH }
-                                  ];
-                                  const rotatedYCorners = localCorners.map(pt => (pt.x * sin) + (pt.y * cos));
                                   const centerAbsY = el.y + halfH;
-                                  const boxMinY = centerAbsY + Math.min(...rotatedYCorners);
+                                  
+                                  // Exact world Y of the rotation handle
+                                  const localHandleOffsetY = -halfH - 34 * scaleInv;
+                                  const rotHandleWorldY = centerAbsY + localHandleOffsetY * cos;
 
-                                  const isNearTop = boxMinY < 50 || el.y < 50;
+                                  // Place popup towards center only if the rotation handle is close to the top of the canvas
+                                  const placeBelowHandle = rotHandleWorldY < 60;
 
                                   return (
                                     <div
-                                      className="absolute left-1/2 z-50 bg-white/95 dark:bg-zinc-900/95 text-zinc-900 dark:text-zinc-100 px-3 h-8 sm:h-9 rounded-full shadow-lg shadow-purple-950/10 border border-white/80 dark:border-zinc-700/80 flex items-center gap-1.5 pointer-events-auto animate-fadeIn select-none backdrop-blur-md"
+                                      className="absolute left-1/2 z-50 bg-white/80 dark:bg-zinc-900/80 text-zinc-800 dark:text-zinc-100 px-3 h-8 sm:h-9 rounded-full shadow-lg border border-zinc-200/60 dark:border-zinc-700/60 flex items-center gap-1.5 pointer-events-auto animate-fadeIn select-none backdrop-blur-md"
                                       style={{
                                         top: 0,
-                                        transform: `translate(-50%, -100%) translateY(${isNearTop ? `${36 * scaleInv}px` : `${-48 * scaleInv}px`}) rotate(${-el.rotation}deg) scaleX(${el.isFlippedH ? -1 : 1}) scaleY(${el.isFlippedV ? -1 : 1}) scale(${scaleInv})`,
-                                        transformOrigin: isNearTop ? 'top center' : 'bottom center',
+                                        transform: `translate(-50%, -100%) translateY(${placeBelowHandle ? `${26 * scaleInv}px` : `${-58 * scaleInv}px`}) rotate(${-el.rotation}deg) scaleX(${el.isFlippedH ? -1 : 1}) scaleY(${el.isFlippedV ? -1 : 1}) scale(${scaleInv})`,
+                                        transformOrigin: placeBelowHandle ? 'top center' : 'bottom center',
                                         WebkitFontSmoothing: 'antialiased'
                                       }}
                                       onMouseDown={(e) => e.stopPropagation()}
@@ -5948,12 +5952,12 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                             const val = parseInt(e.target.value);
                                             updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, rotation: isNaN(val) ? 0 : val } : item));
                                           }}
-                                          className="w-12 text-center font-extrabold text-xs bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full py-0.5 pr-3 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#8C52D0] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                          className="w-12 text-center font-semibold text-xs bg-white/70 dark:bg-zinc-800/70 border border-zinc-200 dark:border-zinc-700 rounded-full py-0.5 pr-3 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavDeep)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                         />
-                                        <span className="absolute right-1.5 text-[10px] font-bold text-[#8C52D0] dark:text-purple-400 pointer-events-none">°</span>
+                                        <span className="absolute right-1.5 text-[10px] font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] pointer-events-none">°</span>
                                       </div>
 
-                                      <div className="w-[1px] h-3.5 bg-zinc-200 dark:bg-zinc-700 shrink-0 mx-0.5" />
+                                      <div className="w-[1px] h-3.5 bg-zinc-300/40 dark:bg-zinc-700/60 shrink-0 mx-0.5" />
 
                                       {/* Quick Preset Angles: 0, 45, 90 */}
                                       <div className="flex items-center gap-1 shrink-0">
@@ -5963,10 +5967,10 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                             onClick={() => {
                                               updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, rotation: deg } : item));
                                             }}
-                                            className={`px-2 py-0.5 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
+                                            className={`px-2 py-0.5 rounded-full text-[11px] font-semibold transition-all cursor-pointer ${
                                               el.rotation === deg
-                                                ? 'bg-[#8C52D0] text-white shadow-xs'
-                                                : 'bg-zinc-100 dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-300 hover:bg-purple-100/80 hover:text-[#8C52D0]'
+                                                ? 'bg-[var(--lavDeep)] text-white shadow-xs'
+                                                : 'bg-white/50 dark:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300 hover:bg-white/80 hover:text-[var(--lavDeep)]'
                                             }`}
                                           >
                                             {deg}°
@@ -6013,25 +6017,40 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                       const canvasMaxY = canvasHeightMm / 10;
                       const toolbarHeight = 44 * scaleInv;
 
-                      // Check if placing below boxMaxY overflows bottom canvas boundary
-                      const overflowBottom = (boxMaxY + toolbarHeight + 16 * scaleInv) > canvasMaxY;
-                      // Check if placing above boxMinY overflows top canvas boundary
-                      const overflowTop = (boxMinY - toolbarHeight - 16 * scaleInv) < 0;
+                      // Calculate where the rotation handle is pointing in world coordinates
+                      // Rotation handle is located on the local top of the element (-halfH)
+                      const rotHandleOffsetY = -(halfH + 24 * scaleInv) * cos;
+                      const isRotHandleAtBottom = rotHandleOffsetY > 5 * scaleInv;
+                      const isRotHandleAtTop = rotHandleOffsetY < -5 * scaleInv;
 
-                      // Default: ALWAYS show below. Move to top ONLY if it overflows bottom AND has space at top.
-                      let showBelow = true;
-                      if (overflowBottom && !overflowTop) {
+                      // Preferred side: opposite to rotation handle so they never collide
+                      let showBelow = !isRotHandleAtBottom;
+
+                      // Boundary safety checks
+                      const overflowBottom = (boxMaxY + toolbarHeight + 20 * scaleInv) > canvasMaxY;
+                      const overflowTop = (boxMinY - toolbarHeight - 20 * scaleInv) < 0;
+
+                      if (showBelow && overflowBottom && !overflowTop) {
                         showBelow = false;
+                      } else if (!showBelow && overflowTop && !overflowBottom) {
+                        showBelow = true;
                       }
 
                       const targetY = showBelow ? boxMaxY : boxMinY;
 
-                      // Extra vertical offset: 16px below boxMaxY, or -38px above boxMinY (so it stays clear of rotation handle)
-                      const gapPx = (showBelow ? 16 : -38) * scaleInv;
+                      // Clearance: if forced onto the same side as the rotation handle due to boundaries, give extra margin
+                      let gapPx: number;
+                      if (showBelow) {
+                        gapPx = (isRotHandleAtBottom ? 44 : 16) * scaleInv;
+                      } else {
+                        gapPx = (isRotHandleAtTop ? -44 : -16) * scaleInv;
+                      }
+
+                      const currentElIdx = activeScene.elements.findIndex(item => item.id === el.id);
 
                       return (
                         <div
-                          className="absolute z-50 pointer-events-auto select-none flex items-center gap-1.5 bg-white/95 dark:bg-zinc-900/95 text-zinc-800 dark:text-zinc-100 px-3 h-8 sm:h-9 rounded-full shadow-lg shadow-purple-950/10 border border-white/80 dark:border-zinc-700/80 backdrop-blur-md"
+                          className="absolute z-50 pointer-events-auto select-none flex items-center gap-1.5 bg-white/40 dark:bg-zinc-900/40 text-zinc-800 dark:text-zinc-100 px-2.5 h-8 sm:h-9 rounded-full shadow-lg shadow-purple-950/10 border border-white/50 dark:border-zinc-700/50 backdrop-blur-md"
                           style={{
                             left: `${centerAbsX}px`,
                             top: `${targetY}px`,
@@ -6064,27 +6083,91 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                               e.stopPropagation();
                               handleDuplicateElement(el);
                             }}
-                            className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-full hover:bg-purple-500/20 active:scale-90 transition-all cursor-pointer flex items-center justify-center shrink-0 group"
+                            className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-full hover:bg-[var(--lavenderSoft)] active:scale-90 transition-all cursor-pointer flex items-center justify-center shrink-0 group"
                             title="Копировать"
                           >
-                            <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#5B3E88] dark:text-purple-300 stroke-[2.3] group-hover:scale-110 transition-transform" />
+                            <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] stroke-[2.3] group-hover:scale-110 transition-transform" />
                           </button>
 
-                          <div className="w-[1px] h-3.5 sm:h-4 bg-purple-300/50 dark:bg-zinc-700 mx-0.5 shrink-0" />
+                          <div className="w-[1px] h-3.5 sm:h-4 bg-[var(--lavenderAccent)]/30 dark:bg-zinc-700/60 mx-0.5 shrink-0" />
 
-                          {/* Delete/Trash */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              updateActiveSceneElements(prev => prev.filter(item => item.id !== el.id));
-                              setSelectedId(null);
-                              showToast('Удалено', 'Элемент удален со сцены.', 'info');
-                            }}
-                            className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-full hover:bg-rose-500/20 active:scale-90 transition-all cursor-pointer flex items-center justify-center shrink-0 group"
-                            title="Удалить со сцены"
-                          >
-                            <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-rose-500 dark:text-rose-400 stroke-[2.3] group-hover:scale-110 transition-transform" />
-                          </button>
+                          {/* Layers Quick Access */}
+                          <div className="relative">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setShowQuickLayerMenu(!showQuickLayerMenu);
+                              }}
+                              className={`w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-full active:scale-90 transition-all cursor-pointer flex items-center justify-center shrink-0 group ${
+                                showQuickLayerMenu
+                                  ? 'bg-[var(--lavDeep)] dark:bg-[var(--lavenderAccent)] text-white dark:text-zinc-900 shadow-xs'
+                                  : 'hover:bg-[var(--lavenderSoft)] text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]'
+                              }`}
+                              title="Управление слоями"
+                            >
+                              <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.3] group-hover:scale-110 transition-transform" />
+                            </button>
+
+                            {/* Floating Layer Actions Dropdown */}
+                            {showQuickLayerMenu && (
+                              <div
+                                onClick={(e) => e.stopPropagation()}
+                                className={`absolute ${showBelow ? 'bottom-full mb-2' : 'top-full mt-2'} left-1/2 -translate-x-1/2 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md p-1.5 rounded-2xl border border-white/60 dark:border-zinc-700/60 shadow-xl flex items-center gap-1 z-50 whitespace-nowrap animate-fadeIn`}
+                              >
+                                <button
+                                  onClick={() => {
+                                    if (currentElIdx >= 0) {
+                                      handleReorderLayer(currentElIdx, activeScene.elements.length - 1);
+                                      setShowQuickLayerMenu(false);
+                                      showToast('Слой', 'Перемещено на передний план', 'info');
+                                    }
+                                  }}
+                                  className="p-1.5 rounded-xl text-zinc-700 dark:text-zinc-200 hover:bg-[var(--lavenderSoft)] hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] transition-colors cursor-pointer"
+                                  title="На самый передний план"
+                                >
+                                  <ArrowUpToLine className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (currentElIdx >= 0) {
+                                      handleMoveLayer(currentElIdx, 'up');
+                                      showToast('Слой', 'Перемещено на слой выше', 'info');
+                                    }
+                                  }}
+                                  className="p-1.5 rounded-xl text-zinc-700 dark:text-zinc-200 hover:bg-[var(--lavenderSoft)] hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] transition-colors cursor-pointer"
+                                  title="На слой выше"
+                                >
+                                  <ArrowUp className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (currentElIdx >= 0) {
+                                      handleMoveLayer(currentElIdx, 'down');
+                                      showToast('Слой', 'Перемещено на слой ниже', 'info');
+                                    }
+                                  }}
+                                  className="p-1.5 rounded-xl text-zinc-700 dark:text-zinc-200 hover:bg-[var(--lavenderSoft)] hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] transition-colors cursor-pointer"
+                                  title="На слой ниже"
+                                >
+                                  <ArrowDown className="w-3.5 h-3.5" />
+                                </button>
+                                <div className="w-[1px] h-3.5 bg-zinc-300/60 dark:bg-zinc-700/60 mx-0.5" />
+                                <button
+                                  onClick={() => {
+                                    if (currentElIdx >= 0) {
+                                      handleReorderLayer(currentElIdx, 0);
+                                      setShowQuickLayerMenu(false);
+                                      showToast('Слой', 'Перемещено на задний план', 'info');
+                                    }
+                                  }}
+                                  className="p-1.5 rounded-xl text-zinc-700 dark:text-zinc-200 hover:bg-[var(--lavenderSoft)] hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] transition-colors cursor-pointer"
+                                  title="На самый задний план"
+                                >
+                                  <ArrowDownToLine className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       );
                     })()}
@@ -6136,17 +6219,17 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                           width="100%"
                           height="100%"
                           fill="rgba(140, 82, 208, 0.08)"
-                          stroke="#8C52D0"
+                          stroke="var(--lavDeep)"
                           strokeWidth={0.85 / ((canvasScale * zoomScale) || 1)}
                           strokeDasharray={`${3 / ((canvasScale * zoomScale) || 1)} ${3 / ((canvasScale * zoomScale) || 1)}`}
                         />
                       </svg>
 
                       {/* Corner Resize/Decoration Markers */}
-                      <div className="absolute top-0 left-0 w-3.5 h-3.5 bg-white border-2 border-purple-600 rounded-xs shadow-xs pointer-events-none" style={{ transform: `translate(-50%, -50%) scale(${1 / ((canvasScale * zoomScale) || 1)})`, transformOrigin: 'center center' }} />
-                      <div className="absolute top-0 right-0 w-3.5 h-3.5 bg-white border-2 border-purple-600 rounded-xs shadow-xs pointer-events-none" style={{ transform: `translate(50%, -50%) scale(${1 / ((canvasScale * zoomScale) || 1)})`, transformOrigin: 'center center' }} />
-                      <div className="absolute bottom-0 left-0 w-3.5 h-3.5 bg-white border-2 border-purple-600 rounded-xs shadow-xs pointer-events-none" style={{ transform: `translate(-50%, 50%) scale(${1 / ((canvasScale * zoomScale) || 1)})`, transformOrigin: 'center center' }} />
-                      <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-white border-2 border-purple-600 rounded-xs shadow-xs pointer-events-none" style={{ transform: `translate(50%, 50%) scale(${1 / ((canvasScale * zoomScale) || 1)})`, transformOrigin: 'center center' }} />
+                      <div className="absolute top-0 left-0 w-3.5 h-3.5 bg-white border-2 border-[var(--lavDeep)] rounded-xs shadow-xs pointer-events-none" style={{ transform: `translate(-50%, -50%) scale(${1 / ((canvasScale * zoomScale) || 1)})`, transformOrigin: 'center center' }} />
+                      <div className="absolute top-0 right-0 w-3.5 h-3.5 bg-white border-2 border-[var(--lavDeep)] rounded-xs shadow-xs pointer-events-none" style={{ transform: `translate(50%, -50%) scale(${1 / ((canvasScale * zoomScale) || 1)})`, transformOrigin: 'center center' }} />
+                      <div className="absolute bottom-0 left-0 w-3.5 h-3.5 bg-white border-2 border-[var(--lavDeep)] rounded-xs shadow-xs pointer-events-none" style={{ transform: `translate(-50%, 50%) scale(${1 / ((canvasScale * zoomScale) || 1)})`, transformOrigin: 'center center' }} />
+                      <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-white border-2 border-[var(--lavDeep)] rounded-xs shadow-xs pointer-events-none" style={{ transform: `translate(50%, 50%) scale(${1 / ((canvasScale * zoomScale) || 1)})`, transformOrigin: 'center center' }} />
 
                       {/* Badge Count Tag */}
                       <div
@@ -6159,9 +6242,9 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         }}
                       >
                         <span
-                          className="text-[10px] font-extrabold text-[#5B3E88] dark:text-purple-300 bg-white/95 dark:bg-zinc-900/95 px-2.5 py-1 rounded-full border border-white/80 dark:border-zinc-700/80 shadow-md flex items-center gap-1.5 backdrop-blur-md"
+                          className="text-[10px] font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] bg-white/95 dark:bg-zinc-900/95 px-2.5 py-1 rounded-full border border-white/80 dark:border-zinc-700/80 shadow-md flex items-center gap-1.5 backdrop-blur-md"
                         >
-                          <BoxSelect className="w-3 h-3 text-[#5B3E88] dark:text-purple-300" />
+                          <BoxSelect className="w-3 h-3 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                           Выделено элементов: {selectedElements.length}
                         </span>
                       </div>
@@ -6170,7 +6253,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                       <div
                         className={`absolute left-1/2 -translate-x-1/2 ${
                           isNearTop ? 'bottom-2' : '-top-14'
-                        } flex items-center gap-1.5 bg-white/95 dark:bg-zinc-900/95 text-zinc-800 dark:text-zinc-100 px-3.5 py-1.5 rounded-full shadow-lg shadow-purple-950/10 border border-white/80 dark:border-zinc-700/80 z-50 pointer-events-auto select-none backdrop-blur-md`}
+                        } flex items-center gap-1.5 bg-white/40 dark:bg-zinc-900/40 text-zinc-800 dark:text-zinc-100 px-3.5 py-1.5 rounded-full shadow-lg shadow-purple-950/10 border border-white/50 dark:border-zinc-700/50 z-50 pointer-events-auto select-none backdrop-blur-md`}
                         style={{
                           transform: `scale(${1 / ((canvasScale * zoomScale) || 1)})`,
                           transformOrigin: isNearTop ? 'bottom center' : 'top center',
@@ -6215,17 +6298,18 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                             setSelectedIds(newIds);
                             showToast('Копия группы', `Скопировано ${selectedElements.length} элементов`, 'success');
                           }}
-                          className="p-1.5 rounded-full hover:bg-purple-500/20 active:scale-90 transition-all cursor-pointer flex items-center justify-center group"
+                          className="p-1.5 rounded-full hover:bg-[var(--lavenderSoft)] active:scale-90 transition-all cursor-pointer flex items-center justify-center group"
                           title="Скопировать всю группу"
                         >
-                          <Copy className="w-4 h-4 text-[#5B3E88] dark:text-purple-300 stroke-[2.3] group-hover:scale-110 transition-transform" />
+                          <Copy className="w-4 h-4 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] stroke-[2.3] group-hover:scale-110 transition-transform" />
                         </button>
 
                         {/* Persistent Group / Ungroup button */}
                         {selectedElements.some(el => el.groupId) ? (
                           <button
                             onClick={handleUngroupSelectedElements}
-                            className="px-3 py-1 rounded-full bg-[#5B3E88] hover:bg-[#4A3172] text-xs font-bold text-white flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95"
+                            style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
+                            className="px-3 py-1 rounded-full text-xs font-bold text-white flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95 hover:opacity-90"
                             title="Разгруппировать (сделать элементы независимыми)"
                           >
                             <Ungroup className="w-3.5 h-3.5" />
@@ -6234,7 +6318,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         ) : (
                           <button
                             onClick={handleGroupSelectedElements}
-                            className="px-3 py-1 rounded-full bg-[#5B3E88] hover:bg-[#4A3172] text-xs font-bold text-white flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95"
+                            style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
+                            className="px-3 py-1 rounded-full text-xs font-bold text-white flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95 hover:opacity-90"
                             title="Сгруппировать в постоянную группу"
                           >
                             <Group className="w-3.5 h-3.5" />
@@ -6242,7 +6327,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                           </button>
                         )}
 
-                        <div className="w-[1px] h-4 bg-purple-300/50 dark:bg-zinc-700 mx-0.5 shrink-0" />
+                        <div className="w-[1px] h-4 bg-zinc-200 dark:bg-zinc-700 mx-0.5 shrink-0" />
 
                         {/* Delete group */}
                         <button
@@ -6286,11 +6371,11 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                 }}
                                 className={`py-1 px-3 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                                   mobileDrawerTab === 'library'
-                                    ? 'bg-[#EAE4F8]/80 text-[#5B3E88] dark:bg-purple-950/80 dark:text-purple-200 shadow-xs border border-[#D4C5ED]/50 backdrop-blur-sm'
+                                    ? 'bg-[var(--lavenderSoft)] text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] shadow-xs border border-[var(--lavenderAccent)]/40 backdrop-blur-sm'
                                     : 'text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white/40 dark:hover:bg-white/10'
                                 }`}
                               >
-                                <BookOpen className="w-3.5 h-3.5 shrink-0 text-[#5B3E88] dark:text-purple-400" />
+                                <BookOpen className="w-3.5 h-3.5 shrink-0 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                                 <span>Библиотека</span>
                               </button>
                               <button
@@ -6300,14 +6385,14 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                 }}
                                 className={`py-1 px-3 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                                   mobileDrawerTab === 'layers'
-                                    ? 'bg-[#EAE4F8]/80 text-[#5B3E88] dark:bg-purple-950/80 dark:text-purple-200 shadow-xs border border-[#D4C5ED]/50 backdrop-blur-sm'
+                                    ? 'bg-[var(--lavenderSoft)] text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] shadow-xs border border-[var(--lavenderAccent)]/40 backdrop-blur-sm'
                                     : 'text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white/40 dark:hover:bg-white/10'
                                 }`}
                               >
-                                <Layers className="w-3.5 h-3.5 shrink-0 text-[#5B3E88] dark:text-purple-400" />
+                                <Layers className="w-3.5 h-3.5 shrink-0 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                                 <span>Элементы</span>
-                                <span className="px-1.5 py-0.5 rounded-full bg-[#5B3E88] text-white text-[9px] font-extrabold leading-none shrink-0">
-                                  {activeScene.elements.length}
+                                <span className="px-1.5 py-0.5 rounded-full bg-[var(--lavDeep)] dark:bg-[var(--lavenderAccent)] text-white text-[9px] font-extrabold leading-none shrink-0">
+                                  {activeScene.elements.filter(el => el.type !== 'measurement').length}
                                 </span>
                               </button>
                             </div>
@@ -6340,7 +6425,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                             }}
                             className="py-1.5 px-3.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 text-zinc-700 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-white/10 active:scale-95"
                           >
-                            <BookOpen className="w-3.5 h-3.5 shrink-0 text-[#5B3E88] dark:text-purple-400" />
+                            <BookOpen className="w-3.5 h-3.5 shrink-0 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                             <span className="truncate">Библиотека</span>
                           </button>
                           <button
@@ -6350,10 +6435,10 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                             }}
                             className="py-1.5 px-3.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 text-zinc-700 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-white/10 active:scale-95"
                           >
-                            <Layers className="w-3.5 h-3.5 shrink-0 text-[#5B3E88] dark:text-purple-400" />
+                            <Layers className="w-3.5 h-3.5 shrink-0 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                             <span className="truncate">Элементы</span>
-                            <span className="px-1.5 py-0.5 rounded-full bg-[#5B3E88] text-white text-[9px] font-extrabold leading-none shrink-0">
-                              {activeScene.elements.length}
+                            <span className="px-1.5 py-0.5 rounded-full bg-[var(--lavDeep)] dark:bg-[var(--lavenderAccent)] text-white text-[9px] font-extrabold leading-none shrink-0">
+                              {activeScene.elements.filter(el => el.type !== 'measurement').length}
                             </span>
                           </button>
                         </div>
@@ -6380,7 +6465,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                     {selectedElem ? (
                       <div className="flex items-center gap-1">
                         <div className="flex items-center gap-0.5">
-                          <span className="font-extrabold text-[#5B3E88] dark:text-purple-400 text-xs pl-0.5">Ш</span>
+                          <span className="font-extrabold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] text-xs pl-0.5">Ш</span>
                           <input
                             type="number"
                             value={Math.round(selectedElem.w)}
@@ -6390,12 +6475,12 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                 updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, w: val } : item));
                               }
                             }}
-                            className="w-11 sm:w-14 text-center font-bold text-xs bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full px-1 py-0.5 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#5B3E88] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            className="w-11 sm:w-14 text-center font-bold text-xs bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full px-1 py-0.5 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavenderAccent)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                           />
                         </div>
                         <span className="text-zinc-400 font-bold text-xs">×</span>
                         <div className="flex items-center gap-0.5">
-                          <span className="font-extrabold text-[#5B3E88] dark:text-purple-400 text-xs pl-0.5">В</span>
+                          <span className="font-extrabold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] text-xs pl-0.5">В</span>
                           <input
                             type="number"
                             value={Math.round(selectedElem.h)}
@@ -6405,14 +6490,14 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                 updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, h: val } : item));
                               }
                             }}
-                            className="w-11 sm:w-14 text-center font-bold text-xs bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full px-1 py-0.5 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#5B3E88] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            className="w-11 sm:w-14 text-center font-bold text-xs bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full px-1 py-0.5 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavenderAccent)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                           />
                         </div>
                       </div>
                     ) : (
                       <div className="flex items-center gap-1">
                         <div className="flex items-center gap-0.5">
-                          <span className="font-extrabold text-[#5B3E88] dark:text-purple-400 text-xs pl-0.5">Ш</span>
+                          <span className="font-extrabold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] text-xs pl-0.5">Ш</span>
                           <input
                             type="number"
                             value={canvasWidthInput}
@@ -6423,12 +6508,12 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                 setCanvasWidthMm(fromDisplayValue(parsed));
                               }
                             }}
-                            className="w-11 sm:w-14 text-center font-bold text-xs bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full px-1 py-0.5 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#5B3E88] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            className="w-11 sm:w-14 text-center font-bold text-xs bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full px-1 py-0.5 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavenderAccent)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                           />
                         </div>
                         <span className="text-zinc-400 font-bold text-xs">×</span>
                         <div className="flex items-center gap-0.5">
-                          <span className="font-extrabold text-[#5B3E88] dark:text-purple-400 text-xs pl-0.5">В</span>
+                          <span className="font-extrabold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] text-xs pl-0.5">В</span>
                           <input
                             type="number"
                             value={canvasHeightInput}
@@ -6439,7 +6524,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                 setCanvasHeightMm(fromDisplayValue(parsed));
                               }
                             }}
-                            className="w-11 sm:w-14 text-center font-bold text-xs bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full px-1 py-0.5 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#5B3E88] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            className="w-11 sm:w-14 text-center font-bold text-xs bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full px-1 py-0.5 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavenderAccent)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                           />
                         </div>
                       </div>
@@ -6452,7 +6537,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                     <div className="relative">
                       <button
                         onClick={() => setIsBackdropPopoverOpen(!isBackdropPopoverOpen)}
-                        className="px-3 py-1.5 rounded-full font-bold text-xs flex items-center gap-1.5 bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white border-transparent hover:opacity-95 shadow-md cursor-pointer transition-all active:scale-95"
+                        style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
+                        className="px-3.5 py-1.5 rounded-full font-semibold text-xs flex items-center gap-1.5 text-white hover:opacity-90 shadow-xs cursor-pointer transition-all active:scale-95"
                         title="Настройки фона (Цвет, картинка, масштаб, сброс)"
                       >
                         <Upload className="w-3.5 h-3.5 shrink-0" />
@@ -6476,11 +6562,11 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                               animate={{ opacity: 1, y: 0, scale: 1 }}
                               exit={{ opacity: 0, y: 8, scale: 0.95 }}
                               transition={{ duration: 0.15 }}
-                              className="absolute right-0 bottom-full mb-2 w-56 bg-white/75 dark:bg-zinc-900/75 hover:bg-white/90 dark:hover:bg-zinc-900/90 backdrop-blur-md border border-zinc-200/80 dark:border-zinc-700/80 rounded-2xl shadow-xl p-2.5 z-[70] flex flex-col gap-2.5 transition-all"
+                              className="absolute right-0 bottom-full mb-2 w-56 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border border-zinc-200/80 dark:border-zinc-700/80 rounded-2xl shadow-xl p-2.5 z-[70] flex flex-col gap-2.5 transition-all"
                             >
                               <div className="flex items-center justify-between pb-1 border-b border-zinc-200/60 dark:border-zinc-800">
-                                <span className="text-xs font-bold text-zinc-800 dark:text-zinc-100 flex items-center gap-1.5">
-                                  <Palette className="w-3.5 h-3.5 text-[#8C52D0] dark:text-purple-400" />
+                                <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-100 flex items-center gap-1.5">
+                                  <Palette className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                                   Настройка фона
                                 </span>
                                 <button
@@ -6497,7 +6583,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                   fileInputRef.current?.click();
                                   setIsBackdropPopoverOpen(false);
                                 }}
-                                className="w-full py-1.5 px-2.5 rounded-xl bg-purple-50/80 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/80 text-[#8C52D0] dark:text-purple-200 text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer border border-purple-200/50 dark:border-purple-800/40"
+                                className="w-full py-1.5 px-2.5 rounded-xl bg-[var(--lavenderSoft)] hover:opacity-90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer border border-[var(--lavenderAccent)]/30"
                               >
                                 <Upload className="w-3.5 h-3.5" />
                                 <span>Загрузить изображение</span>
@@ -6505,7 +6591,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
                               {/* Color Picker Option */}
                               <div className="flex items-center justify-between gap-2 pt-0.5">
-                                <span className="text-[11px] font-bold text-zinc-700 dark:text-zinc-300">
+                                <span className="text-[11px] font-semibold text-zinc-700 dark:text-zinc-300">
                                   Цвет фона:
                                 </span>
                                 <div className="flex items-center gap-1.5">
@@ -6531,7 +6617,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                       setScenes(updated);
                                       recordHistory(updated);
                                     }}
-                                    className="w-16 px-1.5 py-0.5 rounded-md bg-zinc-100/80 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-[10px] font-mono font-bold text-zinc-800 dark:text-zinc-200 uppercase focus:outline-none focus:border-[#8C52D0]"
+                                    className="w-16 px-1.5 py-0.5 rounded-md bg-zinc-100/80 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-[10px] font-mono font-semibold text-zinc-800 dark:text-zinc-200 uppercase focus:outline-none focus:border-[var(--lavDeep)]"
                                   />
                                 </div>
                               </div>
@@ -6539,12 +6625,12 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                               {/* Background Image Scale Slider inside Popover */}
                               {activeScene.backdropImage && (
                                 <div className="space-y-2 pt-2 border-t border-zinc-200/60 dark:border-zinc-800">
-                                  <div className="flex items-center justify-between text-[11px] font-bold text-zinc-600 dark:text-zinc-300">
+                                  <div className="flex items-center justify-between text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
                                     <span className="flex items-center gap-1">
-                                      <ZoomIn className="w-3.5 h-3.5 text-[#8C52D0] dark:text-purple-400" />
+                                      <ZoomIn className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                                       Масштаб картинки
                                     </span>
-                                    <span className="text-[#8C52D0] dark:text-purple-300 font-mono font-extrabold">
+                                    <span className="text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] font-mono font-semibold">
                                       {Math.round((activeScene.backdropScale || 1) * 100)}%
                                     </span>
                                   </div>
@@ -6563,7 +6649,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                       step="5"
                                       value={Math.round((activeScene.backdropScale || 1) * 100)}
                                       onChange={(e) => updateActiveSceneBackdropScale(parseFloat(e.target.value) / 100)}
-                                      className="w-full accent-[#8C52D0] dark:accent-purple-400 h-2 rounded-lg bg-zinc-200 dark:bg-zinc-700 cursor-pointer"
+                                      className="w-full accent-[var(--lavDeep)] dark:accent-[var(--lavenderAccent)] h-2 rounded-lg bg-zinc-200 dark:bg-zinc-700 cursor-pointer"
                                     />
                                     <button
                                       onClick={() => updateActiveSceneBackdropScale((activeScene.backdropScale || 1) + 0.1)}
@@ -6575,7 +6661,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                     {(activeScene.backdropScale && activeScene.backdropScale !== 1) && (
                                       <button
                                         onClick={() => updateActiveSceneBackdropScale(1)}
-                                        className="text-[10px] font-bold text-zinc-400 hover:text-[#8C52D0] dark:hover:text-purple-300 cursor-pointer underline shrink-0 ml-0.5"
+                                        className="text-[10px] font-semibold text-zinc-400 hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] cursor-pointer underline shrink-0 ml-0.5"
                                         title="Сбросить на 100%"
                                       >
                                         100%
@@ -6595,7 +6681,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                     setIsBackdropPopoverOpen(false);
                                     showToast('Фон сброшен', 'Фон возвращен к стандартному прозрачно-светлому.', 'info');
                                   }}
-                                  className="w-full py-1.5 px-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-rose-200/50 dark:border-rose-800/40"
+                                  className="w-full py-1.5 px-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-300 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-rose-200/50 dark:border-rose-800/40"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                   <span>Удалить / сбросить фон</span>
@@ -6609,10 +6695,11 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
                     <button
                       onClick={() => setGridVisible(!gridVisible)}
-                      className={`px-3 py-1.5 rounded-full font-bold text-xs flex items-center gap-1.5 shadow-md transition-all cursor-pointer active:scale-95 ${
+                      style={gridVisible ? { background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' } : undefined}
+                      className={`px-3.5 py-1.5 rounded-full font-semibold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer active:scale-95 ${
                         gridVisible
-                          ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white border-transparent'
-                          : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border border-[#8C52D0]/40 hover:bg-purple-50/50'
+                          ? 'text-white'
+                          : 'bg-white/80 dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-700/80 hover:bg-white dark:hover:bg-zinc-700'
                       }`}
                       title="Показать / скрыть сетку"
                     >
@@ -6622,10 +6709,11 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
                     <button
                       onClick={() => updateActiveSceneHuman({ humanVisible: !activeHumanVisible })}
-                      className={`px-3 py-1.5 rounded-full font-bold text-xs flex items-center gap-1.5 shadow-md transition-all cursor-pointer active:scale-95 ${
+                      style={activeHumanVisible ? { background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' } : undefined}
+                      className={`px-3.5 py-1.5 rounded-full font-semibold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer active:scale-95 ${
                         activeHumanVisible
-                          ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white border-transparent'
-                          : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border border-[#8C52D0]/40 hover:bg-purple-50/50'
+                          ? 'text-white'
+                          : 'bg-white/80 dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-700/80 hover:bg-white dark:hover:bg-zinc-700'
                       }`}
                       title="Показать / скрыть силуэт человека"
                     >
@@ -6648,9 +6736,9 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
               <div className="flex-1 grid grid-cols-2 gap-1">
                 <button
                   onClick={() => setActiveSidebarTab('library')}
-                  className={`py-2 px-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  className={`py-2 px-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                     activeSidebarTab === 'library'
-                      ? 'bg-[#EAE4F8] text-[#5B3E88] dark:bg-purple-950 dark:text-purple-200 shadow-xs border border-[#D4C5ED]/50'
+                      ? 'bg-[var(--lavenderSoft)] text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] shadow-xs border border-[var(--lavenderAccent)]/40'
                       : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
                   }`}
                 >
@@ -6659,16 +6747,16 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                 </button>
                 <button
                   onClick={() => setActiveSidebarTab('layers')}
-                  className={`py-2 px-1 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  className={`py-2 px-1 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                     activeSidebarTab === 'layers'
-                      ? 'bg-[#EAE4F8] text-[#5B3E88] dark:bg-purple-950 dark:text-purple-200 shadow-xs border border-[#D4C5ED]/50'
+                      ? 'bg-[var(--lavenderSoft)] text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] shadow-xs border border-[var(--lavenderAccent)]/40'
                       : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
                   }`}
                 >
                   <Layers className="w-3.5 h-3.5 shrink-0" />
                   <span className="truncate">Элементы</span>
-                  <span className="px-1.5 py-0.5 rounded-full bg-[#5B3E88] text-white text-[9px] font-extrabold leading-none shrink-0">
-                    {activeScene.elements.length}
+                  <span className="px-1.5 py-0.5 rounded-full bg-[var(--lavDeep)] dark:bg-[var(--lavenderAccent)] text-white text-[9px] font-semibold leading-none shrink-0">
+                    {activeScene.elements.filter(el => el.type !== 'measurement').length}
                   </span>
                 </button>
               </div>
@@ -6865,13 +6953,13 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
                         <div className="flex-1 min-w-0 space-y-0.5">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                            <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">
                               {hasCustomBg ? 'Ваш загруженный фон' : 'Пустой светлый белый зал'}
                             </span>
-                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase ${
                               hasCustomBg
                                 ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20'
-                                : 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20'
+                                : 'bg-[var(--lavenderSoft)] text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] border border-[var(--lavenderAccent)]/30'
                             }`}>
                               {hasCustomBg ? 'Свой фон' : 'По умолчанию'}
                             </span>
@@ -6889,7 +6977,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
                   {/* PRESET PROMPT SUGGESTIONS */}
                   <div className="space-y-2">
-                    <div className="flex justify-between items-center text-[10px] font-extrabold uppercase text-zinc-400 tracking-wider">
+                    <div className="flex justify-between items-center text-[10px] font-semibold uppercase text-zinc-400 tracking-wider">
                       <span>Стиль освещения и атмосфера</span>
                       <span className="text-zinc-400 font-normal">Необязательно</span>
                     </div>
@@ -6907,7 +6995,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                           onClick={() => setAiPrompt(preset)}
                           className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all cursor-pointer border ${
                             aiPrompt === preset
-                              ? 'bg-[var(--lavenderSoft)] text-[var(--lavDeep)] dark:text-purple-300 border-[var(--lavDeep)]'
+                              ? 'bg-[var(--lavenderSoft)] text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] border-[var(--lavenderAccent)]/40 shadow-xs'
                               : 'bg-zinc-100/80 dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-300 border-zinc-200/60 dark:border-zinc-700/60 hover:bg-zinc-200 dark:hover:bg-zinc-700'
                           }`}
                         >
@@ -6936,8 +7024,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                   {/* GENERATE PRIMARY BUTTON */}
                   <button
                     onClick={handleStartAiGeneration}
-                    style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
-                    className="w-full py-3 rounded-full text-white text-xs sm:text-sm font-semibold hover:opacity-90 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-[#582F89]/20 active:scale-95"
+                    style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
+                    className="w-full py-3 rounded-full text-white text-xs sm:text-sm font-semibold hover:opacity-90 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-95"
                   >
                     <Wand2 className="w-4 h-4 text-white fill-white" />
                     <span>Сгенерировать реалистичный рендер</span>
@@ -6976,7 +7064,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                     <Sparkles className="w-5 h-5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                   </div>
                   <div>
-                    <h3 className="font-extrabold text-zinc-900 dark:text-zinc-100 text-base sm:text-lg leading-tight">
+                    <h3 className="font-semibold text-zinc-900 dark:text-zinc-100 text-base sm:text-lg leading-tight">
                       Результат ИИ-визуализации
                     </h3>
                     <p className="text-xs text-zinc-500 dark:text-zinc-400 font-normal">
@@ -6999,8 +7087,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                   alt="Результат визуализации"
                   className="w-full h-full max-h-[50vh] sm:max-h-[55vh] object-contain rounded-xl"
                 />
-                <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-bold text-white flex items-center gap-1.5 border border-white/20 shadow-md">
-                  <Sparkles className="w-3.5 h-3.5 text-purple-300" />
+                <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-semibold text-white flex items-center gap-1.5 border border-white/20 shadow-xs">
+                  <Sparkles className="w-3.5 h-3.5 text-[var(--lavenderAccent)]" />
                   <span>3D Фотореализм</span>
                 </div>
               </div>
@@ -7022,17 +7110,17 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                 {/* Secondary Outline: Скачать */}
                 <button
                   onClick={handleDownloadGeneratedResult}
-                  className="w-full sm:w-auto px-5 py-2.5 rounded-full border border-[var(--lavDeep)] text-[var(--lavDeep)] dark:text-purple-300 hover:bg-[var(--lavenderSoft)] text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-full border border-[var(--lavDeep)] text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:bg-[var(--lavenderSoft)] text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                 >
-                  <Download className="w-4 h-4 text-[var(--lavDeep)] dark:text-purple-300" />
+                  <Download className="w-4 h-4 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                   <span>Скачать</span>
                 </button>
 
                 {/* Primary Gradient: Сохранить в карточку проекта */}
                 <button
                   onClick={handleSaveGeneratedToProject}
-                  style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
-                  className="w-full sm:w-auto px-6 py-2.5 rounded-full text-white text-xs sm:text-sm font-semibold hover:opacity-90 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-[#582F89]/20 active:scale-95"
+                  style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-full text-white text-xs sm:text-sm font-semibold hover:opacity-90 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-95"
                 >
                   <FolderPlus className="w-4 h-4 text-white" />
                   <span>Сохранить в карточку проекта</span>
@@ -7066,11 +7154,11 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
               {/* Header */}
               <div className="flex items-center justify-between pb-3 border-b border-zinc-200/80 dark:border-zinc-800">
                 <div>
-                  <h3 className="font-extrabold text-base text-zinc-900 dark:text-zinc-100">
+                  <h3 className="font-semibold text-base text-zinc-900 dark:text-zinc-100">
                     {itemToPreview.name}
                   </h3>
                   <p className="text-xs text-zinc-400 mt-0.5">
-                    Артикул / Код: <span className="font-mono font-bold text-zinc-600 dark:text-zinc-300">{itemToPreview.code}</span>
+                    Артикул / Код: <span className="font-mono font-semibold text-zinc-600 dark:text-zinc-300">{itemToPreview.code}</span>
                   </p>
                 </div>
                 <button
@@ -7091,17 +7179,17 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
               </div>
 
               {/* Specifications/Details */}
-              <div className="grid grid-cols-2 gap-2 text-xs bg-purple-50/60 dark:bg-purple-950/20 p-3.5 rounded-2xl border border-purple-200/40 dark:border-purple-800/30">
+              <div className="grid grid-cols-2 gap-2 text-xs bg-[var(--lavenderSoft)]/50 dark:bg-zinc-800/40 p-3.5 rounded-2xl border border-[var(--lavenderAccent)]/20 dark:border-zinc-800">
                 <div className={activeWorkspaceTab === 'floorplan' ? 'col-span-2' : ''}>
                   <span className="text-zinc-400 text-[11px] block font-medium">Габариты (Ш × В):</span>
-                  <span className="font-bold text-zinc-800 dark:text-zinc-200">
+                  <span className="font-semibold text-zinc-800 dark:text-zinc-200">
                     {itemToPreview.width * 10} × {itemToPreview.height * 10} мм ({toDisplayValue(itemToPreview.width * 10)} × {toDisplayValue(itemToPreview.height * 10)} {activeUnit})
                   </span>
                 </div>
                 {activeWorkspaceTab !== 'floorplan' && (
                   <div>
                     <span className="text-zinc-400 text-[11px] block font-medium">Стоимость:</span>
-                    <span className="font-bold text-[#5B3E88] dark:text-purple-300">
+                    <span className="font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">
                       {itemToPreview.price.toLocaleString('ru')} ₽
                     </span>
                   </div>
@@ -7112,7 +7200,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
               <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-zinc-200/80 dark:border-zinc-800">
                 <button
                   onClick={() => setItemToPreview(null)}
-                  className="px-5 py-2.5 rounded-full text-zinc-700 dark:text-zinc-300 text-xs font-bold hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all cursor-pointer border border-zinc-300 dark:border-zinc-700 bg-transparent active:scale-95"
+                  className="px-5 py-2.5 rounded-full text-zinc-700 dark:text-zinc-300 text-xs font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all cursor-pointer border border-zinc-300 dark:border-zinc-700 bg-transparent active:scale-95"
                 >
                   Отмена
                 </button>
@@ -7121,8 +7209,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                     handleAddElementToScene(itemToPreview);
                     setItemToPreview(null);
                   }}
-                  style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
-                  className="px-6 py-2.5 rounded-full text-white text-xs font-bold hover:opacity-90 transition-all cursor-pointer shadow-md shadow-[#582F89]/20 active:scale-95 flex items-center gap-1.5"
+                  style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
+                  className="px-6 py-2.5 rounded-full text-white text-xs font-semibold hover:opacity-90 transition-all cursor-pointer shadow-xs active:scale-95 flex items-center gap-1.5"
                 >
                   <Check className="w-4 h-4" />
                   <span>ОК</span>
@@ -7145,11 +7233,11 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
             >
               <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 bg-[#EAE4F8] dark:bg-purple-950 rounded-xl text-[#5B3E88] dark:text-purple-300">
+                  <div className="p-2 bg-[var(--lavenderSoft)] rounded-xl text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">
                     <Sliders className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100">Иконки категорий редактора</h3>
+                    <h3 className="font-semibold text-base text-zinc-900 dark:text-zinc-100">Иконки категорий редактора</h3>
                     <p className="text-xs text-zinc-400">Настройка значков боковой панели</p>
                   </div>
                 </div>
@@ -7162,8 +7250,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
               </div>
 
               {/* Instructions Box */}
-              <div className="p-3.5 rounded-2xl bg-purple-50/60 dark:bg-purple-950/20 border border-purple-200/50 dark:border-purple-800/30 text-xs text-zinc-600 dark:text-zinc-300 space-y-1.5 shrink-0">
-                <div className="font-bold text-[#5B3E88] dark:text-purple-300 flex items-center gap-1.5">
+              <div className="p-3.5 rounded-2xl bg-[var(--lavenderSoft)]/50 dark:bg-zinc-800/40 border border-[var(--lavenderAccent)]/20 dark:border-zinc-800 text-xs text-zinc-600 dark:text-zinc-300 space-y-1.5 shrink-0">
+                <div className="font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] flex items-center gap-1.5">
                   <Folder className="w-4 h-4" />
                   <span>Папка в проекте: /public/category-icons/</span>
                 </div>
@@ -7186,7 +7274,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                           <CategoryIcon cat={cat} />
                         </div>
                         <div className="min-w-0">
-                          <div className="font-bold text-zinc-800 dark:text-zinc-200 truncate">{cat.title}</div>
+                          <div className="font-semibold text-zinc-800 dark:text-zinc-200 truncate">{cat.title}</div>
                           <div className="text-[10px] text-zinc-400 font-mono">/public/category-icons/{cat.id}.svg</div>
                         </div>
                       </div>
@@ -7204,7 +7292,10 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                             Сбросить
                           </button>
                         )}
-                        <label className="px-3 py-1.5 rounded-full bg-gradient-to-r from-[#8C52D0] to-[#582F89] hover:opacity-90 text-white text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-xs">
+                        <label
+                          style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
+                          className="px-3.5 py-1.5 rounded-full hover:opacity-90 text-white text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1 shadow-xs"
+                        >
                           <Upload className="w-3 h-3" />
                           <span>Загрузить</span>
                           <input

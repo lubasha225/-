@@ -103,7 +103,7 @@ export default function SidebarStatisticsWidget({ projects, onOpenFullScreen }: 
         <button
           onClick={onOpenFullScreen}
           title="Открыть статистику на всю страницу"
-          className="flex items-center gap-1 text-[11px] font-semibold text-[#8C52D0] dark:text-purple-300 bg-purple-100/80 dark:bg-purple-950/60 hover:bg-purple-200/80 dark:hover:bg-purple-900/80 px-2.5 py-1 rounded-full transition-all cursor-pointer shadow-2xs"
+          className="flex items-center gap-1 text-[11px] font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 bg-purple-100/80 dark:bg-purple-950/60 hover:bg-purple-200/80 dark:hover:bg-purple-900/80 px-2.5 py-1 rounded-full transition-all cursor-pointer shadow-2xs"
         >
           <Maximize2 className="w-3 h-3" />
           <span>На весь экран</span>
@@ -116,7 +116,7 @@ export default function SidebarStatisticsWidget({ projects, onOpenFullScreen }: 
           onClick={() => setPeriodMode('month')}
           className={`flex-1 py-1 px-1.5 rounded-full font-semibold transition-all cursor-pointer text-center ${
             periodMode === 'month'
-              ? 'bg-[#8C52D0] text-white shadow-2xs'
+              ? 'bg-[var(--lavDeep)] text-white shadow-2xs'
               : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
           }`}
         >
@@ -126,7 +126,7 @@ export default function SidebarStatisticsWidget({ projects, onOpenFullScreen }: 
           onClick={() => setPeriodMode('halfyear')}
           className={`flex-1 py-1 px-1.5 rounded-full font-semibold transition-all cursor-pointer text-center ${
             periodMode === 'halfyear'
-              ? 'bg-[#8C52D0] text-white shadow-2xs'
+              ? 'bg-[var(--lavDeep)] text-white shadow-2xs'
               : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
           }`}
         >
@@ -136,7 +136,7 @@ export default function SidebarStatisticsWidget({ projects, onOpenFullScreen }: 
           onClick={() => setPeriodMode('year')}
           className={`flex-1 py-1 px-1.5 rounded-full font-semibold transition-all cursor-pointer text-center ${
             periodMode === 'year'
-              ? 'bg-[#8C52D0] text-white shadow-2xs'
+              ? 'bg-[var(--lavDeep)] text-white shadow-2xs'
               : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
           }`}
         >
@@ -146,7 +146,7 @@ export default function SidebarStatisticsWidget({ projects, onOpenFullScreen }: 
           onClick={() => setPeriodMode('custom')}
           className={`flex-1 py-1 px-1.5 rounded-full font-semibold transition-all cursor-pointer text-center ${
             periodMode === 'custom'
-              ? 'bg-[#8C52D0] text-white shadow-2xs'
+              ? 'bg-[var(--lavDeep)] text-white shadow-2xs'
               : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
           }`}
         >
@@ -157,7 +157,7 @@ export default function SidebarStatisticsWidget({ projects, onOpenFullScreen }: 
       {/* Conditional Specific Month Selection */}
       {periodMode === 'month' && (
         <div className="flex items-center gap-1.5 bg-white/80 dark:bg-zinc-900/80 p-2 rounded-[16px] border border-zinc-200/60 dark:border-zinc-800/60 text-xs">
-          <Calendar className="w-3.5 h-3.5 text-[#8C52D0] shrink-0" />
+          <Calendar className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] shrink-0" />
           <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
@@ -269,7 +269,7 @@ export default function SidebarStatisticsWidget({ projects, onOpenFullScreen }: 
       <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md p-3 rounded-[20px] border border-zinc-200/60 dark:border-zinc-800/60 shadow-xs space-y-2">
         <div className="flex items-center justify-between text-xs font-semibold text-zinc-800 dark:text-zinc-200">
           <span>Категории проектов</span>
-          <PieChartIcon className="w-3.5 h-3.5 text-[#8C52D0]" />
+          <PieChartIcon className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
         </div>
 
         <div className="space-y-2 pt-1">
@@ -293,7 +293,7 @@ export default function SidebarStatisticsWidget({ projects, onOpenFullScreen }: 
       {/* Open full dashboard CTA button */}
       <button
         onClick={onOpenFullScreen}
-        className="w-full py-2 px-3 rounded-full bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white text-xs font-semibold hover:opacity-95 transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
+        className="w-full py-2 px-3 rounded-full bg-gradient-to-r from-[var(--primary-grad-from,#8C52D0)] to-[var(--primary-grad-to,#582F89)] text-white text-xs font-semibold hover:opacity-95 transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
       >
         <Maximize2 className="w-3.5 h-3.5" />
         <span>Полный финансовый отчет</span>

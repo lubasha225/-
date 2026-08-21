@@ -113,7 +113,7 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
   useEffect(() => {
     if (setHeaderActions) {
       setHeaderActions(
-        <label className="shrink-0 bg-gradient-to-r from-[#8C52D0] to-[#582F89] hover:opacity-95 text-white rounded-full px-5 py-3 text-[13px] font-medium shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer">
+        <label className="shrink-0 bg-gradient-to-r from-[var(--primary-grad-from,#8C52D0)] to-[var(--primary-grad-to,#582F89)] hover:opacity-95 text-white rounded-full px-5 py-3 text-[13px] font-medium shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer">
           <UploadCloud className="w-4 h-4 shrink-0" />
           <span>Загрузить фото</span>
           <input
@@ -254,13 +254,13 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
                   onClick={() => setSelectedCategory(cat.key)}
                   className={`rounded-full text-xs font-semibold tracking-tight transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap shadow-xs px-3 py-1 bg-white dark:bg-zinc-900 border ${
                     isActive
-                      ? 'border-[#8C52D0] ring-2 ring-[#8C52D0]/30 text-[#8C52D0]'
-                      : 'border-zinc-200 dark:border-zinc-800 text-[#8C52D0] hover:border-[#8C52D0]/60'
+                      ? 'border-[var(--lavDeep)] ring-2 ring-[var(--lavenderAccent)]/30 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]'
+                      : 'border-zinc-200 dark:border-zinc-800 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:border-[var(--lavDeep)]/60'
                   }`}
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-[#8C52D0] shrink-0" />
+                  <Sparkles className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] shrink-0" />
                   <span>Создано ИИ</span>
-                  <span className="inline-flex items-center justify-center rounded-full text-[10px] font-bold min-w-[18px] h-4.5 px-1.5 bg-[#8C52D0]/10 text-[#8C52D0]">
+                  <span className="inline-flex items-center justify-center rounded-full text-[10px] font-bold min-w-[18px] h-4.5 px-1.5 bg-[var(--lavenderSoft)] text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">
                     {count}
                   </span>
                 </button>
@@ -273,7 +273,7 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
                 onClick={() => setSelectedCategory(cat.key)}
                 className={`rounded-full text-xs font-semibold tracking-tight transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap ${
                   isActive
-                    ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-xs px-3 py-1'
+                    ? 'bg-gradient-to-r from-[var(--primary-grad-from,#8C52D0)] to-[var(--primary-grad-to,#582F89)] text-white shadow-xs px-3 py-1'
                     : 'bg-transparent border-transparent text-[var(--soft)] hover:text-[var(--ink)] hover:bg-black/5 dark:hover:bg-white/5 px-2.5 py-1'
                 }`}
               >

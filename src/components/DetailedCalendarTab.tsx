@@ -473,7 +473,7 @@ export default function DetailedCalendarTab({
                 placeholder="Поиск событий..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white/70 dark:bg-zinc-800/70 border border-zinc-200/60 dark:border-zinc-700/60 rounded-full pl-8 pr-3 py-1.5 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#8C52D0]/40"
+                className="w-full bg-white/70 dark:bg-zinc-800/70 border border-zinc-200/60 dark:border-zinc-700/60 rounded-full pl-8 pr-3 py-1.5 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[var(--lavenderAccent)]/40"
               />
             </div>
 
@@ -485,7 +485,7 @@ export default function DetailedCalendarTab({
                 setSelectedDateForNewEvent(`${currentYear}-${mStr}-${dStr}`);
                 setIsAddEventModalOpen(true);
               }}
-              style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+              style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
               className="text-white rounded-full px-4 py-1.5 text-xs font-semibold shadow-xs hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer flex items-center gap-1.5"
             >
               <Plus className="w-4 h-4" />
@@ -565,7 +565,7 @@ export default function DetailedCalendarTab({
                     !day.currentMonth
                       ? 'bg-zinc-100/30 dark:bg-zinc-900/10 border-transparent opacity-30 select-none'
                       : isSelected
-                      ? 'bg-purple-50/90 dark:bg-purple-950/40 border-[#8C52D0] dark:border-purple-500 shadow-xs'
+                      ? 'bg-purple-50/90 dark:bg-purple-950/40 border-[var(--lavDeep)] dark:border-purple-500 shadow-xs'
                       : 'bg-white/60 dark:bg-zinc-800/50 hover:bg-white dark:hover:bg-zinc-800/80 border-zinc-200/50 dark:border-zinc-800/50'
                   }`}
                 >
@@ -574,9 +574,9 @@ export default function DetailedCalendarTab({
                     <span
                       className={`inline-flex items-center justify-center text-xs sm:text-sm font-extrabold w-6 h-6 rounded-full ${
                         day.isToday
-                          ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-2xs'
+                          ? 'bg-gradient-to-r from-[var(--primary-grad-from,#8C52D0)] to-[var(--primary-grad-to,#582F89)] text-white shadow-2xs'
                           : isSelected
-                          ? 'text-[#8C52D0] dark:text-purple-300'
+                          ? 'text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300'
                           : day.currentMonth
                           ? 'text-zinc-800 dark:text-zinc-200'
                           : 'text-zinc-400'
@@ -677,7 +677,7 @@ export default function DetailedCalendarTab({
                         setSelectedDateForNewEvent(selectedDateStr);
                         setIsAddEventModalOpen(true);
                       }}
-                      className="text-xs text-[#8C52D0] dark:text-purple-300 font-bold hover:underline cursor-pointer"
+                      className="text-xs text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 font-bold hover:underline cursor-pointer"
                     >
                       + Назначить время
                     </button>
@@ -854,7 +854,7 @@ export default function DetailedCalendarTab({
                       }
                       setActiveEventDetail(null);
                     }}
-                    style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                    style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
                     className="text-white rounded-full px-5 py-2 text-xs font-semibold shadow-xs hover:opacity-90 transition-all cursor-pointer"
                   >
                     Перейти к карточке проекта
@@ -910,7 +910,7 @@ export default function DetailedCalendarTab({
                     placeholder="Например: Заезд бригады и сборка арки"
                     value={newEventTitle}
                     onChange={(e) => setNewEventTitle(e.target.value)}
-                    className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl px-3.5 py-2.5 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#8C52D0]/50"
+                    className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl px-3.5 py-2.5 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--lavenderAccent)]/50"
                   />
                 </div>
 
@@ -923,7 +923,7 @@ export default function DetailedCalendarTab({
                       type="date"
                       value={selectedDateForNewEvent}
                       onChange={(e) => setSelectedDateForNewEvent(e.target.value)}
-                      className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl px-3 py-2 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#8C52D0]/50"
+                      className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl px-3 py-2 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--lavenderAccent)]/50"
                     />
                   </div>
 
@@ -935,7 +935,7 @@ export default function DetailedCalendarTab({
                       type="time"
                       value={newEventTime}
                       onChange={(e) => setNewEventTime(e.target.value)}
-                      className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl px-3 py-2 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#8C52D0]/50"
+                      className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl px-3 py-2 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--lavenderAccent)]/50"
                     />
                   </div>
                 </div>
@@ -947,7 +947,7 @@ export default function DetailedCalendarTab({
                   <select
                     value={newEventCategory}
                     onChange={(e) => setNewEventCategory(e.target.value as any)}
-                    className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl px-3.5 py-2 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#8C52D0]/50"
+                    className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl px-3.5 py-2 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--lavenderAccent)]/50"
                   >
                     <option value="montage">💜 Монтаж & Заезд</option>
                     <option value="procurement">🌿 Закупка флористики/декора</option>
@@ -965,7 +965,7 @@ export default function DetailedCalendarTab({
                   <select
                     value={newEventProjectId}
                     onChange={(e) => setNewEventProjectId(e.target.value)}
-                    className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl px-3.5 py-2 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#8C52D0]/50"
+                    className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl px-3.5 py-2 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--lavenderAccent)]/50"
                   >
                     <option value="">Без привязки</option>
                     {projects.map(p => (
@@ -983,7 +983,7 @@ export default function DetailedCalendarTab({
                     placeholder="Локация или название площадки"
                     value={newEventVenue}
                     onChange={(e) => setNewEventVenue(e.target.value)}
-                    className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl px-3.5 py-2 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#8C52D0]/50"
+                    className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl px-3.5 py-2 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--lavenderAccent)]/50"
                   />
                 </div>
 
@@ -997,7 +997,7 @@ export default function DetailedCalendarTab({
                   </button>
                   <button
                     type="submit"
-                    style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                    style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
                     className="text-white rounded-full px-5 py-2 text-xs font-semibold shadow-xs hover:opacity-90 transition-all cursor-pointer"
                   >
                     Сохранить событие

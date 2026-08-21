@@ -145,7 +145,7 @@ export default function StatisticsTab({ projects, showToast }: StatisticsTabProp
               onClick={() => setPeriodMode('month')}
               className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                 periodMode === 'month'
-                  ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-xs'
+                  ? 'bg-gradient-to-r from-[var(--primary-grad-from,#8C52D0)] to-[var(--primary-grad-to,#582F89)] text-white shadow-xs'
                   : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
               }`}
             >
@@ -155,7 +155,7 @@ export default function StatisticsTab({ projects, showToast }: StatisticsTabProp
               onClick={() => setPeriodMode('halfyear')}
               className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                 periodMode === 'halfyear'
-                  ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-xs'
+                  ? 'bg-gradient-to-r from-[var(--primary-grad-from,#8C52D0)] to-[var(--primary-grad-to,#582F89)] text-white shadow-xs'
                   : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
               }`}
             >
@@ -165,7 +165,7 @@ export default function StatisticsTab({ projects, showToast }: StatisticsTabProp
               onClick={() => setPeriodMode('year')}
               className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                 periodMode === 'year'
-                  ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-xs'
+                  ? 'bg-gradient-to-r from-[var(--primary-grad-from,#8C52D0)] to-[var(--primary-grad-to,#582F89)] text-white shadow-xs'
                   : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
               }`}
             >
@@ -175,7 +175,7 @@ export default function StatisticsTab({ projects, showToast }: StatisticsTabProp
               onClick={() => setPeriodMode('custom')}
               className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                 periodMode === 'custom'
-                  ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-xs'
+                  ? 'bg-gradient-to-r from-[var(--primary-grad-from,#8C52D0)] to-[var(--primary-grad-to,#582F89)] text-white shadow-xs'
                   : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
               }`}
             >
@@ -186,7 +186,7 @@ export default function StatisticsTab({ projects, showToast }: StatisticsTabProp
           {/* Conditional Month Picker */}
           {periodMode === 'month' && (
             <div className="flex items-center gap-1.5 bg-white/80 dark:bg-zinc-800/80 px-3 py-1.5 rounded-full border border-zinc-200/80 dark:border-zinc-700/80 text-xs shadow-2xs">
-              <Calendar className="w-3.5 h-3.5 text-[#8C52D0]" />
+              <Calendar className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
               <span className="text-zinc-600 dark:text-zinc-400 font-medium hidden sm:inline">Месяц:</span>
               <select
                 value={selectedMonth}
@@ -204,7 +204,7 @@ export default function StatisticsTab({ projects, showToast }: StatisticsTabProp
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
                 title="Выбрать любой другой месяц"
-                className="bg-transparent font-semibold text-[#8C52D0] dark:text-purple-300 outline-none cursor-pointer w-7 h-5 opacity-80 hover:opacity-100"
+                className="bg-transparent font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 outline-none cursor-pointer w-7 h-5 opacity-80 hover:opacity-100"
               />
             </div>
           )}
@@ -212,7 +212,7 @@ export default function StatisticsTab({ projects, showToast }: StatisticsTabProp
           {/* Conditional Date Range Picker (От ... до ...) */}
           {periodMode === 'custom' && (
             <div className="flex items-center gap-2 bg-white/80 dark:bg-zinc-800/80 px-3 py-1.5 rounded-full border border-zinc-200/80 dark:border-zinc-700/80 text-xs shadow-2xs">
-              <Calendar className="w-3.5 h-3.5 text-[#8C52D0]" />
+              <Calendar className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
               <span className="text-zinc-600 dark:text-zinc-400 font-medium">С:</span>
               <input
                 type="date"
@@ -234,7 +234,7 @@ export default function StatisticsTab({ projects, showToast }: StatisticsTabProp
             onClick={() => showToast && showToast('Экспорт отчета', 'Отчет сформирован и отправлен в загрузки.', 'success')}
             className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/80 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700/80 text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-white dark:hover:bg-zinc-700 transition-all cursor-pointer shadow-2xs"
           >
-            <Download className="w-3.5 h-3.5 text-[#8C52D0]" />
+            <Download className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
             <span>Экспорт</span>
           </button>
         </div>

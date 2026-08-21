@@ -136,7 +136,7 @@ export const BriefBlock: React.FC<BriefBlockProps> = ({
               onClick={() => {
                 showToast?.('Бриф отправлен', 'Ссылка на бриф скопирована', 'success');
               }}
-              style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+              style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
               className="w-8 h-8 sm:w-auto sm:h-8 sm:px-3.5 rounded-full text-white flex items-center justify-center gap-1.5 cursor-pointer transition-all duration-300 hover:shadow-md hover:scale-105 active:scale-95 shadow-xs shrink-0"
               title="Отправить бриф клиенту"
             >
@@ -152,7 +152,7 @@ export const BriefBlock: React.FC<BriefBlockProps> = ({
               className="w-8 h-8 rounded-full text-zinc-700 dark:text-zinc-300 bg-white/70 dark:bg-zinc-800/70 border border-zinc-200/60 dark:border-zinc-700/60 hover:bg-purple-50 dark:hover:bg-purple-950/60 transition-all cursor-pointer flex items-center justify-center shrink-0"
               title={isCollapsed ? 'Развернуть' : 'Свернуть'}
             >
-              {isCollapsed ? <ChevronDown className="w-4 h-4 text-[#8C52D0]" /> : <ChevronUp className="w-4 h-4 text-[#8C52D0]" />}
+              {isCollapsed ? <ChevronDown className="w-4 h-4 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" /> : <ChevronUp className="w-4 h-4 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />}
             </button>
           )}
         </div>
@@ -163,7 +163,7 @@ export const BriefBlock: React.FC<BriefBlockProps> = ({
           {/* SECTION 1: CLIENT FIELDS */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 border-b border-purple-100 dark:border-purple-950/60 pb-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#8C52D0] shrink-0" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[var(--lavDeep)] shrink-0" />
               <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
                 Поля клиента
               </h3>
@@ -198,9 +198,9 @@ export const BriefBlock: React.FC<BriefBlockProps> = ({
                         value={val === "(требует заполнения)" ? "" : val}
                         onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                         placeholder="Заполните информацию..."
-                        className={`w-full text-xs font-semibold rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] resize-none ${
+                        className={`w-full text-xs font-semibold rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)] resize-none ${
                           isEmpty
-                            ? 'bg-purple-50/50 text-[#582F89] italic font-medium border-purple-200/60 dark:bg-zinc-900/90 dark:text-purple-300/80 dark:border-zinc-800'
+                            ? 'bg-purple-50/50 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] italic font-medium border-purple-200/60 dark:bg-zinc-900/90 dark:text-purple-300/80 dark:border-zinc-800'
                             : 'bg-white/90 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100 border-zinc-200 dark:border-zinc-800'
                         }`}
                       />
@@ -210,9 +210,9 @@ export const BriefBlock: React.FC<BriefBlockProps> = ({
                         value={val === "(требует заполнения)" ? "" : val}
                         onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                         placeholder="Заполните значение..."
-                        className={`w-full text-xs font-semibold rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] ${
+                        className={`w-full text-xs font-semibold rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)] ${
                           isEmpty
-                            ? 'bg-purple-50/50 text-[#582F89] italic font-medium border-purple-200/60 dark:bg-zinc-900/90 dark:text-purple-300/80 dark:border-zinc-800'
+                            ? 'bg-purple-50/50 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] italic font-medium border-purple-200/60 dark:bg-zinc-900/90 dark:text-purple-300/80 dark:border-zinc-800'
                             : 'bg-white/90 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100 border-zinc-200 dark:border-zinc-800'
                         }`}
                       />
@@ -281,7 +281,7 @@ export const BriefBlock: React.FC<BriefBlockProps> = ({
                         value={val === "(требует заполнения)" ? "" : val}
                         onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                         placeholder="Заполните информацию..."
-                        className={`w-full text-xs font-semibold rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] resize-none ${
+                        className={`w-full text-xs font-semibold rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)] resize-none ${
                           isEmpty
                             ? 'bg-zinc-100/60 text-zinc-600 italic font-medium border-zinc-200 dark:bg-zinc-800/60 dark:text-zinc-400'
                             : 'bg-white/90 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100 border-zinc-200 dark:border-zinc-800'
@@ -293,7 +293,7 @@ export const BriefBlock: React.FC<BriefBlockProps> = ({
                         value={val === "(требует заполнения)" ? "" : val}
                         onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                         placeholder="Заполните значение..."
-                        className={`w-full text-xs font-semibold rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] ${
+                        className={`w-full text-xs font-semibold rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)] ${
                           isEmpty
                             ? 'bg-zinc-100/60 text-zinc-600 italic font-medium border-zinc-200 dark:bg-zinc-800/60 dark:text-zinc-400'
                             : 'bg-white/90 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100 border-zinc-200 dark:border-zinc-800'
@@ -307,7 +307,7 @@ export const BriefBlock: React.FC<BriefBlockProps> = ({
               {/* ADD CUSTOM FIELD BUTTON / FORM */}
               {isAddingCustomField ? (
                 <div className="p-2.5 rounded-xl border border-l-2 border-dashed border-purple-300 border-l-[#8C52D0] dark:border-purple-800 bg-purple-50/40 dark:bg-purple-950/20 text-left flex flex-col justify-between gap-2 shadow-2xs">
-                  <span className="text-[9px] uppercase tracking-wider font-bold text-[#582F89] dark:text-purple-300">
+                  <span className="text-[9px] uppercase tracking-wider font-bold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300">
                     Новое поле декоратора
                   </span>
                   <input
@@ -326,7 +326,7 @@ export const BriefBlock: React.FC<BriefBlockProps> = ({
                         showToast?.('Поле добавлено', `Добавлено поле: ${keyUpper}`, 'success');
                       }
                     }}
-                    className="w-full text-xs font-semibold rounded-lg px-2 py-1 border border-purple-200 dark:border-purple-800 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-[#8C52D0]"
+                    className="w-full text-xs font-semibold rounded-lg px-2 py-1 border border-purple-200 dark:border-purple-800 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)]"
                   />
                   <div className="flex items-center gap-1.5 pt-0.5">
                     <button
@@ -341,7 +341,7 @@ export const BriefBlock: React.FC<BriefBlockProps> = ({
                         }
                       }}
                       className="flex-1 py-1 px-2 text-white rounded-full text-[11px] font-bold transition-all cursor-pointer hover:opacity-95"
-                      style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                      style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
                     >
                       Сохранить
                     </button>
@@ -359,10 +359,10 @@ export const BriefBlock: React.FC<BriefBlockProps> = ({
               ) : (
                 <button
                   onClick={() => setIsAddingCustomField(true)}
-                  className="p-3 rounded-xl border border-l-2 border-dashed border-zinc-200 border-l-zinc-400 dark:border-zinc-700/60 hover:border-purple-300 bg-white/40 dark:bg-zinc-900/30 hover:bg-purple-50/40 text-zinc-600 hover:text-[#582F89] dark:text-zinc-400 dark:hover:text-purple-300 text-xs font-semibold transition-all duration-300 flex flex-col items-center justify-center gap-1.5 min-h-[82px] cursor-pointer group"
+                  className="p-3 rounded-xl border border-l-2 border-dashed border-zinc-200 border-l-zinc-400 dark:border-zinc-700/60 hover:border-purple-300 bg-white/40 dark:bg-zinc-900/30 hover:bg-purple-50/40 text-zinc-600 hover:text-[var(--lavDeep)] dark:text-zinc-400 dark:hover:text-purple-300 text-xs font-semibold transition-all duration-300 flex flex-col items-center justify-center gap-1.5 min-h-[82px] cursor-pointer group"
                 >
                   <div className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 group-hover:bg-purple-100 flex items-center justify-center transition-colors">
-                    <Plus className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-300 group-hover:text-[#8C52D0]" />
+                    <Plus className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-300 group-hover:text-[var(--lavDeep)]" />
                   </div>
                   <span className="text-[11px] font-bold">+ Добавить поле</span>
                 </button>
@@ -374,7 +374,7 @@ export const BriefBlock: React.FC<BriefBlockProps> = ({
           <div className="pt-4 border-t border-zinc-200/60 dark:border-zinc-800/60 flex items-center justify-between flex-wrap gap-2 text-xs">
             <div className="flex items-center gap-4 text-zinc-700 dark:text-zinc-300">
               <span className="flex items-center gap-1.5 font-normal">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#8C52D0]" /> Поля клиента
+                <span className="w-2.5 h-2.5 rounded-full bg-[var(--lavDeep)]" /> Поля клиента
               </span>
               <span className="flex items-center gap-1.5 font-normal">
                 <span className="w-2.5 h-2.5 rounded-full bg-zinc-400" /> Поля декоратора
@@ -504,7 +504,7 @@ export const DesignBlock: React.FC<DesignBlockProps> = ({
                   showToast?.('Редактор дизайна', 'Переход в встроенный графический редактор...', 'info');
                 }
               }}
-              style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+              style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
               className="rounded-full px-4 py-1.5 text-xs font-bold text-white flex items-center gap-1.5 cursor-pointer transition-all duration-300 hover:shadow-md hover:opacity-95 active:scale-[0.98] shadow-xs shrink-0"
             >
               <SlidersHorizontal className="w-3.5 h-3.5 text-white" />
@@ -519,7 +519,7 @@ export const DesignBlock: React.FC<DesignBlockProps> = ({
               className="w-8 h-8 rounded-full text-zinc-700 dark:text-zinc-300 bg-white/70 dark:bg-zinc-800/70 border border-zinc-200/60 dark:border-zinc-700/60 hover:bg-purple-50 dark:hover:bg-purple-950/60 transition-all cursor-pointer flex items-center justify-center shrink-0"
               title={isCollapsed ? 'Развернуть' : 'Свернуть'}
             >
-              {isCollapsed ? <ChevronDown className="w-4 h-4 text-[#8C52D0]" /> : <ChevronUp className="w-4 h-4 text-[#8C52D0]" />}
+              {isCollapsed ? <ChevronDown className="w-4 h-4 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" /> : <ChevronUp className="w-4 h-4 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />}
             </button>
           )}
         </div>
@@ -532,7 +532,7 @@ export const DesignBlock: React.FC<DesignBlockProps> = ({
             {/* CAROUSEL 1: DRAFT VISUALIZATION */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-[#8C52D0] dark:text-purple-300 uppercase tracking-wider">
+                <span className="text-xs font-bold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 uppercase tracking-wider">
                   Эскизы декоратора ({vizIndex + 1}/{visualizations.length})
                 </span>
                 <div className="flex items-center gap-1.5">
@@ -582,7 +582,7 @@ export const DesignBlock: React.FC<DesignBlockProps> = ({
                         showToast?.('Редактор эскизов', 'Открытие эскиза декоратора в графическом редакторе...', 'info');
                       }
                     }}
-                    style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                    style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
                     className="rounded-full px-4 py-2 text-xs font-bold text-white flex items-center gap-1.5 cursor-pointer shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:scale-105"
                   >
                     <SlidersHorizontal className="w-3.5 h-3.5 text-white" />
@@ -649,7 +649,7 @@ export const DesignBlock: React.FC<DesignBlockProps> = ({
                         showToast?.('Редактор концептов', 'Открытие концепта в графическом редакторе...', 'info');
                       }
                     }}
-                    style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                    style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
                     className="rounded-full px-4 py-2 text-xs font-bold text-white flex items-center gap-1.5 cursor-pointer shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:scale-105"
                   >
                     <SlidersHorizontal className="w-3.5 h-3.5 text-white" />
@@ -673,7 +673,7 @@ export const DesignBlock: React.FC<DesignBlockProps> = ({
               </span>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="text-xs font-semibold text-[#8C52D0] hover:text-[#582F89] flex items-center gap-1 cursor-pointer"
+                className="text-xs font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:text-[var(--lavDeep)] flex items-center gap-1 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" /> <span>Загрузить фото</span>
               </button>
@@ -887,7 +887,7 @@ export const CalcBlock: React.FC<CalcBlockProps> = ({
               className="w-8 h-8 rounded-full text-zinc-700 dark:text-zinc-300 bg-white/70 dark:bg-zinc-800/70 border border-zinc-200/60 dark:border-zinc-700/60 hover:bg-purple-50 dark:hover:bg-purple-950/60 transition-all cursor-pointer flex items-center justify-center shrink-0"
               title={isCollapsed ? 'Развернуть' : 'Свернуть'}
             >
-              {isCollapsed ? <ChevronDown className="w-4 h-4 text-[#8C52D0]" /> : <ChevronUp className="w-4 h-4 text-[#8C52D0]" />}
+              {isCollapsed ? <ChevronDown className="w-4 h-4 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" /> : <ChevronUp className="w-4 h-4 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />}
             </button>
           )}
         </div>
@@ -913,7 +913,7 @@ export const CalcBlock: React.FC<CalcBlockProps> = ({
                 <tr className="bg-purple-50/60 dark:bg-purple-950/40 border-y border-purple-200/50 dark:border-purple-900/50">
                   <td colSpan={4} className="py-2.5 px-2 sm:px-3">
                     <div className="flex items-center gap-2">
-                      <div className="p-1.5 bg-[#F3E8FF] dark:bg-purple-900/50 rounded-lg text-[#8C52D0] dark:text-purple-300 shrink-0">
+                      <div className="p-1.5 bg-[#F3E8FF] dark:bg-purple-900/50 rounded-lg text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 shrink-0">
                         <Sparkles className="w-4 h-4 stroke-[2]" />
                       </div>
                       <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-normal text-zinc-800 dark:text-zinc-200">
@@ -963,7 +963,7 @@ export const CalcBlock: React.FC<CalcBlockProps> = ({
                                 onClick={() => toggleExpandScene(sceneId)}
                                 className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center shadow-2xs border cursor-pointer ${
                                   isIncluded
-                                    ? 'bg-purple-100/80 dark:bg-purple-900/50 border-purple-200 dark:border-purple-800 text-[#8C52D0] dark:text-purple-300'
+                                    ? 'bg-purple-100/80 dark:bg-purple-900/50 border-purple-200 dark:border-purple-800 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300'
                                     : 'bg-stone-200/60 dark:bg-zinc-800 border-stone-300 dark:border-zinc-700 text-stone-400'
                                 }`}
                               >
@@ -980,7 +980,7 @@ export const CalcBlock: React.FC<CalcBlockProps> = ({
                                   type="text"
                                   value={sc.name || `Декор ${idx + 1}`}
                                   onChange={(e) => handleUpdateSceneName(sc.id, e.target.value)}
-                                  className={`font-semibold text-xs sm:text-sm bg-transparent border-b border-transparent hover:border-purple-300 focus:border-[#8C52D0] focus:outline-none transition-colors w-full ${
+                                  className={`font-semibold text-xs sm:text-sm bg-transparent border-b border-transparent hover:border-purple-300 focus:border-[var(--lavDeep)] focus:outline-none transition-colors w-full ${
                                     isIncluded ? 'text-stone-900 dark:text-stone-100' : 'line-through text-stone-400 dark:text-zinc-500'
                                   }`}
                                 />
@@ -1027,7 +1027,7 @@ export const CalcBlock: React.FC<CalcBlockProps> = ({
                                 disabled={!isIncluded}
                                 value={calculatedCost}
                                 onChange={(e) => handleUpdateScenePrice(sc.id, Number(e.target.value))}
-                                className={`w-20 sm:w-28 text-right font-bold text-xs sm:text-sm bg-white dark:bg-zinc-800 border rounded-xl px-1.5 sm:px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-[#8C52D0] ${
+                                className={`w-20 sm:w-28 text-right font-bold text-xs sm:text-sm bg-white dark:bg-zinc-800 border rounded-xl px-1.5 sm:px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)] ${
                                   isIncluded
                                     ? 'border-purple-200 dark:border-purple-800 text-stone-900 dark:text-stone-100'
                                     : 'border-stone-200 text-stone-400 bg-stone-100/50'
@@ -1053,7 +1053,7 @@ export const CalcBlock: React.FC<CalcBlockProps> = ({
                               <div className="ml-4 sm:ml-8 p-3.5 bg-white/90 dark:bg-zinc-900/90 rounded-2xl border border-purple-200/60 dark:border-purple-800/40 shadow-xs space-y-2.5">
                                 <div className="flex items-center justify-between pb-2 border-b border-stone-200/50 dark:border-zinc-800">
                                   <div className="flex items-center gap-2">
-                                    <Sparkles className="w-3.5 h-3.5 text-[#8C52D0]" />
+                                    <Sparkles className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                                     <span className="text-[11px] font-semibold text-stone-800 dark:text-stone-200">
                                       Состав элементов «{sc.name || 'Визуализации'}» ({elements.length} шт.)
                                     </span>
@@ -1061,7 +1061,7 @@ export const CalcBlock: React.FC<CalcBlockProps> = ({
                                   <button
                                     type="button"
                                     onClick={() => handleAddElementToScene(sceneId)}
-                                    className="text-xs font-semibold text-[#8C52D0] dark:text-purple-300 hover:text-purple-800 dark:hover:text-purple-200 flex items-center gap-1 cursor-pointer"
+                                    className="text-xs font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 hover:text-purple-800 dark:hover:text-purple-200 flex items-center gap-1 cursor-pointer"
                                   >
                                     <Plus className="w-3.5 h-3.5" />
                                     <span>Добавить элемент</span>
@@ -1077,7 +1077,7 @@ export const CalcBlock: React.FC<CalcBlockProps> = ({
                                           key={elKey}
                                           className="flex items-center gap-2 text-xs bg-stone-50 dark:bg-zinc-800/80 p-2 rounded-xl border border-stone-200/60 dark:border-zinc-700/60 hover:border-purple-300 dark:hover:border-purple-700 transition-colors"
                                         >
-                                          <div className="p-1 bg-purple-100 dark:bg-purple-900/50 text-[#8C52D0] rounded-lg shrink-0">
+                                          <div className="p-1 bg-purple-100 dark:bg-purple-900/50 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] rounded-lg shrink-0">
                                             <Sparkles className="w-3 h-3" />
                                           </div>
                                           <input
@@ -1085,7 +1085,7 @@ export const CalcBlock: React.FC<CalcBlockProps> = ({
                                             value={el.name || ''}
                                             onChange={(e) => handleUpdateElementInScene(sceneId, elKey, 'name', e.target.value)}
                                             placeholder="Название элемента..."
-                                            className="font-semibold text-xs text-stone-900 dark:text-stone-100 bg-transparent border-b border-transparent hover:border-purple-300 focus:border-[#8C52D0] focus:outline-none flex-1 min-w-0"
+                                            className="font-semibold text-xs text-stone-900 dark:text-stone-100 bg-transparent border-b border-transparent hover:border-purple-300 focus:border-[var(--lavDeep)] focus:outline-none flex-1 min-w-0"
                                           />
                                           <span className="text-[10px] text-stone-400 shrink-0 hidden sm:inline">
                                             {el.category || 'Декор'} • {el.quantity || 1} шт.
@@ -1095,7 +1095,7 @@ export const CalcBlock: React.FC<CalcBlockProps> = ({
                                               type="number"
                                               value={el.price || 0}
                                               onChange={(e) => handleUpdateElementInScene(sceneId, elKey, 'price', Number(e.target.value))}
-                                              className="w-20 text-right font-bold text-xs bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-700 rounded-lg px-2 py-0.5 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-[#8C52D0]"
+                                              className="w-20 text-right font-bold text-xs bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-700 rounded-lg px-2 py-0.5 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)]"
                                             />
                                             <span className="font-semibold text-stone-600 dark:text-stone-400 text-xs">₽</span>
                                           </div>
@@ -1162,7 +1162,7 @@ export const CalcBlock: React.FC<CalcBlockProps> = ({
                               type="text"
                               value={item.name}
                               onChange={(e) => handleUpdateEstimateItemName(item.id, e.target.value)}
-                              className="font-semibold text-xs sm:text-sm bg-transparent text-stone-900 dark:text-stone-100 border-b border-transparent hover:border-stone-300 focus:border-[#8C52D0] focus:outline-none w-full"
+                              className="font-semibold text-xs sm:text-sm bg-transparent text-stone-900 dark:text-stone-100 border-b border-transparent hover:border-stone-300 focus:border-[var(--lavDeep)] focus:outline-none w-full"
                             />
                           ) : (
                             <span className="font-semibold text-xs sm:text-sm text-stone-900 dark:text-stone-100 truncate">{item.name}</span>
@@ -1181,7 +1181,7 @@ export const CalcBlock: React.FC<CalcBlockProps> = ({
                             type="number"
                             value={item.price}
                             onChange={(e) => handleUpdateEstimateItemPrice ? handleUpdateEstimateItemPrice(item.id, Number(e.target.value)) : setServiceEstimate(prev => prev.map(i => i.id === item.id ? { ...i, price: Number(e.target.value) } : i))}
-                            className="w-20 sm:w-28 text-right font-bold text-xs sm:text-sm bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-xl px-1.5 sm:px-2.5 py-1 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-[#8C52D0]"
+                            className="w-20 sm:w-28 text-right font-bold text-xs sm:text-sm bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-xl px-1.5 sm:px-2.5 py-1 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)]"
                           />
                           <span className="font-semibold text-stone-700 dark:text-stone-300 text-xs sm:text-sm">₽</span>
                           <button
@@ -1231,10 +1231,10 @@ export const CalcBlock: React.FC<CalcBlockProps> = ({
                   showToast?.('Добавлен декор', `Создана новая позиция: Визуализация ${newNum}`, 'success');
                 }
               }}
-              className="w-full py-3 px-5 rounded-full bg-[#F3E8FF] dark:bg-purple-950/40 hover:bg-[#E9D5FF] dark:hover:bg-purple-900/50 border border-[#8C52D0]/50 dark:border-purple-600/50 flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 active:scale-[0.98] shadow-xs"
+              className="w-full py-3 px-5 rounded-full bg-[#F3E8FF] dark:bg-purple-950/40 hover:bg-[#E9D5FF] dark:hover:bg-purple-900/50 border border-[var(--lavenderAccent)]/50 dark:border-purple-600/50 flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 active:scale-[0.98] shadow-xs"
             >
-              <Palette className="w-4 h-4 stroke-[2.2] text-[#8C52D0] dark:text-purple-300" />
-              <span className="bg-gradient-to-r from-[#8C52D0] to-[#582F89] dark:from-purple-300 dark:to-purple-200 bg-clip-text text-transparent font-semibold text-xs sm:text-sm">
+              <Palette className="w-4 h-4 stroke-[2.2] text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300" />
+              <span className="bg-gradient-to-r from-[var(--primary-grad-from,#8C52D0)] to-[var(--primary-grad-to,#582F89)] dark:from-purple-300 dark:to-purple-200 bg-clip-text text-transparent font-semibold text-xs sm:text-sm">
                 + Добавить декор
               </span>
             </button>
@@ -1327,10 +1327,10 @@ export const CalcBlock: React.FC<CalcBlockProps> = ({
             {/* CARD 3: CLIENT CHECK */}
             <div className="p-4 bg-gradient-to-br from-purple-50/90 via-purple-50/50 to-white dark:from-purple-950/40 dark:via-purple-950/20 dark:to-zinc-900 rounded-2xl border border-purple-200/90 dark:border-purple-800/60 shadow-2xs flex flex-col justify-between space-y-2">
               <div className="flex items-center gap-2 pb-1 border-b border-purple-100 dark:border-purple-900/50">
-                <div className="w-7 h-7 rounded-lg bg-purple-100 dark:bg-purple-900/60 text-[#8C52D0] dark:text-purple-300 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-lg bg-purple-100 dark:bg-purple-900/60 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 flex items-center justify-center">
                   <Award className="w-4 h-4" />
                 </div>
-                <span className="text-[#582F89] dark:text-purple-300 font-bold uppercase text-[10px] tracking-wider">Чек клиента</span>
+                <span className="text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 font-bold uppercase text-[10px] tracking-wider">Чек клиента</span>
               </div>
               <p className="text-[11px] text-purple-800/80 dark:text-purple-300/80 font-medium">Сумма для сметы и договора:</p>
               <div className="pt-1">
@@ -1343,10 +1343,10 @@ export const CalcBlock: React.FC<CalcBlockProps> = ({
                         const val = e.target.value === '' ? 0 : Number(e.target.value);
                         setFinalPrice(val);
                       }}
-                      className="w-full bg-white dark:bg-zinc-800 border border-[#8C52D0]/50 dark:border-purple-500/50 rounded-xl px-3 py-1.5 font-black font-mono text-xl sm:text-2xl text-[#582F89] dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-[#8C52D0] shadow-2xs transition-all"
+                      className="w-full bg-white dark:bg-zinc-800 border border-[var(--lavenderAccent)]/50 dark:border-purple-500/50 rounded-xl px-3 py-1.5 font-black font-mono text-xl sm:text-2xl text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)] shadow-2xs transition-all"
                     />
                   ) : (
-                    <div className="w-full bg-white dark:bg-zinc-800 border border-[#8C52D0]/50 dark:border-purple-500/50 rounded-xl px-3 py-1.5 font-black font-mono text-xl sm:text-2xl text-[#582F89] dark:text-purple-100 shadow-2xs">
+                    <div className="w-full bg-white dark:bg-zinc-800 border border-[var(--lavenderAccent)]/50 dark:border-purple-500/50 rounded-xl px-3 py-1.5 font-black font-mono text-xl sm:text-2xl text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-100 shadow-2xs">
                       {finalPrice.toLocaleString('ru')}
                     </div>
                   )}
@@ -1423,7 +1423,7 @@ export const JournalBlock: React.FC<JournalBlockProps> = ({
 
   const getCategoryStyle = (cat?: string) => {
     switch (cat) {
-      case 'Монтаж': return 'bg-purple-100 text-[#582F89] dark:bg-purple-950/60 dark:text-purple-300 border-purple-200/80';
+      case 'Монтаж': return 'bg-purple-100 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:bg-purple-950/60 dark:text-purple-300 border-purple-200/80';
       case 'Закупка': return 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200/80';
       case 'Клиент': return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200/80';
       case 'Логистика': return 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200/80';
@@ -1457,7 +1457,7 @@ export const JournalBlock: React.FC<JournalBlockProps> = ({
             className="w-8 h-8 rounded-full text-zinc-700 dark:text-zinc-300 bg-white/70 dark:bg-zinc-800/70 border border-zinc-200/60 dark:border-zinc-700/60 hover:bg-purple-50 dark:hover:bg-purple-950/60 transition-all cursor-pointer flex items-center justify-center shrink-0"
             title={isCollapsed ? 'Развернуть' : 'Свернуть'}
           >
-            {isCollapsed ? <ChevronDown className="w-4 h-4 text-[#8C52D0]" /> : <ChevronUp className="w-4 h-4 text-[#8C52D0]" />}
+            {isCollapsed ? <ChevronDown className="w-4 h-4 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" /> : <ChevronUp className="w-4 h-4 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />}
           </button>
         )}
       </div>
@@ -1469,14 +1469,14 @@ export const JournalBlock: React.FC<JournalBlockProps> = ({
             <div className="space-y-3.5">
               <div className="flex items-center justify-between pb-2 border-b border-stone-200/60 dark:border-zinc-800">
                 <span className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal flex items-center gap-1.5">
-                  <Plus className="w-3.5 h-3.5 text-[#8C52D0]" /> Создать запись
+                  <Plus className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" /> Создать запись
                 </span>
                 {/* Type toggle */}
                 <div className="flex bg-stone-100 dark:bg-zinc-800 p-0.5 rounded-full border border-stone-200 dark:border-zinc-700">
                   <button
                     type="button"
                     onClick={() => setNewType('task')}
-                    style={newType === 'task' ? { background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' } : {}}
+                    style={newType === 'task' ? { background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' } : {}}
                     className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                       newType === 'task'
                         ? 'text-white shadow-2xs'
@@ -1488,7 +1488,7 @@ export const JournalBlock: React.FC<JournalBlockProps> = ({
                   <button
                     type="button"
                     onClick={() => setNewType('note')}
-                    style={newType === 'note' ? { background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' } : {}}
+                    style={newType === 'note' ? { background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' } : {}}
                     className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                       newType === 'note'
                         ? 'text-white shadow-2xs'
@@ -1510,7 +1510,7 @@ export const JournalBlock: React.FC<JournalBlockProps> = ({
                   placeholder={newType === 'task' ? 'Заехать к флористу, подготовить неоновую вывеску, заказать декор...' : 'Важные примечания по монтажу, пожелания заказчика...'}
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs text-stone-800 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-[#8C52D0]"
+                  className="w-full bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs text-stone-800 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)]"
                 />
               </div>
 
@@ -1550,7 +1550,7 @@ export const JournalBlock: React.FC<JournalBlockProps> = ({
               type="button"
               onClick={handleAddTaskNote}
               className="w-full py-2.5 text-white rounded-full text-xs font-semibold transition-all duration-300 hover:shadow-md hover:opacity-95 active:scale-[0.99] cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
-              style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+              style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Добавить {newType === 'task' ? 'задачу' : 'заметку'}</span>
@@ -1566,7 +1566,7 @@ export const JournalBlock: React.FC<JournalBlockProps> = ({
                 <button
                   type="button"
                   onClick={() => changeFilterType('all')}
-                  style={currentFilterType === 'all' ? { background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' } : {}}
+                  style={currentFilterType === 'all' ? { background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' } : {}}
                   className={`px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all cursor-pointer ${
                     currentFilterType === 'all'
                       ? 'text-white shadow-2xs'
@@ -1578,7 +1578,7 @@ export const JournalBlock: React.FC<JournalBlockProps> = ({
                 <button
                   type="button"
                   onClick={() => changeFilterType('task')}
-                  style={currentFilterType === 'task' ? { background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' } : {}}
+                  style={currentFilterType === 'task' ? { background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' } : {}}
                   className={`px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all cursor-pointer ${
                     currentFilterType === 'task'
                       ? 'text-white shadow-2xs'
@@ -1590,7 +1590,7 @@ export const JournalBlock: React.FC<JournalBlockProps> = ({
                 <button
                   type="button"
                   onClick={() => changeFilterType('note')}
-                  style={currentFilterType === 'note' ? { background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' } : {}}
+                  style={currentFilterType === 'note' ? { background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' } : {}}
                   className={`px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all cursor-pointer ${
                     currentFilterType === 'note'
                       ? 'text-white shadow-2xs'
@@ -1605,7 +1605,7 @@ export const JournalBlock: React.FC<JournalBlockProps> = ({
                 <button
                   type="button"
                   onClick={() => changeCalendarDate('all')}
-                  className="text-[10px] font-bold text-[#582F89] dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 px-2.5 py-1 rounded-full border border-purple-200 dark:border-purple-800 hover:bg-purple-100 cursor-pointer flex items-center gap-1"
+                  className="text-[10px] font-bold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 px-2.5 py-1 rounded-full border border-purple-200 dark:border-purple-800 hover:bg-purple-100 cursor-pointer flex items-center gap-1"
                 >
                   <RotateCcw className="w-2.5 h-2.5" /> Сбросить дату: {currentCalendarDate}
                 </button>
@@ -1654,7 +1654,7 @@ export const JournalBlock: React.FC<JournalBlockProps> = ({
                           className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-all cursor-pointer mt-0.5 ${
                             item.completed
                               ? 'bg-emerald-500 text-white'
-                              : 'bg-stone-100 dark:bg-zinc-800 border border-stone-300 dark:border-zinc-700 text-transparent hover:border-[#8C52D0]'
+                              : 'bg-stone-100 dark:bg-zinc-800 border border-stone-300 dark:border-zinc-700 text-transparent hover:border-[var(--lavDeep)]'
                           }`}
                         >
                           <Check className="w-3 h-3 stroke-[3]" />
@@ -1674,7 +1674,7 @@ export const JournalBlock: React.FC<JournalBlockProps> = ({
                     <div className="flex items-center justify-between gap-2 pt-1 border-t border-stone-100 dark:border-zinc-800/60">
                       <div className="flex items-center gap-1.5 flex-wrap min-w-0">
                         <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-full border ${
-                          item.type === 'task' ? 'bg-purple-50 text-[#582F89] border-purple-200 dark:bg-purple-950/40 dark:text-purple-300' : 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300'
+                          item.type === 'task' ? 'bg-purple-50 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] border-purple-200 dark:bg-purple-950/40 dark:text-purple-300' : 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300'
                         }`}>
                           {item.type === 'task' ? 'Задача' : 'Заметка'}
                         </span>
@@ -1810,7 +1810,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
       size: '2.4 МБ',
       desc: 'Договор оказания услуг по оформлению и декорированию площадки',
       icon: FileText,
-      iconBg: 'bg-purple-100 dark:bg-purple-950/80 text-[#8C52D0] dark:text-purple-300 border-purple-200 dark:border-purple-800',
+      iconBg: 'bg-purple-100 dark:bg-purple-950/80 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 border-purple-200 dark:border-purple-800',
       accentColor: 'from-purple-500/10 to-transparent'
     },
     {
@@ -2004,7 +2004,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
             className="w-8 h-8 rounded-full text-zinc-700 dark:text-zinc-300 bg-white/70 dark:bg-zinc-800/70 border border-zinc-200/60 dark:border-zinc-700/60 hover:bg-purple-50 dark:hover:bg-purple-950/60 transition-all cursor-pointer flex items-center justify-center shrink-0"
             title={isCollapsed ? 'Развернуть' : 'Свернуть'}
           >
-            {isCollapsed ? <ChevronDown className="w-4 h-4 text-[#8C52D0]" /> : <ChevronUp className="w-4 h-4 text-[#8C52D0]" />}
+            {isCollapsed ? <ChevronDown className="w-4 h-4 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" /> : <ChevronUp className="w-4 h-4 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />}
           </button>
         )}
       </div>
@@ -2039,7 +2039,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
                     onClick={() => setPayerType(item.id)}
                     className={`px-3 py-1.5 rounded-full text-xs transition-all duration-200 whitespace-nowrap cursor-pointer text-center flex items-center justify-center ${
                       payerType === item.id
-                        ? 'bg-[#8C52D0] text-white font-semibold shadow-xs'
+                        ? 'bg-[var(--lavDeep)] text-white font-semibold shadow-xs'
                         : 'text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium'
                     }`}
                   >
@@ -2065,7 +2065,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
                       value={individualFields.fullName}
                       onChange={(e) => setIndividualFields({ ...individualFields, fullName: e.target.value })}
                       placeholder="Иванов Иван Иванович"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
 
@@ -2080,7 +2080,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
                       value={individualFields.phone}
                       onChange={(e) => setIndividualFields({ ...individualFields, phone: e.target.value })}
                       placeholder="+7 (900) 000-00-00"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
 
@@ -2095,7 +2095,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
                       value={individualFields.passportSeriesNumber}
                       onChange={(e) => setIndividualFields({ ...individualFields, passportSeriesNumber: e.target.value })}
                       placeholder="45 12 345678"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
 
@@ -2110,7 +2110,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
                       value={individualFields.passportIssuedBy}
                       onChange={(e) => setIndividualFields({ ...individualFields, passportIssuedBy: e.target.value })}
                       placeholder="ГУ МВД России по г. Москве"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
 
@@ -2125,7 +2125,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
                       value={individualFields.passportIssueDate}
                       onChange={(e) => setIndividualFields({ ...individualFields, passportIssueDate: e.target.value })}
                       placeholder="01.01.2020"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
 
@@ -2140,7 +2140,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
                       value={individualFields.passportCode}
                       onChange={(e) => setIndividualFields({ ...individualFields, passportCode: e.target.value })}
                       placeholder="770-001"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
 
@@ -2155,7 +2155,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
                       value={individualFields.registrationAddress}
                       onChange={(e) => setIndividualFields({ ...individualFields, registrationAddress: e.target.value })}
                       placeholder="г. Москва, ул. Ленина, д. 10, кв. 5"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
                 </>
@@ -2175,7 +2175,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
                       value={selfEmployedFields.fullName}
                       onChange={(e) => setSelfEmployedFields({ ...selfEmployedFields, fullName: e.target.value })}
                       placeholder="Иванов Иван Иванович"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
 
@@ -2190,7 +2190,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
                       value={selfEmployedFields.inn}
                       onChange={(e) => setSelfEmployedFields({ ...selfEmployedFields, inn: e.target.value })}
                       placeholder="770000000000"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
 
@@ -2205,7 +2205,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
                       value={selfEmployedFields.phone}
                       onChange={(e) => setSelfEmployedFields({ ...selfEmployedFields, phone: e.target.value })}
                       placeholder="+7 (900) 000-00-00"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
 
@@ -2220,7 +2220,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
                       value={selfEmployedFields.registrationAddress}
                       onChange={(e) => setSelfEmployedFields({ ...selfEmployedFields, registrationAddress: e.target.value })}
                       placeholder="г. Москва, ул. Ленина, д. 10, кв. 5"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
                 </>
@@ -2240,7 +2240,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
                       value={ipFields.ipName}
                       onChange={(e) => setIpFields({ ...ipFields, ipName: e.target.value })}
                       placeholder="ИП Иванов Иван Иванович"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
 
@@ -2255,7 +2255,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
                       value={ipFields.inn}
                       onChange={(e) => setIpFields({ ...ipFields, inn: e.target.value })}
                       placeholder="770000000000"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
 
@@ -2270,7 +2270,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
                       value={ipFields.ogrnip}
                       onChange={(e) => setIpFields({ ...ipFields, ogrnip: e.target.value })}
                       placeholder="320770000000000"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
 
@@ -2285,7 +2285,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
                       value={ipFields.phone}
                       onChange={(e) => setIpFields({ ...ipFields, phone: e.target.value })}
                       placeholder="+7 (900) 000-00-00"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
 
@@ -2300,7 +2300,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
                       value={ipFields.registrationAddress}
                       onChange={(e) => setIpFields({ ...ipFields, registrationAddress: e.target.value })}
                       placeholder="г. Москва, ул. Ленина, д. 10, кв. 5"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
 
@@ -2315,7 +2315,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
                       value={ipFields.bankAccount}
                       onChange={(e) => setIpFields({ ...ipFields, bankAccount: e.target.value })}
                       placeholder="р/с 40802810..., ПАО Сбербанк, БИК 044525225"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
                 </>
@@ -2335,7 +2335,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
                       value={oooFields.companyName}
                       onChange={(e) => setOooFields({ ...oooFields, companyName: e.target.value })}
                       placeholder="ООО «Название»"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
 
@@ -2350,7 +2350,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
                       value={oooFields.inn}
                       onChange={(e) => setOooFields({ ...oooFields, inn: e.target.value })}
                       placeholder="7700000000"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
 
@@ -2365,7 +2365,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
                       value={oooFields.kpp}
                       onChange={(e) => setOooFields({ ...oooFields, kpp: e.target.value })}
                       placeholder="770101001"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
 
@@ -2380,7 +2380,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
                       value={oooFields.ogrn}
                       onChange={(e) => setOooFields({ ...oooFields, ogrn: e.target.value })}
                       placeholder="1207700000000"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
 
@@ -2395,7 +2395,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
                       value={oooFields.legalAddress}
                       onChange={(e) => setOooFields({ ...oooFields, legalAddress: e.target.value })}
                       placeholder="г. Москва, ул. Тверская, д. 1, офис 100"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
 
@@ -2410,7 +2410,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
                       value={oooFields.signatoryName}
                       onChange={(e) => setOooFields({ ...oooFields, signatoryName: e.target.value })}
                       placeholder="Петров Петр Петрович"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
 
@@ -2425,7 +2425,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
                       value={oooFields.signatoryPosition}
                       onChange={(e) => setOooFields({ ...oooFields, signatoryPosition: e.target.value })}
                       placeholder="Генерального директора"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
 
@@ -2440,7 +2440,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
                       value={oooFields.phone}
                       onChange={(e) => setOooFields({ ...oooFields, phone: e.target.value })}
                       placeholder="+7 (495) 000-00-00"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
 
@@ -2455,7 +2455,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
                       value={oooFields.bankAccount}
                       onChange={(e) => setOooFields({ ...oooFields, bankAccount: e.target.value })}
                       placeholder="р/с 40702810..., ПАО Сбербанк, БИК 044525225"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
                 </>
@@ -2485,7 +2485,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
                     key={doc.id}
                     className={`group relative p-3.5 bg-white/80 dark:bg-zinc-950/60 rounded-2xl border flex flex-col justify-between gap-2.5 text-left backdrop-blur-xs transition-all duration-300 hover:shadow-md overflow-hidden ${
                       isGenerated
-                        ? 'border-[#8C52D0] dark:border-purple-500 shadow-sm'
+                        ? 'border-[var(--lavDeep)] dark:border-purple-500 shadow-sm'
                         : isChecked
                         ? 'border-purple-200 dark:border-purple-800'
                         : 'border-zinc-200/80 dark:border-zinc-800 opacity-80'
@@ -2512,7 +2512,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
                         </div>
 
                         {isGenerated && (
-                          <span className="px-2 py-0.5 text-[9px] font-semibold bg-purple-100 text-[#8C52D0] dark:bg-purple-950 dark:text-purple-300 rounded-full border border-purple-300/50 shrink-0">
+                          <span className="px-2 py-0.5 text-[9px] font-semibold bg-purple-100 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:bg-purple-950 dark:text-purple-300 rounded-full border border-purple-300/50 shrink-0">
                             Сформирован
                           </span>
                         )}
@@ -2532,8 +2532,8 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
                       >
                         <div className={`w-4 h-4 rounded-full border transition-all flex items-center justify-center shrink-0 ${
                           isChecked
-                            ? 'bg-[#8C52D0] border-[#8C52D0] text-white shadow-2xs'
-                            : 'border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 group-hover/cb:border-[#8C52D0]'
+                            ? 'bg-[var(--lavDeep)] border-[var(--lavDeep)] text-white shadow-2xs'
+                            : 'border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 group-hover/cb:border-[var(--lavDeep)]'
                         }`}>
                           {isChecked && <Check className="w-2.5 h-2.5 stroke-[3]" />}
                         </div>
@@ -2553,7 +2553,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
               <button
                 type="button"
                 onClick={handleGenerateDocuments}
-                style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
                 className="px-6 py-2.5 rounded-full text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all hover:opacity-95 cursor-pointer shadow-sm shrink-0 active:scale-95"
               >
                 <Sparkles className="w-4 h-4 text-white" />
@@ -2566,7 +2566,7 @@ export const DocsBlock: React.FC<DocsBlockProps> = ({
           <div className="pt-4 border-t border-zinc-200/40 dark:border-zinc-800/40 space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider flex items-center gap-2">
-                <FileText className="w-3.5 h-3.5 text-[#8C52D0]" />
+                <FileText className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                 Журнал сформированных документов
               </h4>
               <span className="text-[11px] text-zinc-600 dark:text-zinc-400">

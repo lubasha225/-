@@ -910,7 +910,7 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
               <button
                 type="button"
                 onClick={onClose}
-                className="p-2 rounded-full bg-white/80 dark:bg-zinc-800/80 border border-zinc-200/60 dark:border-zinc-700/60 hover:bg-purple-50 dark:hover:bg-purple-950/50 hover:border-[#8C52D0] text-zinc-600 dark:text-zinc-300 hover:text-[#8C52D0] transition-all cursor-pointer shadow-2xs shrink-0"
+                className="p-2 rounded-full bg-white/80 dark:bg-zinc-800/80 border border-zinc-200/60 dark:border-zinc-700/60 hover:bg-purple-50 dark:hover:bg-purple-950/50 hover:border-[var(--lavDeep)] text-zinc-600 dark:text-zinc-300 hover:text-[var(--lavDeep)] transition-all cursor-pointer shadow-2xs shrink-0"
                 title="Назад к списку проектов"
               >
                 <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
@@ -931,7 +931,7 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
                     }
                   }}
                   autoFocus
-                  className="text-xl sm:text-2xl font-[800] tracking-tight text-[var(--foreground)] bg-white dark:bg-zinc-800 border-2 border-[#8C52D0] rounded-xl px-3 py-1 shadow-2xs focus:outline-none"
+                  className="text-xl sm:text-2xl font-[800] tracking-tight text-[var(--foreground)] bg-white dark:bg-zinc-800 border-2 border-[var(--lavDeep)] rounded-xl px-3 py-1 shadow-2xs focus:outline-none"
                 />
                 <button
                   onClick={() => {
@@ -939,7 +939,7 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
                     setIsEditingTitle(false);
                     showToast?.('Название обновлено', `Новое название проекта: ${titleInput}`, 'success');
                   }}
-                  className="p-2 bg-[#8C52D0] text-white rounded-full hover:bg-[#582F89] transition-colors cursor-pointer shadow-2xs"
+                  className="p-2 bg-[var(--lavDeep)] text-white rounded-full hover:bg-[var(--lavDeep)] transition-colors cursor-pointer shadow-2xs"
                   title="Сохранить название"
                 >
                   <Check className="w-4 h-4" />
@@ -956,7 +956,7 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
                     setTitleInput(projectName);
                     setIsEditingTitle(true);
                   }}
-                  className="p-1.5 rounded-full hover:bg-purple-100 dark:hover:bg-purple-950/80 text-zinc-400 group-hover:text-[#8C52D0] transition-colors cursor-pointer shrink-0"
+                  className="p-1.5 rounded-full hover:bg-purple-100 dark:hover:bg-purple-950/80 text-zinc-400 group-hover:text-[var(--lavDeep)] transition-colors cursor-pointer shrink-0"
                   title="Редактировать название проекта"
                 >
                   <Pencil className="w-4 h-4" />
@@ -971,7 +971,7 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
                   setIsNotificationsOpen(!isNotificationsOpen);
                   setHasNotifications(false);
                 }}
-                className="w-10 h-10 rounded-full bg-white/80 dark:bg-zinc-800/80 border border-zinc-200/60 dark:border-zinc-700/60 hover:bg-purple-50 dark:hover:bg-purple-950/50 hover:border-[#8C52D0] text-zinc-600 dark:text-zinc-300 hover:text-[#8C52D0] transition-all cursor-pointer relative shadow-2xs flex items-center justify-center"
+                className="w-10 h-10 rounded-full bg-white/80 dark:bg-zinc-800/80 border border-zinc-200/60 dark:border-zinc-700/60 hover:bg-purple-50 dark:hover:bg-purple-950/50 hover:border-[var(--lavDeep)] text-zinc-600 dark:text-zinc-300 hover:text-[var(--lavDeep)] transition-all cursor-pointer relative shadow-2xs flex items-center justify-center"
                 title="Уведомления проекта"
               >
                 <Bell className="w-5 h-5" />
@@ -993,7 +993,7 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
                     >
                       <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-2">
                         <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
-                          <Bell className="w-3.5 h-3.5 text-[#8C52D0]" /> Уведомления
+                          <Bell className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" /> Уведомления
                         </span>
                         <span className="text-[10px] text-zinc-400">2 новых</span>
                       </div>
@@ -1017,25 +1017,25 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
           {/* CLIENT & PROJECT INFO PILLS */}
           <div className="flex flex-wrap items-center gap-1.5 text-xs text-zinc-700 dark:text-zinc-300 w-full min-w-0">
             <span className="flex items-center gap-1 font-medium bg-white/80 dark:bg-zinc-800/80 px-2.5 py-0.5 rounded-full border border-white/90 dark:border-zinc-700/60 shadow-2xs text-[11px] shrink-0">
-              <User className="w-3 h-3 text-[#8C52D0]" /> <strong className="font-bold text-zinc-900 dark:text-zinc-100">{briefValues["ИМЯ КЛИЕНТА"] || 'Клиент не указан'}</strong>
+              <User className="w-3 h-3 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" /> <strong className="font-bold text-zinc-900 dark:text-zinc-100">{briefValues["ИМЯ КЛИЕНТА"] || 'Клиент не указан'}</strong>
             </span>
 
             {briefValues["ТЕЛЕФОН"] ? (
-              <a href={`tel:${briefValues["ТЕЛЕФОН"]}`} className="flex items-center gap-1 font-medium bg-white/80 dark:bg-zinc-800/80 px-2.5 py-0.5 rounded-full border border-white/90 dark:border-zinc-700/60 shadow-2xs text-[11px] hover:border-[#8C52D0] hover:text-[#8C52D0] transition-colors shrink-0">
-                <Phone className="w-3 h-3 text-[#8C52D0]" /> {briefValues["ТЕЛЕФОН"]}
+              <a href={`tel:${briefValues["ТЕЛЕФОН"]}`} className="flex items-center gap-1 font-medium bg-white/80 dark:bg-zinc-800/80 px-2.5 py-0.5 rounded-full border border-white/90 dark:border-zinc-700/60 shadow-2xs text-[11px] hover:border-[var(--lavDeep)] hover:text-[var(--lavDeep)] transition-colors shrink-0">
+                <Phone className="w-3 h-3 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" /> {briefValues["ТЕЛЕФОН"]}
               </a>
             ) : (
               <span className="flex items-center gap-1 font-medium bg-white/80 dark:bg-zinc-800/80 px-2.5 py-0.5 rounded-full border border-white/90 dark:border-zinc-700/60 shadow-2xs text-[11px] shrink-0 opacity-70">
-                <Phone className="w-3 h-3 text-[#8C52D0]" /> Телефон не указан
+                <Phone className="w-3 h-3 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" /> Телефон не указан
               </span>
             )}
 
             <span className="flex items-center gap-1 font-medium bg-white/80 dark:bg-zinc-800/80 px-2.5 py-0.5 rounded-full border border-white/90 dark:border-zinc-700/60 shadow-2xs text-[11px] shrink-0">
-              <Calendar className="w-3 h-3 text-[#8C52D0]" /> {briefValues["ДАТА"] || 'Дата не указана'}
+              <Calendar className="w-3 h-3 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" /> {briefValues["ДАТА"] || 'Дата не указана'}
             </span>
 
             <span className="flex items-center gap-1 font-medium bg-white/80 dark:bg-zinc-800/80 px-2.5 py-0.5 rounded-full border border-white/90 dark:border-zinc-700/60 shadow-2xs text-[11px] shrink-0">
-              <MapPin className="w-3 h-3 text-[#8C52D0]" /> {briefValues["АДРЕС ПЛОЩАДКИ/НАЗВАНИЕ"] || briefValues["ПЛОЩАДКА"] || 'Площадка не указана'}
+              <MapPin className="w-3 h-3 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" /> {briefValues["АДРЕС ПЛОЩАДКИ/НАЗВАНИЕ"] || briefValues["ПЛОЩАДКА"] || 'Площадка не указана'}
             </span>
           </div>
         </div>
@@ -1047,12 +1047,12 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
           <div className="relative shrink-0 z-30">
             <button
               onClick={() => setIsStepMenuOpen(!isStepMenuOpen)}
-              className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-purple-100/90 dark:bg-purple-950/90 text-[#582F89] dark:text-purple-200 border border-purple-300 dark:border-purple-700/60 shadow-xs hover:bg-purple-200/80 transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-purple-100/90 dark:bg-purple-950/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-200 border border-purple-300 dark:border-purple-700/60 shadow-xs hover:bg-purple-200/80 transition-all cursor-pointer"
               title="Этап проекта"
             >
-              <span className="w-2 h-2 rounded-full bg-[#8C52D0] animate-pulse shrink-0" />
+              <span className="w-2 h-2 rounded-full bg-[var(--lavDeep)] animate-pulse shrink-0" />
               <span>{steps[currentStep]}</span>
-              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 text-[#8C52D0] shrink-0 ${isStepMenuOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] shrink-0 ${isStepMenuOpen ? 'rotate-180' : ''}`} />
             </button>
 
             <AnimatePresence>
@@ -1081,7 +1081,7 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
                           }}
                           className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
                             isCurrent
-                              ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-xs'
+                              ? 'bg-gradient-to-r from-[var(--primary-grad-from,#8C52D0)] to-[var(--primary-grad-to,#582F89)] text-white shadow-xs'
                               : isCompleted
                               ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
                               : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
@@ -1089,7 +1089,7 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
                         >
                           <span className="flex items-center gap-2 truncate">
                             <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${
-                              isCurrent ? 'bg-white text-[#582F89]' : isCompleted ? 'bg-emerald-500 text-white' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500'
+                              isCurrent ? 'bg-white text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]' : isCompleted ? 'bg-emerald-500 text-white' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500'
                             }`}>
                               {isCompleted ? '✓' : idx + 1}
                             </span>
@@ -1113,7 +1113,7 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
               showToast?.('Ссылка скопирована', `Ссылка для клиента скопирована в буфер обмена: ${briefUrl}`, 'success');
             }}
             className="w-8 h-8 sm:w-auto sm:h-8 sm:px-3.5 rounded-full text-white flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer shrink-0 shadow-md"
-            style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+            style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
             title="Отправить клиенту (Поделиться)"
           >
             <Share2 className="w-3.5 h-3.5" />
@@ -1239,20 +1239,20 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
             <span className="text-[9px] sm:text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal truncate">
               Смета
             </span>
-            <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-md bg-purple-100/90 dark:bg-purple-950/80 text-[#8C52D0] dark:text-purple-300 flex items-center justify-center shrink-0">
+            <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-md bg-purple-100/90 dark:bg-purple-950/80 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 flex items-center justify-center shrink-0">
               <Wallet className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2]" />
             </div>
           </div>
 
           <div className="my-1">
-            <div className="text-sm sm:text-lg md:text-xl font-[800] text-[#582F89] dark:text-purple-200 tracking-tight leading-none font-mono">
+            <div className="text-sm sm:text-lg md:text-xl font-[800] text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-200 tracking-tight leading-none font-mono">
               {finalPrice.toLocaleString('ru')} ₽
             </div>
           </div>
 
           <div className="pt-1 border-t border-purple-200/50 dark:border-purple-900/50 flex items-center justify-between text-[9px] sm:text-[10px]">
             <span className="text-zinc-600 dark:text-zinc-400 font-normal truncate hidden sm:inline">Бюджет</span>
-            <span className="font-bold text-[#8C52D0] ml-auto">100%</span>
+            <span className="font-bold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] ml-auto">100%</span>
           </div>
         </div>
 
@@ -1613,7 +1613,7 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
                       setIsEditingClientPrice(false);
                       showToast?.('Обновлено', `Общая стоимость: ${finalPrice.toLocaleString('ru')} ₽`, 'success');
                     }}
-                    className="p-1.5 bg-white text-[#582F89] rounded-full hover:bg-purple-100 transition-colors cursor-pointer shrink-0"
+                    className="p-1.5 bg-white text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] rounded-full hover:bg-purple-100 transition-colors cursor-pointer shrink-0"
                   >
                     <Check className="w-4 h-4 stroke-[3]" />
                   </button>
@@ -1662,7 +1662,7 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
                       }}
                       className={`px-2.5 py-0.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
                         isActive
-                          ? 'bg-white text-[#582F89] shadow-2xs'
+                          ? 'bg-white text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] shadow-2xs'
                           : 'bg-white/20 hover:bg-white/30 text-white'
                       }`}
                     >
@@ -1690,14 +1690,14 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
                       setIsEditingAdvance(false);
                       showToast?.('Аванс обновлен', `Аванс сохранен: ${advanceAmount.toLocaleString('ru')} ₽`, 'success');
                     }}
-                    className="p-1.5 bg-white text-[#582F89] rounded-full hover:bg-purple-100 transition-colors cursor-pointer shrink-0"
+                    className="p-1.5 bg-white text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] rounded-full hover:bg-purple-100 transition-colors cursor-pointer shrink-0"
                   >
                     <Check className="w-4 h-4 stroke-[3]" />
                   </button>
                 </div>
               ) : (
                 <div className="w-full bg-white/95 dark:bg-zinc-900/90 text-zinc-900 dark:text-white px-4 py-1.5 rounded-full flex items-center justify-between shadow-inner">
-                  <span className="text-lg sm:text-xl font-extrabold font-mono text-[#582F89] dark:text-purple-300">
+                  <span className="text-lg sm:text-xl font-extrabold font-mono text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300">
                     {advanceAmount.toLocaleString('ru')} ₽
                   </span>
                   <span className="text-xs font-bold text-zinc-500 dark:text-zinc-400">
@@ -1722,9 +1722,9 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
                   showToast?.('Статус проекта', 'Проект возвращен в работу', 'info');
                 }
               }}
-              className="w-full py-2 px-4 rounded-full bg-white hover:bg-purple-50 text-[#582F89] text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all cursor-pointer text-center justify-center flex items-center gap-1.5 whitespace-nowrap"
+              className="w-full py-2 px-4 rounded-full bg-white hover:bg-purple-50 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all cursor-pointer text-center justify-center flex items-center gap-1.5 whitespace-nowrap"
             >
-              <Check className="w-4 h-4 stroke-[3] text-[#8C52D0]" />
+              <Check className="w-4 h-4 stroke-[3] text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
               <span>{projectStatus === 'completed' ? 'Заказ сдан ✓' : 'Заказ сдан'}</span>
             </button>
 

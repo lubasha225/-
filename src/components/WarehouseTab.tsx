@@ -527,7 +527,7 @@ export default function WarehouseTab({
                 onClick={() => setSelectedCategory(cat.key)}
                 className={`rounded-full text-xs font-semibold tracking-tight transition-all duration-200 cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
                   isActive
-                    ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-xs px-3 py-1'
+                    ? 'bg-gradient-to-r from-[var(--primary-grad-from,#8C52D0)] to-[var(--primary-grad-to,#582F89)] text-white shadow-xs px-3 py-1'
                     : 'bg-transparent text-[var(--soft)] hover:text-[var(--ink)] hover:bg-black/5 dark:hover:bg-white/5 border border-transparent px-2.5 py-1'
                 }`}
               >
@@ -887,7 +887,7 @@ export default function WarehouseTab({
                   </button>
                   <button
                     type="submit"
-                    className="bg-gradient-to-r from-[#8C52D0] to-[#582F89] hover:opacity-95 text-white rounded-full py-2.5 px-6 text-xs font-medium flex items-center gap-2 shadow-sm cursor-pointer transition-colors"
+                    className="bg-gradient-to-r from-[var(--primary-grad-from,#8C52D0)] to-[var(--primary-grad-to,#582F89)] hover:opacity-95 text-white rounded-full py-2.5 px-6 text-xs font-medium flex items-center gap-2 shadow-sm cursor-pointer transition-colors"
                   >
                     <Check className="w-4 h-4" />
                     Добавить позицию

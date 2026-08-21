@@ -49,7 +49,7 @@ export const PrivacyPolicyModal: React.FC<PrivacyPolicyModalProps> = ({ isOpen, 
 
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#8C52D0]" />
+              <span className="w-2 h-2 rounded-full bg-[var(--lavDeep)]" />
               1. Общие положения и оператор данных
             </h3>
             <p className="text-xs text-zinc-600 dark:text-zinc-400 pl-4">
@@ -59,7 +59,7 @@ export const PrivacyPolicyModal: React.FC<PrivacyPolicyModalProps> = ({ isOpen, 
 
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#8C52D0]" />
+              <span className="w-2 h-2 rounded-full bg-[var(--lavDeep)]" />
               2. Цели обработки персональных данных
             </h3>
             <ul className="text-xs text-zinc-600 dark:text-zinc-400 pl-4 space-y-1 list-disc list-inside">
@@ -71,7 +71,7 @@ export const PrivacyPolicyModal: React.FC<PrivacyPolicyModalProps> = ({ isOpen, 
 
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#8C52D0]" />
+              <span className="w-2 h-2 rounded-full bg-[var(--lavDeep)]" />
               3. Состав обрабатываемых сведений
             </h3>
             <p className="text-xs text-zinc-600 dark:text-zinc-400 pl-4">
@@ -81,7 +81,7 @@ export const PrivacyPolicyModal: React.FC<PrivacyPolicyModalProps> = ({ isOpen, 
 
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#8C52D0]" />
+              <span className="w-2 h-2 rounded-full bg-[var(--lavDeep)]" />
               4. Защита и передача данных
             </h3>
             <p className="text-xs text-zinc-600 dark:text-zinc-400 pl-4">
@@ -91,7 +91,7 @@ export const PrivacyPolicyModal: React.FC<PrivacyPolicyModalProps> = ({ isOpen, 
 
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#8C52D0]" />
+              <span className="w-2 h-2 rounded-full bg-[var(--lavDeep)]" />
               5. Права субъекта персональных данных
             </h3>
             <p className="text-xs text-zinc-600 dark:text-zinc-400 pl-4">
@@ -104,7 +104,7 @@ export const PrivacyPolicyModal: React.FC<PrivacyPolicyModalProps> = ({ isOpen, 
         <div className="p-4 sm:p-5 border-t border-zinc-200/60 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-900/50 flex items-center justify-end">
           <button
             onClick={onClose}
-            style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+            style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
             className="px-6 py-2 rounded-full text-white font-semibold text-xs sm:text-sm flex items-center gap-2 transition-all hover:opacity-95 cursor-pointer shadow-sm"
           >
             <Check className="w-4 h-4 text-white" />

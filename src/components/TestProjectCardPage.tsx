@@ -1135,7 +1135,7 @@ export default function TestProjectCardPage({
                     }
                   }}
                   autoFocus
-                  className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 border-2 border-[#8C52D0] rounded-xl px-3 py-1 shadow-2xs focus:outline-none"
+                  className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 border-2 border-[var(--lavDeep)] rounded-xl px-3 py-1 shadow-2xs focus:outline-none"
                 />
                 <button
                   onClick={() => {
@@ -1143,7 +1143,7 @@ export default function TestProjectCardPage({
                     setIsEditingTitle(false);
                     showToast('Название обновлено', `Новое название проекта: ${titleInput}`, 'success');
                   }}
-                  className="p-2 bg-[#8C52D0] text-white rounded-full hover:bg-[#582F89] transition-colors cursor-pointer shadow-2xs"
+                  className="p-2 bg-[var(--lavDeep)] text-white rounded-full hover:bg-[var(--lavDeep)] transition-colors cursor-pointer shadow-2xs"
                   title="Сохранить название"
                 >
                   <Check className="w-4 h-4" />
@@ -1156,7 +1156,7 @@ export default function TestProjectCardPage({
                 </h1>
                 <button
                   onClick={() => setIsEditingTitle(true)}
-                  className="p-1.5 rounded-full hover:bg-purple-100 dark:hover:bg-purple-950/80 text-zinc-400 group-hover:text-[#8C52D0] transition-colors cursor-pointer shrink-0"
+                  className="p-1.5 rounded-full hover:bg-purple-100 dark:hover:bg-purple-950/80 text-zinc-400 group-hover:text-[var(--lavDeep)] transition-colors cursor-pointer shrink-0"
                   title="Редактировать название проекта"
                 >
                   <Edit2 className="w-4 h-4" />
@@ -1168,11 +1168,11 @@ export default function TestProjectCardPage({
             <div className="relative shrink-0 z-30">
               <button
                 onClick={() => setIsStepMenuOpen(!isStepMenuOpen)}
-                className="inline-flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-full bg-purple-100/90 dark:bg-purple-950/90 text-[#582F89] dark:text-purple-200 border border-purple-300 dark:border-purple-700/60 shadow-xs hover:bg-purple-200/80 transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-full bg-purple-100/90 dark:bg-purple-950/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-200 border border-purple-300 dark:border-purple-700/60 shadow-xs hover:bg-purple-200/80 transition-all cursor-pointer"
               >
-                <span className="w-2.5 h-2.5 rounded-full bg-[#8C52D0] animate-pulse shrink-0" />
-                <span>Этап {project.currentStep + 1} из {steps.length}: <strong className="text-[#582F89] dark:text-purple-100">{steps[project.currentStep]}</strong></span>
-                <ChevronDown className={`w-4 h-4 transition-transform duration-200 text-[#8C52D0] shrink-0 ${isStepMenuOpen ? 'rotate-180' : ''}`} />
+                <span className="w-2.5 h-2.5 rounded-full bg-[var(--lavDeep)] animate-pulse shrink-0" />
+                <span>Этап {project.currentStep + 1} из {steps.length}: <strong className="text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-100">{steps[project.currentStep]}</strong></span>
+                <ChevronDown className={`w-4 h-4 transition-transform duration-200 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] shrink-0 ${isStepMenuOpen ? 'rotate-180' : ''}`} />
               </button>
 
               <AnimatePresence>
@@ -1200,7 +1200,7 @@ export default function TestProjectCardPage({
                             }}
                             className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
                               isCurrent
-                                ? 'bg-gradient-to-r from-[#8C52D0] to-[#582F89] text-white shadow-xs'
+                                ? 'bg-gradient-to-r from-[var(--primary-grad-from,#8C52D0)] to-[var(--primary-grad-to,#582F89)] text-white shadow-xs'
                                 : isCompleted
                                 ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
                                 : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
@@ -1208,7 +1208,7 @@ export default function TestProjectCardPage({
                           >
                             <span className="flex items-center gap-2 truncate">
                               <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${
-                                isCurrent ? 'bg-white text-[#582F89]' : isCompleted ? 'bg-emerald-500 text-white' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500'
+                                isCurrent ? 'bg-white text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]' : isCompleted ? 'bg-emerald-500 text-white' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500'
                               }`}>
                                 {isCompleted ? '✓' : idx + 1}
                               </span>
@@ -1228,23 +1228,23 @@ export default function TestProjectCardPage({
           {/* Client & Project Info (White Floating Pill Caps) */}
           <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-700 dark:text-zinc-300 w-full min-w-0">
             <span className="flex items-center gap-1.5 font-medium bg-white/80 dark:bg-zinc-800/80 px-3 py-1 rounded-full border border-white/90 dark:border-zinc-700/60 shadow-2xs shrink-0">
-              <User className="w-3.5 h-3.5 text-[#8C52D0]" /> Клиент: <strong className="font-bold text-zinc-900 dark:text-zinc-100">{project.clientName}</strong>
+              <User className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" /> Клиент: <strong className="font-bold text-zinc-900 dark:text-zinc-100">{project.clientName}</strong>
             </span>
 
-            <a href={`tel:${project.clientPhone || briefValues["ТЕЛЕФОН"] || '+7 905 123 45 67'}`} className="flex items-center gap-1.5 font-medium bg-white/80 dark:bg-zinc-800/80 px-3 py-1 rounded-full border border-white/90 dark:border-zinc-700/60 shadow-2xs hover:border-[#8C52D0] hover:text-[#8C52D0] transition-colors shrink-0">
-              <Phone className="w-3.5 h-3.5 text-[#8C52D0]" /> {project.clientPhone || briefValues["ТЕЛЕФОН"] || '+7 905 123 45 67'}
+            <a href={`tel:${project.clientPhone || briefValues["ТЕЛЕФОН"] || '+7 905 123 45 67'}`} className="flex items-center gap-1.5 font-medium bg-white/80 dark:bg-zinc-800/80 px-3 py-1 rounded-full border border-white/90 dark:border-zinc-700/60 shadow-2xs hover:border-[var(--lavDeep)] hover:text-[var(--lavDeep)] transition-colors shrink-0">
+              <Phone className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" /> {project.clientPhone || briefValues["ТЕЛЕФОН"] || '+7 905 123 45 67'}
             </a>
 
-            <a href={`mailto:${project.clientEmail || 'socolova.design@mail.ru'}`} className="flex items-center gap-1.5 font-medium bg-white/80 dark:bg-zinc-800/80 px-3 py-1 rounded-full border border-white/90 dark:border-zinc-700/60 shadow-2xs hover:border-[#8C52D0] hover:text-[#8C52D0] transition-colors truncate max-w-[220px]">
-              <Mail className="w-3.5 h-3.5 text-[#8C52D0] shrink-0" /> {project.clientEmail || 'socolova.design@mail.ru'}
+            <a href={`mailto:${project.clientEmail || 'socolova.design@mail.ru'}`} className="flex items-center gap-1.5 font-medium bg-white/80 dark:bg-zinc-800/80 px-3 py-1 rounded-full border border-white/90 dark:border-zinc-700/60 shadow-2xs hover:border-[var(--lavDeep)] hover:text-[var(--lavDeep)] transition-colors truncate max-w-[220px]">
+              <Mail className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] shrink-0" /> {project.clientEmail || 'socolova.design@mail.ru'}
             </a>
 
             <span className="flex items-center gap-1.5 font-medium bg-white/80 dark:bg-zinc-800/80 px-3 py-1 rounded-full border border-white/90 dark:border-zinc-700/60 shadow-2xs shrink-0">
-              <Calendar className="w-3.5 h-3.5 text-[#8C52D0]" /> {project.date}
+              <Calendar className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" /> {project.date}
             </span>
 
             <span className="flex items-center gap-1.5 font-medium bg-white/80 dark:bg-zinc-800/80 px-3 py-1 rounded-full border border-white/90 dark:border-zinc-700/60 shadow-2xs shrink-0">
-              <MapPin className="w-3.5 h-3.5 text-[#8C52D0]" /> {project.venue}
+              <MapPin className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" /> {project.venue}
             </span>
           </div>
         </div>
@@ -1258,7 +1258,7 @@ export default function TestProjectCardPage({
               showToast('Ссылка отправлена клиенту', `Ссылка для клиента ${project.clientName} скопирована в буфер обмена: ${briefUrl}`, 'success');
             }}
             className="h-10 px-6 text-white rounded-full text-xs font-bold flex items-center justify-center gap-2 transition-all duration-300 hover:shadow-lg hover:opacity-95 active:scale-[0.98] cursor-pointer shrink-0 shadow-md flex-1 sm:flex-none"
-            style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+            style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
           >
             <Share2 className="w-4 h-4" /> Отправить клиенту
           </button>
@@ -1284,21 +1284,21 @@ export default function TestProjectCardPage({
               <span className="text-[10px] uppercase font-normal text-zinc-600 dark:text-zinc-400 tracking-normal truncate">
                 Общая сметная стоимость
               </span>
-              <span className="px-2.5 py-0.5 rounded-full bg-white/90 dark:bg-zinc-800/90 text-[10px] font-semibold text-[#582F89] dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/40 shadow-2xs shrink-0">
+              <span className="px-2.5 py-0.5 rounded-full bg-white/90 dark:bg-zinc-800/90 text-[10px] font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/40 shadow-2xs shrink-0">
                 Стоимость
               </span>
             </div>
             <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-purple-200/90 dark:bg-purple-900/70 text-[#8C52D0] rounded-xl shrink-0">
+              <div className="p-2 bg-purple-200/90 dark:bg-purple-900/70 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] rounded-xl shrink-0">
                 <Wallet className="w-4 h-4 stroke-[2.2]" />
               </div>
-              <div className="text-xl sm:text-2xl font-black font-mono text-[#582F89] dark:text-purple-200 tracking-tight truncate">
+              <div className="text-xl sm:text-2xl font-black font-mono text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-200 tracking-tight truncate">
                 {finalPrice.toLocaleString('ru')} ₽
               </div>
             </div>
             <div className="pt-2 border-t border-purple-200/60 dark:border-purple-900/40 flex items-center justify-between text-xs text-zinc-800 dark:text-zinc-200">
               <span className="font-medium text-zinc-700 dark:text-zinc-300">Фиксированный бюджет</span>
-              <span className="font-extrabold text-[#582F89] dark:text-purple-300">100% сметы</span>
+              <span className="font-extrabold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300">100% сметы</span>
             </div>
           </div>
 
@@ -1367,7 +1367,7 @@ export default function TestProjectCardPage({
             id: 'all',
             label: 'Обзор',
             icon: Layout,
-            activeStyle: 'bg-white dark:bg-zinc-900 text-[#582F89] dark:text-purple-200 border-t border-x border-purple-300/80 dark:border-purple-800/60 rounded-t-2xl shadow-2xs z-30 relative -mb-[1px] pb-3 pt-2.5 px-4 sm:px-5',
+            activeStyle: 'bg-white dark:bg-zinc-900 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-200 border-t border-x border-purple-300/80 dark:border-purple-800/60 rounded-t-2xl shadow-2xs z-30 relative -mb-[1px] pb-3 pt-2.5 px-4 sm:px-5',
             inactiveStyle: 'bg-white/40 dark:bg-zinc-900/40 text-zinc-600 dark:text-zinc-400 hover:bg-white/70 hover:text-zinc-900 dark:hover:bg-zinc-800/60 border-t border-x border-purple-100/60 dark:border-zinc-800/60 z-10 rounded-t-xl pb-2 pt-2 px-3.5 sm:px-4'
           },
           {
@@ -1434,7 +1434,7 @@ export default function TestProjectCardPage({
               <section className="bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-rose-100/50 via-white/40 to-white/40 dark:from-rose-950/30 dark:via-zinc-900/30 dark:to-zinc-900/30 backdrop-blur-md border border-zinc-200/50 dark:border-zinc-800/40 rounded-[28px] overflow-hidden shadow-xs w-full min-w-0">
                 <div className="bg-white/40 dark:bg-zinc-900/30 border-b border-zinc-200/50 dark:border-zinc-800/40 px-4 sm:px-6 py-4 flex justify-between items-center flex-wrap gap-2.5 w-full min-w-0">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="p-2 bg-[#F3E8FF] dark:bg-purple-950/60 text-[#8C52D0] dark:text-[#985DE0] rounded-xl shrink-0">
+                    <div className="p-2 bg-[#F3E8FF] dark:bg-purple-950/60 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-[#985DE0] rounded-xl shrink-0">
                       <Clipboard className="w-5 h-5 stroke-[2.2]" />
                     </div>
                     <div className="min-w-0">
@@ -1459,16 +1459,16 @@ export default function TestProjectCardPage({
                       <span
                         className="absolute inset-0 rounded-full pointer-events-none p-[1px]"
                         style={{
-                          background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)',
+                          background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)',
                           WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
                           WebkitMaskComposite: 'xor',
                           maskComposite: 'exclude',
                         }}
                       />
-                      <Send className="w-3.5 h-3.5 stroke-[2.2] relative z-10 shrink-0 text-[#8C52D0]" />
+                      <Send className="w-3.5 h-3.5 stroke-[2.2] relative z-10 shrink-0 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                       <span
                         className="bg-clip-text text-transparent relative z-10"
-                        style={{ backgroundImage: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                        style={{ backgroundImage: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
                       >
                         Отправить бриф
                       </span>
@@ -1496,7 +1496,7 @@ export default function TestProjectCardPage({
                     {/* SECTION 1: CLIENT FIELDS */}
                     <div className="space-y-3">
                       <div className="flex items-center gap-2 border-b border-purple-100 dark:border-purple-950/60 pb-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#8C52D0] shrink-0" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-[var(--lavDeep)] shrink-0" />
                         <h3 className="text-xs font-normal uppercase tracking-normal text-zinc-600 dark:text-zinc-400">
                           Поля клиента
                         </h3>
@@ -1515,8 +1515,8 @@ export default function TestProjectCardPage({
                               key={field.key}
                               className={`p-2.5 rounded-xl border border-l-2 text-left transition-all flex flex-col justify-between shadow-2xs ${
                                 isEmpty
-                                  ? 'border-dashed border-purple-300/80 border-l-[#8C52D0] dark:border-purple-900/40 dark:border-l-purple-500/70 bg-purple-50/30 dark:bg-zinc-900/40'
-                                  : 'border-purple-200/60 border-l-[#8C52D0] dark:border-zinc-800 dark:border-l-purple-500/70 bg-purple-50/10 dark:bg-zinc-900/60'
+                                  ? 'border-dashed border-zinc-300/80 border-l-[var(--lavDeep)] dark:border-zinc-700/60 dark:border-l-[var(--lavenderAccent)] bg-[var(--lavenderSoft)]/40 dark:bg-zinc-900/40'
+                                  : 'border-zinc-200/60 border-l-[var(--lavDeep)] dark:border-zinc-800 dark:border-l-[var(--lavenderAccent)] bg-[var(--lavenderSoft)]/20 dark:bg-zinc-900/60'
                               }`}
                             >
                               <div className="flex items-center justify-between gap-1 mb-1.5">
@@ -1531,9 +1531,9 @@ export default function TestProjectCardPage({
                                   value={val === "(требует заполнения)" ? "" : val}
                                   onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                                   placeholder=""
-                                  className={`w-full text-sm font-semibold rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] resize-none ${
+                                  className={`w-full text-sm font-semibold rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)] resize-none ${
                                     isEmpty
-                                      ? 'bg-purple-50/50 text-[#582F89] italic font-medium border-purple-200/60 dark:bg-zinc-900/90 dark:text-purple-300/80 dark:border-zinc-800'
+                                      ? 'bg-purple-50/50 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] italic font-medium border-purple-200/60 dark:bg-zinc-900/90 dark:text-purple-300/80 dark:border-zinc-800'
                                       : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
                                   }`}
                                 />
@@ -1543,9 +1543,9 @@ export default function TestProjectCardPage({
                                   value={val === "(требует заполнения)" ? "" : val}
                                   onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                                   placeholder=""
-                                  className={`w-full text-sm font-semibold rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] ${
+                                  className={`w-full text-sm font-semibold rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)] ${
                                     isEmpty
-                                      ? 'bg-purple-50/50 text-[#582F89] italic font-medium border-purple-200/60 dark:bg-zinc-900/90 dark:text-purple-300/80 dark:border-zinc-800'
+                                      ? 'bg-purple-50/50 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] italic font-medium border-purple-200/60 dark:bg-zinc-900/90 dark:text-purple-300/80 dark:border-zinc-800'
                                       : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
                                   }`}
                                 />
@@ -1611,7 +1611,7 @@ export default function TestProjectCardPage({
                                   value={val === "(требует заполнения)" ? "" : val}
                                   onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                                   placeholder=""
-                                  className={`w-full text-sm font-semibold rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] resize-none ${
+                                  className={`w-full text-sm font-semibold rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)] resize-none ${
                                     isEmpty
                                       ? 'bg-zinc-100/50 text-zinc-600 italic font-medium border-zinc-200 dark:bg-zinc-900/80 dark:text-zinc-400 dark:border-zinc-800'
                                       : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
@@ -1623,7 +1623,7 @@ export default function TestProjectCardPage({
                                   value={val === "(требует заполнения)" ? "" : val}
                                   onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                                   placeholder=""
-                                  className={`w-full text-sm font-semibold rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[#8C52D0] ${
+                                  className={`w-full text-sm font-semibold rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)] ${
                                     isEmpty
                                       ? 'bg-zinc-100/50 text-zinc-600 italic font-medium border-zinc-200 dark:bg-zinc-900/80 dark:text-zinc-400 dark:border-zinc-800'
                                       : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
@@ -1638,7 +1638,7 @@ export default function TestProjectCardPage({
                         {isAddingCustomField ? (
                           <div className="p-2.5 rounded-xl border border-l-2 border-dashed border-purple-300 border-l-stone-400 dark:border-purple-800 bg-purple-50/30 dark:bg-purple-950/20 text-left flex flex-col justify-between gap-2 shadow-2xs">
                             <div className="flex items-center justify-between gap-1">
-                              <span className="text-[9px] uppercase tracking-wider font-bold text-[#582F89] dark:text-purple-300">
+                              <span className="text-[9px] uppercase tracking-wider font-bold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300">
                                 Новое поле декоратора
                               </span>
                             </div>
@@ -1658,7 +1658,7 @@ export default function TestProjectCardPage({
                                   showToast('Поле добавлено', `Добавлено новое поле: ${keyUpper}`, 'success');
                                 }
                               }}
-                              className="w-full text-xs font-semibold rounded-lg px-2 py-1 border border-purple-200 dark:border-purple-800 bg-white dark:bg-zinc-900 text-stone-800 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-[#8C52D0]"
+                              className="w-full text-xs font-semibold rounded-lg px-2 py-1 border border-purple-200 dark:border-purple-800 bg-white dark:bg-zinc-900 text-stone-800 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)]"
                             />
                             <div className="flex items-center gap-1.5 pt-0.5">
                               <button
@@ -1673,7 +1673,7 @@ export default function TestProjectCardPage({
                                   }
                                 }}
                                 className="flex-1 py-1 px-2 text-white rounded-full text-[11px] font-bold transition-all cursor-pointer hover:opacity-95"
-                                style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                                style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
                               >
                                 Сохранить
                               </button>
@@ -1691,10 +1691,10 @@ export default function TestProjectCardPage({
                         ) : (
                           <button
                             onClick={() => setIsAddingCustomField(true)}
-                            className="p-3 rounded-xl border border-l-2 border-dashed border-stone-300 border-l-stone-400 dark:border-zinc-700 hover:border-[#8C52D0] dark:hover:border-[#8C52D0] bg-stone-50/40 dark:bg-zinc-900/30 hover:bg-purple-50/40 dark:hover:bg-purple-950/20 text-stone-500 hover:text-[#582F89] dark:text-stone-400 dark:hover:text-purple-300 text-xs font-semibold transition-all duration-300 flex flex-col items-center justify-center gap-1.5 min-h-[82px] cursor-pointer group"
+                            className="p-3 rounded-xl border border-l-2 border-dashed border-stone-300 border-l-stone-400 dark:border-zinc-700 hover:border-[var(--lavDeep)] dark:hover:border-[var(--lavDeep)] bg-stone-50/40 dark:bg-zinc-900/30 hover:bg-purple-50/40 dark:hover:bg-purple-950/20 text-stone-500 hover:text-[var(--lavDeep)] dark:text-stone-400 dark:hover:text-purple-300 text-xs font-semibold transition-all duration-300 flex flex-col items-center justify-center gap-1.5 min-h-[82px] cursor-pointer group"
                           >
                             <div className="w-6 h-6 rounded-full bg-stone-200/80 dark:bg-zinc-800 group-hover:bg-purple-200 dark:group-hover:bg-purple-900/60 flex items-center justify-center transition-colors">
-                              <Plus className="w-3.5 h-3.5 text-stone-600 dark:text-stone-300 group-hover:text-[#582F89] dark:group-hover:text-purple-200" />
+                              <Plus className="w-3.5 h-3.5 text-stone-600 dark:text-stone-300 group-hover:text-[var(--lavDeep)] dark:group-hover:text-purple-200" />
                             </div>
                             <span className="text-[11px] font-bold">+ Добавить поле</span>
                           </button>
@@ -1705,8 +1705,8 @@ export default function TestProjectCardPage({
                     {/* BOTTOM LEGEND AT THE VERY BOTTOM OF BRIEF CARD */}
                     <div className="pt-4 border-t border-stone-200/60 dark:border-zinc-800/80 flex items-center justify-between flex-wrap gap-2 text-xs">
                       <div className="flex items-center gap-4 flex-wrap">
-                        <span className="inline-flex items-center gap-1.5 text-xs text-[#582F89] dark:text-purple-300 font-semibold bg-purple-100/90 dark:bg-purple-950/70 px-3 py-1 rounded-full border border-purple-200/70 dark:border-purple-800/50">
-                          <span className="w-2.5 h-2.5 rounded-full bg-[#8C52D0] shadow-xs" /> Заполняет клиент
+                        <span className="inline-flex items-center gap-1.5 text-xs text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 font-semibold bg-purple-100/90 dark:bg-purple-950/70 px-3 py-1 rounded-full border border-purple-200/70 dark:border-purple-800/50">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[var(--lavDeep)] shadow-xs" /> Заполняет клиент
                         </span>
                         <span className="inline-flex items-center gap-1.5 text-xs text-stone-600 dark:text-stone-300 font-semibold bg-stone-100 dark:bg-zinc-800 px-3 py-1 rounded-full border border-stone-200 dark:border-zinc-700">
                           <span className="w-2.5 h-2.5 rounded-full bg-stone-400 dark:bg-zinc-400 shadow-xs" /> Декоратор
@@ -1726,7 +1726,7 @@ export default function TestProjectCardPage({
               <section className="bg-gradient-to-br from-purple-50/70 via-white/60 to-indigo-50/50 dark:from-purple-950/30 dark:via-zinc-900/60 dark:to-zinc-900/60 backdrop-blur-xl border border-indigo-200/60 dark:border-indigo-900/40 rounded-[28px] overflow-hidden shadow-xs">
                 <div className="bg-white dark:bg-zinc-900 border-b border-indigo-200/60 dark:border-indigo-900/40 px-5 py-4 flex justify-between items-center flex-wrap gap-2">
                   <div className="flex items-center gap-2.5">
-                    <div className="p-2 bg-purple-100 dark:bg-purple-900/50 text-[#8C52D0] rounded-2xl shrink-0">
+                    <div className="p-2 bg-purple-100 dark:bg-purple-900/50 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] rounded-2xl shrink-0">
                       <Palette className="w-4 h-4 stroke-[2.2]" />
                     </div>
                     <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">Дизайн & Визуализация</h2>
@@ -1736,7 +1736,7 @@ export default function TestProjectCardPage({
                       showToast('Редактор дизайна', 'Переход в встроенный графический редактор...', 'info');
                       if (onOpenEditor) onOpenEditor();
                     }}
-                    style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                    style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
                     className="px-4 py-1.5 rounded-full text-xs font-semibold text-white flex items-center gap-1.5 cursor-pointer transition-all duration-300 hover:shadow-md hover:opacity-95 active:scale-[0.98] shadow-2xs"
                   >
                     <SlidersHorizontal className="w-3.5 h-3.5 text-white" />
@@ -1755,7 +1755,7 @@ export default function TestProjectCardPage({
                           <button
                             type="button"
                             onClick={() => setVizIndex((prev) => (prev === 0 ? visualizations.length - 1 : prev - 1))}
-                            className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full border border-[#8C52D0] bg-white/90 dark:bg-zinc-900/90 text-[#582F89] dark:text-purple-300 shadow-md flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-[#F0EBF9] dark:hover:bg-[#20152B] active:scale-95 cursor-pointer"
+                            className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full border border-[var(--lavDeep)] bg-white/90 dark:bg-zinc-900/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 shadow-md flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-[#F0EBF9] dark:hover:bg-[#20152B] active:scale-95 cursor-pointer"
                             title="Предыдущая визуализация"
                           >
                             <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
@@ -1764,7 +1764,7 @@ export default function TestProjectCardPage({
                           <button
                             type="button"
                             onClick={() => setVizIndex((prev) => (prev === visualizations.length - 1 ? 0 : prev + 1))}
-                            className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full border border-[#8C52D0] bg-white/90 dark:bg-zinc-900/90 text-[#582F89] dark:text-purple-300 shadow-md flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-[#F0EBF9] dark:hover:bg-[#20152B] active:scale-95 cursor-pointer"
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full border border-[var(--lavDeep)] bg-white/90 dark:bg-zinc-900/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 shadow-md flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-[#F0EBF9] dark:hover:bg-[#20152B] active:scale-95 cursor-pointer"
                             title="Следующая визуализация"
                           >
                             <ChevronRight className="w-5 h-5 stroke-[2.5]" />
@@ -1791,7 +1791,7 @@ export default function TestProjectCardPage({
                         className="w-full flex-1 flex items-center justify-center my-1 px-1 cursor-pointer group"
                         title="Нажмите, чтобы развернуть эскиз во весь экран"
                       >
-                        <div className="aspect-square w-full max-w-[280px] sm:max-w-[300px] overflow-hidden rounded-2xl border border-stone-200/80 dark:border-zinc-800 shadow-xs relative transition-all duration-300 group-hover:shadow-md group-hover:border-[#8C52D0]">
+                        <div className="aspect-square w-full max-w-[280px] sm:max-w-[300px] overflow-hidden rounded-2xl border border-stone-200/80 dark:border-zinc-800 shadow-xs relative transition-all duration-300 group-hover:shadow-md group-hover:border-[var(--lavDeep)]">
                           <div ref={pageSketchRef} className="w-full h-full">
                             <EditorSketchCanvasPreview
                               title={visualizations[vizIndex % visualizations.length]?.title}
@@ -1812,7 +1812,7 @@ export default function TestProjectCardPage({
                                 showToast('Редактор визуализации', `Переход в редактор: ${visualizations[vizIndex % visualizations.length]?.title}`, 'info');
                                 if (onOpenEditor) onOpenEditor();
                               }}
-                              style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                              style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
                               className="rounded-full px-3.5 py-1.5 text-xs font-bold text-white flex items-center gap-1.5 cursor-pointer shadow-lg hover:scale-105 transition-all"
                             >
                               <Edit2 className="w-3.5 h-3.5 text-white" />
@@ -1833,7 +1833,7 @@ export default function TestProjectCardPage({
                     </div>
                   ) : (
                     <div className="bg-white/40 dark:bg-zinc-950/30 rounded-2xl p-6 border border-stone-200/80 dark:border-zinc-800 flex flex-col items-center justify-center text-center space-y-3 min-h-[260px] backdrop-blur-xs">
-                      <div className="w-12 h-12 rounded-2xl bg-purple-100/80 dark:bg-purple-950/60 text-[#8C52D0] dark:text-purple-300 flex items-center justify-center">
+                      <div className="w-12 h-12 rounded-2xl bg-purple-100/80 dark:bg-purple-950/60 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 flex items-center justify-center">
                         <Palette className="w-6 h-6 stroke-[2]" />
                       </div>
                       <div className="space-y-1">
@@ -1848,7 +1848,7 @@ export default function TestProjectCardPage({
                           showToast('Редактор дизайна', 'Переход в графический редактор...', 'info');
                           if (onOpenEditor) onOpenEditor();
                         }}
-                        style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                        style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
                         className="px-4 py-2 rounded-full text-xs font-semibold text-white flex items-center gap-1.5 cursor-pointer shadow-sm hover:opacity-90 transition-all active:scale-[0.98]"
                       >
                         <Plus className="w-4 h-4" />
@@ -1867,7 +1867,7 @@ export default function TestProjectCardPage({
                           <button
                             type="button"
                             onClick={() => setAiVizIndex((prev) => (prev === 0 ? aiVisualizations.length - 1 : prev - 1))}
-                            className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full border border-[#8C52D0] bg-white/90 dark:bg-zinc-900/90 text-[#582F89] dark:text-purple-300 shadow-md flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-[#F0EBF9] dark:hover:bg-[#20152B] active:scale-95 cursor-pointer"
+                            className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full border border-[var(--lavDeep)] bg-white/90 dark:bg-zinc-900/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 shadow-md flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-[#F0EBF9] dark:hover:bg-[#20152B] active:scale-95 cursor-pointer"
                             title="Предыдущая ИИ визуализация"
                           >
                             <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
@@ -1876,7 +1876,7 @@ export default function TestProjectCardPage({
                           <button
                             type="button"
                             onClick={() => setAiVizIndex((prev) => (prev === aiVisualizations.length - 1 ? 0 : prev + 1))}
-                            className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full border border-[#8C52D0] bg-white/90 dark:bg-zinc-900/90 text-[#582F89] dark:text-purple-300 shadow-md flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-[#F0EBF9] dark:hover:bg-[#20152B] active:scale-95 cursor-pointer"
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full border border-[var(--lavDeep)] bg-white/90 dark:bg-zinc-900/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 shadow-md flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-[#F0EBF9] dark:hover:bg-[#20152B] active:scale-95 cursor-pointer"
                             title="Следующая ИИ визуализация"
                           >
                             <ChevronRight className="w-5 h-5 stroke-[2.5]" />
@@ -1887,7 +1887,7 @@ export default function TestProjectCardPage({
                       {/* CARD TITLE */}
                       <div className="flex items-center gap-2 mb-1">
                         <div className="flex items-center gap-1.5 truncate max-w-[200px]">
-                          <Sparkles className="w-3.5 h-3.5 text-[#8C52D0] shrink-0" />
+                          <Sparkles className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] shrink-0" />
                           <span className="text-[10px] font-bold uppercase tracking-wider text-purple-800 dark:text-purple-300 truncate">
                             {aiVisualizations[aiVizIndex % aiVisualizations.length]?.title || 'ИИ ВИЗУАЛИЗАЦИЯ'}
                           </span>
@@ -1908,7 +1908,7 @@ export default function TestProjectCardPage({
                         className="w-full flex-1 flex items-center justify-center my-1 px-1 cursor-pointer group"
                         title="ИИ Визуализация проекта"
                       >
-                        <div className="aspect-square w-full max-w-[280px] sm:max-w-[300px] overflow-hidden rounded-2xl border border-stone-200/80 dark:border-zinc-800 shadow-xs relative transition-all duration-300 group-hover:shadow-md group-hover:border-[#8C52D0]">
+                        <div className="aspect-square w-full max-w-[280px] sm:max-w-[300px] overflow-hidden rounded-2xl border border-stone-200/80 dark:border-zinc-800 shadow-xs relative transition-all duration-300 group-hover:shadow-md group-hover:border-[var(--lavDeep)]">
                           <img
                             src={aiVisualizations[aiVizIndex % aiVisualizations.length]?.image}
                             alt={aiVisualizations[aiVizIndex % aiVisualizations.length]?.title || 'ИИ Визуализация'}
@@ -1944,9 +1944,9 @@ export default function TestProjectCardPage({
                           showToast('ИИ Генератор', 'Открытие генератора вариантов ИИ...', 'info');
                           if (onOpenEditor) onOpenEditor();
                         }}
-                        className="px-4 py-2 rounded-full text-xs font-semibold text-[#582F89] dark:text-purple-300 bg-purple-100/80 hover:bg-purple-200 dark:bg-purple-950/60 dark:hover:bg-purple-900/80 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-[0.98]"
+                        className="px-4 py-2 rounded-full text-xs font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 bg-purple-100/80 hover:bg-purple-200 dark:bg-purple-950/60 dark:hover:bg-purple-900/80 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-[0.98]"
                       >
-                        <Sparkles className="w-4 h-4 text-[#8C52D0]" />
+                        <Sparkles className="w-4 h-4 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                         <span>Сгенерировать в ИИ</span>
                       </button>
                     </div>
@@ -1970,7 +1970,7 @@ export default function TestProjectCardPage({
                     <button
                       type="button"
                       onClick={() => scrollGallery('left')}
-                      className="shrink-0 w-8 h-8 rounded-full text-[#582F89] dark:text-purple-300 hover:bg-[#F0EBF9] dark:hover:bg-[#20152B] flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer z-10"
+                      className="shrink-0 w-8 h-8 rounded-full text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 hover:bg-[#F0EBF9] dark:hover:bg-[#20152B] flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer z-10"
                       title="Прокрутить влево"
                     >
                       <ChevronLeft className="w-6 h-6 stroke-[2.5]" />
@@ -1988,19 +1988,19 @@ export default function TestProjectCardPage({
                       className={`shrink-0 w-16 sm:w-20 h-20 rounded-xl border-2 border-dashed flex flex-col items-center justify-center p-1 transition-all group shadow-2xs z-10 ${
                         venuePhotos.length >= 6
                           ? 'border-stone-300 dark:border-zinc-700 bg-stone-100 dark:bg-zinc-800/50 text-stone-400 dark:text-zinc-500 cursor-not-allowed opacity-60'
-                          : 'border-[#8C52D0]/60 hover:border-[#8C52D0] bg-[#F0EBF9]/40 dark:bg-[#20152B]/40 hover:bg-[#F0EBF9] dark:hover:bg-[#20152B] cursor-pointer'
+                          : 'border-[var(--lavenderAccent)]/60 hover:border-[var(--lavDeep)] bg-[#F0EBF9]/40 dark:bg-[#20152B]/40 hover:bg-[#F0EBF9] dark:hover:bg-[#20152B] cursor-pointer'
                       }`}
                       title={venuePhotos.length >= 6 ? 'Максимум 6 фото (лимит достигнут)' : 'Загрузить фото'}
                     >
                       <Plus className={`w-4 h-4 stroke-[2.5] ${
                         venuePhotos.length >= 6
                           ? 'text-stone-400 dark:text-zinc-500'
-                          : 'text-[#582F89] dark:text-purple-300 group-hover:scale-110 transition-transform'
+                          : 'text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 group-hover:scale-110 transition-transform'
                       }`} />
                       <span className={`text-[8px] sm:text-[9px] font-bold mt-0.5 text-center leading-tight ${
                         venuePhotos.length >= 6
                           ? 'text-stone-400 dark:text-zinc-500'
-                          : 'text-[#582F89] dark:text-purple-300'
+                          : 'text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300'
                       }`}>
                         {venuePhotos.length >= 6 ? 'Лимит 6/6' : 'Загрузить'}
                       </span>
@@ -2020,7 +2020,7 @@ export default function TestProjectCardPage({
                       {venuePhotos.map((photoUrl, idx) => (
                         <div
                           key={idx}
-                          className="shrink-0 w-28 h-20 rounded-xl overflow-hidden border border-stone-200/80 dark:border-zinc-800 bg-stone-100 dark:bg-zinc-900 relative group cursor-pointer shadow-2xs hover:border-[#8C52D0] transition-all"
+                          className="shrink-0 w-28 h-20 rounded-xl overflow-hidden border border-stone-200/80 dark:border-zinc-800 bg-stone-100 dark:bg-zinc-900 relative group cursor-pointer shadow-2xs hover:border-[var(--lavDeep)] transition-all"
                         >
                           <img
                             src={photoUrl}
@@ -2052,7 +2052,7 @@ export default function TestProjectCardPage({
                     <button
                       type="button"
                       onClick={() => scrollGallery('right')}
-                      className="shrink-0 w-8 h-8 rounded-full text-[#582F89] dark:text-purple-300 hover:bg-[#F0EBF9] dark:hover:bg-[#20152B] flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer z-10"
+                      className="shrink-0 w-8 h-8 rounded-full text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 hover:bg-[#F0EBF9] dark:hover:bg-[#20152B] flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer z-10"
                       title="Прокрутить вправо"
                     >
                       <ChevronRight className="w-6 h-6 stroke-[2.5]" />
@@ -2093,7 +2093,7 @@ export default function TestProjectCardPage({
                         <tr className="bg-purple-50/60 dark:bg-purple-950/40 border-y border-purple-200/50 dark:border-purple-900/50">
                           <td colSpan={4} className="py-2.5 px-3">
                             <div className="flex items-center gap-2">
-                              <div className="p-1.5 bg-[#F3E8FF] dark:bg-purple-900/50 rounded-lg text-[#8C52D0] dark:text-purple-300">
+                              <div className="p-1.5 bg-[#F3E8FF] dark:bg-purple-900/50 rounded-lg text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300">
                                 <Sparkles className="w-4 h-4 stroke-[2]" />
                               </div>
                               <span className="text-xs font-semibold uppercase tracking-normal text-zinc-800 dark:text-zinc-200">
@@ -2122,7 +2122,7 @@ export default function TestProjectCardPage({
                                 <td className="py-3 px-3">
                                   <div className={`w-8 h-8 rounded-xl flex items-center justify-center shadow-2xs border ${
                                     isIncluded
-                                      ? 'bg-purple-100/80 dark:bg-purple-900/50 border-purple-200 dark:border-purple-800 text-[#8C52D0] dark:text-purple-300'
+                                      ? 'bg-purple-100/80 dark:bg-purple-900/50 border-purple-200 dark:border-purple-800 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300'
                                       : 'bg-stone-200/60 dark:bg-zinc-800 border-stone-300 dark:border-zinc-700 text-stone-400'
                                   }`}>
                                     <Palette className="w-4 h-4 stroke-[2]" />
@@ -2136,7 +2136,7 @@ export default function TestProjectCardPage({
                                       type="text"
                                       value={sc.name || `Декор ${idx + 1}`}
                                       onChange={(e) => handleUpdateSceneName(sc.id, e.target.value)}
-                                      className={`font-semibold text-sm bg-transparent border-b border-transparent hover:border-purple-300 focus:border-[#8C52D0] focus:outline-none transition-colors ${
+                                      className={`font-semibold text-sm bg-transparent border-b border-transparent hover:border-purple-300 focus:border-[var(--lavDeep)] focus:outline-none transition-colors ${
                                         isIncluded ? 'text-stone-900 dark:text-stone-100' : 'line-through text-stone-400 dark:text-zinc-500'
                                       }`}
                                     />
@@ -2171,7 +2171,7 @@ export default function TestProjectCardPage({
                                         value={cost || ''}
                                         placeholder="0"
                                         onChange={(e) => handleUpdateScenePrice(sc.id, Number(e.target.value) || 0)}
-                                        className="w-28 bg-white dark:bg-zinc-800 border border-purple-200 dark:border-purple-800 px-2.5 py-1 rounded-xl text-right font-bold text-sm text-[#582F89] dark:text-purple-200 focus:outline-none focus:ring-1 focus:ring-[#8C52D0] shadow-2xs"
+                                        className="w-28 bg-white dark:bg-zinc-800 border border-purple-200 dark:border-purple-800 px-2.5 py-1 rounded-xl text-right font-bold text-sm text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-200 focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)] shadow-2xs"
                                       />
                                     ) : (
                                       <span className="font-mono font-bold text-sm line-through text-stone-400 dark:text-zinc-600">
@@ -2233,7 +2233,7 @@ export default function TestProjectCardPage({
                                   type="text"
                                   value={item.name}
                                   onChange={(e) => handleUpdateEstimateItemName(item.id, e.target.value)}
-                                  className="font-semibold text-sm bg-transparent border-b border-transparent hover:border-purple-300 focus:border-[#8C52D0] focus:outline-none transition-colors text-stone-900 dark:text-stone-100"
+                                  className="font-semibold text-sm bg-transparent border-b border-transparent hover:border-purple-300 focus:border-[var(--lavDeep)] focus:outline-none transition-colors text-stone-900 dark:text-stone-100"
                                 />
                                 <span className="text-[10px] text-zinc-600 dark:text-zinc-300 font-normal leading-normal">
                                   Сервисная позиция / услуга
@@ -2286,7 +2286,7 @@ export default function TestProjectCardPage({
                                   onKeyDown={(e) => {
                                     if (e.key === 'Enter') handleAddWorkPosition();
                                   }}
-                                  className="font-semibold text-sm bg-transparent border-b border-transparent hover:border-purple-300 focus:border-[#8C52D0] focus:outline-none transition-colors text-stone-900 dark:text-stone-100 placeholder:text-stone-400"
+                                  className="font-semibold text-sm bg-transparent border-b border-transparent hover:border-purple-300 focus:border-[var(--lavDeep)] focus:outline-none transition-colors text-stone-900 dark:text-stone-100 placeholder:text-stone-400"
                                 />
                                 <span className="text-[10px] text-zinc-600 dark:text-zinc-300 font-normal leading-normal">
                                   Новая позиция работ
@@ -2342,10 +2342,10 @@ export default function TestProjectCardPage({
                         onUpdateProject({ ...project, scenesData: updatedScenes });
                         showToast('Добавлен декор', `Создана новая позиция: Декор ${newNum}`, 'success');
                       }}
-                      className="w-full py-3 px-5 rounded-full bg-[#F3E8FF] dark:bg-purple-950/40 hover:bg-[#E9D5FF] dark:hover:bg-purple-900/50 border border-[#8C52D0]/50 dark:border-purple-600/50 flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 active:scale-[0.98] shadow-xs"
+                      className="w-full py-3 px-5 rounded-full bg-[#F3E8FF] dark:bg-purple-950/40 hover:bg-[#E9D5FF] dark:hover:bg-purple-900/50 border border-[var(--lavenderAccent)]/50 dark:border-purple-600/50 flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 active:scale-[0.98] shadow-xs"
                     >
-                      <Palette className="w-4 h-4 stroke-[2.2] text-[#8C52D0] dark:text-purple-300" />
-                      <span className="bg-gradient-to-r from-[#8C52D0] to-[#582F89] dark:from-purple-300 dark:to-purple-200 bg-clip-text text-transparent font-semibold text-xs sm:text-sm">
+                      <Palette className="w-4 h-4 stroke-[2.2] text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300" />
+                      <span className="bg-gradient-to-r from-[var(--primary-grad-from,#8C52D0)] to-[var(--primary-grad-to,#582F89)] dark:from-purple-300 dark:to-purple-200 bg-clip-text text-transparent font-semibold text-xs sm:text-sm">
                         + Добавить декор
                       </span>
                     </button>
@@ -2436,12 +2436,12 @@ export default function TestProjectCardPage({
                     <div className="p-4 bg-gradient-to-br from-purple-50/90 via-purple-50/50 to-white dark:from-purple-950/40 dark:via-purple-950/20 dark:to-zinc-900 rounded-2xl border border-purple-200/90 dark:border-purple-800/60 shadow-2xs flex flex-col justify-between space-y-2">
                       <div className="flex items-center justify-between pb-1 border-b border-purple-100 dark:border-purple-900/50">
                         <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-lg bg-purple-100 dark:bg-purple-900/60 text-[#8C52D0] dark:text-purple-300 flex items-center justify-center">
+                          <div className="w-7 h-7 rounded-lg bg-purple-100 dark:bg-purple-900/60 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 flex items-center justify-center">
                             <Award className="w-4 h-4" />
                           </div>
-                          <span className="text-[#582F89] dark:text-purple-300 font-bold uppercase text-[10px] tracking-wider">Чек клиента</span>
+                          <span className="text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 font-bold uppercase text-[10px] tracking-wider">Чек клиента</span>
                         </div>
-                        <span className="text-[10px] font-bold text-white bg-gradient-to-r from-[#8C52D0] to-[#582F89] px-2.5 py-0.5 rounded-full shadow-2xs">
+                        <span className="text-[10px] font-bold text-white bg-gradient-to-r from-[var(--primary-grad-from,#8C52D0)] to-[var(--primary-grad-to,#582F89)] px-2.5 py-0.5 rounded-full shadow-2xs">
                           Ручной ввод
                         </span>
                       </div>
@@ -2456,10 +2456,10 @@ export default function TestProjectCardPage({
                               setFinalPrice(val);
                               onUpdateProject({ ...project, clientPrice: val });
                             }}
-                            className="w-full bg-white dark:bg-zinc-800 border border-[#8C52D0]/50 dark:border-purple-500/50 rounded-xl px-3 py-1.5 font-black font-mono text-xl sm:text-2xl text-[#582F89] dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-[#8C52D0] shadow-2xs transition-all"
+                            className="w-full bg-white dark:bg-zinc-800 border border-[var(--lavenderAccent)]/50 dark:border-purple-500/50 rounded-xl px-3 py-1.5 font-black font-mono text-xl sm:text-2xl text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)] shadow-2xs transition-all"
                             placeholder="0"
                           />
-                          <span className="absolute right-3.5 font-black font-mono text-lg text-[#8C52D0] dark:text-purple-300 pointer-events-none">
+                          <span className="absolute right-3.5 font-black font-mono text-lg text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 pointer-events-none">
                             ₽
                           </span>
                         </div>
@@ -2511,14 +2511,14 @@ export default function TestProjectCardPage({
                         <div className="space-y-3.5">
                           <div className="flex items-center justify-between pb-2 border-b border-stone-200/60 dark:border-zinc-800">
                             <span className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal flex items-center gap-1.5">
-                              <Plus className="w-3.5 h-3.5 text-[#8C52D0]" /> Создать запись
+                              <Plus className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" /> Создать запись
                             </span>
                             {/* Type toggle */}
                             <div className="flex bg-stone-100 dark:bg-zinc-800 p-0.5 rounded-full border border-stone-200 dark:border-zinc-700">
                               <button
                                 type="button"
                                 onClick={() => setNewType('task')}
-                                style={newType === 'task' ? { background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' } : {}}
+                                style={newType === 'task' ? { background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' } : {}}
                                 className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                                   newType === 'task'
                                     ? 'text-white shadow-2xs'
@@ -2530,7 +2530,7 @@ export default function TestProjectCardPage({
                               <button
                                 type="button"
                                 onClick={() => setNewType('note')}
-                                style={newType === 'note' ? { background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' } : {}}
+                                style={newType === 'note' ? { background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' } : {}}
                                 className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                                   newType === 'note'
                                     ? 'text-white shadow-2xs'
@@ -2552,7 +2552,7 @@ export default function TestProjectCardPage({
                               placeholder={newType === 'task' ? 'Заехать к флористу, подготовить неоновую вывеску, заказать декор...' : 'Важные примечания по монтажу, пожелания заказчика...'}
                               value={newTitle}
                               onChange={(e) => setNewTitle(e.target.value)}
-                              className="w-full bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs text-stone-800 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-[#8C52D0]"
+                              className="w-full bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs text-stone-800 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)]"
                             />
                           </div>
 
@@ -2592,7 +2592,7 @@ export default function TestProjectCardPage({
                           type="button"
                           onClick={handleAddTaskNote}
                           className="w-full mt-3 py-2.5 text-white rounded-full text-xs font-semibold transition-all duration-300 hover:shadow-md hover:opacity-95 active:scale-[0.99] cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
-                          style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                          style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
                         >
                           <Plus className="w-3.5 h-3.5" />
                           <span>Добавить {newType === 'task' ? 'задачу' : 'заметку'}</span>
@@ -2608,7 +2608,7 @@ export default function TestProjectCardPage({
                             <button
                               type="button"
                               onClick={() => setJournalFilterType('all')}
-                              style={journalFilterType === 'all' ? { background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' } : {}}
+                              style={journalFilterType === 'all' ? { background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' } : {}}
                               className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                                 journalFilterType === 'all'
                                   ? 'text-white shadow-2xs'
@@ -2620,7 +2620,7 @@ export default function TestProjectCardPage({
                             <button
                               type="button"
                               onClick={() => setJournalFilterType('task')}
-                              style={journalFilterType === 'task' ? { background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' } : {}}
+                              style={journalFilterType === 'task' ? { background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' } : {}}
                               className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                                 journalFilterType === 'task'
                                   ? 'text-white shadow-2xs'
@@ -2632,7 +2632,7 @@ export default function TestProjectCardPage({
                             <button
                               type="button"
                               onClick={() => setJournalFilterType('note')}
-                              style={journalFilterType === 'note' ? { background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' } : {}}
+                              style={journalFilterType === 'note' ? { background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' } : {}}
                               className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                                 journalFilterType === 'note'
                                   ? 'text-white shadow-2xs'
@@ -2646,7 +2646,7 @@ export default function TestProjectCardPage({
                           {selectedCalendarDate !== 'all' && (
                             <button
                               onClick={() => setSelectedCalendarDate('all')}
-                              className="text-[10px] font-bold text-[#582F89] dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 px-2.5 py-1 rounded-full border border-purple-200 dark:border-purple-800 hover:bg-purple-100 cursor-pointer flex items-center gap-1"
+                              className="text-[10px] font-bold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 px-2.5 py-1 rounded-full border border-purple-200 dark:border-purple-800 hover:bg-purple-100 cursor-pointer flex items-center gap-1"
                             >
                               <RotateCcw className="w-2.5 h-2.5" /> Сбросить дату: {selectedCalendarDate}
                             </button>
@@ -2715,7 +2715,7 @@ export default function TestProjectCardPage({
                                         className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-all cursor-pointer ${
                                           item.completed
                                             ? 'bg-emerald-500 border-emerald-500 text-white'
-                                            : 'border-stone-300 dark:border-zinc-600 hover:border-[#8C52D0] bg-white dark:bg-zinc-800'
+                                            : 'border-stone-300 dark:border-zinc-600 hover:border-[var(--lavDeep)] bg-white dark:bg-zinc-800'
                                         }`}
                                       >
                                         {item.completed && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
@@ -2795,7 +2795,7 @@ export default function TestProjectCardPage({
                   <button
                     onClick={() => showToast('Генерация пакета', 'Создается комплект документов в PDF...', 'success')}
                     className="px-4 py-1.5 text-white rounded-full text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all duration-300 hover:shadow-md hover:opacity-95 active:scale-[0.98] shadow-xs"
-                    style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                    style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
                   >
                     <Sparkles className="w-3.5 h-3.5" /> Сгенерировать
                   </button>
@@ -2811,7 +2811,7 @@ export default function TestProjectCardPage({
                       size: '2.4 МБ',
                       desc: 'Договор оказания услуг по оформлению и декорированию площадки',
                       icon: FileText,
-                      iconBg: 'bg-purple-100 dark:bg-purple-950/80 text-[#8C52D0] dark:text-purple-300 border-purple-200 dark:border-purple-800',
+                      iconBg: 'bg-purple-100 dark:bg-purple-950/80 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 border-purple-200 dark:border-purple-800',
                       accentColor: 'from-purple-500/10 to-transparent'
                     },
                     {
@@ -2867,7 +2867,7 @@ export default function TestProjectCardPage({
                               <span className="text-[10px] font-mono text-zinc-600 dark:text-zinc-400 font-normal uppercase tracking-normal block leading-tight mb-0.5">
                                 {doc.code}
                               </span>
-                              <h4 className="font-semibold text-sm text-stone-900 dark:text-stone-100 group-hover:text-[#8C52D0] dark:group-hover:text-purple-300 transition-colors leading-snug">
+                              <h4 className="font-semibold text-sm text-stone-900 dark:text-stone-100 group-hover:text-[var(--lavDeep)] dark:group-hover:text-purple-300 transition-colors leading-snug">
                                 {doc.title}
                               </h4>
                             </div>
@@ -2890,7 +2890,7 @@ export default function TestProjectCardPage({
                           <div className="flex items-center gap-1">
                             <button
                               onClick={() => showToast('Просмотр документа', `Открываем ${doc.title}...`, 'info')}
-                              className="p-1.5 hover:bg-purple-100 dark:hover:bg-purple-900/40 text-stone-500 hover:text-[#582F89] dark:hover:text-purple-300 rounded-lg transition-colors cursor-pointer"
+                              className="p-1.5 hover:bg-purple-100 dark:hover:bg-purple-900/40 text-stone-500 hover:text-[var(--lavDeep)] dark:hover:text-purple-300 rounded-lg transition-colors cursor-pointer"
                               title="Просмотреть"
                             >
                               <Eye className="w-3.5 h-3.5" />
@@ -2914,7 +2914,7 @@ export default function TestProjectCardPage({
             {/* BOTTOM FLOATING ACTION BAR */}
             <div 
               className="px-6 py-4 rounded-3xl flex flex-col lg:flex-row items-center justify-between gap-4 shadow-2xl text-white border border-white/20 transition-all"
-              style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+              style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
             >
               <div className="flex flex-wrap items-center gap-4 sm:gap-6 w-full lg:w-auto">
                 {/* METRIC 1: СТОИМОСТЬ */}
@@ -2951,8 +2951,8 @@ export default function TestProjectCardPage({
                           onClick={() => setPrepayment(Math.round(finalPrice * 0.3))}
                           className={`text-xs font-black px-3 py-0.5 rounded-full transition-all duration-200 cursor-pointer shadow-xs ${
                             prepayment === Math.round(finalPrice * 0.3) && finalPrice > 0
-                              ? 'bg-white text-[#582F89] ring-2 ring-white shadow-md scale-105'
-                              : 'bg-white text-[#582F89] hover:bg-purple-50 active:scale-95 opacity-90 hover:opacity-100'
+                              ? 'bg-white text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] ring-2 ring-white shadow-md scale-105'
+                              : 'bg-white text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:bg-purple-50 active:scale-95 opacity-90 hover:opacity-100'
                           }`}
                           title="Выбрать 30% предоплаты"
                         >
@@ -2994,10 +2994,10 @@ export default function TestProjectCardPage({
                           const val = e.target.value === '' ? 0 : Number(e.target.value);
                           setPrepayment(val);
                         }}
-                        className="w-full pl-3 pr-7 py-1 bg-white border border-stone-200 rounded-xl text-xs font-black font-mono text-[#582F89] placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-sm"
+                        className="w-full pl-3 pr-7 py-1 bg-white border border-stone-200 rounded-xl text-xs font-black font-mono text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-sm"
                         placeholder="Ручной ввод..."
                       />
-                      <span className="absolute right-2.5 text-xs font-black font-mono text-[#8C52D0] pointer-events-none">
+                      <span className="absolute right-2.5 text-xs font-black font-mono text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] pointer-events-none">
                         ₽
                       </span>
                     </div>
@@ -3018,9 +3018,9 @@ export default function TestProjectCardPage({
                     showToast('Проект завершен', 'Статус проекта обновлен на «Выполнено»', 'success');
                     onClose();
                   }}
-                  className="px-6 py-2.5 bg-white text-[#582F89] hover:bg-purple-50 rounded-full text-xs font-black transition-all duration-300 hover:shadow-lg active:scale-[0.98] cursor-pointer flex items-center gap-2 shadow-md"
+                  className="px-6 py-2.5 bg-white text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:bg-purple-50 rounded-full text-xs font-black transition-all duration-300 hover:shadow-lg active:scale-[0.98] cursor-pointer flex items-center gap-2 shadow-md"
                 >
-                  <CheckCircle className="w-4 h-4 text-[#8C52D0] stroke-[2.5]" />
+                  <CheckCircle className="w-4 h-4 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] stroke-[2.5]" />
                   <span>Заказ сдан</span>
                 </button>
               </div>
@@ -3038,7 +3038,7 @@ export default function TestProjectCardPage({
               className="bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 p-6 rounded-3xl max-w-md w-full space-y-4 shadow-xl text-left"
             >
               <div className="flex justify-between items-center border-b border-stone-100 dark:border-zinc-800 pb-3">
-                <span className="text-xs font-bold uppercase text-[#582F89]">Спецификация точки #{activeArchPoint}</span>
+                <span className="text-xs font-bold uppercase text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">Спецификация точки #{activeArchPoint}</span>
                 <button onClick={() => setIsSpecModalOpen(false)} className="text-stone-400 hover:text-stone-600">
                   <X className="w-4 h-4" />
                 </button>
@@ -3055,7 +3055,7 @@ export default function TestProjectCardPage({
                 <button
                   onClick={() => setIsSpecModalOpen(false)}
                   className="px-4 py-2 text-white rounded-full text-xs font-bold transition-all duration-300 hover:shadow-lg hover:opacity-95 active:scale-[0.98] cursor-pointer"
-                  style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                  style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
                 >
                   Закрыть
                 </button>

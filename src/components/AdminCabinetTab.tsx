@@ -1175,7 +1175,7 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                             <p className={`text-xs font-semibold line-clamp-2 leading-tight ${isUnnamed ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-zinc-900 dark:text-zinc-100'}`}>
                               {item.name}
                             </p>
-                            <p className="text-[11px] font-semibold text-[#8C52D0] dark:text-purple-300">
+                            <p className="text-[11px] font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300">
                               {item.price ? `${item.price.toLocaleString('ru-RU')} ₽` : 'Цена не указана'}
                             </p>
                           </div>

@@ -87,7 +87,7 @@ export default function ProfileTab({ showToast }: ProfileTabProps) {
           {/* Logo Section */}
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 pb-2">
             <div className="relative group shrink-0">
-              <div className="w-24 h-24 rounded-2xl bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200/60 dark:border-zinc-800/60 flex items-center justify-center overflow-hidden transition-all group-hover:border-[#8C52D0]/60 relative shadow-xs">
+              <div className="w-24 h-24 rounded-2xl bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200/60 dark:border-zinc-800/60 flex items-center justify-center overflow-hidden transition-all group-hover:border-[var(--lavDeep)]/60 relative shadow-xs">
                 {logoUrl ? (
                   <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
                 ) : (
@@ -99,7 +99,7 @@ export default function ProfileTab({ showToast }: ProfileTabProps) {
                 
                 {/* Overlay controls */}
                 <div className="absolute inset-0 bg-black/45 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                  <label className="p-2 bg-white/90 dark:bg-zinc-950/90 rounded-full text-zinc-700 dark:text-zinc-200 hover:text-[#8C52D0] dark:hover:text-[#985DE0] cursor-pointer shadow-xs transition-colors">
+                  <label className="p-2 bg-white/90 dark:bg-zinc-950/90 rounded-full text-zinc-700 dark:text-zinc-200 hover:text-[var(--lavDeep)] dark:hover:text-[#985DE0] cursor-pointer shadow-xs transition-colors">
                     <Upload className="w-4 h-4" />
                     <input
                       type="file"
@@ -133,16 +133,16 @@ export default function ProfileTab({ showToast }: ProfileTabProps) {
                   <span
                     className="absolute inset-0 rounded-full pointer-events-none p-[1px]"
                     style={{
-                      background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)',
+                      background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)',
                       WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
                       WebkitMaskComposite: 'xor',
                       maskComposite: 'exclude',
                     }}
                   />
-                  <Upload className="w-3.5 h-3.5 text-[#8C52D0] dark:text-[#985DE0] relative z-10 shrink-0" />
+                  <Upload className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-[#985DE0] relative z-10 shrink-0" />
                   <span
                     className="bg-clip-text text-transparent relative z-10"
-                    style={{ backgroundImage: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                    style={{ backgroundImage: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
                   >
                     Выбрать логотип
                   </span>
@@ -181,7 +181,7 @@ export default function ProfileTab({ showToast }: ProfileTabProps) {
                   required
                   value={studioName}
                   onChange={(e) => setStudioName(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-zinc-50/80 dark:bg-zinc-950/30 border border-zinc-200/80 dark:border-zinc-800/80 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#8C52D0] text-sm font-normal placeholder:text-zinc-400 transition-colors"
+                  className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-zinc-50/80 dark:bg-zinc-950/30 border border-zinc-200/80 dark:border-zinc-800/80 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavDeep)] text-sm font-normal placeholder:text-zinc-400 transition-colors"
                 />
               </div>
             </div>
@@ -195,7 +195,7 @@ export default function ProfileTab({ showToast }: ProfileTabProps) {
                 required
                 value={ownerName}
                 onChange={(e) => setOwnerName(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-50/80 dark:bg-zinc-950/30 border border-zinc-200/80 dark:border-zinc-800/80 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#8C52D0] text-sm font-normal placeholder:text-zinc-400 transition-colors"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-50/80 dark:bg-zinc-950/30 border border-zinc-200/80 dark:border-zinc-800/80 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavDeep)] text-sm font-normal placeholder:text-zinc-400 transition-colors"
               />
             </div>
           </div>
@@ -209,7 +209,7 @@ export default function ProfileTab({ showToast }: ProfileTabProps) {
                 type="text"
                 value={tagline}
                 onChange={(e) => setTagline(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-50/80 dark:bg-zinc-950/30 border border-zinc-200/80 dark:border-zinc-800/80 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#8C52D0] text-sm font-normal placeholder:text-zinc-400 transition-colors"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-50/80 dark:bg-zinc-950/30 border border-zinc-200/80 dark:border-zinc-800/80 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavDeep)] text-sm font-normal placeholder:text-zinc-400 transition-colors"
               />
             </div>
 
@@ -224,7 +224,7 @@ export default function ProfileTab({ showToast }: ProfileTabProps) {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-zinc-50/80 dark:bg-zinc-950/30 border border-zinc-200/80 dark:border-zinc-800/80 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#8C52D0] text-sm font-normal placeholder:text-zinc-400 transition-colors"
+                  className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-zinc-50/80 dark:bg-zinc-950/30 border border-zinc-200/80 dark:border-zinc-800/80 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavDeep)] text-sm font-normal placeholder:text-zinc-400 transition-colors"
                 />
               </div>
             </div>
@@ -241,7 +241,7 @@ export default function ProfileTab({ showToast }: ProfileTabProps) {
                   type="text"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-zinc-50/80 dark:bg-zinc-950/30 border border-zinc-200/80 dark:border-zinc-800/80 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#8C52D0] text-sm font-normal placeholder:text-zinc-400 transition-colors"
+                  className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-zinc-50/80 dark:bg-zinc-950/30 border border-zinc-200/80 dark:border-zinc-800/80 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavDeep)] text-sm font-normal placeholder:text-zinc-400 transition-colors"
                 />
               </div>
             </div>
@@ -256,7 +256,7 @@ export default function ProfileTab({ showToast }: ProfileTabProps) {
                   type="text"
                   value={website}
                   onChange={(e) => setWebsite(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-zinc-50/80 dark:bg-zinc-950/30 border border-zinc-200/80 dark:border-zinc-800/80 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#8C52D0] text-sm font-normal placeholder:text-zinc-400 transition-colors"
+                  className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-zinc-50/80 dark:bg-zinc-950/30 border border-zinc-200/80 dark:border-zinc-800/80 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavDeep)] text-sm font-normal placeholder:text-zinc-400 transition-colors"
                 />
               </div>
             </div>
@@ -270,14 +270,14 @@ export default function ProfileTab({ showToast }: ProfileTabProps) {
               type="text"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-50/80 dark:bg-zinc-950/30 border border-zinc-200/80 dark:border-zinc-800/80 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#8C52D0] text-sm font-normal placeholder:text-zinc-400 transition-colors"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-50/80 dark:bg-zinc-950/30 border border-zinc-200/80 dark:border-zinc-800/80 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavDeep)] text-sm font-normal placeholder:text-zinc-400 transition-colors"
             />
           </div>
 
           <div className="flex justify-center pt-3">
             <button
               type="submit"
-              style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+              style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
               className="px-6 py-2.5 rounded-full text-white font-semibold text-xs sm:text-sm shadow-sm transition-all duration-300 hover:shadow-md hover:opacity-90 active:scale-[0.98] cursor-pointer"
             >
               Сохранить настройки
@@ -300,7 +300,7 @@ export default function ProfileTab({ showToast }: ProfileTabProps) {
               </span>
             </div>
             <span
-              style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+              style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
               className="text-[10px] font-semibold text-white px-2.5 py-0.5 rounded-full uppercase tracking-wider shrink-0"
             >
               PRO

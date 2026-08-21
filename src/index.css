@@ -252,5 +252,43 @@ body {
   opacity: 0.95;
 }
 
+/* Bold Focus Mode for high contrast accessibility */
+html[data-bold-focus="true"] *:focus-visible,
+html[data-bold-focus="true"] button:focus-visible,
+html[data-bold-focus="true"] input:focus,
+html[data-bold-focus="true"] textarea:focus,
+html[data-bold-focus="true"] select:focus,
+html[data-bold-focus="true"] [role="button"]:focus-visible,
+html[data-bold-focus="true"] .cursor-pointer:focus-visible {
+  outline: 2.5px solid var(--primary-accent, #8C52D0) !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 0 5px var(--lavenderSoft, rgba(140, 82, 208, 0.35)) !important;
+}
+
+html[data-bold-focus="true"] input:focus,
+html[data-bold-focus="true"] textarea:focus {
+  border-color: var(--primary-accent, #8C52D0) !important;
+  box-shadow: 0 0 0 4px var(--lavenderSoft, rgba(140, 82, 208, 0.35)) !important;
+}
+
+@keyframes scanline {
+  0% {
+    top: 2%;
+    opacity: 0.85;
+  }
+  50% {
+    top: 92%;
+    opacity: 1;
+  }
+  100% {
+    top: 2%;
+    opacity: 0.85;
+  }
+}
+
+.animate-scanline {
+  animation: scanline 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
 
 

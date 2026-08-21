@@ -427,7 +427,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
   };
 
   const RequiredBadge = () => (
-    <span className="px-1.5 py-0.5 rounded-md text-[9px] font-semibold bg-purple-100 dark:bg-purple-950/80 text-[#8C52D0] dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/60">
+    <span className="px-1.5 py-0.5 rounded-md text-[9px] font-semibold bg-purple-100 dark:bg-purple-950/80 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/60">
       Обязательно
     </span>
   );
@@ -481,7 +481,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                 onClick={() => setEntityType(item.id as DecoratorEntityType)}
                 className={`px-3 py-1.5 rounded-full text-xs transition-all duration-200 cursor-pointer text-center flex items-center justify-center ${
                   entityType === item.id
-                    ? 'bg-[#8C52D0] text-white font-semibold shadow-xs'
+                    ? 'bg-[var(--lavDeep)] text-white font-semibold shadow-xs'
                     : 'text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium'
                 }`}
               >
@@ -515,7 +515,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                       value={ipData.name}
                       onChange={(e) => setIpData({ ...ipData, name: e.target.value })}
                       placeholder="ИП Иванов Иван Иванович"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
 
@@ -532,7 +532,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                       value={ipData.inn}
                       onChange={(e) => setIpData({ ...ipData, inn: e.target.value })}
                       placeholder="772812345678"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
 
@@ -549,7 +549,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                       value={ipData.ogrnip}
                       onChange={(e) => setIpData({ ...ipData, ogrnip: e.target.value })}
                       placeholder="320774600123456"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
                 </>
@@ -570,7 +570,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                       value={oooData.name}
                       onChange={(e) => setOooData({ ...oooData, name: e.target.value })}
                       placeholder="ООО «Название»"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
 
@@ -587,7 +587,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                       value={oooData.inn}
                       onChange={(e) => setOooData({ ...oooData, inn: e.target.value })}
                       placeholder="7728987654"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
 
@@ -604,7 +604,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                       value={oooData.kpp}
                       onChange={(e) => setOooData({ ...oooData, kpp: e.target.value })}
                       placeholder="772801001"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
 
@@ -621,7 +621,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                       value={oooData.ogrn}
                       onChange={(e) => setOooData({ ...oooData, ogrn: e.target.value })}
                       placeholder="1207700987654"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
                 </>
@@ -642,7 +642,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                       value={selfEmployedData.fullName}
                       onChange={(e) => setSelfEmployedData({ ...selfEmployedData, fullName: e.target.value })}
                       placeholder="Иванов Иван Иванович"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
 
@@ -659,7 +659,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                       value={selfEmployedData.inn}
                       onChange={(e) => setSelfEmployedData({ ...selfEmployedData, inn: e.target.value })}
                       placeholder="772812345678"
-                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                     />
                   </div>
                 </>
@@ -671,7 +671,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
           {entityType === 'ooo' && (
             <div className="p-4 bg-purple-50/40 dark:bg-purple-950/20 rounded-2xl border border-purple-200/50 dark:border-purple-900/40 space-y-3">
               <div className="flex items-center gap-2">
-                <UserCheck className="w-4 h-4 text-[#8C52D0]" />
+                <UserCheck className="w-4 h-4 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                 <h4 className="text-xs sm:text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
                   Подписант
                 </h4>
@@ -690,7 +690,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                     value={oooData.signatoryName}
                     onChange={(e) => setOooData({ ...oooData, signatoryName: e.target.value })}
                     placeholder="Иванов Иван Иванович"
-                    className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                    className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                   />
                 </div>
 
@@ -706,7 +706,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                     value={oooData.signatoryPosition}
                     onChange={(e) => setOooData({ ...oooData, signatoryPosition: e.target.value })}
                     placeholder="Генеральный директор"
-                    className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                    className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                   />
                 </div>
               </div>
@@ -743,7 +743,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                     else setSelfEmployedData({ ...selfEmployedData, phone: val });
                   }}
                   placeholder="+7 (999) 000-00-00"
-                  className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                  className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                 />
               </div>
 
@@ -770,7 +770,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                     else setSelfEmployedData({ ...selfEmployedData, address: val });
                   }}
                   placeholder="г. Москва, ул. Ленина, д. 10"
-                  className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                  className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                 />
               </div>
             </div>
@@ -780,7 +780,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
           <div className="space-y-3 pt-2 border-t border-zinc-200/50 dark:border-zinc-800/50">
             <div>
               <div className="flex items-center gap-2">
-                <Landmark className="w-4 h-4 text-[#8C52D0]" />
+                <Landmark className="w-4 h-4 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                 <h4 className="text-xs sm:text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
                   Банковские реквизиты
                 </h4>
@@ -815,7 +815,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                     else setSelfEmployedData({ ...selfEmployedData, bankAccount: val });
                   }}
                   placeholder="40802810..."
-                  className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                  className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                 />
                 <p className="text-[10px] text-zinc-500 leading-tight">
                   Расчётный счёт, 20 цифр. Номер карты вводить нельзя.
@@ -845,7 +845,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                     else setSelfEmployedData({ ...selfEmployedData, bankName: val });
                   }}
                   placeholder="ПАО Сбербанк"
-                  className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                  className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                 />
               </div>
 
@@ -873,7 +873,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                     else setSelfEmployedData({ ...selfEmployedData, bik: val });
                   }}
                   placeholder="044525225"
-                  className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all"
+                  className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all"
                 />
               </div>
             </div>
@@ -883,7 +883,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
           <div className="space-y-3 pt-2 border-t border-zinc-200/50 dark:border-zinc-800/50">
             <div>
               <div className="flex items-center gap-2">
-                <Percent className="w-4 h-4 text-[#8C52D0]" />
+                <Percent className="w-4 h-4 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                 <h4 className="text-xs sm:text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
                   Налоговый режим и НДС (Актуально на 2026 год)
                 </h4>
@@ -913,7 +913,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                       if (entityType === 'ip') setIpData({ ...ipData, taxSystem: val });
                       else setOooData({ ...oooData, taxSystem: val });
                     }}
-                    className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all cursor-pointer"
+                    className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all cursor-pointer"
                   >
                     <option value="УСН «Доходы» (6%)">УСН «Доходы» (6%)</option>
                     <option value="УСН «Доходы минус расходы» (15%)">УСН «Доходы минус расходы» (15%)</option>
@@ -945,7 +945,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                       if (entityType === 'ip') setIpData({ ...ipData, vatRate: val });
                       else setOooData({ ...oooData, vatRate: val });
                     }}
-                    className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#8C52D0]/30 focus:border-[#8C52D0] outline-none transition-all cursor-pointer"
+                    className="w-full px-3.5 py-2.5 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[var(--lavenderAccent)]/30 focus:border-[var(--lavDeep)] outline-none transition-all cursor-pointer"
                   >
                     {vatOptions.map((opt) => (
                       <option key={opt.value} value={opt.value}>
@@ -964,7 +964,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
             <button
               type="submit"
               className="px-5 py-2.5 text-white rounded-full text-xs sm:text-sm font-semibold flex items-center gap-2 cursor-pointer transition-all duration-300 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] shadow-xs"
-              style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+              style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
             >
               <Save className="w-4 h-4" /> Сохранить реквизиты
             </button>
@@ -1029,7 +1029,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                     <button
                       type="button"
                       onClick={() => setPreviewTemplate(template)}
-                      className="px-3 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-zinc-700 dark:text-zinc-300 hover:text-[#8C52D0] dark:hover:text-purple-300 text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer"
+                      className="px-3 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-zinc-700 dark:text-zinc-300 hover:text-[var(--lavDeep)] dark:hover:text-purple-300 text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer"
                     >
                       <Eye className="w-3.5 h-3.5" /> Просмотреть
                     </button>
@@ -1045,7 +1045,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                     </button>
 
                     {/* Upload custom template */}
-                    <label className="px-3 py-1.5 rounded-full border border-purple-200 dark:border-purple-800/60 bg-purple-50/50 dark:bg-purple-950/30 hover:bg-purple-100 dark:hover:bg-purple-900/40 text-[#582F89] dark:text-purple-300 text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer">
+                    <label className="px-3 py-1.5 rounded-full border border-purple-200 dark:border-purple-800/60 bg-purple-50/50 dark:bg-purple-950/30 hover:bg-purple-100 dark:hover:bg-purple-900/40 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer">
                       <Upload className="w-3.5 h-3.5" /> Загрузить файл
                       <input
                         type="file"
@@ -1076,7 +1076,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
           <div className="bg-white dark:bg-zinc-900 rounded-[28px] border border-zinc-200/80 dark:border-zinc-800 max-w-2xl w-full p-6 shadow-xl space-y-4 max-h-[85vh] flex flex-col">
             <div className="flex items-center justify-between pb-3 border-b border-zinc-200 dark:border-zinc-800">
               <div className="flex items-center gap-2.5">
-                <FileCode2 className="w-5 h-5 text-[#8C52D0]" />
+                <FileCode2 className="w-5 h-5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                 <div>
                   <h3 className="font-semibold text-base text-zinc-900 dark:text-zinc-100">
                     {previewTemplate.title} ({previewTemplate.code})
@@ -1113,7 +1113,7 @@ export default function DocumentsTab({ showToast }: DocumentsTabProps) {
                   setPreviewTemplate(null);
                 }}
                 className="px-4 py-2 text-white rounded-full text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all hover:opacity-95"
-                style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+                style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
               >
                 <Download className="w-3.5 h-3.5" /> Скачать бланк
               </button>

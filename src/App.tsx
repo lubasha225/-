@@ -45,7 +45,8 @@ import {
   FlaskConical,
   MoreHorizontal,
   Maximize2,
-  ShieldCheck
+  ShieldCheck,
+  Scissors
 } from 'lucide-react';
 
 import { Project, WarehouseItem, Task, DocumentItem, ImageItem, ProjectStatus, EstimateItem } from './types';
@@ -68,6 +69,7 @@ import StatisticsTab from './components/StatisticsTab';
 import SidebarStatisticsWidget from './components/SidebarStatisticsWidget';
 import DetailedCalendarTab from './components/DetailedCalendarTab';
 import AdminCabinetTab from './components/AdminCabinetTab';
+import RemoveBackgroundTab from './components/RemoveBackgroundTab';
 
 export default function App() {
   // Theme state
@@ -87,7 +89,7 @@ export default function App() {
   });
 
   // Main active tab state
-  const [activeTab, setActiveTab] = useState<'projects' | 'projectCard' | 'testCard' | 'testPage' | 'warehouse' | 'images' | 'documents' | 'profile' | 'moodboard' | 'calendar' | 'statistics' | 'settings' | 'admin'>('projects');
+  const [activeTab, setActiveTab] = useState<'projects' | 'projectCard' | 'testCard' | 'testPage' | 'warehouse' | 'images' | 'removeBackground' | 'documents' | 'profile' | 'moodboard' | 'calendar' | 'statistics' | 'settings' | 'admin'>('projects');
 
   // Right sidebar tab state (calendar & tasks combined vs statistics)
   const [rightSidebarTab, setRightSidebarTab] = useState<'calendar' | 'statistics'>('calendar');
@@ -412,6 +414,14 @@ export default function App() {
       window.removeEventListener('storage', handleSyncTasks);
     };
   }, []);
+
+  const handleAddWarehouseItem = (newItemData: Omit<WarehouseItem, 'id'>) => {
+    const newItem: WarehouseItem = {
+      ...newItemData,
+      id: 'wh_' + Date.now()
+    };
+    setWarehouseItems(prev => [newItem, ...prev]);
+  };
 
   // Toggle tasks and notes from the right sidebar
   const handleToggleGlobalTaskNote = (id: string) => {
@@ -898,6 +908,7 @@ export default function App() {
                 {[
                   { value: 'projects', label: 'Мои проекты', icon: <FolderKanban className="w-4 h-4" /> },
                   { value: 'moodboard', label: 'Редактор', icon: <Layout className="w-4 h-4" /> },
+                  { value: 'removeBackground', label: 'Удаление фона', icon: <Scissors className="w-4 h-4" /> },
                   { value: 'calendar', label: 'Календарь', icon: <Calendar className="w-4 h-4" /> },
                   { value: 'statistics', label: 'Статистика', icon: <TrendingUp className="w-4 h-4" /> },
                   { value: 'warehouse', label: 'Мой склад', icon: <Warehouse className="w-4 h-4" /> },
@@ -1198,7 +1209,14 @@ export default function App() {
       {/* Background Decorative Abstract Soft Spheres/Blobs for Glassmorphism */}
       {(() => {
         const activePreset = BG_PRESETS.find(p => p.id === bgPresetId);
-        if (activePreset?.type === 'pastel' || activePreset?.type === 'classic') {
+        if (
+          !activePreset ||
+          activePreset.hideBlobs ||
+          activePreset.type === 'pastel' ||
+          activePreset.type === 'classic' ||
+          activePreset.id === 'bg-pure-grey-gradient' ||
+          activePreset.id.includes('graphite')
+        ) {
           return null;
         }
         return (
@@ -1283,6 +1301,7 @@ export default function App() {
           {[
             { key: 'projects', label: 'Мои проекты', icon: <FolderKanban className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'moodboard', label: 'Редактор', icon: <Layout className="w-[17px] h-[17px] shrink-0" /> },
+            { key: 'removeBackground', label: 'Удаление фона', icon: <Scissors className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'warehouse', label: 'Мой склад', icon: <Warehouse className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'images', label: 'Мои изображения', icon: <ImageIcon className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'documents', label: 'Мои документы', icon: <FileText className="w-[17px] h-[17px] shrink-0" /> },
@@ -1419,6 +1438,8 @@ export default function App() {
         <main className={`flex-1 relative flex flex-col min-w-0 ${
           activeTab === 'moodboard'
             ? 'p-2 sm:p-3 space-y-1.5 h-full overflow-hidden'
+            : activeTab === 'removeBackground'
+            ? 'px-2.5 sm:px-6 pt-3 sm:pt-6 pb-2 sm:pb-3 space-y-2 sm:space-y-3 h-full overflow-hidden'
             : 'px-3 sm:px-6 pt-5 sm:pt-8 pb-6 space-y-4 h-full overflow-y-auto overflow-x-hidden'
         }`}>
           
@@ -1447,10 +1468,18 @@ export default function App() {
                     {activeTab === 'statistics' && 'Статистика и аналитика'}
                     {activeTab === 'warehouse' && 'Складской инвентарь'}
                     {activeTab === 'images' && 'Галерея'}
+                    {activeTab === 'removeBackground' && 'Удаление фона'}
                     {activeTab === 'documents' && 'Мои документы'}
                     {activeTab === 'profile' && 'Профиль бренда'}
                     {activeTab === 'admin' && 'Кабинет админа'}
-                    {activeTab === 'settings' && 'Настройки'}
+                    {activeTab === 'settings' && (
+                      <span className="inline-flex items-center gap-2.5">
+                        <span className="p-1.5 bg-[var(--lavenderSoft)] rounded-xl shrink-0 inline-flex items-center justify-center">
+                          <Palette className="w-5 h-5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
+                        </span>
+                        <span>Настройки</span>
+                      </span>
+                    )}
                     {activeTab === 'testPage' && (selectedProject ? selectedProject.name : 'Тестовая страница')}
                   </h1>
                 </div>
@@ -1508,6 +1537,7 @@ export default function App() {
                     {activeTab === 'statistics' && 'Наглядный финансовый учет, конверсия смет и структура расходов студии.'}
                     {activeTab === 'warehouse' && 'Каталог вашего декора, флористики и оборудования. Учет остатков и задействованных в проектах позиций.'}
                     {activeTab === 'images' && 'Ваша галерея загруженных референсов, сгенерированных ИИ фонов, элементов флористики и декора для оформления.'}
+                    {activeTab === 'removeBackground' && 'Интеллектуальное вырезание объектов декора и очистка фона.'}
                     {activeTab === 'documents' && 'Реквизиты, на кого оформляется договор, шаблоны договора и акта. Только автоматическая генерация и печать, оплата не принимается в сервисе.'}
                     {activeTab === 'profile' && 'Настройки реквизитов и контактов студии для формирования коммерческих предложений.'}
                     {activeTab === 'admin' && 'Управление библиотекой декора, иконками инструментов, категориями и логотипом приложения.'}
@@ -1696,7 +1726,7 @@ export default function App() {
           )}
 
           {/* 3. DYNAMIC CONTENT SECTION BY ACTIVE TAB */}
-          <div className={`flex-1 ${activeTab === 'moodboard' ? 'flex flex-col min-h-0 h-full overflow-hidden' : ''}`}>
+          <div className={`flex-1 ${activeTab === 'moodboard' || activeTab === 'removeBackground' ? 'flex flex-col min-h-0 h-full overflow-hidden' : ''}`}>
             <AnimatePresence mode="wait">
               
               {/* PROJECTS TAB */}
@@ -1912,7 +1942,7 @@ export default function App() {
                                             isDone
                                               ? 'bg-[var(--sage)] border-[var(--sage)]'
                                               : isCurrent
-                                              ? 'bg-[#8C52D0] border-[#8C52D0] shadow-[0_0_0_3px_rgba(140,82,208,0.25)]'
+                                              ? 'bg-[var(--lavDeep)] border-[var(--lavDeep)] shadow-[0_0_0_3px_rgba(140,82,208,0.25)]'
                                               : 'bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700'
                                           }`}
                                         />
@@ -2134,13 +2164,13 @@ export default function App() {
                                               isDone
                                                 ? 'bg-emerald-500 border-2 border-emerald-500'
                                                 : isCurrent
-                                                ? 'bg-[#8C52D0] border-2 border-[#8C52D0] ring-4 ring-[#8C52D0]/20'
+                                                ? 'bg-[var(--lavDeep)] border-2 border-[var(--lavDeep)] ring-4 ring-[var(--lavenderAccent)]/20'
                                                 : 'bg-white dark:bg-zinc-900 border-2 border-zinc-300 dark:border-zinc-700'
                                             }`}
                                           />
                                           <span className={`text-[10px] sm:text-xs font-semibold mt-1 transition-colors capitalize ${
                                             isCurrent
-                                              ? 'text-[#8C52D0] font-bold'
+                                              ? 'text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] font-bold'
                                               : isDone
                                               ? 'text-zinc-700 dark:text-zinc-300'
                                               : 'text-zinc-400 dark:text-zinc-500'
@@ -2375,6 +2405,26 @@ export default function App() {
                 </motion.div>
               )}
 
+              {/* REMOVE BACKGROUND TAB */}
+              {activeTab === 'removeBackground' && (
+                <motion.div
+                  key="remove-bg-tab"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex-1 flex flex-col min-h-0 h-full"
+                >
+                  <RemoveBackgroundTab
+                    images={images}
+                    onUpdateImages={setImages}
+                    onAddWarehouseItem={handleAddWarehouseItem}
+                    onOpenMoodboard={() => setActiveTab('moodboard')}
+                    showToast={showToast}
+                  />
+                </motion.div>
+              )}
+
               {/* DOCUMENTS CHECKLIST TAB */}
               {activeTab === 'documents' && (
                 <motion.div
@@ -2529,7 +2579,7 @@ export default function App() {
                   <button
                     onClick={() => setActiveTab(rightSidebarTab)}
                     title={`Открыть ${rightSidebarTab === 'calendar' ? 'Календарь' : 'Статистику'} на странице`}
-                    className="w-7 h-7 rounded-full hover:bg-white/40 dark:hover:bg-zinc-800 flex items-center justify-center text-[var(--soft)] hover:text-[#8C52D0] dark:hover:text-purple-300 cursor-pointer transition-colors shrink-0"
+                    className="w-7 h-7 rounded-full hover:bg-white/40 dark:hover:bg-zinc-800 flex items-center justify-center text-[var(--soft)] hover:text-[var(--lavDeep)] dark:hover:text-purple-300 cursor-pointer transition-colors shrink-0"
                   >
                     <Maximize2 className="w-3.5 h-3.5" />
                   </button>
@@ -2554,7 +2604,7 @@ export default function App() {
                         <button
                           onClick={() => setActiveTab('calendar')}
                           title="Открыть календарь на весь экран"
-                          className="p-1 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-[var(--soft)] hover:text-[#8C52D0] mr-1"
+                          className="p-1 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-[var(--soft)] hover:text-[var(--lavDeep)] mr-1"
                         >
                           <Maximize2 className="w-3 h-3" />
                         </button>
@@ -2657,7 +2707,7 @@ export default function App() {
                     {calendarEvents[selectedCalendarDay] && calendarEvents[selectedCalendarDay].length > 0 && (
                       <div className="space-y-2">
                         {calendarEvents[selectedCalendarDay].map((ev, i) => {
-                          let borderCol = '#8C52D0';
+                          let borderCol = 'var(--lavDeep, #8C52D0)';
                           if (ev.type === 'warn') { borderCol = '#EF4444'; }
                           if (ev.type === 'sage') { borderCol = '#10B981'; }
                           if (ev.type === 'indigo') { borderCol = '#6366F1'; }
@@ -2674,7 +2724,7 @@ export default function App() {
                             >
                               <div className="flex justify-between items-center mb-1">
                                 <span className="font-semibold text-xs text-[var(--ink)]">{ev.title}</span>
-                                <span className="text-[10px] font-bold text-[#8C52D0] dark:text-purple-300 bg-purple-100/80 dark:bg-purple-950/60 px-2 py-0.5 rounded-full">{ev.time}</span>
+                                <span className="text-[10px] font-bold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 bg-purple-100/80 dark:bg-purple-950/60 px-2 py-0.5 rounded-full">{ev.time}</span>
                               </div>
                               <p className="text-xs text-[var(--soft)]">{ev.desc}</p>
                             </div>
@@ -2709,7 +2759,7 @@ export default function App() {
                             {sidebarTaskFilter === 'date' && globalProjectTasksNotes.length > 0 && (
                               <button
                                 onClick={() => setSidebarTaskFilter('all')}
-                                className="text-[10px] font-bold text-[#8C52D0] dark:text-purple-300 hover:underline cursor-pointer"
+                                className="text-[10px] font-bold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 hover:underline cursor-pointer"
                               >
                                 Показать все записи ({globalProjectTasksNotes.length})
                               </button>
@@ -2750,7 +2800,7 @@ export default function App() {
                                       className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 cursor-pointer transition-all ${
                                         isCompleted
                                           ? 'bg-emerald-500 border-emerald-500 text-white'
-                                          : 'border-zinc-400 dark:border-zinc-600 hover:border-[#8C52D0] bg-white/50'
+                                          : 'border-zinc-400 dark:border-zinc-600 hover:border-[var(--lavDeep)] bg-white/50'
                                       }`}
                                     >
                                       {isCompleted && <Check className="w-3 h-3 stroke-[3]" />}
@@ -2775,7 +2825,7 @@ export default function App() {
                                             setActiveTab('projectCard');
                                           }
                                         }}
-                                        className="px-2 py-0.5 rounded-full bg-purple-100/80 dark:bg-purple-900/40 text-[#582F89] dark:text-purple-300 font-semibold hover:underline truncate max-w-[120px] cursor-pointer"
+                                        className="px-2 py-0.5 rounded-full bg-purple-100/80 dark:bg-purple-900/40 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 font-semibold hover:underline truncate max-w-[120px] cursor-pointer"
                                       >
                                         {item.projectName || 'Проект'}
                                       </button>

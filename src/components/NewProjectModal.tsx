@@ -106,7 +106,7 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
               placeholder="например, Свадьба в лесу или День Рождения"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full h-9 sm:h-10 px-3 rounded-xl bg-zinc-50/90 dark:bg-zinc-800/70 border border-zinc-200/80 dark:border-zinc-700/80 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-[#8C52D0] focus:ring-2 focus:ring-[#8C52D0]/15 text-xs sm:text-sm font-normal transition-all"
+              className="w-full h-9 sm:h-10 px-3 rounded-xl bg-zinc-50/90 dark:bg-zinc-800/70 border border-zinc-200/80 dark:border-zinc-700/80 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-[var(--lavDeep)] focus:ring-2 focus:ring-[var(--lavenderAccent)]/15 text-xs sm:text-sm font-normal transition-all"
             />
           </div>
 
@@ -123,7 +123,7 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
                   placeholder="Анна К."
                   value={clientName}
                   onChange={(e) => setClientName(e.target.value)}
-                  className="w-full h-9 sm:h-10 pl-8 pr-2.5 rounded-xl bg-zinc-50/90 dark:bg-zinc-800/70 border border-zinc-200/80 dark:border-zinc-700/80 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-[#8C52D0] focus:ring-2 focus:ring-[#8C52D0]/15 text-xs sm:text-sm font-normal transition-all"
+                  className="w-full h-9 sm:h-10 pl-8 pr-2.5 rounded-xl bg-zinc-50/90 dark:bg-zinc-800/70 border border-zinc-200/80 dark:border-zinc-700/80 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-[var(--lavDeep)] focus:ring-2 focus:ring-[var(--lavenderAccent)]/15 text-xs sm:text-sm font-normal transition-all"
                 />
               </div>
             </div>
@@ -139,7 +139,7 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
                   placeholder="+7 999 123-45-67"
                   value={clientPhone}
                   onChange={(e) => setClientPhone(e.target.value)}
-                  className="w-full h-9 sm:h-10 pl-8 pr-2.5 rounded-xl bg-zinc-50/90 dark:bg-zinc-800/70 border border-zinc-200/80 dark:border-zinc-700/80 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-[#8C52D0] focus:ring-2 focus:ring-[#8C52D0]/15 text-xs sm:text-sm font-normal transition-all"
+                  className="w-full h-9 sm:h-10 pl-8 pr-2.5 rounded-xl bg-zinc-50/90 dark:bg-zinc-800/70 border border-zinc-200/80 dark:border-zinc-700/80 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-[var(--lavDeep)] focus:ring-2 focus:ring-[var(--lavenderAccent)]/15 text-xs sm:text-sm font-normal transition-all"
                 />
               </div>
             </div>
@@ -158,7 +158,7 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
                   placeholder="anna@example.com"
                   value={clientEmail}
                   onChange={(e) => setClientEmail(e.target.value)}
-                  className="w-full h-9 sm:h-10 pl-8 pr-2.5 rounded-xl bg-zinc-50/90 dark:bg-zinc-800/70 border border-zinc-200/80 dark:border-zinc-700/80 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-[#8C52D0] focus:ring-2 focus:ring-[#8C52D0]/15 text-xs sm:text-sm font-normal transition-all"
+                  className="w-full h-9 sm:h-10 pl-8 pr-2.5 rounded-xl bg-zinc-50/90 dark:bg-zinc-800/70 border border-zinc-200/80 dark:border-zinc-700/80 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-[var(--lavDeep)] focus:ring-2 focus:ring-[var(--lavenderAccent)]/15 text-xs sm:text-sm font-normal transition-all"
                 />
               </div>
             </div>
@@ -174,7 +174,7 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
                   placeholder="Лофт «Верх»"
                   value={venue}
                   onChange={(e) => setVenue(e.target.value)}
-                  className="w-full h-9 sm:h-10 pl-8 pr-2.5 rounded-xl bg-zinc-50/90 dark:bg-zinc-800/70 border border-zinc-200/80 dark:border-zinc-700/80 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-[#8C52D0] focus:ring-2 focus:ring-[#8C52D0]/15 text-xs sm:text-sm font-normal transition-all"
+                  className="w-full h-9 sm:h-10 pl-8 pr-2.5 rounded-xl bg-zinc-50/90 dark:bg-zinc-800/70 border border-zinc-200/80 dark:border-zinc-700/80 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-[var(--lavDeep)] focus:ring-2 focus:ring-[var(--lavenderAccent)]/15 text-xs sm:text-sm font-normal transition-all"
                 />
               </div>
             </div>
@@ -192,7 +192,7 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full h-9 sm:h-10 pl-8 pr-2 rounded-xl bg-zinc-50/90 dark:bg-zinc-800/70 border border-zinc-200/80 dark:border-zinc-700/80 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#8C52D0] focus:ring-2 focus:ring-[#8C52D0]/15 text-xs sm:text-sm font-normal transition-all"
+                  className="w-full h-9 sm:h-10 pl-8 pr-2 rounded-xl bg-zinc-50/90 dark:bg-zinc-800/70 border border-zinc-200/80 dark:border-zinc-700/80 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavDeep)] focus:ring-2 focus:ring-[var(--lavenderAccent)]/15 text-xs sm:text-sm font-normal transition-all"
                 />
               </div>
             </div>
@@ -204,7 +204,7 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as ProjectStatus)}
-                className="w-full h-9 sm:h-10 px-2.5 rounded-xl bg-zinc-50/90 dark:bg-zinc-800/70 border border-zinc-200/80 dark:border-zinc-700/80 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#8C52D0] focus:ring-2 focus:ring-[#8C52D0]/15 text-xs sm:text-sm font-normal transition-all cursor-pointer"
+                className="w-full h-9 sm:h-10 px-2.5 rounded-xl bg-zinc-50/90 dark:bg-zinc-800/70 border border-zinc-200/80 dark:border-zinc-700/80 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--lavDeep)] focus:ring-2 focus:ring-[var(--lavenderAccent)]/15 text-xs sm:text-sm font-normal transition-all cursor-pointer"
               >
                 <option value="progress">В работе</option>
                 <option value="waiting">Ждёт клиента</option>
@@ -226,7 +226,7 @@ export default function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjec
             <button
               type="submit"
               className="flex-1 h-9 sm:h-10 rounded-full text-white font-semibold text-xs sm:text-sm transition-all duration-200 hover:opacity-95 hover:shadow-md hover:shadow-purple-900/20 active:scale-[0.98] cursor-pointer"
-              style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
+              style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
             >
               Создать проект
             </button>
