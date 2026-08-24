@@ -906,14 +906,14 @@ export default function App() {
               {/* Menu Options */}
               <div className="flex flex-col gap-1.5 flex-1">
                 {[
-                  { value: 'projects', label: 'Мои проекты', icon: <FolderKanban className="w-4 h-4" /> },
+                  { value: 'projects', label: 'Проекты', icon: <FolderKanban className="w-4 h-4" /> },
                   { value: 'moodboard', label: 'Редактор', icon: <Layout className="w-4 h-4" /> },
                   { value: 'removeBackground', label: 'Удаление фона', icon: <Scissors className="w-4 h-4" /> },
                   { value: 'calendar', label: 'Календарь', icon: <Calendar className="w-4 h-4" /> },
                   { value: 'statistics', label: 'Статистика', icon: <TrendingUp className="w-4 h-4" /> },
-                  { value: 'warehouse', label: 'Мой склад', icon: <Warehouse className="w-4 h-4" /> },
-                  { value: 'images', label: 'Мои изображения', icon: <ImageIcon className="w-4 h-4" /> },
-                  { value: 'documents', label: 'Мои документы', icon: <FileText className="w-4 h-4" /> },
+                  { value: 'warehouse', label: 'Склад', icon: <Warehouse className="w-4 h-4" /> },
+                  { value: 'images', label: 'Изображения', icon: <ImageIcon className="w-4 h-4" /> },
+                  { value: 'documents', label: 'Документы', icon: <FileText className="w-4 h-4" /> },
                   { value: 'profile', label: 'Профиль бренда', icon: <User className="w-4 h-4" /> },
                   { value: 'admin', label: 'Кабинет админа', icon: <ShieldCheck className="w-4 h-4" /> },
                   { value: 'settings', label: 'Настройки', icon: <Settings className="w-4 h-4" /> }
@@ -1299,12 +1299,12 @@ export default function App() {
         {/* Sidebar Navigation */}
         <nav className={`flex flex-col gap-1 w-full ${!isLeftSidebarExpanded ? 'items-center' : ''}`}>
           {[
-            { key: 'projects', label: 'Мои проекты', icon: <FolderKanban className="w-[17px] h-[17px] shrink-0" /> },
+            { key: 'projects', label: 'Проекты', icon: <FolderKanban className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'moodboard', label: 'Редактор', icon: <Layout className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'removeBackground', label: 'Удаление фона', icon: <Scissors className="w-[17px] h-[17px] shrink-0" /> },
-            { key: 'warehouse', label: 'Мой склад', icon: <Warehouse className="w-[17px] h-[17px] shrink-0" /> },
-            { key: 'images', label: 'Мои изображения', icon: <ImageIcon className="w-[17px] h-[17px] shrink-0" /> },
-            { key: 'documents', label: 'Мои документы', icon: <FileText className="w-[17px] h-[17px] shrink-0" /> },
+            { key: 'warehouse', label: 'Склад', icon: <Warehouse className="w-[17px] h-[17px] shrink-0" /> },
+            { key: 'images', label: 'Изображения', icon: <ImageIcon className="w-[17px] h-[17px] shrink-0" /> },
+            { key: 'documents', label: 'Документы', icon: <FileText className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'profile', label: 'Профиль бренда', icon: <User className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'admin', label: 'Кабинет админа', icon: <ShieldCheck className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'settings', label: 'Настройки', icon: <Settings className="w-[17px] h-[17px] shrink-0" /> }
@@ -1462,25 +1462,99 @@ export default function App() {
                     </button>
                   )}
 
-                  <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--ink)] truncate">
-                    {activeTab === 'projects' && (selectedProject ? selectedProject.name : 'Мои проекты')}
-                    {activeTab === 'calendar' && 'Календарь мероприятий'}
-                    {activeTab === 'statistics' && 'Статистика и аналитика'}
-                    {activeTab === 'warehouse' && 'Складской инвентарь'}
-                    {activeTab === 'images' && 'Галерея'}
-                    {activeTab === 'removeBackground' && 'Удаление фона'}
-                    {activeTab === 'documents' && 'Мои документы'}
-                    {activeTab === 'profile' && 'Профиль бренда'}
-                    {activeTab === 'admin' && 'Кабинет админа'}
+                  <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--ink)] truncate inline-flex items-center gap-2.5 sm:gap-3">
+                    {activeTab === 'projects' && (
+                      <>
+                        <span className="p-1.5 sm:p-2 bg-[var(--lavenderSoft)] rounded-xl shrink-0 inline-flex items-center justify-center">
+                          {selectedProject ? (
+                            <FolderOpen className="w-5 h-5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
+                          ) : (
+                            <FolderKanban className="w-5 h-5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
+                          )}
+                        </span>
+                        <span>{selectedProject ? selectedProject.name : 'Проекты'}</span>
+                      </>
+                    )}
+                    {activeTab === 'calendar' && (
+                      <>
+                        <span className="p-1.5 sm:p-2 bg-[var(--lavenderSoft)] rounded-xl shrink-0 inline-flex items-center justify-center">
+                          <Calendar className="w-5 h-5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
+                        </span>
+                        <span>Календарь мероприятий</span>
+                      </>
+                    )}
+                    {activeTab === 'statistics' && (
+                      <>
+                        <span className="p-1.5 sm:p-2 bg-[var(--lavenderSoft)] rounded-xl shrink-0 inline-flex items-center justify-center">
+                          <TrendingUp className="w-5 h-5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
+                        </span>
+                        <span>Статистика и аналитика</span>
+                      </>
+                    )}
+                    {activeTab === 'warehouse' && (
+                      <>
+                        <span className="p-1.5 sm:p-2 bg-[var(--lavenderSoft)] rounded-xl shrink-0 inline-flex items-center justify-center">
+                          <Warehouse className="w-5 h-5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
+                        </span>
+                        <span>Склад</span>
+                      </>
+                    )}
+                    {activeTab === 'images' && (
+                      <>
+                        <span className="p-1.5 sm:p-2 bg-[var(--lavenderSoft)] rounded-xl shrink-0 inline-flex items-center justify-center">
+                          <ImageIcon className="w-5 h-5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
+                        </span>
+                        <span>Изображения</span>
+                      </>
+                    )}
+                    {activeTab === 'removeBackground' && (
+                      <>
+                        <span className="p-1.5 sm:p-2 bg-[var(--lavenderSoft)] rounded-xl shrink-0 inline-flex items-center justify-center">
+                          <Scissors className="w-5 h-5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
+                        </span>
+                        <span>Удаление фона</span>
+                      </>
+                    )}
+                    {activeTab === 'documents' && (
+                      <>
+                        <span className="p-1.5 sm:p-2 bg-[var(--lavenderSoft)] rounded-xl shrink-0 inline-flex items-center justify-center">
+                          <FileText className="w-5 h-5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
+                        </span>
+                        <span>Документы</span>
+                      </>
+                    )}
+                    {activeTab === 'profile' && (
+                      <>
+                        <span className="p-1.5 sm:p-2 bg-[var(--lavenderSoft)] rounded-xl shrink-0 inline-flex items-center justify-center">
+                          <User className="w-5 h-5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
+                        </span>
+                        <span>Профиль бренда</span>
+                      </>
+                    )}
+                    {activeTab === 'admin' && (
+                      <>
+                        <span className="p-1.5 sm:p-2 bg-[var(--lavenderSoft)] rounded-xl shrink-0 inline-flex items-center justify-center">
+                          <ShieldCheck className="w-5 h-5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
+                        </span>
+                        <span>Кабинет админа</span>
+                      </>
+                    )}
                     {activeTab === 'settings' && (
-                      <span className="inline-flex items-center gap-2.5">
-                        <span className="p-1.5 bg-[var(--lavenderSoft)] rounded-xl shrink-0 inline-flex items-center justify-center">
+                      <>
+                        <span className="p-1.5 sm:p-2 bg-[var(--lavenderSoft)] rounded-xl shrink-0 inline-flex items-center justify-center">
                           <Palette className="w-5 h-5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                         </span>
                         <span>Настройки</span>
-                      </span>
+                      </>
                     )}
-                    {activeTab === 'testPage' && (selectedProject ? selectedProject.name : 'Тестовая страница')}
+                    {activeTab === 'testPage' && (
+                      <>
+                        <span className="p-1.5 sm:p-2 bg-[var(--lavenderSoft)] rounded-xl shrink-0 inline-flex items-center justify-center">
+                          <FlaskConical className="w-5 h-5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
+                        </span>
+                        <span>{selectedProject ? selectedProject.name : 'Тестовая страница'}</span>
+                      </>
+                    )}
                   </h1>
                 </div>
 
