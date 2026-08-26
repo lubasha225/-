@@ -3,19 +3,11 @@ import { motion } from 'motion/react';
 import {
   TrendingUp,
   DollarSign,
-  PieChart as PieChartIcon,
-  BarChart2,
   Calendar,
-  Layers,
   ArrowUpRight,
-  ArrowDownRight,
-  Download,
-  Filter,
   CheckCircle2,
-  Zap,
   FolderKanban,
   Award,
-  Maximize2,
   MoreHorizontal
 } from 'lucide-react';
 import {
@@ -28,10 +20,7 @@ import {
   ResponsiveContainer,
   PieChart,
   Pie,
-  Cell,
-  BarChart,
-  Bar,
-  Legend
+  Cell
 } from 'recharts';
 import { Project } from '../types';
 
@@ -128,19 +117,13 @@ export default function StatisticsTab({ projects, showToast }: StatisticsTabProp
     { name: 'Фотозоны и аренда', value: 12, color: '#FDBA74' }, // Soft Peach / Amber
   ];
 
-  const categoryExpenses = [
-    { label: 'Закупка цветов и флористика', percent: 82, amount: '480 тыс. ₽', color: 'from-purple-300 to-indigo-300 dark:from-purple-400 dark:to-indigo-400', badgeBg: 'bg-purple-100 text-purple-800 dark:bg-purple-900/60 dark:text-purple-200' },
-    { label: 'Конструкции и свет', percent: 64, amount: '310 тыс. ₽', color: 'from-emerald-300 to-teal-300 dark:from-emerald-400 dark:to-teal-400', badgeBg: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200' },
-    { label: 'Текстиль и полиграфия', percent: 48, amount: '190 тыс. ₽', color: 'from-amber-200 to-orange-300 dark:from-amber-300 dark:to-orange-400', badgeBg: 'bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200' },
-    { label: 'Логистика и монтаж', percent: 35, amount: '120 тыс. ₽', color: 'from-sky-300 to-blue-300 dark:from-sky-400 dark:to-blue-400', badgeBg: 'bg-sky-100 text-sky-800 dark:bg-sky-900/60 dark:text-sky-200' },
-  ];
-
   return (
-    <div className="space-y-6 animate-fadeIn pb-8">
-      {/* Controls: Period selector + Custom month/range pickers + Export button */}
-      <div className="flex items-center justify-end gap-2.5 flex-wrap">
-          {/* Main Mode Toggles */}
-          <div className="flex bg-white/80 dark:bg-zinc-800/80 p-1 rounded-full border border-zinc-200/80 dark:border-zinc-700/80 shadow-2xs flex-wrap">
+    <div className="space-y-5 sm:space-y-6 animate-fadeIn pb-8">
+      {/* 1. TOP HEADER TOOLBAR: Period Switcher, Month/Date Pickers & Export */}
+      <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[28px] sm:rounded-[32px] border border-zinc-200/50 dark:border-zinc-800/40 p-3 sm:p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+        {/* Period Selector with horizontal scroll on mobile */}
+        <div className="overflow-x-auto no-scrollbar py-0.5">
+          <div className="inline-flex bg-white/80 dark:bg-zinc-800/80 p-1 rounded-full border border-zinc-200/80 dark:border-zinc-700/80 shadow-2xs whitespace-nowrap">
             <button
               onClick={() => setPeriodMode('month')}
               className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
@@ -182,16 +165,18 @@ export default function StatisticsTab({ projects, showToast }: StatisticsTabProp
               Произвольный период
             </button>
           </div>
+        </div>
 
+        {/* Date / Month Picker */}
+        <div className="flex items-center justify-between md:justify-end gap-2 flex-wrap sm:flex-nowrap">
           {/* Conditional Month Picker */}
           {periodMode === 'month' && (
-            <div className="flex items-center gap-1.5 bg-white/80 dark:bg-zinc-800/80 px-3 py-1.5 rounded-full border border-zinc-200/80 dark:border-zinc-700/80 text-xs shadow-2xs">
-              <Calendar className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
-              <span className="text-zinc-600 dark:text-zinc-400 font-medium hidden sm:inline">Месяц:</span>
+            <div className="flex items-center gap-1.5 bg-white/80 dark:bg-zinc-800/80 px-3 py-1.5 rounded-full border border-zinc-200/80 dark:border-zinc-700/80 text-xs shadow-2xs flex-1 sm:flex-initial justify-center sm:justify-start">
+              <Calendar className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] shrink-0" />
               <select
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
-                className="bg-transparent font-semibold text-zinc-900 dark:text-zinc-100 outline-none cursor-pointer pr-1"
+                className="bg-transparent font-semibold text-zinc-900 dark:text-zinc-100 outline-none cursor-pointer"
               >
                 {monthsList.map((m) => (
                   <option key={m.value} value={m.value} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100">
@@ -199,54 +184,38 @@ export default function StatisticsTab({ projects, showToast }: StatisticsTabProp
                   </option>
                 ))}
               </select>
-              <input
-                type="month"
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                title="Выбрать любой другой месяц"
-                className="bg-transparent font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 outline-none cursor-pointer w-7 h-5 opacity-80 hover:opacity-100"
-              />
             </div>
           )}
 
-          {/* Conditional Date Range Picker (От ... до ...) */}
+          {/* Conditional Date Range Picker */}
           {periodMode === 'custom' && (
-            <div className="flex items-center gap-2 bg-white/80 dark:bg-zinc-800/80 px-3 py-1.5 rounded-full border border-zinc-200/80 dark:border-zinc-700/80 text-xs shadow-2xs">
-              <Calendar className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
+            <div className="flex items-center gap-2 bg-white/80 dark:bg-zinc-800/80 px-3 py-1.5 rounded-full border border-zinc-200/80 dark:border-zinc-700/80 text-xs shadow-2xs flex-1 sm:flex-initial">
+              <Calendar className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] shrink-0" />
               <span className="text-zinc-600 dark:text-zinc-400 font-medium">С:</span>
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="bg-transparent font-semibold text-zinc-900 dark:text-zinc-100 outline-none cursor-pointer"
+                className="bg-transparent font-semibold text-zinc-900 dark:text-zinc-100 outline-none cursor-pointer text-xs"
               />
               <span className="text-zinc-600 dark:text-zinc-400 font-medium">по:</span>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="bg-transparent font-semibold text-zinc-900 dark:text-zinc-100 outline-none cursor-pointer"
+                className="bg-transparent font-semibold text-zinc-900 dark:text-zinc-100 outline-none cursor-pointer text-xs"
               />
             </div>
           )}
-
-          <button
-            onClick={() => showToast && showToast('Экспорт отчета', 'Отчет сформирован и отправлен в загрузки.', 'success')}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/80 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700/80 text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-white dark:hover:bg-zinc-700 transition-all cursor-pointer shadow-2xs"
-          >
-            <Download className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
-            <span>Экспорт</span>
-          </button>
         </div>
+      </div>
 
-      {/* Top Metric Cards (Pastel Tone Theme - 2 columns on mobile, 4 on desktop) */}
+      {/* 2. TOP METRIC CARDS (Pastel Tone Theme - 2 columns on mobile, 4 on desktop) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 md:gap-4">
         {/* Metric 1 - Soft Periwinkle/Indigo (ОБЩАЯ ВЫРУЧКА) */}
         <div className="relative overflow-hidden bg-[#b8c6fa]/70 dark:bg-indigo-950/60 backdrop-blur-md p-3 sm:p-3.5 md:p-4 rounded-[22px] flex flex-col justify-between border border-[#9cb1f8]/80 dark:border-indigo-800/40 shadow-xs hover:shadow-md transition-all duration-300 group">
-          {/* Background Large Cut-off Decorative Icon */}
           <DollarSign className="absolute -right-4 -bottom-4 sm:-right-5 sm:-bottom-5 w-20 h-20 sm:w-28 sm:h-28 lg:w-32 lg:h-32 text-indigo-950/15 dark:text-white/10 pointer-events-none select-none -rotate-12 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6" />
 
-          {/* Header Row: Icon Left, Dots Right */}
           <div className="relative z-10 flex items-center justify-between gap-2 mb-1">
             <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-indigo-900/10 dark:bg-white/10 flex items-center justify-center text-indigo-900 dark:text-indigo-200 shrink-0">
               <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -256,12 +225,10 @@ export default function StatisticsTab({ projects, showToast }: StatisticsTabProp
             </div>
           </div>
 
-          {/* Title */}
           <span className="relative z-10 text-[10px] sm:text-xs font-semibold text-indigo-950/80 dark:text-indigo-200/90 tracking-wide uppercase truncate mb-0.5">
             Общая выручка
           </span>
 
-          {/* Large Number */}
           <div className="relative z-10 my-0.5 flex items-baseline gap-1 flex-wrap">
             <span className="text-lg sm:text-2xl lg:text-3xl font-extrabold text-indigo-950 dark:text-white tracking-tight leading-none">
               {(totalRevenue / 1000).toLocaleString('ru-RU')}
@@ -271,7 +238,6 @@ export default function StatisticsTab({ projects, showToast }: StatisticsTabProp
             </span>
           </div>
 
-          {/* Bottom Row: Trend label */}
           <div className="relative z-10 flex items-center gap-1 mt-1 pt-0.5 text-[10px] sm:text-[11px] font-medium text-indigo-900/80 dark:text-indigo-300/80 truncate">
             <ArrowUpRight className="w-3 h-3 shrink-0" />
             <span className="truncate">+18.4% к прошлому</span>
@@ -280,10 +246,8 @@ export default function StatisticsTab({ projects, showToast }: StatisticsTabProp
 
         {/* Metric 2 - Soft Mint (ЧИСТАЯ ПРИБЫЛЬ) */}
         <div className="relative overflow-hidden bg-[#d8f2b2]/70 dark:bg-emerald-950/60 backdrop-blur-md p-3 sm:p-3.5 md:p-4 rounded-[22px] flex flex-col justify-between border border-[#c3e895]/80 dark:border-emerald-800/40 shadow-xs hover:shadow-md transition-all duration-300 group">
-          {/* Background Large Cut-off Decorative Icon */}
           <TrendingUp className="absolute -right-4 -bottom-4 sm:-right-5 sm:-bottom-5 w-20 h-20 sm:w-28 sm:h-28 lg:w-32 lg:h-32 text-emerald-950/15 dark:text-white/10 pointer-events-none select-none -rotate-12 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6" />
 
-          {/* Header Row: Icon Left, Dots Right */}
           <div className="relative z-10 flex items-center justify-between gap-2 mb-1">
             <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-emerald-900/10 dark:bg-white/10 flex items-center justify-center text-emerald-900 dark:text-emerald-200 shrink-0">
               <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -293,12 +257,10 @@ export default function StatisticsTab({ projects, showToast }: StatisticsTabProp
             </div>
           </div>
 
-          {/* Title */}
           <span className="relative z-10 text-[10px] sm:text-xs font-semibold text-emerald-950/80 dark:text-emerald-200/90 tracking-wide uppercase truncate mb-0.5">
             Чистая прибыль
           </span>
 
-          {/* Large Number */}
           <div className="relative z-10 my-0.5 flex items-baseline gap-1 flex-wrap">
             <span className="text-lg sm:text-2xl lg:text-3xl font-extrabold text-emerald-950 dark:text-white tracking-tight leading-none">
               {(netProfit / 1000).toLocaleString('ru-RU')}
@@ -308,7 +270,6 @@ export default function StatisticsTab({ projects, showToast }: StatisticsTabProp
             </span>
           </div>
 
-          {/* Bottom Row: Trend label */}
           <div className="relative z-10 flex items-center gap-1 mt-1 pt-0.5 text-[10px] sm:text-[11px] font-medium text-emerald-900/80 dark:text-emerald-300/80 truncate">
             <ArrowUpRight className="w-3 h-3 shrink-0" />
             <span className="truncate">Рентабельность ~ 42%</span>
@@ -317,10 +278,8 @@ export default function StatisticsTab({ projects, showToast }: StatisticsTabProp
 
         {/* Metric 3 - Soft Teal (АКТИВНЫЕ ПРОЕКТЫ) */}
         <div className="relative overflow-hidden bg-[#a4e5d9]/70 dark:bg-teal-950/60 backdrop-blur-md p-3 sm:p-3.5 md:p-4 rounded-[22px] flex flex-col justify-between border border-[#83d4c3]/80 dark:border-teal-800/40 shadow-xs hover:shadow-md transition-all duration-300 group">
-          {/* Background Large Cut-off Decorative Icon */}
           <FolderKanban className="absolute -right-4 -bottom-4 sm:-right-5 sm:-bottom-5 w-20 h-20 sm:w-28 sm:h-28 lg:w-32 lg:h-32 text-teal-950/15 dark:text-white/10 pointer-events-none select-none -rotate-12 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6" />
 
-          {/* Header Row: Icon Left, Dots Right */}
           <div className="relative z-10 flex items-center justify-between gap-2 mb-1">
             <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-teal-900/10 dark:bg-white/10 flex items-center justify-center text-teal-900 dark:text-teal-200 shrink-0">
               <FolderKanban className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -330,12 +289,10 @@ export default function StatisticsTab({ projects, showToast }: StatisticsTabProp
             </div>
           </div>
 
-          {/* Title */}
           <span className="relative z-10 text-[10px] sm:text-xs font-semibold text-teal-950/80 dark:text-teal-200/90 tracking-wide uppercase truncate mb-0.5">
             Активные проекты
           </span>
 
-          {/* Large Number */}
           <div className="relative z-10 my-0.5 flex items-baseline gap-1 flex-wrap">
             <span className="text-lg sm:text-2xl lg:text-3xl font-extrabold text-teal-950 dark:text-white tracking-tight leading-none">
               {projects.length}
@@ -345,7 +302,6 @@ export default function StatisticsTab({ projects, showToast }: StatisticsTabProp
             </span>
           </div>
 
-          {/* Bottom Row: Trend label */}
           <div className="relative z-10 flex items-center gap-1 mt-1 pt-0.5 text-[10px] sm:text-[11px] font-medium text-teal-900/80 dark:text-teal-300/80 truncate">
             <span className="truncate">{projects.filter(p => p.status === 'progress').length} в монтаже · {projects.filter(p => p.status === 'approved').length} зак.</span>
           </div>
@@ -353,10 +309,8 @@ export default function StatisticsTab({ projects, showToast }: StatisticsTabProp
 
         {/* Metric 4 - Soft Coral/Rose (КОНВЕРСИЯ СОГЛАСОВАНИЙ) */}
         <div className="relative overflow-hidden bg-[#f8c5c8]/70 dark:bg-rose-950/60 backdrop-blur-md p-3 sm:p-3.5 md:p-4 rounded-[22px] flex flex-col justify-between border border-[#f4a8ac]/80 dark:border-rose-800/40 shadow-xs hover:shadow-md transition-all duration-300 group">
-          {/* Background Large Cut-off Decorative Icon */}
           <Award className="absolute -right-4 -bottom-4 sm:-right-5 sm:-bottom-5 w-20 h-20 sm:w-28 sm:h-28 lg:w-32 lg:h-32 text-rose-950/15 dark:text-white/10 pointer-events-none select-none -rotate-12 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6" />
 
-          {/* Header Row: Icon Left, Dots Right */}
           <div className="relative z-10 flex items-center justify-between gap-2 mb-1">
             <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-rose-900/10 dark:bg-white/10 flex items-center justify-center text-rose-900 dark:text-rose-200 shrink-0">
               <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -366,19 +320,16 @@ export default function StatisticsTab({ projects, showToast }: StatisticsTabProp
             </div>
           </div>
 
-          {/* Title */}
           <span className="relative z-10 text-[10px] sm:text-xs font-semibold text-rose-950/80 dark:text-rose-200/90 tracking-wide uppercase truncate mb-0.5">
             Конверсия
           </span>
 
-          {/* Large Number */}
           <div className="relative z-10 my-0.5 flex items-baseline gap-1 flex-wrap">
             <span className="text-lg sm:text-2xl lg:text-3xl font-extrabold text-rose-950 dark:text-white tracking-tight leading-none">
               78.5%
             </span>
           </div>
 
-          {/* Bottom Row: Trend label */}
           <div className="relative z-10 flex items-center gap-1 mt-1 pt-0.5 text-[10px] sm:text-[11px] font-medium text-rose-900/80 dark:text-rose-300/80 truncate">
             <CheckCircle2 className="w-3 h-3 shrink-0" />
             <span className="truncate">Высокая лояльность</span>
@@ -386,35 +337,39 @@ export default function StatisticsTab({ projects, showToast }: StatisticsTabProp
         </div>
       </div>
 
-      {/* Main Charts Row */}
+      {/* 3. MAIN CHARTS ROW (Area Chart & Category Donut Chart) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Main Line Area Chart - Yearly/Period Revenue Growth */}
         <div className="lg:col-span-2 bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[28px] border border-zinc-200/50 dark:border-zinc-800/40 p-5 sm:p-6 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
-                  Динамика доходов и расходов (тыс. ₽)
-                </h2>
-                <span className="text-[11px] font-semibold text-purple-700 dark:text-purple-300 bg-purple-100/80 dark:bg-purple-950/60 px-2.5 py-0.5 rounded-full">
-                  {periodMode === 'month' && getMonthNameByValue(selectedMonth)}
-                  {periodMode === 'halfyear' && 'За 6 месяцев'}
-                  {periodMode === 'year' && 'За год'}
-                  {periodMode === 'custom' && `${startDate.split('-').reverse().join('.')} — ${endDate.split('-').reverse().join('.')}`}
-                </span>
-              </div>
-              <p className="text-xs sm:text-sm font-normal text-zinc-700 dark:text-zinc-300 leading-relaxed mt-0.5">
+          {/* Card Header with clean full-width title, description & legend redistribution */}
+          <div className="space-y-3 mb-4">
+            {/* Top row: Title + Period Badge */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <h2 className="text-base sm:text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+                Динамика доходов и расходов (тыс. ₽)
+              </h2>
+              <span className="self-start sm:self-auto text-[11px] font-semibold text-purple-700 dark:text-purple-300 bg-purple-100/80 dark:bg-purple-950/60 px-2.5 py-0.5 rounded-full shrink-0">
+                {periodMode === 'month' && getMonthNameByValue(selectedMonth)}
+                {periodMode === 'halfyear' && 'За 6 месяцев'}
+                {periodMode === 'year' && 'За год'}
+                {periodMode === 'custom' && `${startDate.split('-').reverse().join('.')} — ${endDate.split('-').reverse().join('.')}`}
+              </span>
+            </div>
+
+            {/* Bottom row: Description spanning full width + Legend on the right */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 border-t border-zinc-200/40 dark:border-zinc-800/40">
+              <p className="text-xs sm:text-sm font-normal text-zinc-700 dark:text-zinc-300 leading-relaxed">
                 Соотношение общей выручки, прямых себестоимостей и чистой прибыли
               </p>
-            </div>
-            <div className="flex items-center gap-3 text-xs font-semibold">
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-[#A78BFA]" />
-                <span className="text-zinc-700 dark:text-zinc-300">Доходы</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-[#6EE7B7]" />
-                <span className="text-zinc-700 dark:text-zinc-300">Прибыль</span>
+              <div className="flex items-center gap-3 text-xs font-semibold shrink-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#A78BFA]" />
+                  <span className="text-zinc-700 dark:text-zinc-300">Доходы</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#6EE7B7]" />
+                  <span className="text-zinc-700 dark:text-zinc-300">Прибыль</span>
+                </div>
               </div>
             </div>
           </div>
@@ -502,74 +457,6 @@ export default function StatisticsTab({ projects, showToast }: StatisticsTabProp
                 <span className="font-bold text-zinc-900 dark:text-zinc-100">{item.value}%</span>
               </div>
             ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom Row: Expense Progress Bars & Work Efficiency */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Expense Category Progress */}
-        <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[28px] border border-zinc-200/50 dark:border-zinc-800/40 p-5 sm:p-6 shadow-xs space-y-4">
-          <div>
-            <h2 className="text-base sm:text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
-              Исполнение статей расходов
-            </h2>
-            <p className="text-xs sm:text-sm font-normal text-zinc-700 dark:text-zinc-300 leading-relaxed mt-0.5">
-              Текущий лимит и фактически потраченные бюджеты
-            </p>
-          </div>
-
-          <div className="space-y-3.5">
-            {categoryExpenses.map((cat, idx) => (
-              <div key={idx} className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs font-semibold">
-                  <span className="text-zinc-800 dark:text-zinc-200">{cat.label}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-zinc-500 dark:text-zinc-400 font-normal">{cat.amount}</span>
-                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${cat.badgeBg}`}>{cat.percent}%</span>
-                  </div>
-                </div>
-                <div className="w-full h-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full bg-gradient-to-r ${cat.color} rounded-full transition-all duration-500`}
-                    style={{ width: `${cat.percent}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Work Efficiency Circular Gauges */}
-        <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[28px] border border-zinc-200/50 dark:border-zinc-800/40 p-5 sm:p-6 shadow-xs flex flex-col justify-between">
-          <div>
-            <h2 className="text-base sm:text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
-              Эффективность команды и сроки
-            </h2>
-            <p className="text-xs sm:text-sm font-normal text-zinc-700 dark:text-zinc-300 leading-relaxed mt-0.5">
-              Показатели выполнения монтажей, смет и взаимодействия с клиентами
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-4">
-            {[
-              { label: 'Смет в срок', percent: '94%', color: 'border-emerald-300 text-emerald-800 dark:text-emerald-300 bg-emerald-50/60 dark:bg-emerald-950/30' },
-              { label: 'Монтажи', percent: '88%', color: 'border-purple-300 text-purple-800 dark:text-purple-300 bg-purple-50/60 dark:bg-purple-950/30' },
-              { label: 'Оплата смет', percent: '91%', color: 'border-sky-300 text-sky-800 dark:text-sky-300 bg-sky-50/60 dark:bg-sky-950/30' },
-              { label: 'Аренда возвращена', percent: '96%', color: 'border-amber-300 text-amber-800 dark:text-amber-300 bg-amber-50/60 dark:bg-amber-950/30' }
-            ].map((stat, i) => (
-              <div key={i} className="flex flex-col items-center justify-center p-3 rounded-2xl bg-white/50 dark:bg-zinc-800/40 border border-zinc-200/50 dark:border-zinc-800/40 text-center">
-                <div className={`w-14 h-14 rounded-full border-4 ${stat.color} flex items-center justify-center font-extrabold text-base mb-2 shadow-2xs`}>
-                  {stat.percent}
-                </div>
-                <span className="text-[11px] font-medium text-zinc-700 dark:text-zinc-300">{stat.label}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="p-3.5 bg-emerald-500/10 dark:bg-emerald-950/30 rounded-2xl border border-emerald-500/20 text-xs text-emerald-900 dark:text-emerald-200 font-normal leading-relaxed flex items-center gap-2">
-            <Zap className="w-4 h-4 text-emerald-500 shrink-0" />
-            <span>Все проекты выполняются в графике. Нет просроченных монтажей.</span>
           </div>
         </div>
       </div>

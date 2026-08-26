@@ -4,7 +4,6 @@ import {
   Moon,
   Monitor,
   Check,
-  Sparkles,
   RefreshCw,
   Search,
   Plus,
@@ -12,9 +11,10 @@ import {
   FolderKanban,
   Zap,
   Calendar,
-  Layers
+  Layers,
+  Type
 } from 'lucide-react';
-import { COLOR_SCHEMES, BG_PRESETS, ColorScheme, BgPreset } from '../lib/themeConfig';
+import { COLOR_SCHEMES, BG_PRESETS, FONT_PRESETS, ColorScheme, BgPreset, FontPreset } from '../lib/themeConfig';
 
 interface SettingsTabProps {
   theme: 'light' | 'dark';
@@ -23,6 +23,8 @@ interface SettingsTabProps {
   setColorSchemeId: (id: string) => void;
   bgPresetId: string;
   setBgPresetId: (id: string) => void;
+  fontPresetId?: string;
+  setFontPresetId?: (id: string) => void;
   showToast?: (title: string, message: string, type?: 'success' | 'info' | 'warn') => void;
 }
 
@@ -33,6 +35,8 @@ export default function SettingsTab({
   setColorSchemeId,
   bgPresetId,
   setBgPresetId,
+  fontPresetId = 'jost',
+  setFontPresetId,
   showToast,
 }: SettingsTabProps) {
   const [bgTab, setBgTab] = useState<'recommended' | 'all'>('recommended');
@@ -80,6 +84,7 @@ export default function SettingsTab({
   // Find active scheme and preset
   const activeScheme = COLOR_SCHEMES.find(s => s.id === colorSchemeId) || COLOR_SCHEMES[0];
   const activePreset = BG_PRESETS.find(p => p.id === bgPresetId) || BG_PRESETS[0];
+  const activeFont = FONT_PRESETS.find(f => f.id === fontPresetId) || FONT_PRESETS[0];
 
   const handleSelectScheme = (scheme: ColorScheme) => {
     setColorSchemeId(scheme.id);
@@ -104,6 +109,19 @@ export default function SettingsTab({
     }
   };
 
+  const handleSelectFont = (font: FontPreset) => {
+    if (setFontPresetId) {
+      setFontPresetId(font.id);
+    }
+    if (showToast) {
+      showToast(
+        'Шрифт интерфейса обновлен',
+        `Установлен шрифт «${font.name}» (${font.category})`,
+        'success'
+      );
+    }
+  };
+
   // Universal 5th pure grey gradient preset (without color spots)
   const pureGreyPreset = BG_PRESETS.find(p => p.id === 'bg-pure-grey-gradient') || {
     id: 'bg-pure-grey-gradient',
@@ -114,6 +132,9 @@ export default function SettingsTab({
     lightBg: 'linear-gradient(145deg, #FAFAFC 0%, #EEEEF2 50%, #DFE1E6 100%)',
     darkBg: 'linear-gradient(145deg, #323236 0%, #202024 50%, #111114 100%)',
   };
+
+  const vibrantSchemes = COLOR_SCHEMES.filter(s => s.group !== 'pastel');
+  const pastelSchemes = COLOR_SCHEMES.filter(s => s.group === 'pastel');
 
   // Exactly 5 recommended presets for the active scheme (4 scheme-specific + 1 pure grey gradient)
   const schemeSpecificPresets = BG_PRESETS.filter(p => p.schemeId === activeScheme.id);
@@ -202,8 +223,8 @@ export default function SettingsTab({
             </div>
           </div>
 
-          {/* 1. ACCENT COLOR PICKER (Vibrant Color Gradient Swatches) */}
-          <div className="space-y-3">
+          {/* 1. ACCENT COLOR PICKER (Separated Stacks for Vibrant and Pastel Tones) */}
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal uppercase">
                 АКЦЕНТНЫЙ ЦВЕТ (ACCENT COLOR)
@@ -213,52 +234,103 @@ export default function SettingsTab({
                   {activeScheme.name}
                 </span>
                 <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                  ({activeScheme.from})
+                  ({activeScheme.from} → {activeScheme.to})
                 </span>
               </div>
             </div>
 
-            {/* Row of Swatch Circles with Glow */}
-            <div className="flex flex-wrap items-center gap-3 sm:gap-4 p-3 bg-white/30 dark:bg-zinc-950/40 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/40">
-              {COLOR_SCHEMES.map((scheme) => {
-                const isSelected = scheme.id === colorSchemeId;
-                return (
-                  <button
-                    key={scheme.id}
-                    type="button"
-                    onClick={() => handleSelectScheme(scheme)}
-                    className="group relative flex flex-col items-center cursor-pointer outline-none focus:scale-110 transition-transform"
-                    title={scheme.name}
-                  >
-                    <div
-                      style={{
-                        background: `linear-gradient(135deg, ${scheme.from} 0%, ${scheme.to} 100%)`,
-                        boxShadow: isSelected
-                          ? `0 0 0 3px var(--bg-card, rgba(255,255,255,0.9)), 0 0 16px ${scheme.from}`
-                          : undefined,
-                      }}
-                      className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all duration-200 ${
-                        isSelected
-                          ? 'scale-110 ring-2 ring-[var(--lavDeep)] dark:ring-[var(--lavenderAccent)]'
-                          : 'hover:scale-110 opacity-85 hover:opacity-100'
-                      }`}
+            {/* STACK 1: VIBRANT & CLASSIC PALETTES */}
+            <div className="p-3.5 bg-white/30 dark:bg-zinc-950/40 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/40 space-y-2.5">
+              <span className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal uppercase block">
+                НАСЫЩЕННЫЕ ОТТЕНКИ
+              </span>
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+                {vibrantSchemes.map((scheme) => {
+                  const isSelected = scheme.id === colorSchemeId;
+                  return (
+                    <button
+                      key={scheme.id}
+                      type="button"
+                      onClick={() => handleSelectScheme(scheme)}
+                      className="group relative flex flex-col items-center cursor-pointer outline-none focus:scale-110 transition-transform"
+                      title={`${scheme.name} (${scheme.from} — ${scheme.to})`}
                     >
-                      {isSelected && (
-                        <Check className="w-3.5 h-3.5 text-white stroke-[3] drop-shadow-xs" />
-                      )}
-                    </div>
-                    
-                    {/* Micro caption */}
-                    <span className={`text-[10px] font-medium mt-1.5 transition-colors whitespace-nowrap ${
-                      isSelected
-                        ? 'text-zinc-900 dark:text-zinc-100 font-semibold'
-                        : 'text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-300'
-                    }`}>
-                      {scheme.name}
-                    </span>
-                  </button>
-                );
-              })}
+                      <div
+                        style={{
+                          background: `linear-gradient(135deg, ${scheme.from} 0%, ${scheme.to} 100%)`,
+                          boxShadow: isSelected
+                            ? `0 0 0 3px var(--bg-card, rgba(255,255,255,0.9)), 0 0 16px ${scheme.from}`
+                            : undefined,
+                        }}
+                        className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all duration-200 ${
+                          isSelected
+                            ? 'scale-110 ring-2 ring-[var(--lavDeep)] dark:ring-[var(--lavenderAccent)]'
+                            : 'hover:scale-110 opacity-85 hover:opacity-100'
+                        }`}
+                      >
+                        {isSelected && (
+                          <Check className="w-3.5 h-3.5 text-white stroke-[3] drop-shadow-xs" />
+                        )}
+                      </div>
+                      
+                      <span className={`text-[10px] font-medium mt-1.5 transition-colors whitespace-nowrap ${
+                        isSelected
+                          ? 'text-zinc-900 dark:text-zinc-100 font-semibold'
+                          : 'text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-300'
+                      }`}>
+                        {scheme.name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* STACK 2: PASTEL TONES (NEW SEPARATE STACK) */}
+            <div className="p-3.5 bg-white/30 dark:bg-zinc-950/40 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/40 space-y-2.5">
+              <span className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal uppercase block">
+                ПАСТЕЛЬНЫЕ ТОНА
+              </span>
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+                {pastelSchemes.map((scheme) => {
+                  const isSelected = scheme.id === colorSchemeId;
+                  return (
+                    <button
+                      key={scheme.id}
+                      type="button"
+                      onClick={() => handleSelectScheme(scheme)}
+                      className="group relative flex flex-col items-center cursor-pointer outline-none focus:scale-110 transition-transform"
+                      title={`${scheme.name} (${scheme.from} — ${scheme.to})`}
+                    >
+                      <div
+                        style={{
+                          background: `linear-gradient(135deg, ${scheme.from} 0%, ${scheme.to} 100%)`,
+                          boxShadow: isSelected
+                            ? `0 0 0 3px var(--bg-card, rgba(255,255,255,0.9)), 0 0 16px ${scheme.from}`
+                            : undefined,
+                        }}
+                        className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all duration-200 ${
+                          isSelected
+                            ? 'scale-110 ring-2 ring-[var(--lavDeep)] dark:ring-[var(--lavenderAccent)]'
+                            : 'hover:scale-110 opacity-85 hover:opacity-100'
+                        }`}
+                      >
+                        {isSelected && (
+                          <Check className="w-3.5 h-3.5 text-white stroke-[3] drop-shadow-xs" />
+                        )}
+                      </div>
+                      
+                      <span className={`text-[10px] font-medium mt-1.5 transition-colors whitespace-nowrap ${
+                        isSelected
+                          ? 'text-zinc-900 dark:text-zinc-100 font-semibold'
+                          : 'text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-300'
+                      }`}>
+                        {scheme.name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
@@ -268,9 +340,6 @@ export default function SettingsTab({
               <div>
                 <span className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal uppercase block">
                   ФОНОВЫЙ СТИЛЬ ОТОБРАЖЕНИЯ (BACKGROUND PRESETS)
-                </span>
-                <span className="text-xs text-zinc-600 dark:text-zinc-400 leading-snug">
-                  Квадратные пресеты градиентов и чистого серого фона
                 </span>
               </div>
 
@@ -382,7 +451,89 @@ export default function SettingsTab({
             )}
           </div>
 
-          {/* 3. ADDITIONAL COMPACT TOGGLES */}
+          {/* 3. FONT SELECTION (5 TYPOGRAPHY PRESETS) */}
+          <div className="space-y-3 pt-3 border-t border-zinc-200/40 dark:border-zinc-800/40">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal uppercase">
+                ШРИФТ ИНТЕРФЕЙСА (FONT FAMILY)
+              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                  {activeFont.name}
+                </span>
+                <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                  ({activeFont.category})
+                </span>
+              </div>
+            </div>
+
+            {/* 5 Font Selection Cards Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2.5">
+              {FONT_PRESETS.map((font) => {
+                const isSelected = font.id === (fontPresetId || 'jost');
+                return (
+                  <button
+                    key={font.id}
+                    type="button"
+                    onClick={() => handleSelectFont(font)}
+                    className={`relative text-left p-3 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2 outline-none ${
+                      isSelected
+                        ? 'bg-white/90 dark:bg-zinc-900/90 border-transparent shadow-xs ring-2 ring-[var(--lavDeep)] dark:ring-[var(--lavenderAccent)]'
+                        : 'bg-white/30 dark:bg-zinc-950/30 border-zinc-200/50 dark:border-zinc-800/40 hover:bg-white/50 dark:hover:bg-zinc-950/50 hover:border-zinc-300 dark:hover:border-zinc-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-1 w-full">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <div
+                          className={`w-5 h-5 rounded-lg flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                            isSelected
+                              ? 'text-white'
+                              : 'bg-zinc-200/70 dark:bg-zinc-800/70 text-zinc-600 dark:text-zinc-300'
+                          }`}
+                          style={isSelected ? { background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' } : undefined}
+                        >
+                          Aa
+                        </div>
+                        <span
+                          style={{ fontFamily: font.fontFamily }}
+                          className={`text-xs font-semibold truncate ${
+                            isSelected
+                              ? 'text-zinc-900 dark:text-zinc-100'
+                              : 'text-zinc-700 dark:text-zinc-300'
+                          }`}
+                        >
+                          {font.name}
+                        </span>
+                      </div>
+
+                      {isSelected && (
+                        <div
+                          style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
+                          className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 shadow-xs"
+                        >
+                          <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-0.5">
+                      <div
+                        style={{ fontFamily: font.fontFamily }}
+                        className="text-[13px] tracking-tight font-medium text-zinc-800 dark:text-zinc-200"
+                      >
+                        Аа Бб Вв 123
+                      </div>
+                      <span className="text-[10px] font-normal text-zinc-500 dark:text-zinc-400 block leading-tight">
+                        {font.description}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 4. ADDITIONAL COMPACT TOGGLES */}
           <div className="pt-4 border-t border-zinc-200/40 dark:border-zinc-800/40 space-y-3">
             <span className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal uppercase block">
               ДОПОЛНИТЕЛЬНЫЕ НАСТРОЙКИ ИНТЕРФЕЙСА
@@ -441,34 +592,6 @@ export default function SettingsTab({
                 </div>
               </div>
             </div>
-
-            {/* Test field for testing focus ring immediately */}
-            {boldFocusRings && (
-              <div className="p-3 bg-white/40 dark:bg-zinc-900/60 rounded-xl border border-zinc-200/60 dark:border-zinc-800/60 flex items-center justify-between gap-3 animate-fadeIn">
-                <span className="text-xs text-zinc-600 dark:text-zinc-300">
-                  Проверьте фокус: кликните на кнопку или поле справа:
-                </span>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    placeholder="Тест фокуса..."
-                    className="w-28 px-2 py-1 text-xs rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
-                  />
-                  <button
-                    type="button"
-                    className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
-                  >
-                    Тест
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* NOTICE BOX */}
-          <div className="p-3.5 bg-emerald-500/10 dark:bg-emerald-950/30 rounded-2xl border border-emerald-500/20 text-xs text-emerald-900 dark:text-emerald-200 font-normal leading-relaxed flex items-center gap-2.5">
-            <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-            <span>Все выбранные параметры оформления, цвет и фоновые стили сохраняются мгновенно.</span>
           </div>
 
         </div>

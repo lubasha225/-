@@ -1,28 +1,80 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Scissors,
+  Paintbrush,
   Upload,
   Eraser,
-  Paintbrush,
   Download,
-  FolderPlus,
   Warehouse,
-  Layout,
-  Eye,
   Undo2,
   Redo2,
   Crop as CropIcon,
   X,
   Check,
-  RefreshCw,
   Image as ImageIcon,
   Loader2,
   ZoomIn,
   ZoomOut,
-  RotateCcw
+  RotateCcw,
+  Move,
+  Sparkles,
+  Maximize2,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ImageItem, WarehouseItem } from '../types';
+
+export type EditorTool = 'select' | 'crop' | 'erase' | 'brush' | 'cutout';
+
+// Иконка «Удаление фона» (ножницы с крупными выразительными звёздами-ушками и четкими отверстиями)
+export function CutoutScissorsIcon({
+  className = 'w-5 h-5',
+  strokeWidth = 2
+}: {
+  className?: string;
+  strokeWidth?: number;
+  sparkClassName?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={`${className} shrink-0`}
+    >
+      {/* Верхнее крупное ушко-звезда с большим отверстием */}
+      <path
+        d="M6.5 1 C6.5 4.3 3.8 6.5 1 6.5 C3.8 6.5 6.5 8.7 6.5 12 C6.5 8.7 9.2 6.5 12 6.5 C9.2 6.5 6.5 4.3 6.5 1 Z"
+        fill="currentColor"
+        fillOpacity="0.25"
+      />
+      <circle cx="6.5" cy="6.5" r="2.3" strokeWidth={strokeWidth} />
+
+      {/* Нижнее крупное ушко-звезда с большим отверстием */}
+      <path
+        d="M6.5 12 C6.5 15.3 3.8 17.5 1 17.5 C3.8 17.5 6.5 19.7 6.5 23 C6.5 19.7 9.2 17.5 12 17.5 C9.2 17.5 6.5 15.3 6.5 12 Z"
+        fill="currentColor"
+        fillOpacity="0.25"
+      />
+      <circle cx="6.5" cy="17.5" r="2.3" strokeWidth={strokeWidth} />
+
+      {/* Лезвие 1: от нижнего ушка вверх */}
+      <line x1="8.8" y1="15.5" x2="22.5" y2="6" strokeWidth={strokeWidth} />
+
+      {/* Лезвие 2: от верхнего ушка вниз */}
+      <line x1="8.8" y1="8.5" x2="22.5" y2="18" strokeWidth={strokeWidth} />
+
+      {/* Центральный осевой шарнир */}
+      <circle cx="13.5" cy="12" r="1.5" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+export const CutoutSparklesIcon = CutoutScissorsIcon;
 
 interface RemoveBackgroundTabProps {
   images: ImageItem[];
@@ -36,7 +88,6 @@ export default function RemoveBackgroundTab({
   images,
   onUpdateImages,
   onAddWarehouseItem,
-  onOpenMoodboard,
   showToast
 }: RemoveBackgroundTabProps) {
   // Active Image State
@@ -44,12 +95,30 @@ export default function RemoveBackgroundTab({
   const [activeImageTitle, setActiveImageTitle] = useState<string>('Фото декора');
   const [imageLoaded, setImageLoaded] = useState<boolean>(false);
   const [isProcessingCutout, setIsProcessingCutout] = useState<boolean>(false);
-  const [zoomScale, setZoomScale] = useState<number>(1.0);
+  const [zoomScale, setZoomScale] = useState<number>(0.9);
   const [isZoomPanelCollapsed, setIsZoomPanelCollapsed] = useState<boolean>(true);
+  const [isToolsRailCollapsed, setIsToolsRailCollapsed] = useState<boolean>(false);
+  const [isToolSettingsOpen, setIsToolSettingsOpen] = useState<boolean>(false);
   const cachedCutoutRef = useRef<string | null>(null);
 
-  // Tools & Edit Modes
-  const [activeTool, setActiveTool] = useState<'erase' | 'restore'>('erase');
+  // 4 Primary Tools: select (move), crop (default on load), erase, brush
+  const [activeTool, setActiveTool] = useState<EditorTool>('crop');
+
+  const handleToolSelect = (tool: EditorTool) => {
+    if (tool === 'cutout') {
+      setActiveTool('cutout');
+      setIsToolSettingsOpen(false);
+      return;
+    }
+    if (activeTool === tool) {
+      setIsToolSettingsOpen((prev) => !prev);
+    } else {
+      setActiveTool(tool);
+      setIsToolSettingsOpen(true);
+    }
+  };
+
+  // Brush / Eraser tool parameters
   const [brushSize, setBrushSize] = useState<number>(35);
   const [brushHardness, setBrushHardness] = useState<number>(80);
   const [tolerance, setTolerance] = useState<number>(35);
@@ -73,10 +142,6 @@ export default function RemoveBackgroundTab({
     startCropBottom: number;
   } | null>(null);
 
-  // View mode
-  const [showOriginalComparison, setShowOriginalComparison] = useState<boolean>(false);
-  const [activeRightTab, setActiveRightTab] = useState<'removal' | 'crop'>('removal');
-
   // Canvas Refs
   const containerRef = useRef<HTMLDivElement>(null);
   const cropContainerRef = useRef<HTMLDivElement>(null);
@@ -84,8 +149,11 @@ export default function RemoveBackgroundTab({
   const maskCanvasRef = useRef<HTMLCanvasElement>(null);
   const displayCanvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Mouse / Drawing State
+  // Mouse / Drawing / Pan State
   const [isMouseDown, setIsMouseDown] = useState<boolean>(false);
+  const [isPanning, setIsPanning] = useState<boolean>(false);
+  const isPanningRef = useRef<boolean>(false);
+  const panStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
 
   // Canvas Pan & Middle-Click Drag State
@@ -204,7 +272,6 @@ export default function RemoveBackgroundTab({
       const g = src[i + 1];
       const b = src[i + 2];
 
-      // Check distance against closest border sample
       let minDist = Infinity;
       for (const [br, bg, bb] of bgSamples) {
         const dist = Math.sqrt((r - br) ** 2 + (g - bg) ** 2 + (b - bb) ** 2);
@@ -232,7 +299,7 @@ export default function RemoveBackgroundTab({
     renderCompositeCanvas();
   }, [renderCompositeCanvas, saveMaskHistoryState]);
 
-  // Initialize Canvas with Image
+  // Initialize Canvas with Image (Crop is activated by default!)
   const initCanvas = useCallback((url: string) => {
     setImageLoaded(false);
     const img = new Image();
@@ -273,6 +340,16 @@ export default function RemoveBackgroundTab({
         saveMaskHistoryState(maskCtx, w, h);
       }
 
+      // Default active tool is CROP upon loading an image
+      setActiveTool('crop');
+      setCropLeft(0);
+      setCropRight(0);
+      setCropTop(0);
+      setCropBottom(0);
+      setCropRatioPreset('free');
+      setZoomScale(0.82);
+      setPanOffset({ x: 0, y: 0 });
+
       setImageLoaded(true);
     };
   }, [saveMaskHistoryState]);
@@ -289,7 +366,7 @@ export default function RemoveBackgroundTab({
     }
   }, [imageLoaded, renderCompositeCanvas]);
 
-  // Non-passive wheel event listener for smooth canvas zooming (always active)
+  // Non-passive wheel event listener for smooth canvas zooming
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -336,7 +413,7 @@ export default function RemoveBackgroundTab({
     }
   };
 
-  // Brush Paint / Erase on Mask Canvas
+  // Brush Paint / Erase on Mask Canvas with True Brush Hardness Falloff
   const lastBrushPosRef = useRef<{ x: number; y: number } | null>(null);
 
   const applyBrushToMask = (canvasX: number, canvasY: number, prevX?: number, prevY?: number) => {
@@ -348,31 +425,66 @@ export default function RemoveBackgroundTab({
 
     maskCtx.save();
 
-    if (activeTool === 'erase') {
+    const isErase = activeTool === 'erase';
+    if (isErase) {
       maskCtx.globalCompositeOperation = 'destination-out';
-      maskCtx.fillStyle = 'rgba(0,0,0,1)';
-      maskCtx.strokeStyle = 'rgba(0,0,0,1)';
-    } else if (activeTool === 'restore') {
+    } else {
       maskCtx.globalCompositeOperation = 'source-over';
-      maskCtx.fillStyle = '#FFFFFF';
-      maskCtx.strokeStyle = '#FFFFFF';
     }
 
-    maskCtx.lineWidth = brushSize;
-    maskCtx.lineCap = 'round';
-    maskCtx.lineJoin = 'round';
+    const radius = Math.max(1, brushSize / 2);
+    const hardnessFactor = Math.max(0.01, Math.min(1.0, brushHardness / 100));
 
-    if (prevX !== undefined && prevY !== undefined) {
+    if (hardnessFactor >= 0.96) {
+      // 100% Crisp / Hard Brush
+      maskCtx.fillStyle = isErase ? 'rgba(0,0,0,1)' : '#FFFFFF';
+      maskCtx.strokeStyle = isErase ? 'rgba(0,0,0,1)' : '#FFFFFF';
+      maskCtx.lineWidth = brushSize;
+      maskCtx.lineCap = 'round';
+      maskCtx.lineJoin = 'round';
+
+      if (prevX !== undefined && prevY !== undefined) {
+        maskCtx.beginPath();
+        maskCtx.moveTo(prevX, prevY);
+        maskCtx.lineTo(canvasX, canvasY);
+        maskCtx.stroke();
+      }
+
       maskCtx.beginPath();
-      maskCtx.moveTo(prevX, prevY);
-      maskCtx.lineTo(canvasX, canvasY);
-      maskCtx.stroke();
-    }
+      maskCtx.arc(canvasX, canvasY, radius, 0, Math.PI * 2);
+      maskCtx.fill();
+    } else {
+      // Soft / Feathered Brush using Radial Gradient stamp interpolation
+      const drawSoftStamp = (cx: number, cy: number) => {
+        const innerRadius = radius * hardnessFactor;
+        const grad = maskCtx.createRadialGradient(cx, cy, innerRadius, cx, cy, radius);
+        if (isErase) {
+          grad.addColorStop(0, 'rgba(0,0,0,1)');
+          grad.addColorStop(1, 'rgba(0,0,0,0)');
+        } else {
+          grad.addColorStop(0, 'rgba(255,255,255,1)');
+          grad.addColorStop(1, 'rgba(255,255,255,0)');
+        }
+        maskCtx.fillStyle = grad;
+        maskCtx.beginPath();
+        maskCtx.arc(cx, cy, radius, 0, Math.PI * 2);
+        maskCtx.fill();
+      };
 
-    // Always draw an arc at current position to ensure crisp round caps and single clicks work
-    maskCtx.beginPath();
-    maskCtx.arc(canvasX, canvasY, brushSize / 2, 0, Math.PI * 2);
-    maskCtx.fill();
+      if (prevX !== undefined && prevY !== undefined) {
+        const dist = Math.hypot(canvasX - prevX, canvasY - prevY);
+        const stepSize = Math.max(1.5, radius * 0.15);
+        const steps = Math.max(1, Math.ceil(dist / stepSize));
+        for (let i = 0; i <= steps; i++) {
+          const t = i / steps;
+          const sx = prevX + (canvasX - prevX) * t;
+          const sy = prevY + (canvasY - prevY) * t;
+          drawSoftStamp(sx, sy);
+        }
+      } else {
+        drawSoftStamp(canvasX, canvasY);
+      }
+    }
 
     maskCtx.restore();
     renderCompositeCanvas();
@@ -380,7 +492,7 @@ export default function RemoveBackgroundTab({
 
   // Canvas Container Middle-Click Pan Drag Event Handlers
   const handleContainerMouseDown = (e: React.MouseEvent) => {
-    if (e.button === 1) {
+    if (e.button === 1 || activeTool === 'select') {
       e.preventDefault();
       isMiddleDraggingRef.current = true;
       setIsMiddleDragging(true);
@@ -408,7 +520,7 @@ export default function RemoveBackgroundTab({
   // Canvas Container Touch Pan & Pinch Handlers (Mobile)
   const handleContainerTouchStart = (e: React.TouchEvent) => {
     if (draggingCropHandleRef.current) return;
-    if (activeRightTab === 'crop' && e.touches.length === 1 && e.target !== containerRef.current) {
+    if (e.touches.length === 1 && e.target !== containerRef.current && activeTool !== 'select') {
       return;
     }
     if (e.touches.length === 1) {
@@ -481,7 +593,7 @@ export default function RemoveBackgroundTab({
 
   // Canvas Mouse / Touch Event Handlers
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (e.button === 1) {
+    if (e.button === 1 || activeTool === 'select') {
       e.preventDefault();
       isMiddleDraggingRef.current = true;
       setIsMiddleDragging(true);
@@ -507,7 +619,7 @@ export default function RemoveBackgroundTab({
       height: rect.height / zoomScale
     });
 
-    if (activeTool === 'erase' || activeTool === 'restore') {
+    if (activeTool === 'erase' || activeTool === 'brush') {
       setIsMouseDown(true);
       lastBrushPosRef.current = { x, y };
       applyBrushToMask(x, y);
@@ -536,7 +648,7 @@ export default function RemoveBackgroundTab({
       height: rect.height / zoomScale
     });
 
-    if (isMouseDown && (activeTool === 'erase' || activeTool === 'restore')) {
+    if (isMouseDown && (activeTool === 'erase' || activeTool === 'brush')) {
       const scaleX = displayCanvasRef.current.width / rect.width;
       const scaleY = displayCanvasRef.current.height / rect.height;
       const x = (e.clientX - rect.left) * scaleX;
@@ -570,7 +682,7 @@ export default function RemoveBackgroundTab({
       setIsMiddleDragging(false);
     }
     lastBrushPosRef.current = null;
-    if (isMouseDown && (activeTool === 'erase' || activeTool === 'restore')) {
+    if (isMouseDown && (activeTool === 'erase' || activeTool === 'brush')) {
       setIsMouseDown(false);
       const maskCanvas = maskCanvasRef.current;
       if (maskCanvas) {
@@ -582,9 +694,14 @@ export default function RemoveBackgroundTab({
     }
   };
 
-  // Canvas Direct Touch Event Handlers (Support 1-finger brush & 2-finger pan/zoom)
+  // Canvas Direct Touch Event Handlers
   const handleCanvasTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
     if (e.touches.length === 1) {
+      if (activeTool === 'select') {
+        handleContainerTouchStart(e);
+        return;
+      }
+      e.stopPropagation();
       if (!displayCanvasRef.current) return;
       const rect = displayCanvasRef.current.getBoundingClientRect();
       const scaleX = displayCanvasRef.current.width / rect.width;
@@ -603,7 +720,7 @@ export default function RemoveBackgroundTab({
         height: rect.height / zoomScale
       });
 
-      if (activeRightTab === 'removal' && (activeTool === 'erase' || activeTool === 'restore')) {
+      if (activeTool === 'erase' || activeTool === 'brush') {
         setIsMouseDown(true);
         lastBrushPosRef.current = { x, y };
         applyBrushToMask(x, y);
@@ -626,30 +743,40 @@ export default function RemoveBackgroundTab({
   };
 
   const handleCanvasTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
-    if (e.touches.length === 1 && isMouseDown && (activeTool === 'erase' || activeTool === 'restore')) {
-      if (!displayCanvasRef.current) return;
-      const rect = displayCanvasRef.current.getBoundingClientRect();
-      const scaleX = displayCanvasRef.current.width / rect.width;
-      const scaleY = displayCanvasRef.current.height / rect.height;
+    if (e.touches.length === 1) {
+      if (activeTool === 'select') {
+        handleContainerTouchMove(e);
+        return;
+      }
+      e.stopPropagation();
+      if (isMouseDown && (activeTool === 'erase' || activeTool === 'brush')) {
+        if (!displayCanvasRef.current) return;
+        const rect = displayCanvasRef.current.getBoundingClientRect();
+        const scaleX = displayCanvasRef.current.width / rect.width;
+        const scaleY = displayCanvasRef.current.height / rect.height;
 
-      const touch = e.touches[0];
-      const x = (touch.clientX - rect.left) * scaleX;
-      const y = (touch.clientY - rect.top) * scaleY;
+        const touch = e.touches[0];
+        const x = (touch.clientX - rect.left) * scaleX;
+        const y = (touch.clientY - rect.top) * scaleY;
 
-      setCursorPos({
-        x: (touch.clientX - rect.left) / zoomScale,
-        y: (touch.clientY - rect.top) / zoomScale
-      });
+        setCursorPos({
+          x: (touch.clientX - rect.left) / zoomScale,
+          y: (touch.clientY - rect.top) / zoomScale
+        });
 
-      applyBrushToMask(x, y, lastBrushPosRef.current?.x, lastBrushPosRef.current?.y);
-      lastBrushPosRef.current = { x, y };
+        applyBrushToMask(x, y, lastBrushPosRef.current?.x, lastBrushPosRef.current?.y);
+        lastBrushPosRef.current = { x, y };
+      }
     } else if (e.touches.length >= 2) {
       handleContainerTouchMove(e);
     }
   };
 
   const handleCanvasTouchEnd = (e: React.TouchEvent<HTMLCanvasElement>) => {
-    if (isMouseDown && (activeTool === 'erase' || activeTool === 'restore')) {
+    if (e.touches.length === 0) {
+      e.stopPropagation();
+    }
+    if (isMouseDown && (activeTool === 'erase' || activeTool === 'brush')) {
       setIsMouseDown(false);
       lastBrushPosRef.current = null;
       setCursorPos(null);
@@ -664,7 +791,7 @@ export default function RemoveBackgroundTab({
     handleContainerTouchEnd(e);
   };
 
-  // Helper to load AI cutout mask into maskCanvas without destroying white foreground pixels
+  // Helper to load AI cutout mask into maskCanvas
   const applyCutoutDataToMask = (cutoutUrl: string, callback?: () => void) => {
     const origCanvas = originalCanvasRef.current;
     const maskCanvas = maskCanvasRef.current;
@@ -690,7 +817,6 @@ export default function RemoveBackgroundTab({
 
           for (let i = 0; i < cutoutData.length; i += 4) {
             const a = cutoutData[i + 3];
-            // Opaque subject foreground from AI (alpha >= 20) -> fill mask with white (keep region)
             if (a >= 20) {
               mDst[i] = 255;
               mDst[i + 1] = 255;
@@ -769,19 +895,20 @@ export default function RemoveBackgroundTab({
     }
   };
 
-  // File Upload Handler
+  // File Upload Handler (activates Crop by default)
   const handleUploadNewFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       const url = URL.createObjectURL(file);
       setActiveImageTitle(file.name.split('.')[0] || 'Декор');
       setOriginalImageUrl(url);
+      setActiveTool('crop');
       setCropRatioPreset('free');
       setCropLeft(0);
       setCropRight(0);
       setCropTop(0);
       setCropBottom(0);
-      showToast('Изображение загружено', 'Готово к вырезанию фона.', 'success');
+      showToast('Изображение загружено', 'Режим кадрирования активирован.', 'success');
     }
   };
 
@@ -809,13 +936,9 @@ export default function RemoveBackgroundTab({
     else if (preset === '16:9') targetAspect = 16 / 9;
     else if (preset === '9:16') targetAspect = 9 / 16;
 
-    // We want cropWidthPx / cropHeightPx = targetAspect
-    // cropWidthPx / cropHeightPx = (boxWidthPct * origW) / (boxHeightPct * origH) = (boxWidthPct / boxHeightPct) * imgAspect
-    // boxWidthPct / boxHeightPct = targetAspect / imgAspect
     const ratio = targetAspect / imgAspect;
 
     if (ratio <= 1) {
-      // Target is narrower/taller than the image -> use 100% height, center width
       const wPct = Math.min(100, Math.max(5, 100 * ratio));
       const horizMargin = (100 - wPct) / 2;
       setCropTop(0);
@@ -823,7 +946,6 @@ export default function RemoveBackgroundTab({
       setCropLeft(horizMargin);
       setCropRight(horizMargin);
     } else {
-      // Target is wider/shorter than the image -> use 100% width, center height
       const hPct = Math.min(100, Math.max(5, 100 / ratio));
       const vertMargin = (100 - hPct) / 2;
       setCropLeft(0);
@@ -833,7 +955,7 @@ export default function RemoveBackgroundTab({
     }
   };
 
-  // Crop Sliders & Pointer Drag (clean, no snap indicators or locking)
+  // Crop Sliders & Pointer Drag
   const handleCropChange = (type: 'left' | 'right' | 'top' | 'bottom', val: number) => {
     setCropRatioPreset('free');
     const clampedVal = Math.max(0, Math.min(48, val));
@@ -843,7 +965,7 @@ export default function RemoveBackgroundTab({
     if (type === 'bottom') setCropBottom(clampedVal);
   };
 
-  // Interactive Handle Pointer Dragging Event Handlers for Mobile & Desktop
+  // Interactive Handle Pointer Dragging Event Handlers
   const handleCropPointerDown = (handle: string, e: React.PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -935,7 +1057,6 @@ export default function RemoveBackgroundTab({
     const cropW = Math.max(10, Math.round(w - cropX - (cropRight / 100) * w));
     const cropH = Math.max(10, Math.round(h - cropY - (cropBottom / 100) * h));
 
-    // Temporary copy canvases
     const tempOrig = document.createElement('canvas');
     tempOrig.width = w;
     tempOrig.height = h;
@@ -971,10 +1092,15 @@ export default function RemoveBackgroundTab({
     setCropRight(0);
     setCropTop(0);
     setCropBottom(0);
+    setCropRatioPreset('free');
+    setIsToolSettingsOpen(false);
 
     renderCompositeCanvas();
     showToast('Кадрировано', 'Лишние края успешно обрезаны.', 'success');
   };
+
+  // Check if crop frame has active adjustment
+  const hasActiveCrop = cropLeft > 0 || cropRight > 0 || cropTop > 0 || cropBottom > 0;
 
   // Save Result to "Мои изображения" Gallery
   const handleSaveToGallery = () => {
@@ -1008,9 +1134,11 @@ export default function RemoveBackgroundTab({
     showToast('Скачивание', 'Файл сохранен на ваше устройство.', 'success');
   };
 
-  // Universal Apply action handler for quick floating bar & sidebar controls
-  const handleUniversalApply = () => {
-    if (activeRightTab === 'removal') {
+  // Apply Changes / Save mask state
+  const handleApplyChanges = () => {
+    if (activeTool === 'crop') {
+      handleApplyCrop();
+    } else {
       const origCanvas = originalCanvasRef.current;
       const maskCanvas = maskCanvasRef.current;
       if (origCanvas && maskCanvas) {
@@ -1020,9 +1148,7 @@ export default function RemoveBackgroundTab({
         }
       }
       renderCompositeCanvas();
-      showToast('Применено', 'Ручные корректировки успешно применены.', 'success');
-    } else if (activeRightTab === 'crop') {
-      handleApplyCrop();
+      showToast('Применено', 'Правки успешно применены.', 'success');
     }
   };
 
@@ -1065,7 +1191,7 @@ export default function RemoveBackgroundTab({
               Загрузите фото декора
             </h3>
             <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-              Выберите или перетащите фотографию любого объекта декора, мебели или флористики. Сервис автоматически сгладит края и подготовит файл без фона.
+              Выберите или перетащите фотографию любого объекта декора, мебели или флористики. Вы сможете легко кадрировать изображение и удалить фон.
             </p>
           </div>
 
@@ -1085,20 +1211,20 @@ export default function RemoveBackgroundTab({
         </div>
       ) : (
         /* 2. Main Editor Workspace Grid */
-        <div className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-2 sm:gap-4 items-stretch h-full min-h-0">
-          {/* LEFT / CENTER: Interactive Canvas Viewport (8 Columns on desktop, flex-1 on mobile) */}
-          <div className="lg:col-span-7 xl:col-span-8 bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[24px] sm:rounded-[28px] border border-zinc-200/50 dark:border-zinc-800/40 shadow-xs p-2 sm:p-2.5 flex flex-col items-center justify-between flex-1 min-h-[380px] sm:min-h-[480px] lg:min-h-[580px] h-full relative overflow-hidden">
+        <div className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-1.5 sm:gap-4 items-stretch h-full min-h-0 overflow-hidden">
+          {/* LEFT / CENTER: Interactive Canvas Viewport */}
+          <div className="lg:col-span-7 xl:col-span-7 bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-none sm:rounded-[28px] border-x-0 sm:border border-y sm:border-y border-zinc-200/50 dark:border-zinc-800/40 shadow-xs p-1 sm:p-2.5 flex flex-col items-center justify-between flex-1 min-h-0 lg:min-h-[540px] h-full relative overflow-hidden">
             
-            {/* Top Canvas Toolbar — Responsive labels for desktop / landscape tablets, compact icons for mobile */}
-            <div className="w-full flex items-center justify-between gap-1.5 pb-2.5 mb-2 border-b border-zinc-200/40 dark:border-zinc-800/40 shrink-0 overflow-x-auto no-scrollbar">
-              {/* LEFT SIDE: Upload, Undo, Redo, Original Compare */}
+            {/* Top Canvas Header Toolbar — Clean without 'Оригинал' button */}
+            <div className="w-full flex items-center justify-between gap-1.5 pb-1.5 sm:pb-2.5 mb-1 sm:mb-2 border-b border-zinc-200/40 dark:border-zinc-800/40 shrink-0 overflow-x-auto no-scrollbar px-1 sm:px-0">
+              {/* LEFT SIDE: Upload, Undo, Redo */}
               <div className="flex items-center gap-1.5 shrink-0">
                 <label
-                  className="px-2.5 sm:px-3 py-1.5 rounded-full bg-white/80 dark:bg-zinc-800/80 hover:bg-white text-zinc-700 dark:text-zinc-200 border border-zinc-200/60 dark:border-zinc-700/60 transition-all cursor-pointer shadow-2xs flex items-center gap-1.5 shrink-0 text-xs font-medium"
+                  className="px-3 sm:px-3.5 py-1.5 rounded-full bg-[var(--primary-accent,#8C52D0)] hover:opacity-95 text-white transition-all cursor-pointer shadow-sm flex items-center gap-1.5 shrink-0 text-xs font-semibold active:scale-95"
                   title="Загрузить другое фото"
                 >
-                  <Upload className="w-4 h-4 text-[var(--primary-accent,#8C52D0)] shrink-0" />
-                  <span className="hidden sm:inline whitespace-nowrap">Загрузить</span>
+                  <Upload className="w-4 h-4 text-white shrink-0" />
+                  <span className="inline whitespace-nowrap">Загрузить фото</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -1124,24 +1250,6 @@ export default function RemoveBackgroundTab({
                   title="Повторить действие"
                 >
                   <Redo2 className="w-4 h-4" />
-                </button>
-
-                <div className="w-[1px] h-4 bg-zinc-300 dark:bg-zinc-700 mx-0.5 shrink-0" />
-
-                <button
-                  onMouseDown={() => setShowOriginalComparison(true)}
-                  onMouseUp={() => setShowOriginalComparison(false)}
-                  onMouseLeave={() => setShowOriginalComparison(false)}
-                  className={`p-1.5 sm:px-2.5 sm:py-1.5 rounded-full transition-all cursor-pointer shadow-2xs shrink-0 flex items-center gap-1.5 text-xs font-medium border border-zinc-200/60 dark:border-zinc-700/60 ${
-                    showOriginalComparison
-                      ? 'text-white border-transparent'
-                      : 'bg-white/80 dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-200 hover:bg-white'
-                  }`}
-                  style={showOriginalComparison ? { background: 'var(--primary-accent, #8C52D0)' } : undefined}
-                  title="Удерживайте для просмотра оригинала"
-                >
-                  <Eye className="w-4 h-4 shrink-0 text-[var(--primary-accent,#8C52D0)]" />
-                  <span className="hidden md:inline whitespace-nowrap">Оригинал</span>
                 </button>
               </div>
 
@@ -1193,182 +1301,388 @@ export default function RemoveBackgroundTab({
               onTouchEnd={handleContainerTouchEnd}
               onTouchCancel={handleContainerTouchEnd}
               onDoubleClick={() => {
-                setZoomScale(1.0);
+                setZoomScale(0.85);
                 setPanOffset({ x: 0, y: 0 });
               }}
               onAuxClick={(e) => e.button === 1 && e.preventDefault()}
               onWheel={handleContainerWheel}
-              className={`w-full h-full flex-1 flex items-center justify-center relative rounded-xl sm:rounded-2xl overflow-hidden border border-zinc-200/50 dark:border-zinc-800/50 select-none touch-none bg-[radial-gradient(#d1d5db_1.2px,transparent_1.2px)] dark:bg-[radial-gradient(#3f3f46_1.2px,transparent_1.2px)] [background-size:16px_16px] bg-zinc-100 dark:bg-zinc-950 p-1.5 sm:p-2 ${
-                isMiddleDragging ? 'cursor-grabbing' : ''
+              className={`w-full h-full flex-1 min-h-0 flex items-center justify-center relative rounded-none sm:rounded-2xl overflow-hidden border-x-0 sm:border border-y sm:border-y border-zinc-200/50 dark:border-zinc-800/50 select-none touch-none bg-[radial-gradient(#d1d5db_1.2px,transparent_1.2px)] dark:bg-[radial-gradient(#3f3f46_1.2px,transparent_1.2px)] [background-size:16px_16px] bg-zinc-100 dark:bg-zinc-950 p-2 sm:p-4 pr-16 sm:pr-20 ${
+                isMiddleDragging || (activeTool === 'select' && isMouseDown) ? 'cursor-grabbing' : activeTool === 'select' ? 'cursor-grab' : ''
               }`}
             >
-              {/* Standalone Round Zoom Button & Vertical Scale Slider (Top Right Corner of Canvas Box) */}
-              <div className="absolute top-3 right-3 z-40 flex flex-col items-center w-10">
+              {/* VERTICAL TOOL RAIL DOCKED DIRECTLY TO BOTTOM-RIGHT EDGE OF CANVAS */}
+              <div className="absolute bottom-1 sm:bottom-3 right-0.5 sm:right-2.5 z-40 flex flex-col items-center bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md p-1 rounded-full border border-zinc-200/50 dark:border-zinc-800/40 shadow-xs gap-1 transition-all w-11">
+                {/* 1. Zoom Indicator / Button at Top */}
+                <div className="relative flex flex-col items-center">
+                  {/* Vertical Slider Panel expanding UPWARDS above zoom button */}
+                  <AnimatePresence>
+                    {!isZoomPanelCollapsed && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                        transition={{ duration: 0.15 }}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onMouseMove={(e) => e.stopPropagation()}
+                        onMouseUp={(e) => e.stopPropagation()}
+                        onTouchStart={(e) => e.stopPropagation()}
+                        onTouchMove={(e) => e.stopPropagation()}
+                        onTouchEnd={(e) => e.stopPropagation()}
+                        className="absolute bottom-full mb-1.5 w-11 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md py-2.5 rounded-full border border-zinc-200/60 dark:border-zinc-800/60 shadow-lg flex flex-col items-center gap-2 text-xs z-50 pointer-events-auto"
+                      >
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setZoomScale((prev) => Math.min(3.0, Math.round((prev + 0.1) * 10) / 10));
+                          }}
+                          title="Увеличить масштаб"
+                          className="p-1 rounded-full hover:bg-white/80 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer"
+                        >
+                          <ZoomIn className="w-3.5 h-3.5" />
+                        </button>
+
+                        <div 
+                          className="h-16 flex items-center justify-center my-0.5"
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onTouchStart={(e) => e.stopPropagation()}
+                        >
+                          <input
+                            type="range"
+                            min="50"
+                            max="300"
+                            step="10"
+                            value={Math.round(zoomScale * 100)}
+                            onChange={(e) => setZoomScale(Number(e.target.value) / 100)}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onMouseMove={(e) => e.stopPropagation()}
+                            onMouseUp={(e) => e.stopPropagation()}
+                            onTouchStart={(e) => e.stopPropagation()}
+                            onTouchMove={(e) => e.stopPropagation()}
+                            onTouchEnd={(e) => e.stopPropagation()}
+                            className="h-14 w-1.5 accent-[var(--primary-accent,#8C52D0)] cursor-pointer appearance-none bg-zinc-200/80 dark:bg-zinc-700/80 rounded-full [writing-mode:vertical-lr] [direction:rtl]"
+                            title="Слайдер масштаба"
+                          />
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setZoomScale((prev) => Math.max(0.5, Math.round((prev - 0.1) * 10) / 10));
+                          }}
+                          title="Уменьшить масштаб"
+                          className="p-1 rounded-full hover:bg-white/80 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer"
+                        >
+                          <ZoomOut className="w-3.5 h-3.5" />
+                        </button>
+
+                        {(zoomScale !== 1 || panOffset.x !== 0 || panOffset.y !== 0) && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setZoomScale(1.0);
+                              setPanOffset({ x: 0, y: 0 });
+                            }}
+                            title="Сбросить масштаб (1:1)"
+                            className="px-1.5 py-0.5 rounded-full bg-[var(--lavenderSoft)] text-[var(--primary-accent,#8C52D0)] dark:text-[var(--lavenderAccent)] text-[8px] font-bold hover:scale-105 transition-all cursor-pointer"
+                          >
+                            1:1
+                          </button>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsZoomPanelCollapsed(!isZoomPanelCollapsed)}
+                    title={`Масштаб: ${Math.round(zoomScale * 100)}%`}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                      !isZoomPanelCollapsed || zoomScale !== 1 || panOffset.x !== 0 || panOffset.y !== 0
+                        ? 'bg-[var(--lavenderSoft)] text-[var(--primary-accent,#8C52D0)] font-bold'
+                        : 'text-zinc-600 dark:text-zinc-300 hover:bg-white/80 dark:hover:bg-zinc-800'
+                    }`}
+                  >
+                    <ZoomIn className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Small Divider */}
+                <div className="w-6 h-[1px] bg-zinc-300/80 dark:bg-zinc-700/80 my-0.5" />
+
+                {/* Collapse / Expand Toggle Button */}
                 <button
-                  onClick={() => setIsZoomPanelCollapsed(!isZoomPanelCollapsed)}
-                  title={`Масштаб: ${Math.round(zoomScale * 100)}%`}
-                  className={`w-10 h-10 rounded-full backdrop-blur-md shadow-sm border transition-all cursor-pointer flex items-center justify-center hover:scale-105 active:scale-95 ${
-                    !isZoomPanelCollapsed || zoomScale !== 1 || panOffset.x !== 0 || panOffset.y !== 0
-                      ? 'text-white'
-                      : 'bg-white/60 dark:bg-zinc-900/60 text-zinc-700 dark:text-zinc-200 border-zinc-200/50 dark:border-zinc-800/50 hover:bg-white/90'
-                  }`}
-                  style={!isZoomPanelCollapsed || zoomScale !== 1 || panOffset.x !== 0 || panOffset.y !== 0 ? { background: 'var(--primary-accent, #8C52D0)', borderColor: 'var(--primary-accent, #8C52D0)' } : undefined}
+                  type="button"
+                  onClick={() => setIsToolsRailCollapsed(!isToolsRailCollapsed)}
+                  title={isToolsRailCollapsed ? 'Развернуть инструменты' : 'Свернуть инструменты'}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-white/50 dark:hover:bg-zinc-800/50 transition-all cursor-pointer"
                 >
-                  <ZoomIn className="w-4 h-4" />
+                  {isToolsRailCollapsed ? (
+                    <ChevronDown className="w-4 h-4" />
+                  ) : (
+                    <ChevronUp className="w-4 h-4" />
+                  )}
                 </button>
 
-                {/* Vertical Slider Panel directly below zoom button, matching width and fully rounded */}
-                {!isZoomPanelCollapsed && (
-                  <div className="mt-1.5 w-10 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-md py-3 rounded-full border border-zinc-200/50 dark:border-zinc-800/50 shadow-lg flex flex-col items-center gap-2 text-xs animate-fadeIn">
+                {/* When collapsed: show only current active tool icon */}
+                {isToolsRailCollapsed ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (activeTool !== 'cutout') {
+                        setIsToolSettingsOpen((prev) => !prev);
+                      }
+                    }}
+                    title="Нажмите чтобы настроить инструмент"
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-white shadow-xs cursor-pointer hover:scale-105 transition-transform"
+                    style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
+                  >
+                    {activeTool === 'select' && <Move className="w-4 h-4" />}
+                    {activeTool === 'crop' && <CropIcon className="w-4 h-4" />}
+                    {activeTool === 'erase' && <Eraser className="w-4 h-4" />}
+                    {activeTool === 'brush' && <Paintbrush className="w-4 h-4" />}
+                    {activeTool === 'cutout' && <CutoutScissorsIcon className="w-4 h-4" />}
+                  </button>
+                ) : (
+                  /* Expanded list of tools below zoom: Cutout (Scissors with sparkles), Select, Crop, Erase, Restore (Paintbrush) */
+                  <>
+                    {/* 1. Cutout (CutoutScissorsIcon / Удалить фон) */}
                     <button
-                      onClick={() => setZoomScale((prev) => Math.min(3.0, Math.round((prev + 0.1) * 10) / 10))}
-                      title="Увеличить масштаб"
-                      className="p-1 rounded-full hover:bg-white/80 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer"
+                      type="button"
+                      onClick={() => handleToolSelect('cutout')}
+                      title="Удалить фон"
+                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                        activeTool === 'cutout'
+                          ? 'text-white shadow-xs scale-105'
+                          : 'text-zinc-700 dark:text-zinc-300 hover:bg-white/60 dark:hover:bg-zinc-800/60'
+                      }`}
+                      style={activeTool === 'cutout' ? { background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' } : undefined}
                     >
-                      <ZoomIn className="w-3.5 h-3.5" />
+                      <CutoutScissorsIcon className="w-4 h-4" />
                     </button>
 
-                    {/* Scale Slider */}
-                    <div className="h-18 flex items-center justify-center my-0.5">
-                      <input
-                        type="range"
-                        min="50"
-                        max="300"
-                        step="10"
-                        value={Math.round(zoomScale * 100)}
-                        onChange={(e) => setZoomScale(Number(e.target.value) / 100)}
-                        className="h-16 w-1.5 accent-[var(--primary-accent,#8C52D0)] cursor-pointer appearance-none bg-zinc-200/80 dark:bg-zinc-700/80 rounded-full [writing-mode:vertical-lr] [direction:rtl]"
-                        title="Слайдер масштаба"
-                      />
+                    {/* 2. Crop */}
+                    <button
+                      type="button"
+                      onClick={() => handleToolSelect('crop')}
+                      title="Кадрирование (нажмите для пропорций)"
+                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                        activeTool === 'crop'
+                          ? 'text-white shadow-xs scale-105'
+                          : 'text-zinc-700 dark:text-zinc-300 hover:bg-white/60 dark:hover:bg-zinc-800/60'
+                      }`}
+                      style={activeTool === 'crop' ? { background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' } : undefined}
+                    >
+                      <CropIcon className="w-4 h-4" />
+                    </button>
+
+                    {/* 3. Eraser */}
+                    <button
+                      type="button"
+                      onClick={() => handleToolSelect('erase')}
+                      title="Ластик (нажмите для размера и жесткости)"
+                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                        activeTool === 'erase'
+                          ? 'text-white shadow-xs scale-105'
+                          : 'text-zinc-700 dark:text-zinc-300 hover:bg-white/60 dark:hover:bg-zinc-800/60'
+                      }`}
+                      style={activeTool === 'erase' ? { background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' } : undefined}
+                    >
+                      <Eraser className="w-4 h-4" />
+                    </button>
+
+                    {/* 4. Restore (Paintbrush) */}
+                    <button
+                      type="button"
+                      onClick={() => handleToolSelect('brush')}
+                      title="Восстановить (нажмите для размера)"
+                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                        activeTool === 'brush'
+                          ? 'text-white shadow-xs scale-105'
+                          : 'text-zinc-700 dark:text-zinc-300 hover:bg-white/60 dark:hover:bg-zinc-800/60'
+                      }`}
+                      style={activeTool === 'brush' ? { background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' } : undefined}
+                    >
+                      <Paintbrush className="w-4 h-4" />
+                    </button>
+
+                    {/* 5. Select / Move */}
+                    <button
+                      type="button"
+                      onClick={() => handleToolSelect('select')}
+                      title="Выделение / Перемещение (нажмите для параметров)"
+                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                        activeTool === 'select'
+                          ? 'text-white shadow-xs scale-105'
+                          : 'text-zinc-700 dark:text-zinc-300 hover:bg-white/60 dark:hover:bg-zinc-800/60'
+                      }`}
+                      style={activeTool === 'select' ? { background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' } : undefined}
+                    >
+                      <Move className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {/* COMPACT TOOL SETTINGS POPUP/FLYOUT ON CANVAS (SEMI-TRANSPARENT WITH BLUR) */}
+              <AnimatePresence>
+                {isToolSettingsOpen && activeTool !== 'cutout' && (
+                  <motion.div
+                    initial={{ opacity: 0, x: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    exit={{ opacity: 0, x: 10, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute bottom-1 sm:bottom-3 right-13 sm:right-15 z-50 w-72 max-w-[calc(100vw-55px)] bg-white/60 dark:bg-zinc-900/60 backdrop-blur-md rounded-2xl border border-zinc-200/50 dark:border-zinc-800/40 shadow-xl p-3.5 space-y-3"
+                  >
+                    {/* Header with Title and Close Button */}
+                    <div className="flex items-center justify-between pb-1.5 border-b border-zinc-200/50 dark:border-zinc-800/50">
+                      <div className="flex items-center gap-1.5">
+                        <div className="p-1 rounded-lg bg-[var(--lavenderSoft)] text-[var(--primary-accent,#8C52D0)]">
+                          {activeTool === 'select' && <Move className="w-3.5 h-3.5" />}
+                          {activeTool === 'crop' && <CropIcon className="w-3.5 h-3.5" />}
+                          {activeTool === 'erase' && <Eraser className="w-3.5 h-3.5" />}
+                          {activeTool === 'brush' && <Paintbrush className="w-3.5 h-3.5" />}
+                        </div>
+                        <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                          {activeTool === 'select' && 'Выделение'}
+                          {activeTool === 'crop' && 'Кадрирование'}
+                          {activeTool === 'erase' && 'Ластик'}
+                          {activeTool === 'brush' && 'Восстановить'}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsToolSettingsOpen(false)}
+                        className="p-1 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100/60 dark:hover:bg-zinc-800/60 transition-colors cursor-pointer"
+                        title="Закрыть настройки"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     </div>
 
-                    <button
-                      onClick={() => setZoomScale((prev) => Math.max(0.5, Math.round((prev - 0.1) * 10) / 10))}
-                      title="Уменьшить масштаб"
-                      className="p-1 rounded-full hover:bg-white/80 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer"
-                    >
-                      <ZoomOut className="w-3.5 h-3.5" />
-                    </button>
-
-                    {(zoomScale !== 1 || panOffset.x !== 0 || panOffset.y !== 0) && (
-                      <button
-                        onClick={() => {
-                          setZoomScale(1.0);
-                          setPanOffset({ x: 0, y: 0 });
-                        }}
-                        title="Сбросить масштаб и смещение (1:1)"
-                        className="mt-1 px-1.5 py-0.5 rounded-full bg-[var(--lavenderSoft)] text-[var(--primary-accent,#8C52D0)] dark:text-[var(--lavenderAccent)] text-[9px] font-bold hover:scale-105 transition-all cursor-pointer"
-                      >
-                        1:1
-                      </button>
+                    {/* Content depending on activeTool */}
+                    {activeTool === 'crop' && (
+                      <div className="space-y-2.5 text-xs">
+                        <div className="text-[11px] font-medium text-zinc-600 dark:text-zinc-400">
+                          Пропорции кадра
+                        </div>
+                        {/* 5 Compact Rectangular Buttons in a Single Row */}
+                        <div className="grid grid-cols-5 gap-1 w-full">
+                          {[
+                            { id: '1:1', label: '1:1' },
+                            { id: '4:3', label: '4:3' },
+                            { id: '3:4', label: '3:4' },
+                            { id: '16:9', label: '16:9' },
+                            { id: '9:16', label: '9:16' }
+                          ].map((p) => (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => {
+                                handleApplyCropRatioPreset(p.id as any);
+                                setIsToolSettingsOpen(false);
+                              }}
+                              className={`py-2 px-0.5 text-[11px] rounded-lg border transition-all cursor-pointer text-center font-medium ${
+                                cropRatioPreset === p.id
+                                  ? 'bg-[var(--lavenderSoft)] text-[var(--primary-accent,#8C52D0)] dark:text-[var(--lavenderAccent)] border-[var(--primary-accent,#8C52D0)] font-bold shadow-2xs'
+                                  : 'bg-white/60 dark:bg-zinc-800/60 border-zinc-200/50 dark:border-zinc-700/50 text-zinc-700 dark:text-zinc-200 hover:bg-white dark:hover:bg-zinc-700'
+                              }`}
+                            >
+                              {p.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     )}
-                  </div>
+
+                    {activeTool === 'erase' && (
+                      <div className="space-y-2.5 text-xs">
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-[11px] text-zinc-700 dark:text-zinc-300 font-medium">
+                            <span>Размер кисти</span>
+                            <span className="font-semibold text-[var(--primary-accent,#8C52D0)]">{brushSize} px</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="5"
+                            max="120"
+                            value={brushSize}
+                            onChange={(e) => setBrushSize(Number(e.target.value))}
+                            className="w-full accent-[var(--primary-accent,#8C52D0)] cursor-pointer h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-[11px] text-zinc-700 dark:text-zinc-300 font-medium">
+                            <span>Жесткость</span>
+                            <span className="font-semibold text-[var(--primary-accent,#8C52D0)]">{brushHardness}%</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="10"
+                            max="100"
+                            value={brushHardness}
+                            onChange={(e) => setBrushHardness(Number(e.target.value))}
+                            className="w-full accent-[var(--primary-accent,#8C52D0)] cursor-pointer h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {activeTool === 'brush' && (
+                      <div className="space-y-2.5 text-xs">
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-[11px] text-zinc-700 dark:text-zinc-300 font-medium">
+                            <span>Размер кисти</span>
+                            <span className="font-semibold text-[var(--primary-accent,#8C52D0)]">{brushSize} px</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="5"
+                            max="120"
+                            value={brushSize}
+                            onChange={(e) => setBrushSize(Number(e.target.value))}
+                            className="w-full accent-[var(--primary-accent,#8C52D0)] cursor-pointer h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-[11px] text-zinc-700 dark:text-zinc-300 font-medium">
+                            <span>Жесткость</span>
+                            <span className="font-semibold text-[var(--primary-accent,#8C52D0)]">{brushHardness}%</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="10"
+                            max="100"
+                            value={brushHardness}
+                            onChange={(e) => setBrushHardness(Number(e.target.value))}
+                            className="w-full accent-[var(--primary-accent,#8C52D0)] cursor-pointer h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {activeTool === 'select' && (
+                      <div className="space-y-2 text-xs">
+                        <p className="text-[11px] text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                          Перемещайте объект по холсту пальцем или курсором мыши.
+                        </p>
+                      </div>
+                    )}
+                  </motion.div>
                 )}
-              </div>
-
-              {/* Floating Quick Action Overlay Bar directly over Canvas bottom */}
-              <div className="absolute bottom-3 left-3 right-14 sm:right-auto sm:left-1/2 sm:-translate-x-1/2 z-40 max-w-[calc(100%-4.5rem)] sm:max-w-md h-11 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-md px-2.5 sm:px-3 rounded-full border border-white/50 dark:border-zinc-700/50 shadow-lg flex items-center overflow-x-auto no-scrollbar">
-                {/* TAB 1: REMOVAL QUICK ACTIONS */}
-                {activeRightTab === 'removal' && (
-                  <div className="flex items-center justify-between w-full gap-1 sm:gap-2">
-                    <button
-                      onClick={handleCutout}
-                      disabled={isProcessingCutout}
-                      className="px-3 sm:px-3.5 py-1.5 rounded-full text-white text-xs font-semibold flex items-center gap-1.5 shrink-0 cursor-pointer shadow-md active:scale-95 disabled:opacity-50 hover:opacity-95 transition-all"
-                      style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
-                      title="Вырезать объект"
-                    >
-                      {isProcessingCutout ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <Scissors className="w-3.5 h-3.5" />
-                      )}
-                      <span className="whitespace-nowrap">Вырезать</span>
-                    </button>
-
-                    <div className="w-[1px] h-4 bg-zinc-300 dark:bg-zinc-700 shrink-0 mx-0.5" />
-
-                    {/* Centered Eraser and Brush icons */}
-                    <div className="flex-1 flex items-center justify-center gap-2 sm:gap-3">
-                      <button
-                        onClick={() => setActiveTool('erase')}
-                        title="Ластик — стереть фон / лишнее"
-                        className={`p-1.5 sm:px-2.5 sm:py-1.5 rounded-full text-xs transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
-                          activeTool === 'erase'
-                            ? 'bg-[var(--lavenderSoft)] text-[var(--primary-accent,#8C52D0)] dark:text-[var(--lavenderAccent)] font-semibold shadow-2xs scale-105'
-                            : 'hover:bg-zinc-200/60 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
-                        }`}
-                      >
-                        <Eraser className="w-4 h-4 sm:w-3.5 sm:h-3.5 shrink-0" />
-                        <span className="hidden sm:inline text-[11px] font-medium whitespace-nowrap">Ластик</span>
-                      </button>
-
-                      <button
-                        onClick={() => setActiveTool('restore')}
-                        title="Кисть — восстановить детали"
-                        className={`p-1.5 sm:px-2.5 sm:py-1.5 rounded-full text-xs transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
-                          activeTool === 'restore'
-                            ? 'bg-[var(--lavenderSoft)] text-[var(--primary-accent,#8C52D0)] dark:text-[var(--lavenderAccent)] font-semibold shadow-2xs scale-105'
-                            : 'hover:bg-zinc-200/60 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
-                        }`}
-                      >
-                        <Paintbrush className="w-4 h-4 sm:w-3.5 sm:h-3.5 shrink-0" />
-                        <span className="hidden sm:inline text-[11px] font-medium whitespace-nowrap">Кисть</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* TAB 2: CROP QUICK ACTIONS (Aspect Ratios) */}
-                {activeRightTab === 'crop' && (
-                  <div className="w-full flex items-center justify-start sm:justify-center gap-1 sm:gap-1.5 px-0.5 overflow-x-auto no-scrollbar py-0.5">
-                    {[
-                      { id: 'free', label: 'Свободно' },
-                      { id: '1:1', label: '1:1' },
-                      { id: '4:3', label: '4:3' },
-                      { id: '3:4', label: '3:4' },
-                      { id: '16:9', label: '16:9' },
-                      { id: '9:16', label: '9:16' }
-                    ].map((preset) => (
-                      <button
-                        key={preset.id}
-                        onClick={() => handleApplyCropRatioPreset(preset.id as any)}
-                        className={`px-2.5 sm:px-3 py-1 rounded-full text-[11px] shrink-0 cursor-pointer shadow-2xs active:scale-95 transition-all whitespace-nowrap ${
-                          cropRatioPreset === preset.id
-                            ? 'bg-[var(--lavenderSoft)] text-[var(--primary-accent,#8C52D0)] dark:text-[var(--lavenderAccent)] font-bold shadow-xs'
-                            : 'bg-white/80 dark:bg-zinc-800/80 hover:bg-white text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60 font-semibold'
-                        }`}
-                      >
-                        {preset.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Standalone Round Apply Button (Bottom Right Corner) */}
-              <button
-                onClick={handleUniversalApply}
-                disabled={isProcessingCutout}
-                title="Применить изменения"
-                className="absolute bottom-3 right-3 z-40 w-11 h-11 p-0 hover:opacity-95 text-white rounded-full shadow-lg flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
-                style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
-              >
-                <Check className="w-4 h-4 text-white" />
-              </button>
+              </AnimatePresence>
 
               {/* AI Processing Scanner Effect on viewport canvas when cutting out */}
               {isProcessingCutout && (
                 <div className="absolute inset-0 z-30 rounded-xl sm:rounded-2xl overflow-hidden pointer-events-none bg-black/25 backdrop-blur-[1px] flex flex-col justify-between">
-                  {/* Moving Laser Beam */}
                   <div className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#985DE0] to-transparent shadow-[0_0_20px_#8C52D0,0_0_35px_#8C52D0] animate-scanline">
                     <div className="w-full h-16 -mt-16 bg-gradient-to-b from-transparent via-[#8C52D0]/30 to-transparent" />
                   </div>
-
-                  {/* Scanner Overlay Grid Lines */}
                   <div className="absolute inset-0 bg-[linear-gradient(to_right,#8c52d020_1px,transparent_1px),linear-gradient(to_bottom,#8c52d020_1px,transparent_1px)] bg-[size:20px_20px] opacity-70" />
-
-                  {/* Center Status Badge - Fixed size on screen regardless of zoom */}
                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-zinc-900/90 text-white text-xs font-semibold px-4 py-2.5 rounded-full shadow-2xl border border-[var(--lavenderAccent)]/60 backdrop-blur-md flex items-center gap-2.5 animate-pulse z-40">
                     <Loader2 className="w-4 h-4 text-purple-300 animate-spin" />
                     <span>Вырезание объекта и удаление фона...</span>
@@ -1400,15 +1714,17 @@ export default function RemoveBackgroundTab({
                   onTouchMove={handleCanvasTouchMove}
                   onTouchEnd={handleCanvasTouchEnd}
                   onTouchCancel={handleCanvasTouchEnd}
-                  className={`max-w-full max-h-[480px] object-contain shadow-lg rounded-xl touch-none ${
-                    activeTool === 'erase' || activeTool === 'restore'
+                  className={`max-w-full max-h-[400px] sm:max-h-[460px] object-contain shadow-lg rounded-xl touch-none ${
+                    activeTool === 'erase' || activeTool === 'brush'
                       ? 'cursor-none'
+                      : activeTool === 'select'
+                      ? 'cursor-grab'
                       : 'cursor-default'
                   }`}
                 />
 
-                {/* FULLY INTERACTIVE TOUCH & MOUSE CANVASCROP FRAME - OUTWARD CONTROLS */}
-                {activeRightTab === 'crop' && (
+                {/* FULLY INTERACTIVE TOUCH & MOUSE CROP FRAME */}
+                {activeTool === 'crop' && (
                   <div
                     ref={cropContainerRef}
                     onPointerMove={handleCropPointerMove}
@@ -1467,8 +1783,8 @@ export default function RemoveBackgroundTab({
                         <span>В: {Math.round(100 - cropTop - cropBottom)}%</span>
                       </div>
 
-                      {/* OUTWARD CORNER HANDLES WITH ENLARGED TOUCH TARGETS (44px+) */}
-                      {/* Top-Left Corner Handle */}
+                      {/* CORNER HANDLES */}
+                      {/* Top-Left */}
                       <div
                         onPointerDown={(e) => handleCropPointerDown('tl', e)}
                         className="absolute -top-5.5 -left-5.5 w-11 h-11 flex items-center justify-center cursor-nwse-resize z-30 touch-none select-none"
@@ -1482,7 +1798,7 @@ export default function RemoveBackgroundTab({
                         </div>
                       </div>
 
-                      {/* Top-Right Corner Handle */}
+                      {/* Top-Right */}
                       <div
                         onPointerDown={(e) => handleCropPointerDown('tr', e)}
                         className="absolute -top-5.5 -right-5.5 w-11 h-11 flex items-center justify-center cursor-nesw-resize z-30 touch-none select-none"
@@ -1496,7 +1812,7 @@ export default function RemoveBackgroundTab({
                         </div>
                       </div>
 
-                      {/* Bottom-Left Corner Handle */}
+                      {/* Bottom-Left */}
                       <div
                         onPointerDown={(e) => handleCropPointerDown('bl', e)}
                         className="absolute -bottom-5.5 -left-5.5 w-11 h-11 flex items-center justify-center cursor-nesw-resize z-30 touch-none select-none"
@@ -1510,7 +1826,7 @@ export default function RemoveBackgroundTab({
                         </div>
                       </div>
 
-                      {/* Bottom-Right Corner Handle */}
+                      {/* Bottom-Right */}
                       <div
                         onPointerDown={(e) => handleCropPointerDown('br', e)}
                         className="absolute -bottom-5.5 -right-5.5 w-11 h-11 flex items-center justify-center cursor-nwse-resize z-30 touch-none select-none"
@@ -1524,8 +1840,8 @@ export default function RemoveBackgroundTab({
                         </div>
                       </div>
 
-                      {/* OUTWARD EDGE MIDDLE HANDLES WITH ENLARGED TOUCH TARGETS */}
-                      {/* Top Middle Handle */}
+                      {/* EDGE MIDDLE HANDLES */}
+                      {/* Top */}
                       <div
                         onPointerDown={(e) => handleCropPointerDown('top', e)}
                         className="absolute -top-4 left-1/2 -translate-x-1/2 w-14 h-9 flex items-center justify-center cursor-ns-resize z-30 touch-none select-none"
@@ -1537,7 +1853,7 @@ export default function RemoveBackgroundTab({
                         />
                       </div>
 
-                      {/* Bottom Middle Handle */}
+                      {/* Bottom */}
                       <div
                         onPointerDown={(e) => handleCropPointerDown('bottom', e)}
                         className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-14 h-9 flex items-center justify-center cursor-ns-resize z-30 touch-none select-none"
@@ -1549,7 +1865,7 @@ export default function RemoveBackgroundTab({
                         />
                       </div>
 
-                      {/* Left Middle Handle */}
+                      {/* Left */}
                       <div
                         onPointerDown={(e) => handleCropPointerDown('left', e)}
                         className="absolute top-1/2 -left-4 -translate-y-1/2 w-9 h-14 flex items-center justify-center cursor-ew-resize z-30 touch-none select-none"
@@ -1561,7 +1877,7 @@ export default function RemoveBackgroundTab({
                         />
                       </div>
 
-                      {/* Right Middle Handle */}
+                      {/* Right */}
                       <div
                         onPointerDown={(e) => handleCropPointerDown('right', e)}
                         className="absolute top-1/2 -right-4 -translate-y-1/2 w-9 h-14 flex items-center justify-center cursor-ew-resize z-30 touch-none select-none"
@@ -1576,8 +1892,8 @@ export default function RemoveBackgroundTab({
                   </div>
                 )}
 
-                {/* Pixel-Perfect Precision Eraser / Brush Cursor Overlay with Zero Margin Distortion */}
-                {cursorPos && (activeTool === 'erase' || activeTool === 'restore') && activeRightTab === 'removal' && (
+                {/* Precision Eraser / Brush Cursor Overlay */}
+                {cursorPos && (activeTool === 'erase' || activeTool === 'brush') && (
                   <div
                     className="pointer-events-none absolute z-50 transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center"
                     style={{
@@ -1587,7 +1903,6 @@ export default function RemoveBackgroundTab({
                       height: Math.max(4, (brushSize / (displayCanvasRef.current?.width || 1)) * (canvasDisplayRect.width || 1))
                     }}
                   >
-                    {/* Exact Erasure / Restore Boundary Circle with inner/outer high contrast */}
                     <div
                       className={`w-full h-full rounded-full transition-colors ${
                         activeTool === 'erase'
@@ -1595,7 +1910,6 @@ export default function RemoveBackgroundTab({
                           : 'border-[1.5px] border-[var(--primary-accent,#8C52D0)] bg-[var(--lavenderSoft)]/50 shadow-[0_0_0_1px_rgba(0,0,0,0.85)]'
                       }`}
                     />
-                    {/* Center Precision Target Micro-Crosshair */}
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                       <div className="w-2 h-[1px] bg-black/90 shadow-[0_0_1px_#fff]" />
                       <div className="h-2 w-[1px] bg-black/90 shadow-[0_0_1px_#fff] absolute" />
@@ -1607,321 +1921,368 @@ export default function RemoveBackgroundTab({
             </div>
           </div>
 
-          {/* Standalone Mobile Instruments Toolbar Panel (Icon on the left, label next to it) */}
-          <div className="lg:hidden bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-full border border-zinc-200/50 dark:border-zinc-800/40 shadow-xs p-1.5 flex items-center justify-between gap-2 shrink-0 mt-2">
-            {[
-              { id: 'removal', title: 'Очистка фона', label: 'Вырезать', icon: <Scissors className="w-4 h-4 shrink-0" /> },
-              { id: 'crop', title: 'Кадрирование полей', label: 'Кадрировать', icon: <CropIcon className="w-4 h-4 shrink-0" /> }
-            ].map((tab) => (
+          {/* MOBILE ONLY: Single Action Button Row (for crop / cutout / select) */}
+          {(activeTool === 'crop' || activeTool === 'cutout' || activeTool === 'select') && (
+            <div className="lg:hidden w-full px-2.5 sm:px-3 pt-1 pb-[max(0.4rem,env(safe-area-inset-bottom))] flex items-center gap-2 shrink-0 z-30">
               <button
-                key={tab.id}
+                type="button"
                 onClick={() => {
-                  setActiveRightTab(tab.id as 'removal' | 'crop');
+                  if (activeTool === 'crop') {
+                    handleApplyCrop();
+                  } else if (activeTool === 'select') {
+                    setZoomScale(0.9);
+                    setPanOffset({ x: 0, y: 0 });
+                    showToast('Центрировано', 'Объект отцентрирован по холсту.', 'info');
+                  } else {
+                    handleCutout();
+                  }
                 }}
-                title={tab.title}
-                className={`flex-1 py-2.5 px-3 rounded-full flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                  activeRightTab === tab.id
-                    ? 'bg-[var(--lavenderSoft)] text-[var(--primary-accent,#8C52D0)] dark:text-[var(--lavenderAccent)] font-semibold shadow-2xs'
-                    : 'bg-white/50 dark:bg-zinc-800/50 text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-white/80 border border-zinc-200/40 dark:border-zinc-700/40 font-medium'
-                }`}
+                disabled={isProcessingCutout}
+                className="w-full py-2.5 sm:py-3 px-4 rounded-full text-white text-xs sm:text-sm font-semibold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 hover:opacity-95 disabled:opacity-60"
+                style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
               >
-                {tab.icon}
-                <span className="text-xs font-semibold whitespace-nowrap">{tab.label}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* RIGHT: Precision Tool Parameters Sidebar (Hidden on mobile and tablet to prevent scrolling) */}
-          <div className="hidden lg:block lg:col-span-5 xl:col-span-4 bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[28px] sm:rounded-[32px] border border-zinc-200/50 dark:border-zinc-800/40 shadow-xs p-4 sm:p-5 space-y-4">
-            {/* Desktop Tool Selector Tabs Header */}
-            <div className="hidden lg:flex items-center justify-between gap-1 p-1.5 bg-white/50 dark:bg-zinc-800/50 backdrop-blur-md rounded-full border border-zinc-200/40 dark:border-zinc-700/40">
-              {[
-                { id: 'removal', title: 'Очистка фона', label: 'Вырезать', icon: <Scissors className="w-4 h-4" /> },
-                { id: 'crop', title: 'Кадрирование', label: 'Кадрировать', icon: <CropIcon className="w-4 h-4" /> }
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => {
-                    setActiveRightTab(tab.id as 'removal' | 'crop');
-                  }}
-                  title={tab.title}
-                  className={`flex-1 py-2 px-1 rounded-full flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
-                    activeRightTab === tab.id
-                      ? 'bg-[var(--lavenderSoft)] text-[var(--primary-accent,#8C52D0)] dark:text-[var(--lavenderAccent)] font-semibold shadow-2xs'
-                      : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-white/60 dark:hover:bg-zinc-700/50'
-                  }`}
-                >
-                  {tab.icon}
-                  <span className="text-[10px] xl:text-[11px] font-semibold leading-none tracking-tight text-center">{tab.label}</span>
-                </button>
-              ))}
-            </div>
-            {/* Active Tool Section Title */}
-            <div className="flex items-center justify-between pb-3 border-b border-zinc-200/50 dark:border-zinc-800/50">
-              <div className="flex items-center gap-2">
-                <div
-                  className="p-2 rounded-xl text-[var(--primary-accent,#8C52D0)] bg-[var(--lavenderSoft)]"
-                >
-                  {activeRightTab === 'removal' && <Scissors className="w-4 h-4" />}
-                  {activeRightTab === 'crop' && <CropIcon className="w-4 h-4" />}
-                </div>
-                <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                  {activeRightTab === 'removal' && 'Очистка и вырезание фона'}
-                  {activeRightTab === 'crop' && 'Кадрирование полей'}
+                {isProcessingCutout ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : activeTool === 'crop' ? (
+                  <CropIcon className="w-4 h-4" />
+                ) : activeTool === 'select' ? (
+                  <Maximize2 className="w-4 h-4" />
+                ) : (
+                  <CutoutScissorsIcon className="w-4 h-4" />
+                )}
+                <span className="whitespace-nowrap font-bold">
+                  {isProcessingCutout
+                    ? 'Вырезание...'
+                    : activeTool === 'crop'
+                    ? 'Обрезать'
+                    : activeTool === 'select'
+                    ? 'Центрировать объект'
+                    : 'Удалить фон'}
                 </span>
-              </div>
+              </button>
             </div>
+          )}
 
-            {/* TAB 1: UNIFIED AI CUTOUT & MANUAL CORRECTION */}
-            {activeRightTab === 'removal' && (
-              <div className="space-y-4 pt-1 animate-fadeIn">
-                {/* Primary Direct Cut Out Button */}
-                <button
-                  onClick={handleCutout}
-                  disabled={isProcessingCutout}
-                  className="w-full py-3 px-4 rounded-full hover:opacity-95 disabled:opacity-60 text-white text-xs sm:text-sm font-semibold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
-                  style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
-                >
-                  {isProcessingCutout ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Scissors className="w-4 h-4" />
-                  )}
-                  <span>{isProcessingCutout ? 'Вырезание объекта...' : 'Вырезать'}</span>
-                </button>
-
-                {/* Manual Refinement Section */}
-                <div className="pt-3 border-t border-zinc-200/50 dark:border-zinc-800/50 space-y-3">
-                  <div className="text-xs sm:text-sm font-semibold text-zinc-800 dark:text-zinc-200">
-                    Ручная корректировка
-                  </div>
-
-                  {/* Tool Buttons: Eraser and Brush filling the 2 columns evenly */}
-                  <div className="grid grid-cols-2 gap-2 py-1">
-                    <button
-                      onClick={() => setActiveTool('erase')}
-                      title="Ластик — стереть фон или лишние фрагменты"
-                      className={`py-2.5 px-3 rounded-2xl flex items-center justify-center gap-2 text-xs font-semibold transition-all cursor-pointer ${
-                        activeTool === 'erase'
-                          ? 'bg-[var(--lavenderSoft)] text-[var(--primary-accent,#8C52D0)] dark:text-[var(--lavenderAccent)] border border-[var(--primary-accent,#8C52D0)]/40 shadow-xs scale-[1.02]'
-                          : 'bg-white/60 dark:bg-zinc-800/60 border border-zinc-200/60 dark:border-zinc-700/60 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
-                      }`}
-                    >
-                      <Eraser className="w-4 h-4" />
-                      <span>Ластик</span>
-                    </button>
-
-                    <button
-                      onClick={() => setActiveTool('restore')}
-                      title="Кисть — восстановить детали изображения"
-                      className={`py-2.5 px-3 rounded-2xl flex items-center justify-center gap-2 text-xs font-semibold transition-all cursor-pointer ${
-                        activeTool === 'restore'
-                          ? 'bg-[var(--lavenderSoft)] text-[var(--primary-accent,#8C52D0)] dark:text-[var(--lavenderAccent)] border border-[var(--primary-accent,#8C52D0)]/40 shadow-xs scale-[1.02]'
-                          : 'bg-white/60 dark:bg-zinc-800/60 border border-zinc-200/60 dark:border-zinc-700/60 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
-                      }`}
-                    >
-                      <Paintbrush className="w-4 h-4" />
-                      <span>Кисть</span>
-                    </button>
-                  </div>
-
-                  {/* Sliders */}
-                  {(activeTool === 'erase' || activeTool === 'restore') && (
-                    <div className="space-y-3 pt-1">
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-xs text-zinc-700 dark:text-zinc-300 font-medium">
-                          <span>Размер кисти</span>
-                          <span>{brushSize} px</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="5"
-                          max="120"
-                          value={brushSize}
-                          onChange={(e) => setBrushSize(Number(e.target.value))}
-                          className="w-full accent-[var(--primary-accent,#8C52D0)] cursor-pointer"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-xs text-zinc-700 dark:text-zinc-300 font-medium">
-                          <span>Жесткость краев</span>
-                          <span>{brushHardness}%</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="10"
-                          max="100"
-                          value={brushHardness}
-                          onChange={(e) => setBrushHardness(Number(e.target.value))}
-                          className="w-full accent-[var(--primary-accent,#8C52D0)] cursor-pointer"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="space-y-1 pt-1">
-                    <div className="flex justify-between text-xs text-zinc-700 dark:text-zinc-300 font-medium">
-                      <span>Чувствительность (Допуск)</span>
-                      <span>{tolerance}%</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="5"
-                      max="90"
-                      value={tolerance}
-                      onChange={(e) => {
-                        const val = Number(e.target.value);
-                        setTolerance(val);
-                        const origCanvas = originalCanvasRef.current;
-                        const maskCanvas = maskCanvasRef.current;
-                        if (origCanvas && maskCanvas) {
-                          performAutoBackgroundRemoval(origCanvas, maskCanvas, val);
-                        }
-                      }}
-                      className="w-full accent-[var(--primary-accent,#8C52D0)] cursor-pointer"
-                    />
-                  </div>
-                </div>
-
-                {/* Reset Action Button */}
-                <div className="pt-2 border-t border-zinc-200/50 dark:border-zinc-800/50">
+          {/* DESKTOP RIGHT SIDEBAR: Primary Action Row at Top, Tool Selector & Dynamic Settings */}
+          <div className="hidden lg:flex lg:col-span-5 xl:col-span-5 bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[28px] sm:rounded-[32px] border border-zinc-200/50 dark:border-zinc-800/40 shadow-xs p-4 sm:p-5 flex-col justify-start space-y-4">
+            
+            {/* TOP BLOCK: MAIN DYNAMIC ACTION BUTTON + 5 TOOLS SELECTOR + DYNAMIC SETTINGS */}
+            <div className="space-y-4">
+              
+              {/* 1. TOP MAIN ACTION ROW: 1 Large Action Button for Crop / Cutout / Select */}
+              {(activeTool === 'crop' || activeTool === 'cutout' || activeTool === 'select') && (
+                <div className="w-full">
                   <button
-                    onClick={handleResetToOriginal}
-                    className="w-full py-2.5 px-4 rounded-full bg-white/80 dark:bg-zinc-800/80 hover:bg-white text-zinc-700 dark:text-zinc-200 border border-zinc-200/80 dark:border-zinc-700/80 text-xs font-semibold shadow-2xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    <span>Сбросить до оригинала</span>
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* TAB 2: CROP TOOL (Кадрирование) */}
-            {activeRightTab === 'crop' && (
-              <div className="space-y-4 pt-1 animate-fadeIn">
-                {/* Aspect Ratio Presets */}
-                <div className="space-y-1.5">
-                  <span className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal block">
-                    Пропорции кадра:
-                  </span>
-                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
-                    {[
-                      { id: 'free', label: 'Свободно' },
-                      { id: '1:1', label: '1 : 1' },
-                      { id: '4:3', label: '4 : 3' },
-                      { id: '3:4', label: '3 : 4' },
-                      { id: '16:9', label: '16 : 9' },
-                      { id: '9:16', label: '9 : 16' }
-                    ].map((p) => (
-                      <button
-                        key={p.id}
-                        onClick={() => handleApplyCropRatioPreset(p.id as any)}
-                        className={`py-1.5 text-[11px] rounded-xl border transition-all cursor-pointer text-center shadow-xs whitespace-nowrap ${
-                          cropRatioPreset === p.id
-                            ? 'bg-[var(--lavenderSoft)] text-[var(--primary-accent,#8C52D0)] dark:text-[var(--lavenderAccent)] border-[var(--primary-accent,#8C52D0)] font-bold shadow-xs'
-                            : 'bg-white/80 dark:bg-zinc-800/80 border-zinc-200/60 dark:border-zinc-700/60 hover:bg-white text-zinc-700 dark:text-zinc-200 font-semibold'
-                        }`}
-                      >
-                        {p.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Compact Directional Edge Adjustments Grid */}
-                <div className="space-y-3 pt-1">
-                  <div className="grid grid-cols-2 gap-3">
-                    {/* Top */}
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs text-zinc-700 dark:text-zinc-300 font-medium">
-                        <span>↑ Сверху</span>
-                        <span>{Math.round(cropTop)}%</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="0"
-                        max="48"
-                        value={cropTop}
-                        onChange={(e) => handleCropChange('top', Number(e.target.value))}
-                        className="w-full accent-[var(--primary-accent,#8C52D0)] cursor-pointer"
-                      />
-                    </div>
-
-                    {/* Bottom */}
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs text-zinc-700 dark:text-zinc-300 font-medium">
-                        <span>↓ Снизу</span>
-                        <span>{Math.round(cropBottom)}%</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="0"
-                        max="48"
-                        value={cropBottom}
-                        onChange={(e) => handleCropChange('bottom', Number(e.target.value))}
-                        className="w-full accent-[var(--primary-accent,#8C52D0)] cursor-pointer"
-                      />
-                    </div>
-
-                    {/* Left */}
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs text-zinc-700 dark:text-zinc-300 font-medium">
-                        <span>← Слева</span>
-                        <span>{Math.round(cropLeft)}%</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="0"
-                        max="48"
-                        value={cropLeft}
-                        onChange={(e) => handleCropChange('left', Number(e.target.value))}
-                        className="w-full accent-[var(--primary-accent,#8C52D0)] cursor-pointer"
-                      />
-                    </div>
-
-                    {/* Right */}
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs text-zinc-700 dark:text-zinc-300 font-medium">
-                        <span>→ Справа</span>
-                        <span>{Math.round(cropRight)}%</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="0"
-                        max="48"
-                        value={cropRight}
-                        onChange={(e) => handleCropChange('right', Number(e.target.value))}
-                        className="w-full accent-[var(--primary-accent,#8C52D0)] cursor-pointer"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Final Apply / Reset Buttons */}
-                <div className="flex gap-2 pt-2 border-t border-zinc-200/50 dark:border-zinc-800/50">
-                  <button
+                    type="button"
                     onClick={() => {
-                      setCropLeft(0);
-                      setCropRight(0);
-                      setCropTop(0);
-                      setCropBottom(0);
+                      if (activeTool === 'crop') {
+                        handleApplyCrop();
+                      } else if (activeTool === 'select') {
+                        setZoomScale(0.9);
+                        setPanOffset({ x: 0, y: 0 });
+                        showToast('Центрировано', 'Объект отцентрирован по холсту.', 'info');
+                      } else {
+                        handleCutout();
+                      }
                     }}
-                    className="flex-1 py-2 px-3 rounded-full border border-zinc-300 dark:border-zinc-700 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all cursor-pointer"
-                  >
-                    Сбросить
-                  </button>
-                  <button
-                    onClick={handleApplyCrop}
-                    className="flex-1 py-2 px-3 rounded-full text-white text-xs font-semibold shadow-md hover:opacity-95 transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-1"
+                    disabled={isProcessingCutout}
+                    className="w-full py-3 px-4 rounded-full text-white text-xs sm:text-sm font-semibold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 hover:opacity-95 disabled:opacity-60"
                     style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
                   >
-                    <Check className="w-3.5 h-3.5" />
-                    <span>Обрезать края</span>
+                    {isProcessingCutout ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : activeTool === 'crop' ? (
+                      <CropIcon className="w-4 h-4" />
+                    ) : activeTool === 'select' ? (
+                      <Maximize2 className="w-4 h-4" />
+                    ) : (
+                      <CutoutScissorsIcon className="w-4 h-4" />
+                    )}
+                    <span className="whitespace-nowrap font-bold">
+                      {isProcessingCutout
+                        ? 'Вырезание объекта...'
+                        : activeTool === 'crop'
+                        ? 'Обрезать'
+                        : activeTool === 'select'
+                        ? 'Центрировать объект'
+                        : 'Удалить фон'}
+                    </span>
                   </button>
                 </div>
+              )}
+
+              {/* 2. TOOLS SELECTOR: Individual Circular Buttons with Captions Below, No Shared White Bar */}
+              <div>
+                <span className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal uppercase block mb-2">
+                  ИНСТРУМЕНТ РЕДАКТОРА
+                </span>
+                <div className="grid grid-cols-5 gap-1.5 sm:gap-2 justify-items-center">
+                  {[
+                    { id: 'cutout', label: 'Удалить фон', icon: <CutoutScissorsIcon className="w-5 h-5" /> },
+                    { id: 'crop', label: 'Кадрировать', icon: <CropIcon className="w-5 h-5" /> },
+                    { id: 'erase', label: 'Ластик', icon: <Eraser className="w-5 h-5" /> },
+                    { id: 'brush', label: 'Восстановить', icon: <Paintbrush className="w-5 h-5" /> },
+                    { id: 'select', label: 'Выделение', icon: <Move className="w-5 h-5" /> }
+                  ].map((tool) => {
+                    const isSelected = activeTool === tool.id;
+                    return (
+                      <button
+                        key={tool.id}
+                        type="button"
+                        onClick={() => setActiveTool(tool.id as EditorTool)}
+                        className="flex flex-col items-center gap-1.5 group cursor-pointer w-full transition-all focus:outline-hidden"
+                      >
+                        {/* Circular Icon Container */}
+                        <div
+                          className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all ${
+                            isSelected
+                              ? 'bg-[var(--lavenderSoft)] text-[var(--primary-accent,#8C52D0)] dark:text-[var(--lavenderAccent)] border border-[var(--primary-accent,#8C52D0)]/40 shadow-xs scale-105 ring-4 ring-[var(--primary-accent,#8C52D0)]/10'
+                              : 'bg-white/70 dark:bg-zinc-800/60 border border-zinc-200/70 dark:border-zinc-700/60 text-zinc-600 dark:text-zinc-400 group-hover:bg-white dark:group-hover:bg-zinc-750 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 group-hover:border-zinc-300 dark:group-hover:border-zinc-600 shadow-2xs'
+                          }`}
+                        >
+                          {tool.icon}
+                        </div>
+                        {/* Tool Caption */}
+                        <span
+                          className={`text-[10px] sm:text-[11px] leading-tight text-center transition-colors ${
+                            isSelected
+                              ? 'font-bold text-[var(--primary-accent,#8C52D0)] dark:text-[var(--lavenderAccent)]'
+                              : 'font-medium text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-200'
+                          }`}
+                        >
+                          {tool.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            )}
+
+              {/* 3. DYNAMIC CONTEXTUAL TOOL SETTINGS */}
+              <div className="pt-2 border-t border-zinc-200/50 dark:border-zinc-800/50 space-y-3">
+                
+                {/* SELECT / MOVE SETTINGS */}
+                {activeTool === 'select' && (
+                  <div className="space-y-3 animate-fadeIn">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-[var(--lavenderSoft)] text-[var(--primary-accent,#8C52D0)]">
+                        <Move className="w-4 h-4" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                        Перемещение и позиционирование
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                      Зажмите левую кнопку мыши или проведите пальцем по экрану, чтобы свободно перемещать объект по холсту. Нажмите кнопку «Центрировать объект» сверху, чтобы вернуть объект в центр.
+                    </p>
+                  </div>
+                )}
+
+                {/* CROP TOOL SETTINGS */}
+                {activeTool === 'crop' && (
+                  <div className="space-y-3 animate-fadeIn">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs sm:text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                        Пропорции кадра
+                      </span>
+                      {cropRatioPreset !== 'free' && (
+                        <span className="text-[11px] text-zinc-500 font-medium">
+                          {cropRatioPreset}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Aspect Ratio Chips: 1:1, 4:3, 3:4, 16:9, 9:16 (Free is default) */}
+                    <div className="grid grid-cols-5 gap-1.5">
+                      {[
+                        { id: '1:1', label: '1:1' },
+                        { id: '4:3', label: '4:3' },
+                        { id: '3:4', label: '3:4' },
+                        { id: '16:9', label: '16:9' },
+                        { id: '9:16', label: '9:16' }
+                      ].map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => handleApplyCropRatioPreset(p.id as any)}
+                          className={`py-1.5 text-[11px] rounded-xl border transition-all cursor-pointer text-center shadow-xs whitespace-nowrap ${
+                            cropRatioPreset === p.id
+                              ? 'bg-[var(--lavenderSoft)] text-[var(--primary-accent,#8C52D0)] dark:text-[var(--lavenderAccent)] border-[var(--primary-accent,#8C52D0)] font-bold shadow-xs'
+                              : 'bg-white/80 dark:bg-zinc-800/80 border-zinc-200/60 dark:border-zinc-700/60 hover:bg-white text-zinc-700 dark:text-zinc-200 font-semibold'
+                          }`}
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Crop Edge Range Sliders */}
+                    <div className="grid grid-cols-2 gap-2.5 pt-1">
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-[11px] text-zinc-700 dark:text-zinc-300 font-medium">
+                          <span>↑ Сверху</span>
+                          <span>{Math.round(cropTop)}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="48"
+                          value={cropTop}
+                          onChange={(e) => handleCropChange('top', Number(e.target.value))}
+                          className="w-full accent-[var(--primary-accent,#8C52D0)] cursor-pointer h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-[11px] text-zinc-700 dark:text-zinc-300 font-medium">
+                          <span>↓ Снизу</span>
+                          <span>{Math.round(cropBottom)}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="48"
+                          value={cropBottom}
+                          onChange={(e) => handleCropChange('bottom', Number(e.target.value))}
+                          className="w-full accent-[var(--primary-accent,#8C52D0)] cursor-pointer h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-[11px] text-zinc-700 dark:text-zinc-300 font-medium">
+                          <span>← Слева</span>
+                          <span>{Math.round(cropLeft)}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="48"
+                          value={cropLeft}
+                          onChange={(e) => handleCropChange('left', Number(e.target.value))}
+                          className="w-full accent-[var(--primary-accent,#8C52D0)] cursor-pointer h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-[11px] text-zinc-700 dark:text-zinc-300 font-medium">
+                          <span>→ Справа</span>
+                          <span>{Math.round(cropRight)}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="48"
+                          value={cropRight}
+                          onChange={(e) => handleCropChange('right', Number(e.target.value))}
+                          className="w-full accent-[var(--primary-accent,#8C52D0)] cursor-pointer h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ERASER SETTINGS */}
+                {activeTool === 'erase' && (
+                  <div className="space-y-3 animate-fadeIn">
+                    <div className="text-xs sm:text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                      Параметры ластика
+                    </div>
+
+                    {/* Brush Size Slider */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs text-zinc-700 dark:text-zinc-300 font-medium">
+                        <span>Размер кисти</span>
+                        <span className="font-semibold text-[var(--primary-accent,#8C52D0)]">{brushSize} px</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="5"
+                        max="120"
+                        value={brushSize}
+                        onChange={(e) => setBrushSize(Number(e.target.value))}
+                        className="w-full accent-[var(--primary-accent,#8C52D0)] cursor-pointer h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none"
+                      />
+                    </div>
+
+                    {/* Brush Hardness Slider */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs text-zinc-700 dark:text-zinc-300 font-medium">
+                        <span>Жесткость краев</span>
+                        <span className="font-semibold text-[var(--primary-accent,#8C52D0)]">{brushHardness}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="10"
+                        max="100"
+                        value={brushHardness}
+                        onChange={(e) => setBrushHardness(Number(e.target.value))}
+                        className="w-full accent-[var(--primary-accent,#8C52D0)] cursor-pointer h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* BRUSH (RESTORE) SETTINGS */}
+                {activeTool === 'brush' && (
+                  <div className="space-y-3 animate-fadeIn">
+                    <div className="text-xs sm:text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                      Параметры восстанавливающей кисти
+                    </div>
+
+                    {/* Brush Size Slider */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs text-zinc-700 dark:text-zinc-300 font-medium">
+                        <span>Размер кисти</span>
+                        <span className="font-semibold text-[var(--primary-accent,#8C52D0)]">{brushSize} px</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="5"
+                        max="120"
+                        value={brushSize}
+                        onChange={(e) => setBrushSize(Number(e.target.value))}
+                        className="w-full accent-[var(--primary-accent,#8C52D0)] cursor-pointer h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none"
+                      />
+                    </div>
+
+                    {/* Brush Hardness Slider */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs text-zinc-700 dark:text-zinc-300 font-medium">
+                        <span>Жесткость краев</span>
+                        <span className="font-semibold text-[var(--primary-accent,#8C52D0)]">{brushHardness}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="10"
+                        max="100"
+                        value={brushHardness}
+                        onChange={(e) => setBrushHardness(Number(e.target.value))}
+                        className="w-full accent-[var(--primary-accent,#8C52D0)] cursor-pointer h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* CUTOUT SETTINGS */}
+                {activeTool === 'cutout' && (
+                  <div className="space-y-3 animate-fadeIn">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-[var(--lavenderSoft)] text-[var(--primary-accent,#8C52D0)]">
+                        <Sparkles className="w-4 h-4" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                        Удаление фона (AI Cutout)
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                      Автоматически определяет передний план и аккуратно удаляет фон изображения в один клик с помощью кнопки «Удалить фон» в верхней части панели.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -4465,7 +4465,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                             activeFilterTool === 'recolor' || activeFilterTool === 'shadow'
                               ? 'right-full mr-2 bottom-0 w-56 sm:w-60 max-w-[calc(100vw-60px)] p-2.5 sm:p-3 bg-white/95 dark:bg-zinc-900/95'
                               : 'bottom-full mb-2 right-0 w-12 sm:w-14 p-2 bg-white/60 dark:bg-zinc-900/60'
-                          } z-50 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 rounded-2xl shadow-xl shadow-purple-950/10 flex flex-col items-center gap-1.5 animate-fadeIn pointer-events-auto transition-all select-none backdrop-blur-md`}
+                          } z-50 text-zinc-900 dark:text-zinc-100 border border-white/80 dark:border-zinc-700/80 rounded-2xl shadow-xl shadow-black/10 flex flex-col items-center gap-1.5 animate-fadeIn pointer-events-auto transition-all select-none backdrop-blur-md`}
                         >
                           
                           {/* Shadow Tool Panel */}
@@ -4474,7 +4474,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                               {/* Header & Toggle */}
                               <div className="flex items-center justify-between pb-1 border-b border-zinc-200/60 dark:border-zinc-800/60">
                                 <div className="flex items-center gap-1 font-bold text-zinc-800 dark:text-zinc-100 text-[11px]">
-                                  <ShadowToolIcon className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-purple-400" />
+                                  <ShadowToolIcon className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                                   <span>Тень</span>
                                 </div>
                                 <button
@@ -4506,7 +4506,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                   <div className="space-y-0.5">
                                     <div className="flex justify-between text-[10px] font-bold text-zinc-600 dark:text-zinc-300">
                                       <span>Размытие</span>
-                                      <span className="font-mono text-[var(--lavDeep)] dark:text-purple-300">{selectedElem.shadowBlur ?? 12}px</span>
+                                      <span className="font-mono text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">{selectedElem.shadowBlur ?? 12}px</span>
                                     </div>
                                     <input
                                       type="range"
@@ -4517,7 +4517,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                         const val = parseInt(e.target.value);
                                         updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, shadowBlur: val } : item));
                                       }}
-                                      className="w-full accent-[var(--lavDeep)] dark:accent-purple-400 h-1 rounded-lg bg-zinc-200 dark:bg-zinc-700 cursor-pointer"
+                                      className="w-full accent-[var(--lavDeep)] dark:accent-[var(--lavenderAccent)] h-1 rounded-lg bg-zinc-200 dark:bg-zinc-700 cursor-pointer"
                                     />
                                   </div>
 
@@ -4525,7 +4525,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                   <div className="space-y-0.5">
                                     <div className="flex justify-between text-[10px] font-bold text-zinc-600 dark:text-zinc-300">
                                       <span>Прозрачность</span>
-                                      <span className="font-mono text-[var(--lavDeep)] dark:text-purple-300">{selectedElem.shadowOpacity ?? 50}%</span>
+                                      <span className="font-mono text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">{selectedElem.shadowOpacity ?? 50}%</span>
                                     </div>
                                     <input
                                       type="range"
@@ -4536,7 +4536,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                         const val = parseInt(e.target.value);
                                         updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, shadowOpacity: val } : item));
                                       }}
-                                      className="w-full accent-[var(--lavDeep)] dark:accent-purple-400 h-1 rounded-lg bg-zinc-200 dark:bg-zinc-700 cursor-pointer"
+                                      className="w-full accent-[var(--lavDeep)] dark:accent-[var(--lavenderAccent)] h-1 rounded-lg bg-zinc-200 dark:bg-zinc-700 cursor-pointer"
                                     />
                                   </div>
 
@@ -4545,7 +4545,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                     <div className="space-y-0.5">
                                       <div className="flex justify-between text-[10px] font-bold text-zinc-600 dark:text-zinc-300">
                                         <span>Смещение X</span>
-                                        <span className="font-mono text-[var(--lavDeep)] dark:text-purple-300">
+                                        <span className="font-mono text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">
                                           {(selectedElem.shadowX ?? 0) > 0 ? `+${selectedElem.shadowX}` : (selectedElem.shadowX ?? 0)}
                                         </span>
                                       </div>
@@ -4558,14 +4558,14 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                           const val = parseInt(e.target.value);
                                           updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, shadowX: val } : item));
                                         }}
-                                        className="w-full accent-[var(--lavDeep)] dark:accent-purple-400 h-1 rounded-lg bg-zinc-200 dark:bg-zinc-700 cursor-pointer"
+                                        className="w-full accent-[var(--lavDeep)] dark:accent-[var(--lavenderAccent)] h-1 rounded-lg bg-zinc-200 dark:bg-zinc-700 cursor-pointer"
                                       />
                                     </div>
 
                                     <div className="space-y-0.5">
                                       <div className="flex justify-between text-[10px] font-bold text-zinc-600 dark:text-zinc-300">
                                         <span>Смещение Y</span>
-                                        <span className="font-mono text-[var(--lavDeep)] dark:text-purple-300">
+                                        <span className="font-mono text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">
                                           {(selectedElem.shadowY ?? 8) > 0 ? `+${selectedElem.shadowY}` : (selectedElem.shadowY ?? 8)}
                                         </span>
                                       </div>
@@ -4578,7 +4578,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                           const val = parseInt(e.target.value);
                                           updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, shadowY: val } : item));
                                         }}
-                                        className="w-full accent-[var(--lavDeep)] dark:accent-purple-400 h-1 rounded-lg bg-zinc-200 dark:bg-zinc-700 cursor-pointer"
+                                        className="w-full accent-[var(--lavDeep)] dark:accent-[var(--lavenderAccent)] h-1 rounded-lg bg-zinc-200 dark:bg-zinc-700 cursor-pointer"
                                       />
                                     </div>
                                   </div>
@@ -4653,7 +4653,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                           {activeFilterTool === 'recolor' && selectedElem && (
                             <div className="flex flex-col gap-2 w-full text-xs">
                               <div className="flex items-center gap-1.5 font-bold text-zinc-800 dark:text-zinc-100 pb-1 border-b border-zinc-200/60 dark:border-zinc-800/60 text-[11px]">
-                                <Pipette className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-purple-400" />
+                                <Pipette className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                                 <span>Замена цвета</span>
                               </div>
 
@@ -4695,7 +4695,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                   <div className="space-y-1 pt-1 border-t border-zinc-100 dark:border-zinc-800">
                                     <div className="flex items-center justify-between text-[11px] font-bold text-zinc-600 dark:text-zinc-300">
                                       <span>Интенсивность</span>
-                                      <span className="text-[var(--lavDeep)] dark:text-purple-300 font-mono">
+                                      <span className="text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] font-mono">
                                         {selectedElem.tintAmount ?? 75}%
                                       </span>
                                     </div>
@@ -4708,7 +4708,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                         const val = parseInt(e.target.value);
                                         updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, tintAmount: val } : item));
                                       }}
-                                      className="w-full accent-[var(--lavDeep)] dark:accent-purple-400 h-1.5 rounded-lg bg-zinc-200 dark:bg-zinc-700 cursor-pointer"
+                                      className="w-full accent-[var(--lavDeep)] dark:accent-[var(--lavenderAccent)] h-1.5 rounded-lg bg-zinc-200 dark:bg-zinc-700 cursor-pointer"
                                     />
                                   </div>
 
@@ -4779,7 +4779,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                             <div className="flex flex-col items-center gap-1 p-0.5 w-full">
                               <button
                                 onClick={() => setZoomScale(prev => Math.min(4.0, Number((prev + 0.15).toFixed(2))))}
-                                className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-purple-100 dark:hover:bg-purple-900/50 text-zinc-700 dark:text-zinc-200 flex items-center justify-center font-bold text-xs cursor-pointer transition-colors shadow-2xs shrink-0"
+                                className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-[var(--lavenderSoft)] text-zinc-700 dark:text-zinc-200 flex items-center justify-center font-bold text-xs cursor-pointer transition-colors shadow-2xs shrink-0"
                                 title="Увеличить масштаб холста"
                               >
                                 +
@@ -4794,22 +4794,22 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                 onChange={(e) => {
                                   setZoomScale(parseFloat(e.target.value) / 100);
                                 }}
-                                className="h-20 w-1.5 accent-[var(--lavDeep)] dark:accent-purple-400 cursor-pointer rounded-lg appearance-none bg-zinc-200 dark:bg-zinc-700 [writing-mode:vertical-lr] [direction:rtl]"
+                                className="h-20 w-1.5 accent-[var(--lavDeep)] dark:accent-[var(--lavenderAccent)] cursor-pointer rounded-lg appearance-none bg-zinc-200 dark:bg-zinc-700 [writing-mode:vertical-lr] [direction:rtl]"
                               />
                               <button
                                 onClick={() => setZoomScale(prev => Math.max(0.2, Number((prev - 0.15).toFixed(2))))}
-                                className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-purple-100 dark:hover:bg-purple-900/50 text-zinc-700 dark:text-zinc-200 flex items-center justify-center font-bold text-xs cursor-pointer transition-colors shadow-2xs shrink-0"
+                                className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-[var(--lavenderSoft)] text-zinc-700 dark:text-zinc-200 flex items-center justify-center font-bold text-xs cursor-pointer transition-colors shadow-2xs shrink-0"
                                 title="Уменьшить масштаб холста"
                               >
                                 -
                               </button>
-                              <span className="text-[10px] font-bold font-mono text-[var(--lavDeep)] dark:text-purple-300">
+                              <span className="text-[10px] font-bold font-mono text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">
                                 {Math.round(zoomScale * 100)}%
                               </span>
                               {zoomScale !== 1 && (
                                 <button
                                   onClick={() => { setZoomScale(1); setPanX(0); setPanY(0); }}
-                                  className="text-[9px] font-bold text-zinc-400 hover:text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:hover:text-purple-300 underline cursor-pointer"
+                                  className="text-[9px] font-bold text-zinc-400 hover:text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] underline cursor-pointer"
                                   title="Сбросить масштаб (100%)"
                                 >
                                   Сброс
@@ -4831,10 +4831,10 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                   const val = parseInt(e.target.value);
                                   updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, exposure: val } : item));
                                 }}
-                                className="h-24 w-1.5 accent-[var(--lavDeep)] dark:accent-purple-400 cursor-pointer rounded-lg appearance-none [writing-mode:vertical-lr] [direction:rtl]"
+                                className="h-24 w-1.5 accent-[var(--lavDeep)] dark:accent-[var(--lavenderAccent)] cursor-pointer rounded-lg appearance-none [writing-mode:vertical-lr] [direction:rtl]"
                                 style={{ background: 'linear-gradient(to top, #27272a, #a1a1aa, #ffffff)' }}
                               />
-                              <span className="text-[10px] font-bold font-mono text-[var(--lavDeep)] dark:text-purple-300">
+                              <span className="text-[10px] font-bold font-mono text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">
                                 {selectedElem.exposure > 0 ? `+${selectedElem.exposure}` : selectedElem.exposure}
                               </span>
                             </div>
@@ -4853,10 +4853,10 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                   const val = parseInt(e.target.value);
                                   updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, hue: val } : item));
                                 }}
-                                className="h-24 w-1.5 accent-[var(--lavDeep)] dark:accent-purple-400 cursor-pointer rounded-lg appearance-none [writing-mode:vertical-lr] [direction:rtl]"
+                                className="h-24 w-1.5 accent-[var(--lavDeep)] dark:accent-[var(--lavenderAccent)] cursor-pointer rounded-lg appearance-none [writing-mode:vertical-lr] [direction:rtl]"
                                 style={{ background: 'linear-gradient(to top, red, yellow, green, cyan, blue, magenta, red)' }}
                               />
-                              <span className="text-[10px] font-bold font-mono text-[var(--lavDeep)] dark:text-purple-300">
+                              <span className="text-[10px] font-bold font-mono text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">
                                 {selectedElem.hue > 0 ? `+${selectedElem.hue}°` : `${selectedElem.hue}°`}
                               </span>
                             </div>
@@ -4875,10 +4875,10 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                   const val = parseInt(e.target.value);
                                   updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, temp: val } : item));
                                 }}
-                                className="h-24 w-1.5 accent-[var(--lavDeep)] dark:accent-purple-400 cursor-pointer rounded-lg appearance-none [writing-mode:vertical-lr] [direction:rtl]"
+                                className="h-24 w-1.5 accent-[var(--lavDeep)] dark:accent-[var(--lavenderAccent)] cursor-pointer rounded-lg appearance-none [writing-mode:vertical-lr] [direction:rtl]"
                                 style={{ background: 'linear-gradient(to top, #3b82f6, #eff6ff, #f59e0b)' }}
                               />
-                              <span className="text-[10px] font-bold font-mono text-[var(--lavDeep)] dark:text-purple-300">
+                              <span className="text-[10px] font-bold font-mono text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">
                                 {(selectedElem.temp || 0) > 0 ? `+${selectedElem.temp}` : (selectedElem.temp || 0)}
                               </span>
                             </div>
@@ -4897,10 +4897,10 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                   const val = parseInt(e.target.value);
                                   updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, saturate: val } : item));
                                 }}
-                                className="h-24 w-1.5 accent-[var(--lavDeep)] dark:accent-purple-400 cursor-pointer rounded-lg appearance-none [writing-mode:vertical-lr] [direction:rtl]"
-                                style={{ background: 'linear-gradient(to top, #a1a1aa, #c084fc, #8b5cf6)' }}
+                                className="h-24 w-1.5 accent-[var(--lavDeep)] dark:accent-[var(--lavenderAccent)] cursor-pointer rounded-lg appearance-none [writing-mode:vertical-lr] [direction:rtl]"
+                                style={{ background: 'linear-gradient(to top, #a1a1aa, var(--lavenderSoft), var(--lavDeep))' }}
                               />
-                              <span className="text-[10px] font-bold font-mono text-[var(--lavDeep)] dark:text-purple-300">
+                              <span className="text-[10px] font-bold font-mono text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">
                                 {selectedElem.saturate}%
                               </span>
                             </div>
@@ -4919,10 +4919,10 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                   const val = parseInt(e.target.value);
                                   updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, opacity: val } : item));
                                 }}
-                                className="h-24 w-1.5 accent-[var(--lavDeep)] dark:accent-purple-400 cursor-pointer rounded-lg appearance-none [writing-mode:vertical-lr] [direction:rtl]"
-                                style={{ background: 'linear-gradient(to top, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 1))' }}
+                                className="h-24 w-1.5 accent-[var(--lavDeep)] dark:accent-[var(--lavenderAccent)] cursor-pointer rounded-lg appearance-none [writing-mode:vertical-lr] [direction:rtl]"
+                                style={{ background: 'linear-gradient(to top, rgba(120, 120, 120, 0.2), var(--lavDeep))' }}
                               />
-                              <span className="text-[10px] font-bold font-mono text-[var(--lavDeep)] dark:text-purple-300">
+                              <span className="text-[10px] font-bold font-mono text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">
                                 {selectedElem.opacity}%
                               </span>
                             </div>
@@ -4945,7 +4945,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
                           activeFilterTool === 'recolor'
                             ? 'bg-[var(--lavDeep)] text-white shadow-md'
-                            : 'bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:bg-white hover:shadow-md'
                         }`}
                         title="Замена цвета (Выбор точного тона HEX или палитры)"
                       >
@@ -4966,7 +4966,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
                           activeFilterTool === 'brightness'
                             ? 'bg-[var(--lavDeep)] text-white shadow-md'
-                            : 'bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:bg-white hover:shadow-md'
                         }`}
                         title="Яркость (Экспозиция)"
                       >
@@ -4987,7 +4987,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
                           activeFilterTool === 'hue'
                             ? 'bg-[var(--lavDeep)] text-white shadow-md'
-                            : 'bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:bg-white hover:shadow-md'
                         }`}
                         title="Оттенок (Тон)"
                       >
@@ -5008,7 +5008,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
                           activeFilterTool === 'temp'
                             ? 'bg-[var(--lavDeep)] text-white shadow-md'
-                            : 'bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:bg-white hover:shadow-md'
                         }`}
                         title="Теплота (Температура)"
                       >
@@ -5029,7 +5029,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
                           activeFilterTool === 'saturate'
                             ? 'bg-[var(--lavDeep)] text-white shadow-md'
-                            : 'bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:bg-white hover:shadow-md'
                         }`}
                         title="Насыщенность"
                       >
@@ -5050,7 +5050,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
                           activeFilterTool === 'opacity'
                             ? 'bg-[var(--lavDeep)] text-white shadow-md'
-                            : 'bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:bg-white hover:shadow-md'
                         }`}
                         title="Прозрачность"
                       >
@@ -5071,7 +5071,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
                           activeFilterTool === 'shadow'
                             ? 'bg-[var(--lavDeep)] text-white shadow-md'
-                            : 'bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:bg-white hover:shadow-md'
                         }`}
                         title="Тень (Размытие, прозрачность, смещение X/Y)"
                       >
@@ -5089,7 +5089,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full transition-all cursor-pointer flex items-center justify-center active:scale-95 border-t border-zinc-200/60 dark:border-zinc-700/60 pt-0.5 mt-0.5 ${
                           activeFilterTool === 'zoom'
                             ? 'bg-[var(--lavDeep)] text-white shadow-md'
-                            : 'bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 hover:bg-white hover:shadow-md'
+                            : 'bg-white/90 dark:bg-zinc-800/90 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:bg-white hover:shadow-md'
                         }`}
                         title="Масштаб холста (Приближение/Отдаление)"
                       >

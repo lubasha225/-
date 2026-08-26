@@ -260,7 +260,10 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
                 >
                   <Sparkles className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] shrink-0" />
                   <span>Создано ИИ</span>
-                  <span className="inline-flex items-center justify-center rounded-full text-[10px] font-bold min-w-[18px] h-4.5 px-1.5 bg-[var(--lavenderSoft)] text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">
+                  <span
+                    className="inline-flex items-center justify-center rounded-full text-[10px] font-bold min-w-[18px] h-4.5 px-1.5 text-white shadow-2xs"
+                    style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
+                  >
                     {count}
                   </span>
                 </button>
@@ -278,11 +281,14 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
                 }`}
               >
                 <span>{cat.label}</span>
-                <span className={`inline-flex items-center justify-center rounded-full text-[10px] font-bold min-w-[18px] h-4.5 px-1.5 transition-all ${
-                  isActive
-                    ? 'bg-white/20 text-white'
-                    : 'bg-[var(--lavenderSoft)] text-[var(--lavDeep)] dark:bg-purple-950/60 dark:text-[var(--lavenderAccent)]'
-                }`}>
+                <span
+                  className={`inline-flex items-center justify-center rounded-full text-[10px] font-bold min-w-[18px] h-4.5 px-1.5 transition-all text-white ${
+                    isActive
+                      ? 'bg-white/25 backdrop-blur-xs'
+                      : 'shadow-2xs'
+                  }`}
+                  style={!isActive ? { background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' } : undefined}
+                >
                   {count}
                 </span>
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, ReactNode, useCallback } from 'react';
-import { COLOR_SCHEMES, BG_PRESETS, applyColorSchemeVariables, applyBgPresetStyle } from './lib/themeConfig';
+import { COLOR_SCHEMES, BG_PRESETS, FONT_PRESETS, applyColorSchemeVariables, applyBgPresetStyle, applyFontPreset } from './lib/themeConfig';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   FolderKanban,
@@ -46,7 +46,8 @@ import {
   MoreHorizontal,
   Maximize2,
   ShieldCheck,
-  Scissors
+  Scissors,
+  UploadCloud
 } from 'lucide-react';
 
 import { Project, WarehouseItem, Task, DocumentItem, ImageItem, ProjectStatus, EstimateItem } from './types';
@@ -69,7 +70,7 @@ import StatisticsTab from './components/StatisticsTab';
 import SidebarStatisticsWidget from './components/SidebarStatisticsWidget';
 import DetailedCalendarTab from './components/DetailedCalendarTab';
 import AdminCabinetTab from './components/AdminCabinetTab';
-import RemoveBackgroundTab from './components/RemoveBackgroundTab';
+import RemoveBackgroundTab, { CutoutScissorsIcon } from './components/RemoveBackgroundTab';
 
 export default function App() {
   // Theme state
@@ -86,6 +87,10 @@ export default function App() {
 
   const [bgPresetId, setBgPresetId] = useState<string>(() => {
     return localStorage.getItem('bg_preset_id') || 'bg-blackberry-gradient-1';
+  });
+
+  const [fontPresetId, setFontPresetId] = useState<string>(() => {
+    return localStorage.getItem('font_preset_id') || 'jost';
   });
 
   // Main active tab state
@@ -447,6 +452,7 @@ export default function App() {
     localStorage.setItem('theme', theme);
     localStorage.setItem('color_scheme_id', colorSchemeId);
     localStorage.setItem('bg_preset_id', bgPresetId);
+    localStorage.setItem('font_preset_id', fontPresetId);
 
     const root = window.document.documentElement;
     if (theme === 'dark') {
@@ -459,10 +465,12 @@ export default function App() {
 
     const scheme = COLOR_SCHEMES.find(s => s.id === colorSchemeId) || COLOR_SCHEMES[5];
     const preset = BG_PRESETS.find(p => p.id === bgPresetId) || BG_PRESETS[0];
+    const fontPreset = FONT_PRESETS.find(f => f.id === fontPresetId) || FONT_PRESETS[0];
 
     applyColorSchemeVariables(scheme, theme === 'dark');
     applyBgPresetStyle(preset, theme === 'dark');
-  }, [theme, colorSchemeId, bgPresetId]);
+    applyFontPreset(fontPreset);
+  }, [theme, colorSchemeId, bgPresetId, fontPresetId]);
 
   // Toast triggering utility
   const showToast = useCallback((title: string, message: string, type: 'success' | 'info' | 'warn' = 'success') => {
@@ -908,7 +916,7 @@ export default function App() {
                 {[
                   { value: 'projects', label: 'Проекты', icon: <FolderKanban className="w-4 h-4" /> },
                   { value: 'moodboard', label: 'Редактор', icon: <Layout className="w-4 h-4" /> },
-                  { value: 'removeBackground', label: 'Удаление фона', icon: <Scissors className="w-4 h-4" /> },
+                  { value: 'removeBackground', label: 'Удаление фона', icon: <CutoutScissorsIcon className="w-4 h-4" /> },
                   { value: 'calendar', label: 'Календарь', icon: <Calendar className="w-4 h-4" /> },
                   { value: 'statistics', label: 'Статистика', icon: <TrendingUp className="w-4 h-4" /> },
                   { value: 'warehouse', label: 'Склад', icon: <Warehouse className="w-4 h-4" /> },
@@ -1204,7 +1212,7 @@ export default function App() {
   };
 
   return (
-    <div className="flex relative w-screen h-screen overflow-hidden bg-transparent font-sans transition-colors duration-300">
+    <div className="flex relative w-screen h-[100dvh] max-h-[100dvh] overflow-hidden bg-transparent font-sans transition-colors duration-300">
       
       {/* Background Decorative Abstract Soft Spheres/Blobs for Glassmorphism */}
       {(() => {
@@ -1301,7 +1309,7 @@ export default function App() {
           {[
             { key: 'projects', label: 'Проекты', icon: <FolderKanban className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'moodboard', label: 'Редактор', icon: <Layout className="w-[17px] h-[17px] shrink-0" /> },
-            { key: 'removeBackground', label: 'Удаление фона', icon: <Scissors className="w-[17px] h-[17px] shrink-0" /> },
+            { key: 'removeBackground', label: 'Удаление фона', icon: <CutoutScissorsIcon className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'warehouse', label: 'Склад', icon: <Warehouse className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'images', label: 'Изображения', icon: <ImageIcon className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'documents', label: 'Документы', icon: <FileText className="w-[17px] h-[17px] shrink-0" /> },
@@ -1432,20 +1440,22 @@ export default function App() {
       </aside>
 
       {/* 2. DYNAMIC MAIN CONTAINER WRAPPER WITH RIGHT SIDEBAR */}
-      <div className="flex-1 flex flex-row min-w-0 h-full overflow-hidden">
+      <div className="flex-1 flex flex-row min-w-0 h-full max-h-full overflow-hidden">
         
         {/* CENTRAL WORKSPACE */}
-        <main className={`flex-1 relative flex flex-col min-w-0 ${
+        <main className={`flex-1 relative flex flex-col min-w-0 h-full max-h-full ${
           activeTab === 'moodboard'
-            ? 'p-2 sm:p-3 space-y-1.5 h-full overflow-hidden'
+            ? 'p-2 sm:p-3 space-y-1.5 overflow-hidden'
             : activeTab === 'removeBackground'
-            ? 'px-2.5 sm:px-6 pt-3 sm:pt-6 pb-2 sm:pb-3 space-y-2 sm:space-y-3 h-full overflow-hidden'
-            : 'px-3 sm:px-6 pt-5 sm:pt-8 pb-6 space-y-4 h-full overflow-y-auto overflow-x-hidden'
+            ? 'px-0 sm:px-6 pt-1 sm:pt-4 pb-1 sm:pb-2 space-y-1 sm:space-y-2.5 overflow-hidden'
+            : 'px-3 sm:px-6 pt-5 sm:pt-8 pb-6 space-y-4 overflow-y-auto overflow-x-hidden'
         }`}>
           
           {/* MAIN PANEL TOP NAVBAR HEADER (ALL PAGES) */}
           {activeTab !== 'moodboard' && activeTab !== 'projectCard' && (
-            <div className="flex flex-col gap-2 shrink-0 pt-0">
+            <div className={`flex flex-col gap-1.5 sm:gap-2 shrink-0 pt-0 px-3 sm:px-0 ${
+              activeTab === 'removeBackground' ? 'pb-0.5' : ''
+            }`}>
               {/* Top Row: Title on Left, Notifications + Calendar + Hamburger Menu on Right */}
               <div className="flex items-center justify-between gap-3 w-full">
                 <div className="flex items-center gap-2.5 min-w-0">
@@ -1462,7 +1472,7 @@ export default function App() {
                     </button>
                   )}
 
-                  <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--ink)] truncate inline-flex items-center gap-2.5 sm:gap-3">
+                  <h1 className="text-xl sm:text-3xl font-bold tracking-tight text-[var(--ink)] truncate inline-flex items-center gap-2 sm:gap-3">
                     {activeTab === 'projects' && (
                       <>
                         <span className="p-1.5 sm:p-2 bg-[var(--lavenderSoft)] rounded-xl shrink-0 inline-flex items-center justify-center">
@@ -1488,7 +1498,7 @@ export default function App() {
                         <span className="p-1.5 sm:p-2 bg-[var(--lavenderSoft)] rounded-xl shrink-0 inline-flex items-center justify-center">
                           <TrendingUp className="w-5 h-5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                         </span>
-                        <span>Статистика и аналитика</span>
+                        <span>Статистика</span>
                       </>
                     )}
                     {activeTab === 'warehouse' && (
@@ -1510,7 +1520,7 @@ export default function App() {
                     {activeTab === 'removeBackground' && (
                       <>
                         <span className="p-1.5 sm:p-2 bg-[var(--lavenderSoft)] rounded-xl shrink-0 inline-flex items-center justify-center">
-                          <Scissors className="w-5 h-5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
+                          <CutoutScissorsIcon className="w-5 h-5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                         </span>
                         <span>Удаление фона</span>
                       </>
@@ -1605,7 +1615,9 @@ export default function App() {
               {/* Subtitle / Description & Mobile Primary Action Buttons */}
               {activeTab !== 'projectCard' && activeTab !== 'testPage' && (
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <p className="text-[var(--soft)] text-sm font-normal leading-relaxed">
+                  <p className={`text-[var(--soft)] text-xs sm:text-sm font-normal leading-tight sm:leading-relaxed ${
+                    activeTab === 'removeBackground' ? 'hidden sm:block' : ''
+                  }`}>
                     {activeTab === 'projects' && !selectedProject && 'Создавайте макеты, открывайте сметный калькулятор и возвращайтесь к ним в любой момент.'}
                     {activeTab === 'calendar' && 'График монтажей, сдачи проектов, выездов команды и встреч с клиентами.'}
                     {activeTab === 'statistics' && 'Наглядный финансовый учет, конверсия смет и структура расходов студии.'}
@@ -1637,6 +1649,36 @@ export default function App() {
                     >
                       <Plus className="w-4 h-4" /> Новый товар
                     </button>
+                  )}
+
+                  {activeTab === 'images' && (
+                    <label
+                      style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
+                      className="sm:hidden w-full hover:opacity-95 text-white rounded-full px-4 py-2.5 text-xs font-semibold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer text-center"
+                    >
+                      <UploadCloud className="w-4 h-4 shrink-0" />
+                      <span>Загрузить фото</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            const file = e.target.files[0];
+                            const url = URL.createObjectURL(file);
+                            const newImage: ImageItem = {
+                              id: 'img_' + Date.now(),
+                              title: file.name.split('.')[0] || 'Новое фото',
+                              url: url,
+                              category: 'arches',
+                              bgRemoved: false
+                            };
+                            setImages(prev => [newImage, ...prev]);
+                            showToast('Фото загружено', 'Новое изображение добавлено в вашу галерею.', 'success');
+                          }
+                        }}
+                      />
+                    </label>
                   )}
                 </div>
               )}
@@ -2089,13 +2131,10 @@ export default function App() {
                                         setActiveTab('moodboard');
                                       }}
                                       style={{ border: '1px solid var(--primary-accent)' }}
-                                      className="flex-1 bg-transparent rounded-full py-1.5 sm:py-2 text-xs font-semibold hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 cursor-pointer flex items-center justify-center gap-1 hover:bg-[var(--primary-accent)]/10"
+                                      className="flex-1 bg-transparent rounded-full py-1.5 sm:py-2 text-xs font-semibold hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 cursor-pointer flex items-center justify-center gap-1 hover:bg-[var(--primary-accent)]/10 text-[var(--primary-accent)]"
                                     >
                                       <Palette className="w-3.5 h-3.5 shrink-0 text-[var(--primary-accent)]" />
-                                      <span
-                                        style={{ backgroundImage: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
-                                        className="bg-clip-text text-transparent font-semibold"
-                                      >
+                                      <span className="font-semibold text-[var(--primary-accent)]">
                                         Редактор
                                       </span>
                                     </button>
@@ -2313,13 +2352,10 @@ export default function App() {
                                           setActiveTab('moodboard');
                                         }}
                                         style={{ border: '1px solid var(--primary-accent)' }}
-                                        className="flex-1 sm:flex-initial bg-transparent rounded-full px-4 sm:px-4 py-1.5 sm:py-2 text-xs font-semibold hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-1.5 hover:bg-[var(--primary-accent)]/10"
+                                        className="flex-1 sm:flex-initial bg-transparent rounded-full px-4 sm:px-4 py-1.5 sm:py-2 text-xs font-semibold hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-1.5 hover:bg-[var(--primary-accent)]/10 text-[var(--primary-accent)]"
                                       >
                                         <Palette className="w-3.5 h-3.5 shrink-0 text-[var(--primary-accent)]" />
-                                        <span
-                                          style={{ backgroundImage: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
-                                          className="bg-clip-text text-transparent font-semibold"
-                                        >
+                                        <span className="font-semibold text-[var(--primary-accent)]">
                                           Редактор
                                         </span>
                                       </button>
@@ -2597,6 +2633,8 @@ export default function App() {
                     setColorSchemeId={setColorSchemeId}
                     bgPresetId={bgPresetId}
                     setBgPresetId={setBgPresetId}
+                    fontPresetId={fontPresetId}
+                    setFontPresetId={setFontPresetId}
                     showToast={showToast}
                   />
                 </motion.div>

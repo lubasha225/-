@@ -2914,7 +2914,7 @@ export default function TestProjectCardPage({
             {/* BOTTOM FLOATING ACTION BAR */}
             <div 
               className="px-6 py-4 rounded-3xl flex flex-col lg:flex-row items-center justify-between gap-4 shadow-2xl text-white border border-white/20 transition-all"
-              style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
+              style={{ background: 'linear-gradient(135deg, #8C52D0 0%, #582F89 100%)' }}
             >
               <div className="flex flex-wrap items-center gap-4 sm:gap-6 w-full lg:w-auto">
                 {/* METRIC 1: СТОИМОСТЬ */}
@@ -2951,8 +2951,8 @@ export default function TestProjectCardPage({
                           onClick={() => setPrepayment(Math.round(finalPrice * 0.3))}
                           className={`text-xs font-black px-3 py-0.5 rounded-full transition-all duration-200 cursor-pointer shadow-xs ${
                             prepayment === Math.round(finalPrice * 0.3) && finalPrice > 0
-                              ? 'bg-white text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] ring-2 ring-white shadow-md scale-105'
-                              : 'bg-white text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:bg-purple-50 active:scale-95 opacity-90 hover:opacity-100'
+                              ? 'bg-white text-[#582F89] ring-2 ring-white shadow-md scale-105'
+                              : 'bg-white text-[#582F89] hover:bg-purple-50 active:scale-95 opacity-90 hover:opacity-100'
                           }`}
                           title="Выбрать 30% предоплаты"
                         >
@@ -2994,10 +2994,10 @@ export default function TestProjectCardPage({
                           const val = e.target.value === '' ? 0 : Number(e.target.value);
                           setPrepayment(val);
                         }}
-                        className="w-full pl-3 pr-7 py-1 bg-white border border-stone-200 rounded-xl text-xs font-black font-mono text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-sm"
+                        className="w-full pl-3 pr-7 py-1 bg-white border border-stone-200 rounded-xl text-xs font-black font-mono text-[#582F89] placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-sm"
                         placeholder="Ручной ввод..."
                       />
-                      <span className="absolute right-2.5 text-xs font-black font-mono text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] pointer-events-none">
+                      <span className="absolute right-2.5 text-xs font-black font-mono text-[#582F89] pointer-events-none">
                         ₽
                       </span>
                     </div>
@@ -3018,10 +3018,10 @@ export default function TestProjectCardPage({
                     showToast('Проект завершен', 'Статус проекта обновлен на «Выполнено»', 'success');
                     onClose();
                   }}
-                  className="px-6 py-2.5 bg-white text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] hover:bg-purple-50 rounded-full text-xs font-black transition-all duration-300 hover:shadow-lg active:scale-[0.98] cursor-pointer flex items-center gap-2 shadow-md"
+                  className="px-6 py-2.5 bg-white text-[#582F89] hover:bg-purple-50 rounded-full text-xs font-black transition-all duration-300 hover:shadow-lg active:scale-[0.98] cursor-pointer flex items-center gap-2 shadow-md"
                 >
-                  <CheckCircle className="w-4 h-4 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] stroke-[2.5]" />
-                  <span>Заказ сдан</span>
+                  <CheckCircle className="w-4 h-4 text-[#582F89] stroke-[2.5]" />
+                  <span className="text-[#582F89]">Заказ сдан</span>
                 </button>
               </div>
             </div>

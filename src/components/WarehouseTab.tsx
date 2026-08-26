@@ -121,8 +121,8 @@ export default function WarehouseTab({
   const [newItemName, setNewItemName] = useState('');
   const [newItemDescription, setNewItemDescription] = useState('');
   const [newItemCat, setNewItemCat] = useState('Конструкции');
-  const [newItemQty, setNewItemQty] = useState(10);
-  const [newItemPrice, setNewItemPrice] = useState(1000);
+  const [newItemQty, setNewItemQty] = useState<number | ''>(1);
+  const [newItemPrice, setNewItemPrice] = useState<number | ''>(0);
   const [newItemImageUrl, setNewItemImageUrl] = useState('');
   const [isDraggingOver, setIsDraggingOver] = useState(false);
 
@@ -272,6 +272,9 @@ export default function WarehouseTab({
     setNewCategoryName('');
     setIsAddingCategory(false);
     setSelectedCategory(key);
+    setNewItemCat(newCat.label);
+    setNewItemQty(1);
+    setNewItemPrice(0);
     showToast('Категория добавлена', `Категория «${newCat.label}» успешно создана.`, 'success');
   };
 
@@ -454,6 +457,10 @@ export default function WarehouseTab({
     setNewItemName('');
     setNewItemDescription('');
     setNewItemImageUrl('');
+    setNewItemQty(1);
+    setNewItemPrice(0);
+    setOriginalImgBeforeBgRemoval('');
+    setHasRemovedBg(false);
     setIsAdding(false);
     showToast('Склад пополнен', `Товар "${newItem.name}" успешно занесен в базу.`, 'success');
   };
@@ -533,11 +540,12 @@ export default function WarehouseTab({
               >
                 <span>{cat.label}</span>
                 <span
-                  className={`inline-flex items-center justify-center rounded-full text-[10px] font-bold min-w-[18px] h-4.5 px-1.5 transition-all duration-200 ${
+                  className={`inline-flex items-center justify-center rounded-full text-[10px] font-bold min-w-[18px] h-4.5 px-1.5 transition-all duration-200 text-white ${
                     isActive
-                      ? 'bg-white/20 text-white backdrop-blur-xs'
-                      : 'bg-[var(--lavenderSoft)] text-[var(--lavDeep)] dark:bg-purple-950/60 dark:text-[var(--lavenderAccent)]'
+                      ? 'bg-white/25 backdrop-blur-xs'
+                      : 'shadow-2xs'
                   }`}
+                  style={!isActive ? { background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' } : undefined}
                 >
                   {count}
                 </span>
@@ -651,7 +659,7 @@ export default function WarehouseTab({
 
       {/* Add item collapsible form */}
       {isAdding && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-md overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-md">
           <style>{`
             @keyframes scanLine {
               0% { top: 0%; opacity: 0; }
@@ -665,21 +673,23 @@ export default function WarehouseTab({
           `}</style>
           
           <div
-            className="bg-white/70 dark:bg-zinc-900/75 backdrop-blur-2xl rounded-[32px] max-w-4xl w-full p-6 md:p-8 shadow-2xl border border-white/80 dark:border-zinc-700/80 relative animate-fadeIn max-h-[90vh] overflow-y-auto"
+            className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl rounded-[28px] sm:rounded-[32px] max-w-4xl w-full shadow-2xl border border-white/80 dark:border-zinc-700/80 relative animate-fadeIn max-h-[92vh] flex flex-col overflow-hidden"
             style={{
               backdropFilter: 'blur(20px)',
               WebkitBackdropFilter: 'blur(20px)',
             }}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between pb-4 mb-6 border-b border-zinc-100 dark:border-zinc-800/60">
-              <h3 className="text-lg font-semibold text-[var(--ink)] tracking-tight">Добавить новый товар</h3>
+            {/* Pinned Header */}
+            <div className="flex items-center justify-between px-5 sm:px-8 py-4 sm:py-5 border-b border-zinc-100 dark:border-zinc-800/60 shrink-0">
+              <h3 className="text-base sm:text-lg font-semibold text-[var(--ink)] tracking-tight">Добавить новый товар</h3>
               <button
                 type="button"
                 onClick={() => {
                   setNewItemName('');
                   setNewItemDescription('');
                   setNewItemImageUrl('');
+                  setNewItemQty(1);
+                  setNewItemPrice(0);
                   setOriginalImgBeforeBgRemoval('');
                   setHasRemovedBg(false);
                   setIsAdding(false);
@@ -690,211 +700,222 @@ export default function WarehouseTab({
               </button>
             </div>
 
-            <form onSubmit={handleAddNewItem} className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 text-left animate-fadeIn">
-              {/* Left Column: Image Area */}
-              <div className="md:col-span-5 flex flex-col gap-4">
-                <span className="text-xs font-medium text-[var(--soft)] uppercase tracking-wider block">
-                  Изображение товара
-                </span>
-                
-                <div
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                  className={`relative aspect-square rounded-2xl border-2 border-dashed flex flex-col items-center justify-center p-4 transition-all overflow-hidden ${
-                    newItemImageUrl 
-                      ? 'border-solid border-[var(--lavenderAccent)]/40 bg-zinc-50 dark:bg-zinc-950/40' 
-                      : isDraggingOver
-                        ? 'border-[var(--lavDeep)] bg-[var(--lavenderSoft)]/20 text-[var(--lavDeep)]'
-                        : 'border-zinc-200/80 dark:border-zinc-800/80 hover:border-[var(--lavenderAccent)] bg-white/20 dark:bg-zinc-950/10'
-                  }`}
-                >
-                  {newItemImageUrl ? (
-                    <div className="relative w-full h-full group">
-                      <img
-                        src={newItemImageUrl}
-                        alt="Uploaded preview"
-                        className="w-full h-full object-contain rounded-xl"
-                      />
-                      {isRemovingBg && (
-                        <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex flex-col items-center justify-center gap-3">
-                          <div className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[var(--lavenderAccent)] to-transparent shadow-[0_0_15px_var(--lavenderAccent)] animate-scan" />
-                          <Loader2 className="w-8 h-8 text-[var(--lavenderAccent)] animate-spin" />
-                          <span className="text-xs font-medium text-white tracking-wider animate-pulse">ИИ убирает фон...</span>
+            {/* Scrollable Form Body */}
+            <form id="add-warehouse-item-form" onSubmit={handleAddNewItem} className="flex-1 overflow-y-auto px-5 sm:px-8 py-5 sm:py-6 custom-scrollbar text-left">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-5 md:gap-8">
+                {/* Left Column: Image Area */}
+                <div className="md:col-span-5 flex flex-col gap-3.5">
+                  <span className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal block">
+                    Изображение товара
+                  </span>
+                  
+                  <div
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={`relative aspect-4/3 sm:aspect-square rounded-2xl border-2 border-dashed flex flex-col items-center justify-center p-3 sm:p-4 transition-all overflow-hidden ${
+                      newItemImageUrl 
+                        ? 'border-solid border-[var(--lavenderAccent)]/40 bg-zinc-50 dark:bg-zinc-950/40' 
+                        : isDraggingOver
+                          ? 'border-[var(--lavDeep)] bg-[var(--lavenderSoft)]/20 text-[var(--lavDeep)]'
+                          : 'border-zinc-200/80 dark:border-zinc-800/80 hover:border-[var(--lavenderAccent)] bg-white/20 dark:bg-zinc-950/10'
+                    }`}
+                  >
+                    {newItemImageUrl ? (
+                      <div className="relative w-full h-full group">
+                        <img
+                          src={newItemImageUrl}
+                          alt="Uploaded preview"
+                          className="w-full h-full object-contain rounded-xl"
+                        />
+                        {isRemovingBg && (
+                          <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex flex-col items-center justify-center gap-3">
+                            <div className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[var(--lavenderAccent)] to-transparent shadow-[0_0_15px_var(--lavenderAccent)] animate-scan" />
+                            <Loader2 className="w-8 h-8 text-[var(--lavenderAccent)] animate-spin" />
+                            <span className="text-xs font-medium text-white tracking-wider animate-pulse">ИИ убирает фон...</span>
+                          </div>
+                        )}
+                        
+                        {!isRemovingBg && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setNewItemImageUrl('');
+                              setOriginalImgBeforeBgRemoval('');
+                              setHasRemovedBg(false);
+                            }}
+                            className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors cursor-pointer"
+                            title="Удалить фото"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center gap-2 cursor-pointer h-full w-full select-none text-center py-4 sm:py-8">
+                        <div className="p-2.5 sm:p-3 rounded-full bg-[var(--lavenderSoft)]/50 dark:bg-purple-950/20 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">
+                          <Upload className="w-4 h-4 sm:w-5 sm:h-5" />
                         </div>
-                      )}
-                      
-                      {!isRemovingBg && (
+                        <div className="space-y-0.5">
+                          <p className="text-xs font-medium text-[var(--ink)]">Загрузить фото</p>
+                          <p className="text-[11px] text-[var(--soft)] max-w-[150px] leading-relaxed mx-auto">
+                            Перетащите или нажмите для выбора
+                          </p>
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="hidden"
+                        />
+                      </label>
+                    )}
+                  </div>
+
+                  {/* AI Background Removal Action Button and Slider */}
+                  {newItemImageUrl && !isRemovingBg && (
+                    <div className="space-y-3 bg-zinc-50 dark:bg-zinc-950/20 p-3 rounded-2xl border border-zinc-100 dark:border-zinc-800/40">
+                      {!hasRemovedBg ? (
                         <button
                           type="button"
-                          onClick={() => {
-                            setNewItemImageUrl('');
-                            setOriginalImgBeforeBgRemoval('');
-                            setHasRemovedBg(false);
-                          }}
-                          className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors cursor-pointer"
-                          title="Удалить photo"
+                          onClick={handleBgRemoval}
+                          className="w-full bg-gradient-to-r from-[var(--lavenderAccent)] to-[var(--lavDeep)] hover:opacity-90 text-white text-xs font-medium py-2 px-3 rounded-full flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
                         >
-                          <X className="w-3.5 h-3.5" />
+                          <Sparkles className="w-3.5 h-3.5" />
+                          Удалить фон с помощью ИИ
                         </button>
+                      ) : (
+                        <div className="space-y-2.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-zinc-500 flex items-center gap-1.5">
+                              <Sliders className="w-3.5 h-3.5" />
+                              Точность удаления (допуск)
+                            </span>
+                            <span className="text-xs font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">{bgRemovalTolerance}</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="1"
+                            max="150"
+                            value={bgRemovalTolerance}
+                            onChange={(e) => handleToleranceChange(Number(e.target.value))}
+                            className="w-full accent-[var(--lavDeep)] cursor-pointer"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleRestoreOriginal}
+                            className="w-full bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-xs py-1.5 px-3 rounded-full flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                            Восстановить оригинал
+                          </button>
+                        </div>
                       )}
                     </div>
-                  ) : (
-                    <label className="flex flex-col items-center justify-center gap-2 cursor-pointer h-full w-full select-none text-center py-8">
-                      <div className="p-3 rounded-full bg-[var(--lavenderSoft)]/50 dark:bg-purple-950/20 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">
-                        <Upload className="w-5 h-5" />
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-xs font-medium text-[var(--ink)]">Загрузить фото</p>
-                        <p className="text-xs text-[var(--soft)] max-w-[150px] leading-relaxed mx-auto">
-                          Перетащите или нажмите для выбора
-                        </p>
-                      </div>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="hidden"
-                      />
-                    </label>
                   )}
                 </div>
 
-                {/* AI Background Removal Action Button and Slider */}
-                {newItemImageUrl && !isRemovingBg && (
-                  <div className="space-y-3 bg-zinc-50 dark:bg-zinc-950/20 p-3.5 rounded-2xl border border-zinc-100 dark:border-zinc-800/40">
-                    {!hasRemovedBg ? (
-                      <button
-                        type="button"
-                        onClick={handleBgRemoval}
-                        className="w-full bg-gradient-to-r from-[var(--lavenderAccent)] to-[var(--lavDeep)] hover:opacity-90 text-white text-xs font-medium py-2.5 px-4 rounded-full flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg hover:scale-[1.01] active:scale-95 cursor-pointer"
+                {/* Right Column: Item Fields */}
+                <div className="md:col-span-7 flex flex-col gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-6 gap-3.5">
+                    <div className="sm:col-span-6 space-y-1">
+                      <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal block">Наименование инвентаря</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="например, Круглая арка-кольцо 2.2м"
+                        value={newItemName}
+                        onChange={(e) => setNewItemName(e.target.value)}
+                        className="w-full text-xs px-3.5 py-2.5 rounded-xl bg-white/80 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 text-[var(--ink)] focus:outline-none focus:border-[var(--lavenderAccent)] focus:ring-1 focus:ring-[var(--lavenderAccent)]/25 transition-all"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-6 space-y-1">
+                      <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal block">Краткое описание</label>
+                      <textarea
+                        placeholder="например, Классический декор, золото"
+                        value={newItemDescription}
+                        onChange={(e) => setNewItemDescription(e.target.value)}
+                        rows={2}
+                        className="w-full text-xs px-3.5 py-2 rounded-xl bg-white/80 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 text-[var(--ink)] focus:outline-none focus:border-[var(--lavenderAccent)] focus:ring-1 focus:ring-[var(--lavenderAccent)]/25 transition-all resize-none"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2 space-y-1">
+                      <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal block">Категория</label>
+                      <select
+                        value={newItemCat}
+                        onChange={(e) => setNewItemCat(e.target.value)}
+                        className="w-full text-xs px-3 py-2.5 rounded-xl bg-white/80 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 text-[var(--ink)] focus:outline-none focus:border-[var(--lavenderAccent)] transition-all cursor-pointer"
                       >
-                        <Sparkles className="w-4 h-4" />
-                        Удалить фон с помощью ИИ
-                      </button>
-                    ) : (
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-zinc-500 flex items-center gap-1.5">
-                            <Sliders className="w-3.5 h-3.5" />
-                            Точность удаления (допуск)
-                          </span>
-                          <span className="text-xs font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">{bgRemovalTolerance}</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="1"
-                          max="150"
-                          value={bgRemovalTolerance}
-                          onChange={(e) => handleToleranceChange(Number(e.target.value))}
-                          className="w-full accent-[var(--lavDeep)] cursor-pointer"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleRestoreOriginal}
-                          className="w-full bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-xs py-2 px-4 rounded-full flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                        >
-                          <RotateCcw className="w-3.5 h-3.5" />
-                          Восстановить оригинал
-                        </button>
-                      </div>
-                    )}
+                        {customCategories.map(cat => (
+                          <option key={cat.key} value={cat.label}>
+                            {cat.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="sm:col-span-2 space-y-1">
+                      <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal block">Количество всего</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={newItemQty === '' ? '' : newItemQty}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setNewItemQty(val === '' ? '' : parseInt(val) || 1);
+                        }}
+                        className="w-full text-xs px-3.5 py-2.5 rounded-xl bg-white/80 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 text-[var(--ink)] focus:outline-none focus:border-[var(--lavenderAccent)] transition-all"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2 space-y-1">
+                      <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal block">Стоимость ₽</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={newItemPrice === '' ? '' : newItemPrice}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setNewItemPrice(val === '' ? '' : Number(val) || 0);
+                        }}
+                        className="w-full text-xs px-3.5 py-2.5 rounded-xl bg-white/80 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 text-[var(--ink)] focus:outline-none focus:border-[var(--lavenderAccent)] transition-all"
+                      />
+                    </div>
                   </div>
-                )}
-
-
-              </div>
-
-              {/* Right Column: Item Fields */}
-              <div className="md:col-span-7 flex flex-col justify-between gap-5">
-                <div className="grid grid-cols-1 sm:grid-cols-6 gap-4">
-                  <div className="sm:col-span-6 space-y-1.5">
-                    <label className="text-xs font-semibold text-[var(--soft)] uppercase tracking-wider block">Наименование инвентаря</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="например, Круглая арка-кольцо 2.2м"
-                      value={newItemName}
-                      onChange={(e) => setNewItemName(e.target.value)}
-                      className="w-full text-xs px-3.5 py-2 rounded-xl bg-white/80 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 text-[var(--ink)] focus:outline-none focus:border-[var(--lavenderAccent)] focus:ring-1 focus:ring-[var(--lavenderAccent)]/25 transition-all"
-                    />
-                  </div>
-
-                  <div className="sm:col-span-6 space-y-1.5">
-                    <label className="text-xs font-semibold text-[var(--soft)] uppercase tracking-wider block">Краткое описание</label>
-                    <textarea
-                      placeholder="например, Классический декор, золото"
-                      value={newItemDescription}
-                      onChange={(e) => setNewItemDescription(e.target.value)}
-                      rows={3}
-                      className="w-full text-xs px-3.5 py-2 rounded-xl bg-white/80 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 text-[var(--ink)] focus:outline-none focus:border-[var(--lavenderAccent)] focus:ring-1 focus:ring-[var(--lavenderAccent)]/25 transition-all resize-none"
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2 space-y-1.5">
-                    <label className="text-xs font-semibold text-[var(--soft)] uppercase tracking-wider block">Категория</label>
-                    <select
-                      value={newItemCat}
-                      onChange={(e) => setNewItemCat(e.target.value)}
-                      className="w-full text-xs px-3 py-2 rounded-xl bg-white/80 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 text-[var(--ink)] focus:outline-none focus:border-[var(--lavenderAccent)] transition-all cursor-pointer"
-                    >
-                      {customCategories.map(cat => (
-                        <option key={cat.key} value={cat.label}>
-                          {cat.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="sm:col-span-2 space-y-1.5">
-                    <label className="text-xs font-semibold text-[var(--soft)] uppercase tracking-wider block">Количество всего</label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={newItemQty}
-                      onChange={(e) => setNewItemQty(Number(e.target.value))}
-                      className="w-full text-xs px-3.5 py-2 rounded-xl bg-white/80 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 text-[var(--ink)] focus:outline-none focus:border-[var(--lavenderAccent)] transition-all"
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2 space-y-1.5">
-                    <label className="text-xs font-semibold text-[var(--soft)] uppercase tracking-wider block">Стоимость ₽</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={newItemPrice}
-                      onChange={(e) => setNewItemPrice(Number(e.target.value))}
-                      className="w-full text-xs px-3.5 py-2 rounded-xl bg-white/80 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 text-[var(--ink)] focus:outline-none focus:border-[var(--lavenderAccent)] transition-all"
-                    />
-                  </div>
-                </div>
-
-                {/* Bottom Actions Row */}
-                <div className="flex gap-3 justify-end pt-4 border-t border-zinc-100 dark:border-zinc-800/40 mt-6">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setNewItemName('');
-                      setNewItemDescription('');
-                      setNewItemImageUrl('');
-                      setOriginalImgBeforeBgRemoval('');
-                      setHasRemovedBg(false);
-                      setIsAdding(false);
-                    }}
-                    className="bg-white/50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 text-[var(--soft)] rounded-full py-2.5 px-5 text-xs font-medium border border-zinc-200/40 dark:border-zinc-800/40 cursor-pointer transition-colors"
-                  >
-                    Отмена
-                  </button>
-                  <button
-                    type="submit"
-                    className="bg-gradient-to-r from-[var(--primary-grad-from,#8C52D0)] to-[var(--primary-grad-to,#582F89)] hover:opacity-95 text-white rounded-full py-2.5 px-6 text-xs font-medium flex items-center gap-2 shadow-sm cursor-pointer transition-colors"
-                  >
-                    <Check className="w-4 h-4" />
-                    Добавить позицию
-                  </button>
                 </div>
               </div>
             </form>
+
+            {/* Pinned Bottom Actions Row (Never scrolls off-screen on mobile) */}
+            <div className="px-5 sm:px-8 py-3.5 sm:py-4 border-t border-zinc-100 dark:border-zinc-800/60 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md flex items-center justify-end gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setNewItemName('');
+                  setNewItemDescription('');
+                  setNewItemImageUrl('');
+                  setNewItemQty(1);
+                  setNewItemPrice(0);
+                  setOriginalImgBeforeBgRemoval('');
+                  setHasRemovedBg(false);
+                  setIsAdding(false);
+                }}
+                className="bg-white/60 dark:bg-zinc-800/60 hover:bg-zinc-100 dark:hover:bg-zinc-700/60 text-[var(--soft)] rounded-full py-2 px-5 text-xs font-semibold border border-zinc-200/60 dark:border-zinc-700/60 cursor-pointer transition-colors"
+              >
+                Отмена
+              </button>
+              <button
+                type="submit"
+                form="add-warehouse-item-form"
+                style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
+                className="hover:opacity-95 text-white rounded-full py-2 px-6 text-xs font-semibold flex items-center gap-2 shadow-xs cursor-pointer transition-all"
+              >
+                <Check className="w-4 h-4 stroke-[2.5]" />
+                <span>Добавить позицию</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1068,7 +1089,7 @@ export default function WarehouseTab({
                             }}
                             title="Изменить стоимость"
                           >
-                            <span className="text-base sm:text-lg font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] tracking-tight">
+                            <span className="text-base sm:text-lg font-bold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] tracking-tight">
                               {item.pricePerDay.toLocaleString('ru')} ₽
                             </span>
                             <Pencil className="w-3 h-3 text-zinc-400 dark:text-zinc-500 group-hover/price:text-[var(--lavDeep)] dark:group-hover/price:text-[var(--lavenderAccent)] transition-colors shrink-0" />
@@ -1255,7 +1276,7 @@ export default function WarehouseTab({
                             }}
                             title="Изменить стоимость"
                           >
-                            <span className="text-sm sm:text-base font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] tracking-tight">
+                            <span className="text-sm sm:text-base font-bold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] tracking-tight">
                               {item.pricePerDay.toLocaleString('ru')} ₽
                             </span>
                             <Pencil className="w-3 h-3 text-zinc-400 dark:text-zinc-500 group-hover/price:text-[var(--lavDeep)] dark:group-hover/price:text-[var(--lavenderAccent)] transition-colors shrink-0" />

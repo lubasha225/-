@@ -1690,14 +1690,14 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
                       setIsEditingAdvance(false);
                       showToast?.('Аванс обновлен', `Аванс сохранен: ${advanceAmount.toLocaleString('ru')} ₽`, 'success');
                     }}
-                    className="p-1.5 bg-white text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] rounded-full hover:bg-purple-100 transition-colors cursor-pointer shrink-0"
+                    className="p-1.5 bg-white text-[#582F89] rounded-full hover:bg-purple-100 transition-colors cursor-pointer shrink-0"
                   >
                     <Check className="w-4 h-4 stroke-[3]" />
                   </button>
                 </div>
               ) : (
                 <div className="w-full bg-white/95 dark:bg-zinc-900/90 text-zinc-900 dark:text-white px-4 py-1.5 rounded-full flex items-center justify-between shadow-inner">
-                  <span className="text-lg sm:text-xl font-extrabold font-mono text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300">
+                  <span className="text-lg sm:text-xl font-extrabold font-mono text-[#582F89]">
                     {advanceAmount.toLocaleString('ru')} ₽
                   </span>
                   <span className="text-xs font-bold text-zinc-500 dark:text-zinc-400">
@@ -1722,10 +1722,10 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
                   showToast?.('Статус проекта', 'Проект возвращен в работу', 'info');
                 }
               }}
-              className="w-full py-2 px-4 rounded-full bg-white hover:bg-purple-50 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all cursor-pointer text-center justify-center flex items-center gap-1.5 whitespace-nowrap"
+              className="w-full py-2 px-4 rounded-full bg-white hover:bg-purple-50 text-[#582F89] text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all cursor-pointer text-center justify-center flex items-center gap-1.5 whitespace-nowrap"
             >
-              <Check className="w-4 h-4 stroke-[3] text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
-              <span>{projectStatus === 'completed' ? 'Заказ сдан ✓' : 'Заказ сдан'}</span>
+              <Check className="w-4 h-4 stroke-[3] text-[#582F89]" />
+              <span className="text-[#582F89]">{projectStatus === 'completed' ? 'Заказ сдан ✓' : 'Заказ сдан'}</span>
             </button>
 
             {/* Secondary Button: Отменить */}
