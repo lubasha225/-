@@ -90,9 +90,11 @@ import {
   DoorOpen,
   Ruler,
   Move,
-  Utensils
+  Utensils,
+  Image as ImageIcon
 } from 'lucide-react';
-import { Project, EstimateItem } from '../types';
+import { Project, EstimateItem, WarehouseItem, ImageItem } from '../types';
+import { initialWarehouseItems, initialImages } from '../mockData';
 import { CATALOG_ASSETS, LibraryItem } from './editor/EditorLibraryData';
 import FloorPlanSchema, { PlanElement } from './editor/FloorPlanSchema';
 
@@ -199,6 +201,7 @@ interface EditorScene {
 const NEW_CATALOG_CATEGORIES = [
   { id: 'favorites', title: 'Избранное', icon: 'Heart' },
   { id: 'warehouse', title: 'Склад', icon: 'Box' },
+  { id: 'images', title: 'Изображения', icon: 'Image' },
   { id: 'construction', title: 'Конструкция', icon: 'Layers' },
   { id: 'podiums', title: 'Подиумы', icon: 'Columns' },
   { id: 'textiles', title: 'Текстиль', icon: 'AlignLeft' },
@@ -291,6 +294,9 @@ const CategoryIcon: React.FC<{
   switch (cat.id) {
     case 'favorites': return <Heart className={`w-5 h-5 ${isSelected ? 'fill-[var(--lavDeep)] text-[var(--lavDeep)] dark:fill-[var(--lavenderAccent)] dark:text-[var(--lavenderAccent)]' : 'text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]'}`} />;
     case 'warehouse': return <Box className={iconClass} />;
+    case 'images':
+    case 'image':
+      return <ImageIcon className={iconClass} />;
     case 'construction': return <Layers className={iconClass} />;
     case 'podiums': return <Columns className={iconClass} />;
     case 'textiles': return <AlignLeft className={iconClass} />;
@@ -1287,7 +1293,6 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
   const [editingCaptionText, setEditingCaptionText] = useState<string>('');
   const [libSearch, setLibSearch] = useState<string>('');
   const [favoritesList, setFavoritesList] = useState<string[]>(['text-1', 'arch-1']);
-  const [showCategoryIconManager, setShowCategoryIconManager] = useState<boolean>(false);
   const [itemToPreview, setItemToPreview] = useState<LibraryItem | null>(null);
   const categoryScrollRef = useRef<HTMLDivElement>(null);
   const adjustedAspectIdsRef = useRef<Set<string>>(new Set());
@@ -1910,8 +1915,36 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
       let assetItems: LibraryItem[] = [];
       switch (selectedCategory) {
-        case 'warehouse':
+        case 'warehouse': {
+          const savedWarehouseStr = localStorage.getItem('pop_warehouse');
+          let localWarehouse: WarehouseItem[] = [];
+          try {
+            localWarehouse = savedWarehouseStr ? JSON.parse(savedWarehouseStr) : initialWarehouseItems;
+          } catch (e) {
+            localWarehouse = initialWarehouseItems;
+          }
+
+          const convertedWarehouse: LibraryItem[] = localWarehouse.map((item) => {
+            const isImg = item.imageUrl && (item.imageUrl.startsWith('data:') || item.imageUrl.startsWith('http'));
+            const markup = isImg
+              ? `<img src="${item.imageUrl}" alt="${item.name}" class="w-full h-full object-contain pointer-events-none" />`
+              : `<svg viewBox="0 0 100 100" class="w-full h-full"><rect width="100" height="100" rx="8" fill="#F3E8FF"/><text x="50" y="55" text-anchor="middle" font-size="11" fill="var(--lavDeep, #8C52D0)">${item.name}</text></svg>`;
+
+            return {
+              id: item.id,
+              name: item.name,
+              code: `WH-${item.id.replace('wh_', '').replace(/[^a-zA-Z0-9]/g, '').slice(-4).toUpperCase() || '01'}`,
+              category: 'warehouse',
+              price: item.pricePerDay || 0,
+              width: 120,
+              height: 120,
+              svgMarkup: markup,
+              customImage: isImg ? item.imageUrl : undefined
+            };
+          });
+
           assetItems = [
+            ...convertedWarehouse,
             ...(CATALOG_ASSETS.arches || []),
             ...(CATALOG_ASSETS.stands || []),
             ...(CATALOG_ASSETS.tables || []),
@@ -1919,6 +1952,31 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
             ...(CATALOG_ASSETS.decor || [])
           ];
           break;
+        }
+        case 'images': {
+          const savedImagesStr = localStorage.getItem('pop_images');
+          let localImages: ImageItem[] = [];
+          try {
+            localImages = savedImagesStr ? JSON.parse(savedImagesStr) : initialImages;
+          } catch (e) {
+            localImages = initialImages;
+          }
+
+          const convertedImages: LibraryItem[] = localImages.map((img) => ({
+            id: img.id,
+            name: img.title || 'Изображение',
+            code: `IMG-${img.id.replace('img', '').replace(/[^a-zA-Z0-9]/g, '').slice(-4).toUpperCase() || '01'}`,
+            category: 'images',
+            price: 0,
+            width: 120,
+            height: 120,
+            svgMarkup: `<img src="${img.url}" alt="${img.title || 'Изображение'}" class="w-full h-full object-contain pointer-events-none" />`,
+            customImage: img.url
+          }));
+
+          assetItems = convertedImages;
+          break;
+        }
         case 'construction':
         case 'arches':
         case 'stands':
@@ -1990,7 +2048,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
           tableware: ['сервировка', 'посуда', 'канделябры', 'бокалы'],
           themes: ['тематика', 'концепт-зоны'],
           text: ['текст', 'неон', 'вывески', 'буквы'],
-          warehouse: ['склад', 'инвентарь']
+          warehouse: ['склад', 'инвентарь', 'warehouse'],
+          images: ['изображения', 'изображение', 'картинки', 'фото', 'рендер', 'images', 'image']
         };
 
         if (synonymsMap[sc]) {
@@ -3312,17 +3371,24 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
             <div className="flex gap-2.5 flex-1 min-h-0 items-start overflow-hidden min-w-0">
               
               {/* VERTICAL CATEGORY BAR */}
-              <div className="flex flex-col gap-1 p-1.5 bg-zinc-100/90 dark:bg-zinc-900/80 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 shrink-0 overflow-y-auto overflow-x-hidden max-h-full scrollbar-none shadow-2xs items-center w-[72px] sm:w-[76px]">
-                {(activeWorkspaceTab === 'floorplan' ? SCHEMA_CATALOG_CATEGORIES : NEW_CATALOG_CATEGORIES).map((cat) => {
-                  const isSelected = selectedCategory === cat.id;
-                  return (
-                    <React.Fragment key={cat.id}>
+              <div className="flex flex-col p-1.5 bg-zinc-100/90 dark:bg-zinc-900/80 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 shrink-0 h-full max-h-full overflow-hidden shadow-2xs items-center w-[72px] sm:w-[76px]">
+                {(() => {
+                  const isFloorplan = activeWorkspaceTab === 'floorplan';
+                  const currentCategories = isFloorplan ? SCHEMA_CATALOG_CATEGORIES : NEW_CATALOG_CATEGORIES;
+                  const topCategoryIds = isFloorplan ? ['favorites'] : ['favorites', 'warehouse', 'images'];
+                  const topCats = currentCategories.filter(c => topCategoryIds.includes(c.id));
+                  const bottomCats = currentCategories.filter(c => !topCategoryIds.includes(c.id));
+
+                  const renderCategoryButton = (cat: { id: string; title: string; icon?: string }) => {
+                    const isSelected = selectedCategory === cat.id;
+                    return (
                       <button
+                        key={cat.id}
                         onClick={() => {
                           setSelectedCategory(cat.id);
                           setLibSearch('');
                         }}
-                        className={`w-full py-2 px-1 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer border group ${
+                        className={`w-full py-2 px-1 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer border group shrink-0 ${
                           isSelected
                             ? 'bg-[var(--lavenderSoft)] text-[var(--lavDeep)] border-[var(--lavenderAccent)]/40 dark:text-[var(--lavenderAccent)] shadow-xs'
                             : 'bg-transparent hover:bg-white/70 dark:hover:bg-zinc-800/70 border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
@@ -3338,24 +3404,26 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                           {cat.title}
                         </span>
                       </button>
-                      {cat.id === 'warehouse' && activeWorkspaceTab !== 'floorplan' && (
-                        <div className="w-10 my-1 border-b border-zinc-300/80 dark:border-zinc-700/80 shrink-0" />
-                      )}
-                    </React.Fragment>
-                  );
-                })}
+                    );
+                  };
 
-                {/* Button to manage category icons */}
-                <div className="pt-1 border-t border-zinc-200/60 dark:border-zinc-800 mt-0.5 w-full flex justify-center">
-                  <button
-                    onClick={() => setShowCategoryIconManager(true)}
-                    className="w-full py-1.5 px-0.5 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer bg-white/60 dark:bg-zinc-800/60 text-zinc-400 hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] hover:bg-white dark:hover:bg-zinc-800 border border-transparent hover:border-[var(--lavenderAccent)]/30"
-                    title="Управление иконками категорий (папка /public/category-icons/)"
-                  >
-                    <Sliders className="w-4 h-4 mb-0.5" />
-                    <span className="text-[9px] font-medium text-center text-zinc-400">Иконки</span>
-                  </button>
-                </div>
+                  return (
+                    <>
+                      {/* FIXED TOP SECTION (Избранное, Склад, Изображения) - Не прокручиваются */}
+                      <div className="flex flex-col gap-1 w-full shrink-0 items-center">
+                        {topCats.map(cat => renderCategoryButton(cat))}
+                      </div>
+
+                      {/* SEPARATOR LINE */}
+                      <div className="w-10 my-1.5 border-b border-zinc-300/80 dark:border-zinc-700/80 shrink-0" />
+
+                      {/* SCROLLABLE BOTTOM SECTION - Прокручиваются до последней иконки */}
+                      <div className="flex-1 overflow-y-auto overflow-x-hidden w-full scrollbar-none flex flex-col gap-1 items-center min-h-0 py-0.5">
+                        {bottomCats.map(cat => renderCategoryButton(cat))}
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
 
               {/* CARDS GRID AREA */}
@@ -7214,126 +7282,6 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                 >
                   <Check className="w-4 h-4" />
                   <span>ОК</span>
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* CATEGORY ICON MANAGER MODAL */}
-      <AnimatePresence>
-        {showCategoryIconManager && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white dark:bg-zinc-900 rounded-[28px] p-6 max-w-xl w-full border border-zinc-200 dark:border-zinc-800 shadow-2xl space-y-5 max-h-[85vh] flex flex-col"
-            >
-              <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 bg-[var(--lavenderSoft)] rounded-xl text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">
-                    <Sliders className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-base text-zinc-900 dark:text-zinc-100">Иконки категорий редактора</h3>
-                    <p className="text-xs text-zinc-400">Настройка значков боковой панели</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShowCategoryIconManager(false)}
-                  className="p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 transition-colors cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Instructions Box */}
-              <div className="p-3.5 rounded-2xl bg-[var(--lavenderSoft)]/50 dark:bg-zinc-800/40 border border-[var(--lavenderAccent)]/20 dark:border-zinc-800 text-xs text-zinc-600 dark:text-zinc-300 space-y-1.5 shrink-0">
-                <div className="font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] flex items-center gap-1.5">
-                  <Folder className="w-4 h-4" />
-                  <span>Папка в проекте: /public/category-icons/</span>
-                </div>
-                <p className="leading-relaxed text-[11px]">
-                  Вы можете поместить файлы своих иконок (в формате <strong>.svg</strong> или <strong>.png</strong>) в папку <code>/public/category-icons/</code> с соответствующими именами (напр. <code>favorites.svg</code>, <code>warehouse.svg</code>, <code>arches.svg</code>, <code>tables.svg</code> и др.).
-                </p>
-                <p className="leading-relaxed text-[11px]">
-                  Также вы можете загрузить любую иконку прямо отсюда кнопкой «Загрузить».
-                </p>
-              </div>
-
-              {/* Categories list */}
-              <div className="flex-1 overflow-y-auto space-y-2 pr-1 divide-y divide-zinc-100 dark:divide-zinc-800/50">
-                {NEW_CATALOG_CATEGORIES.map((cat) => {
-                  const hasCustom = !!localStorage.getItem(`cat_icon_${cat.id}`);
-                  return (
-                    <div key={cat.id} className="pt-2.5 first:pt-0 flex items-center justify-between text-xs gap-3">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-9 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center shrink-0 border border-zinc-200/50 dark:border-zinc-700/50">
-                          <CategoryIcon cat={cat} />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="font-semibold text-zinc-800 dark:text-zinc-200 truncate">{cat.title}</div>
-                          <div className="text-[10px] text-zinc-400 font-mono">/public/category-icons/{cat.id}.svg</div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        {hasCustom && (
-                          <button
-                            onClick={() => {
-                              localStorage.removeItem(`cat_icon_${cat.id}`);
-                              window.dispatchEvent(new Event('cat_icons_updated'));
-                              showToast('Сброшено', `Иконка категории "${cat.title}" возвращена к файлу в папке/стандарту.`, 'info');
-                            }}
-                            className="px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 text-zinc-600 dark:text-zinc-300 text-[11px] font-medium transition-colors cursor-pointer"
-                          >
-                            Сбросить
-                          </button>
-                        )}
-                        <label
-                          style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
-                          className="px-3.5 py-1.5 rounded-full hover:opacity-90 text-white text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1 shadow-xs"
-                        >
-                          <Upload className="w-3 h-3" />
-                          <span>Загрузить</span>
-                          <input
-                            type="file"
-                            accept="image/svg+xml,image/png,image/jpeg"
-                            className="hidden"
-                            onChange={(e) => {
-                              if (e.target.files && e.target.files[0]) {
-                                const file = e.target.files[0];
-                                const reader = new FileReader();
-                                reader.onload = (event) => {
-                                  if (event.target?.result) {
-                                    try {
-                                      localStorage.setItem(`cat_icon_${cat.id}`, event.target.result as string);
-                                    } catch (e) {
-                                      console.warn('Failed to save category icon:', e);
-                                    }
-                                    window.dispatchEvent(new Event('cat_icons_updated'));
-                                    showToast('Иконка обновлена', `Иконка категории "${cat.title}" сохранена.`, 'success');
-                                  }
-                                };
-                                reader.readAsDataURL(file);
-                              }
-                            }}
-                          />
-                        </label>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 flex justify-end">
-                <button
-                  onClick={() => setShowCategoryIconManager(false)}
-                  className="px-5 py-2.5 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 text-zinc-800 dark:text-zinc-200 font-bold text-xs transition-colors cursor-pointer"
-                >
-                  Закрыть
                 </button>
               </div>
             </motion.div>

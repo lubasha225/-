@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UploadCloud, Trash2, Plus, Pencil, Check, X, ChevronDown, Sparkles, Search } from 'lucide-react';
+import { UploadCloud, Trash2, Plus, Pencil, Check, X, ChevronDown, Sparkles, Search, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ImageItem } from '../types';
 import DeleteConfirmModal from './DeleteConfirmModal';
@@ -27,6 +27,51 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [activeDropdownImageId, setActiveDropdownImageId] = useState<string | null>(null);
   const [zoomedImage, setZoomedImage] = useState<ImageItem | null>(null);
+
+  // Zoom and pan state for modal lightbox
+  const [modalZoom, setModalZoom] = useState<number>(1);
+  const [modalPan, setModalPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState<boolean>(false);
+  const [panStart, setPanStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // Reset zoom and pan when opening a new image
+  useEffect(() => {
+    setModalZoom(1);
+    setModalPan({ x: 0, y: 0 });
+    setIsPanning(false);
+  }, [zoomedImage]);
+
+  const handleModalWheel = (e: React.WheelEvent) => {
+    e.stopPropagation();
+    const delta = e.deltaY < 0 ? 0.15 : -0.15;
+    setModalZoom(prev => {
+      const next = Math.min(Math.max(Number((prev + delta).toFixed(2)), 0.5), 5);
+      if (next <= 1) setModalPan({ x: 0, y: 0 });
+      return next;
+    });
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (modalZoom > 1) {
+      e.preventDefault();
+      setIsPanning(true);
+      setPanStart({ x: e.clientX - modalPan.x, y: e.clientY - modalPan.y });
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isPanning && modalZoom > 1) {
+      e.preventDefault();
+      setModalPan({
+        x: e.clientX - panStart.x,
+        y: e.clientY - panStart.y
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsPanning(false);
+  };
 
   // Delete confirmation modal state
   const [deleteConfirm, setDeleteConfirm] = useState<{
@@ -485,14 +530,14 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
       {/* Zoom Modal */}
       <AnimatePresence>
         {zoomedImage && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6">
             {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setZoomedImage(null)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/85 backdrop-blur-md"
             />
             
             {/* Modal Content */}
@@ -501,7 +546,7 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: "spring", duration: 0.4 }}
-              className="relative max-w-4xl w-full max-h-[85vh] bg-zinc-950/80 backdrop-blur-2xl rounded-3xl border border-white/20 dark:border-zinc-700/80 overflow-hidden flex flex-col shadow-2xl z-10"
+              className="relative max-w-5xl w-full h-[90vh] max-h-[92vh] bg-zinc-950/95 backdrop-blur-2xl rounded-3xl border border-white/20 dark:border-zinc-700/80 overflow-hidden flex flex-col shadow-2xl z-10 select-none"
               style={{
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
@@ -510,34 +555,102 @@ export default function ImagesTab({ images, onUpdateImages, showToast, setHeader
               {/* Close Button */}
               <button
                 onClick={() => setZoomedImage(null)}
-                className="absolute top-3 right-3 p-2 rounded-full bg-black/50 hover:bg-black/80 text-white/80 hover:text-white border border-white/10 backdrop-blur-md transition-all cursor-pointer z-20"
+                className="absolute top-3 right-3 p-2 rounded-full bg-black/60 hover:bg-black/85 text-white/80 hover:text-white border border-white/15 backdrop-blur-md transition-all cursor-pointer z-30 shadow-md"
                 title="Закрыть"
               >
                 <X className="w-5 h-5" />
               </button>
 
-              {/* Image Container */}
-              <div className="flex-1 overflow-auto flex items-center justify-center bg-zinc-950 p-4 min-h-0">
-                <img
-                  src={zoomedImage.url}
-                  alt={zoomedImage.title}
-                  className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg select-none"
-                  referrerPolicy="no-referrer"
-                />
+              {/* Image Container with Full Height & Interactive Wheel Zoom */}
+              <div 
+                className={`flex-1 w-full overflow-hidden flex items-center justify-center bg-zinc-950/80 p-4 sm:p-6 min-h-0 relative select-none ${
+                  modalZoom > 1 ? (isPanning ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-zoom-in'
+                }`}
+                onWheel={handleModalWheel}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
+                onDoubleClick={() => {
+                  if (modalZoom > 1) {
+                    setModalZoom(1);
+                    setModalPan({ x: 0, y: 0 });
+                  } else {
+                    setModalZoom(2);
+                  }
+                }}
+              >
+                {/* Transparency Grid Pattern */}
+                <div className="absolute inset-0 bg-[radial-gradient(#383838_1px,transparent_1px)] [background-size:16px_16px] opacity-40 pointer-events-none" />
+
+                {/* Zoom Controls Floating Toolbar */}
+                <div 
+                  className="absolute top-3 left-3 z-30 flex items-center gap-1.5 bg-black/70 hover:bg-black/85 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/15 text-white shadow-lg text-xs"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setModalZoom(prev => Math.max(Number((prev - 0.25).toFixed(2)), 0.5))}
+                    className="p-1 rounded-md hover:bg-white/20 text-white/80 hover:text-white transition-colors cursor-pointer"
+                    title="Уменьшить"
+                  >
+                    <ZoomOut className="w-3.5 h-3.5" />
+                  </button>
+                  <span className="font-semibold px-1 text-[11px] tabular-nums text-zinc-200 min-w-[36px] text-center">
+                    {Math.round(modalZoom * 100)}%
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setModalZoom(prev => Math.min(Number((prev + 0.25).toFixed(2)), 5))}
+                    className="p-1 rounded-md hover:bg-white/20 text-white/80 hover:text-white transition-colors cursor-pointer"
+                    title="Увеличить"
+                  >
+                    <ZoomIn className="w-3.5 h-3.5" />
+                  </button>
+                  {modalZoom !== 1 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setModalZoom(1);
+                        setModalPan({ x: 0, y: 0 });
+                      }}
+                      className="p-1 ml-0.5 rounded-md hover:bg-white/20 text-white/80 hover:text-white transition-colors cursor-pointer"
+                      title="Сбросить масштаб"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Zoomable Image Element */}
+                <div 
+                  className="relative flex items-center justify-center max-w-full max-h-full transition-transform duration-75 ease-out"
+                  style={{
+                    transform: `translate(${modalPan.x}px, ${modalPan.y}px) scale(${modalZoom})`,
+                    transformOrigin: 'center center',
+                  }}
+                >
+                  <img
+                    src={zoomedImage.url}
+                    alt={zoomedImage.title}
+                    className="max-w-full max-h-[calc(90vh-140px)] object-contain rounded-lg shadow-2xl pointer-events-none select-none"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
               </div>
 
               {/* Footer / Description */}
-              <div className="bg-zinc-900 px-6 py-4 border-t border-zinc-800 text-left">
+              <div className="bg-zinc-900/95 px-6 py-4 border-t border-zinc-800 text-left shrink-0 z-20">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <h4 className="text-sm font-semibold text-zinc-100 truncate">
+                    <h4 className="text-base sm:text-lg font-semibold text-zinc-100 truncate">
                       {zoomedImage.title || 'Изображение'}
                     </h4>
                     <p className="text-xs text-zinc-400 mt-1">
-                      Категория: {customCategories.find(c => c.key === zoomedImage.category)?.label || zoomedImage.category}
+                      Категория: <strong className="text-zinc-200">{customCategories.find(c => c.key === zoomedImage.category)?.label || zoomedImage.category}</strong>
                     </p>
                     {zoomedImage.projectName && (
-                      <span className="inline-block mt-1 text-[10px] bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded font-medium">
+                      <span className="inline-block mt-1 text-[10px] bg-zinc-800 text-zinc-300 px-2.5 py-0.5 rounded-md font-medium border border-white/5">
                         Проект: {zoomedImage.projectName}
                       </span>
                     )}

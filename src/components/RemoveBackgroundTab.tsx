@@ -181,8 +181,8 @@ export default function RemoveBackgroundTab({
   // Save Modal States
   const [isWarehouseModalOpen, setIsWarehouseModalOpen] = useState<boolean>(false);
   const [newItemName, setNewItemName] = useState<string>('');
-  const [newItemPrice, setNewItemPrice] = useState<number>(1500);
-  const [newItemQuantity, setNewItemQuantity] = useState<number>(1);
+  const [newItemPrice, setNewItemPrice] = useState<number | ''>(0);
+  const [newItemQuantity, setNewItemQuantity] = useState<number | ''>(1);
 
   // Save Mask State to Undo Stack
   const saveMaskHistoryState = useCallback((maskCtx: CanvasRenderingContext2D, w: number, h: number) => {
@@ -1164,11 +1164,11 @@ export default function RemoveBackgroundTab({
       onAddWarehouseItem({
         name: newItemName || activeImageTitle,
         category: 'Декор',
-        total: newItemQuantity,
-        available: newItemQuantity,
+        total: Number(newItemQuantity) || 1,
+        available: Number(newItemQuantity) || 1,
         rented: 0,
-        pricePerDay: newItemPrice,
-        description: 'Вырезанный декор без фона',
+        pricePerDay: Number(newItemPrice) || 0,
+        description: '',
         imageUrl: dataUrl
       });
 
@@ -1268,6 +1268,8 @@ export default function RemoveBackgroundTab({
                   <button
                     onClick={() => {
                       setNewItemName(activeImageTitle);
+                      setNewItemPrice(0);
+                      setNewItemQuantity(1);
                       setIsWarehouseModalOpen(true);
                     }}
                     className="px-2.5 sm:px-3.5 py-1.5 rounded-full bg-white/80 dark:bg-zinc-800/80 hover:bg-white text-zinc-800 dark:text-zinc-100 border border-zinc-200/80 dark:border-zinc-700/80 shadow-2xs transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 shrink-0 text-xs font-semibold"
@@ -2306,7 +2308,7 @@ export default function RemoveBackgroundTab({
 
             <form onSubmit={handleCreateWarehouseItem} className="space-y-3">
               <div>
-                <label className="text-[10px] uppercase text-zinc-500 font-semibold block mb-1">
+                <label className="text-[10px] uppercase text-zinc-600 dark:text-zinc-400 font-normal block mb-1">
                   Название декора
                 </label>
                 <input
@@ -2320,27 +2322,27 @@ export default function RemoveBackgroundTab({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] uppercase text-zinc-500 font-semibold block mb-1">
-                    Аренда (₽/сут)
+                  <label className="text-[10px] uppercase text-zinc-600 dark:text-zinc-400 font-normal block mb-1">
+                    Стоимость ₽
                   </label>
                   <input
                     type="number"
                     min="0"
                     value={newItemPrice}
-                    onChange={(e) => setNewItemPrice(Number(e.target.value))}
+                    onChange={(e) => setNewItemPrice(e.target.value === '' ? '' : Number(e.target.value))}
                     className="w-full px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-xs font-semibold text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--primary-accent,#8C52D0)]"
                   />
                 </div>
 
                 <div>
-                  <label className="text-[10px] uppercase text-zinc-500 font-semibold block mb-1">
+                  <label className="text-[10px] uppercase text-zinc-600 dark:text-zinc-400 font-normal block mb-1">
                     Количество
                   </label>
                   <input
                     type="number"
                     min="1"
                     value={newItemQuantity}
-                    onChange={(e) => setNewItemQuantity(Number(e.target.value))}
+                    onChange={(e) => setNewItemQuantity(e.target.value === '' ? '' : Number(e.target.value))}
                     className="w-full px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-xs font-semibold text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[var(--primary-accent,#8C52D0)]"
                   />
                 </div>
@@ -2350,13 +2352,13 @@ export default function RemoveBackgroundTab({
                 <button
                   type="button"
                   onClick={() => setIsWarehouseModalOpen(false)}
-                  className="flex-1 py-2.5 rounded-full border border-zinc-300 text-xs font-semibold text-zinc-700 dark:text-zinc-300 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                  className="flex-1 py-2.5 rounded-full border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-700 dark:text-zinc-300 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                 >
                   Отмена
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 rounded-full hover:opacity-95 text-white text-xs font-semibold shadow-md cursor-pointer"
+                  className="flex-1 py-2.5 rounded-full hover:opacity-95 text-white text-xs font-semibold shadow-md cursor-pointer transition-all"
                   style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
                 >
                   Сохранить

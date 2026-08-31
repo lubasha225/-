@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Check, X, Layers, Percent, Package, ArrowUpRight, ArrowDownLeft, LayoutGrid, List, Pencil, Upload, Image as ImageIcon, Trash2, Sparkles, Sliders, RotateCcw, Loader2 } from 'lucide-react';
+import { Search, Plus, Check, X, Layers, Percent, Package, ArrowUpRight, ArrowDownLeft, LayoutGrid, List, Pencil, Upload, Image as ImageIcon, Trash2, ChevronDown, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { WarehouseItem } from '../types';
 import DeleteConfirmModal from './DeleteConfirmModal';
 
@@ -43,65 +44,6 @@ const getCategoryPhoto = (category: string, name: string) => {
   return 'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&q=80&w=400';
 };
 
-const removeBackgroundWithCanvas = (
-  base64OrUrl: string,
-  tolerance: number,
-  onComplete: (transparentBase64: string) => void,
-  onError?: (err: any) => void
-) => {
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.onload = () => {
-    try {
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-      ctx.drawImage(img, 0, 0);
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imageData.data;
-
-      // Sample average of 4 corners as background color
-      const cornerPixels = [
-        { r: data[0], g: data[1], b: data[2] },
-        { r: data[(canvas.width - 1) * 4], g: data[(canvas.width - 1) * 4 + 1], b: data[(canvas.width - 1) * 4 + 2] },
-        { r: data[(canvas.height - 1) * canvas.width * 4], g: data[(canvas.height - 1) * canvas.width * 4 + 1], b: data[(canvas.height - 1) * canvas.width * 4 + 2] },
-        { r: data[(canvas.height * canvas.width - 1) * 4], g: data[(canvas.height * canvas.width - 1) * 4 + 1], b: data[(canvas.height * canvas.width - 1) * 4 + 2] }
-      ];
-
-      const targetR = cornerPixels[0].r;
-      const targetG = cornerPixels[0].g;
-      const targetB = cornerPixels[0].b;
-
-      for (let i = 0; i < data.length; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-
-        const distance = Math.sqrt(
-          (r - targetR) ** 2 +
-          (g - targetG) ** 2 +
-          (b - targetB) ** 2
-        );
-
-        if (distance < tolerance) {
-          data[i + 3] = 0; // Set transparent
-        }
-      }
-
-      ctx.putImageData(imageData, 0, 0);
-      onComplete(canvas.toDataURL('image/png'));
-    } catch (e) {
-      if (onError) onError(e);
-    }
-  };
-  img.onerror = (e) => {
-    if (onError) onError(e);
-  };
-  img.src = base64OrUrl;
-};
-
 export default function WarehouseTab({
   items,
   onUpdateItems,
@@ -119,57 +61,18 @@ export default function WarehouseTab({
 
   // New item states
   const [newItemName, setNewItemName] = useState('');
-  const [newItemDescription, setNewItemDescription] = useState('');
   const [newItemCat, setNewItemCat] = useState('Конструкции');
   const [newItemQty, setNewItemQty] = useState<number | ''>(1);
   const [newItemPrice, setNewItemPrice] = useState<number | ''>(0);
   const [newItemImageUrl, setNewItemImageUrl] = useState('');
   const [isDraggingOver, setIsDraggingOver] = useState(false);
 
-  // AI Background Removal states
-  const [isRemovingBg, setIsRemovingBg] = useState(false);
-  const [originalImgBeforeBgRemoval, setOriginalImgBeforeBgRemoval] = useState('');
-  const [bgRemovalTolerance, setBgRemovalTolerance] = useState(30);
-  const [hasRemovedBg, setHasRemovedBg] = useState(false);
-
-  const handleBgRemoval = () => {
-    if (!newItemImageUrl) return;
-    setIsRemovingBg(true);
-    
-    const orig = originalImgBeforeBgRemoval || newItemImageUrl;
-    if (!originalImgBeforeBgRemoval) {
-      setOriginalImgBeforeBgRemoval(newItemImageUrl);
-    }
-
-    setTimeout(() => {
-      removeBackgroundWithCanvas(orig, bgRemovalTolerance, (transparentBase64) => {
-        setNewItemImageUrl(transparentBase64);
-        setIsRemovingBg(false);
-        setHasRemovedBg(true);
-        showToast('Фон удален', 'ИИ успешно очистил фоновый цвет изображения.', 'success');
-      }, (err) => {
-        setIsRemovingBg(false);
-        showToast('Сбой удаления фона', 'Для удаления фона используйте загруженное фото (с ПК/телефона), а не внешнюю ссылку.', 'warn');
-      });
-    }, 1500);
-  };
-
-  const handleRestoreOriginal = () => {
-    if (originalImgBeforeBgRemoval) {
-      setNewItemImageUrl(originalImgBeforeBgRemoval);
-      setOriginalImgBeforeBgRemoval('');
-      setHasRemovedBg(false);
-      showToast('Сброшено', 'Восстановлено исходное изображение.', 'info');
-    }
-  };
-
-  const handleToleranceChange = (newVal: number) => {
-    setBgRemovalTolerance(newVal);
-    if (originalImgBeforeBgRemoval) {
-      removeBackgroundWithCanvas(originalImgBeforeBgRemoval, newVal, (transparentBase64) => {
-        setNewItemImageUrl(transparentBase64);
-      });
-    }
+  const resetFormState = () => {
+    setNewItemName('');
+    setNewItemImageUrl('');
+    setNewItemQty(1);
+    setNewItemPrice(0);
+    setIsAdding(false);
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -224,6 +127,55 @@ export default function WarehouseTab({
   // Delete item state
   const [deletingItem, setDeletingItem] = useState<{ id: string; name: string } | null>(null);
 
+  // Active category dropdown and zoom lightbox states
+  const [activeDropdownItemId, setActiveDropdownItemId] = useState<string | null>(null);
+  const [zoomedWarehouseItem, setZoomedWarehouseItem] = useState<WarehouseItem | null>(null);
+
+  // Zoom and pan state for modal lightbox
+  const [modalZoom, setModalZoom] = useState<number>(1);
+  const [modalPan, setModalPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState<boolean>(false);
+  const [panStart, setPanStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // Reset zoom and pan when opening a new item
+  useEffect(() => {
+    setModalZoom(1);
+    setModalPan({ x: 0, y: 0 });
+    setIsPanning(false);
+  }, [zoomedWarehouseItem]);
+
+  const handleModalWheel = (e: React.WheelEvent) => {
+    e.stopPropagation();
+    const delta = e.deltaY < 0 ? 0.15 : -0.15;
+    setModalZoom(prev => {
+      const next = Math.min(Math.max(Number((prev + delta).toFixed(2)), 0.5), 5);
+      if (next <= 1) setModalPan({ x: 0, y: 0 });
+      return next;
+    });
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (modalZoom > 1) {
+      e.preventDefault();
+      setIsPanning(true);
+      setPanStart({ x: e.clientX - modalPan.x, y: e.clientY - modalPan.y });
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isPanning && modalZoom > 1) {
+      e.preventDefault();
+      setModalPan({
+        x: e.clientX - panStart.x,
+        y: e.clientY - panStart.y
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsPanning(false);
+  };
+
   // Custom categories state
   const [customCategories, setCustomCategories] = useState<CategoryItem[]>(() => {
     try {
@@ -247,7 +199,7 @@ export default function WarehouseTab({
   }, [customCategories]);
 
   const allCategoriesList: CategoryItem[] = [
-    { key: 'all', label: 'Все товары' },
+    { key: 'all', label: 'Все PNG' },
     ...customCategories
   ];
 
@@ -329,6 +281,13 @@ export default function WarehouseTab({
     onUpdateItems(updated);
     setEditingNameId(null);
     showToast('Товар переименован', `Новое название: «${newName}».`, 'success');
+  };
+
+  // Change category of an item
+  const handleItemCategoryChange = (itemId: string, newCategory: string) => {
+    const updated = items.map(item => item.id === itemId ? { ...item, category: newCategory } : item);
+    onUpdateItems(updated);
+    showToast('Категория изменена', `Категория позиции обновлена на «${newCategory}».`, 'success');
   };
 
   // Delete category
@@ -443,25 +402,17 @@ export default function WarehouseTab({
 
     const newItem: WarehouseItem = {
       id: `wh_${Date.now()}`,
-      name: newItemName,
+      name: newItemName.trim(),
       category: newItemCat,
       total: Number(newItemQty) || 1,
       rented: 0,
       available: Number(newItemQty) || 1,
       pricePerDay: Number(newItemPrice) || 0,
-      description: newItemDescription.trim() || undefined,
       imageUrl: newItemImageUrl || undefined
     };
 
     onUpdateItems([newItem, ...items]);
-    setNewItemName('');
-    setNewItemDescription('');
-    setNewItemImageUrl('');
-    setNewItemQty(1);
-    setNewItemPrice(0);
-    setOriginalImgBeforeBgRemoval('');
-    setHasRemovedBg(false);
-    setIsAdding(false);
+    resetFormState();
     showToast('Склад пополнен', `Товар "${newItem.name}" успешно занесен в базу.`, 'success');
   };
 
@@ -659,41 +610,20 @@ export default function WarehouseTab({
 
       {/* Add item collapsible form */}
       {isAdding && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-md">
-          <style>{`
-            @keyframes scanLine {
-              0% { top: 0%; opacity: 0; }
-              10% { opacity: 1; }
-              90% { opacity: 1; }
-              100% { top: 100%; opacity: 0; }
-            }
-            .animate-scan {
-              animation: scanLine 1.5s ease-in-out infinite;
-            }
-          `}</style>
-          
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-6 bg-black/60 backdrop-blur-md overflow-hidden pb-[calc(10px+env(safe-area-inset-bottom,0px))]">
           <div
-            className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl rounded-[28px] sm:rounded-[32px] max-w-4xl w-full shadow-2xl border border-white/80 dark:border-zinc-700/80 relative animate-fadeIn max-h-[92vh] flex flex-col overflow-hidden"
+            className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl rounded-[24px] sm:rounded-[32px] max-w-2xl w-full shadow-2xl border border-white/80 dark:border-zinc-700/80 relative animate-fadeIn max-h-[88vh] sm:max-h-[90vh] flex flex-col overflow-hidden"
             style={{
               backdropFilter: 'blur(20px)',
               WebkitBackdropFilter: 'blur(20px)',
             }}
           >
             {/* Pinned Header */}
-            <div className="flex items-center justify-between px-5 sm:px-8 py-4 sm:py-5 border-b border-zinc-100 dark:border-zinc-800/60 shrink-0">
-              <h3 className="text-base sm:text-lg font-semibold text-[var(--ink)] tracking-tight">Добавить новый товар</h3>
+            <div className="flex items-center justify-between px-4 sm:px-8 py-3.5 sm:py-5 border-b border-zinc-100 dark:border-zinc-800/60 shrink-0">
+              <h3 className="text-base sm:text-lg font-semibold text-[var(--ink)] tracking-tight">Добавить PNG</h3>
               <button
                 type="button"
-                onClick={() => {
-                  setNewItemName('');
-                  setNewItemDescription('');
-                  setNewItemImageUrl('');
-                  setNewItemQty(1);
-                  setNewItemPrice(0);
-                  setOriginalImgBeforeBgRemoval('');
-                  setHasRemovedBg(false);
-                  setIsAdding(false);
-                }}
+                onClick={resetFormState}
                 className="p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-[var(--soft)] hover:text-[var(--ink)] transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
@@ -701,65 +631,55 @@ export default function WarehouseTab({
             </div>
 
             {/* Scrollable Form Body */}
-            <form id="add-warehouse-item-form" onSubmit={handleAddNewItem} className="flex-1 overflow-y-auto px-5 sm:px-8 py-5 sm:py-6 custom-scrollbar text-left">
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-5 md:gap-8">
-                {/* Left Column: Image Area */}
-                <div className="md:col-span-5 flex flex-col gap-3.5">
-                  <span className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal block">
-                    Изображение товара
-                  </span>
-                  
+            <form id="add-warehouse-item-form" onSubmit={handleAddNewItem} className="flex-1 overflow-y-auto px-4 sm:px-8 py-4 sm:py-6 custom-scrollbar text-left">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 items-start">
+                {/* Left Column: PNG Image Upload Area (Right under title) */}
+                <div className="md:col-span-5 flex flex-col">
                   <div
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
                     className={`relative aspect-4/3 sm:aspect-square rounded-2xl border-2 border-dashed flex flex-col items-center justify-center p-3 sm:p-4 transition-all overflow-hidden ${
                       newItemImageUrl 
-                        ? 'border-solid border-[var(--lavenderAccent)]/40 bg-zinc-50 dark:bg-zinc-950/40' 
+                        ? 'border-solid border-[var(--lavenderAccent)]/40 bg-zinc-50/50 dark:bg-zinc-950/40' 
                         : isDraggingOver
                           ? 'border-[var(--lavDeep)] bg-[var(--lavenderSoft)]/20 text-[var(--lavDeep)]'
                           : 'border-zinc-200/80 dark:border-zinc-800/80 hover:border-[var(--lavenderAccent)] bg-white/20 dark:bg-zinc-950/10'
                     }`}
                   >
                     {newItemImageUrl ? (
-                      <div className="relative w-full h-full group">
+                      <div className="relative w-full h-full group flex items-center justify-center">
+                        <div 
+                          className="absolute inset-0 opacity-15 rounded-xl pointer-events-none"
+                          style={{
+                            backgroundImage: 'linear-gradient(45deg, #888 25%, transparent 25%), linear-gradient(-45deg, #888 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #888 75%), linear-gradient(-45deg, transparent 75%, #888 75%)',
+                            backgroundSize: '16px 16px',
+                            backgroundPosition: '0 0, 0 8px, 8px -8px, -8px 0px'
+                          }}
+                        />
                         <img
                           src={newItemImageUrl}
                           alt="Uploaded preview"
-                          className="w-full h-full object-contain rounded-xl"
+                          className="relative z-10 w-full h-full object-contain rounded-xl p-1"
                         />
-                        {isRemovingBg && (
-                          <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex flex-col items-center justify-center gap-3">
-                            <div className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[var(--lavenderAccent)] to-transparent shadow-[0_0_15px_var(--lavenderAccent)] animate-scan" />
-                            <Loader2 className="w-8 h-8 text-[var(--lavenderAccent)] animate-spin" />
-                            <span className="text-xs font-medium text-white tracking-wider animate-pulse">ИИ убирает фон...</span>
-                          </div>
-                        )}
-                        
-                        {!isRemovingBg && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setNewItemImageUrl('');
-                              setOriginalImgBeforeBgRemoval('');
-                              setHasRemovedBg(false);
-                            }}
-                            className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors cursor-pointer"
-                            title="Удалить фото"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => setNewItemImageUrl('')}
+                          className="absolute top-2 right-2 z-20 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors cursor-pointer shadow-sm"
+                          title="Удалить фото"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     ) : (
-                      <label className="flex flex-col items-center justify-center gap-2 cursor-pointer h-full w-full select-none text-center py-4 sm:py-8">
-                        <div className="p-2.5 sm:p-3 rounded-full bg-[var(--lavenderSoft)]/50 dark:bg-purple-950/20 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">
+                      <label className="flex flex-col items-center justify-center gap-1.5 cursor-pointer h-full w-full select-none text-center py-3 sm:py-6">
+                        <div className="p-2 sm:p-2.5 rounded-full bg-[var(--lavenderSoft)]/50 dark:bg-purple-950/20 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">
                           <Upload className="w-4 h-4 sm:w-5 sm:h-5" />
                         </div>
                         <div className="space-y-0.5">
-                          <p className="text-xs font-medium text-[var(--ink)]">Загрузить фото</p>
-                          <p className="text-[11px] text-[var(--soft)] max-w-[150px] leading-relaxed mx-auto">
-                            Перетащите или нажмите для выбора
+                          <p className="text-xs font-semibold text-[var(--ink)]">Загрузить фото</p>
+                          <p className="text-[11px] text-[var(--soft)] max-w-[150px] leading-snug mx-auto">
+                            Перетащите или нажмите для выбора готового PNG
                           </p>
                         </div>
                         <input
@@ -771,93 +691,47 @@ export default function WarehouseTab({
                       </label>
                     )}
                   </div>
-
-                  {/* AI Background Removal Action Button and Slider */}
-                  {newItemImageUrl && !isRemovingBg && (
-                    <div className="space-y-3 bg-zinc-50 dark:bg-zinc-950/20 p-3 rounded-2xl border border-zinc-100 dark:border-zinc-800/40">
-                      {!hasRemovedBg ? (
-                        <button
-                          type="button"
-                          onClick={handleBgRemoval}
-                          className="w-full bg-gradient-to-r from-[var(--lavenderAccent)] to-[var(--lavDeep)] hover:opacity-90 text-white text-xs font-medium py-2 px-3 rounded-full flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
-                        >
-                          <Sparkles className="w-3.5 h-3.5" />
-                          Удалить фон с помощью ИИ
-                        </button>
-                      ) : (
-                        <div className="space-y-2.5">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-medium text-zinc-500 flex items-center gap-1.5">
-                              <Sliders className="w-3.5 h-3.5" />
-                              Точность удаления (допуск)
-                            </span>
-                            <span className="text-xs font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">{bgRemovalTolerance}</span>
-                          </div>
-                          <input
-                            type="range"
-                            min="1"
-                            max="150"
-                            value={bgRemovalTolerance}
-                            onChange={(e) => handleToleranceChange(Number(e.target.value))}
-                            className="w-full accent-[var(--lavDeep)] cursor-pointer"
-                          />
-                          <button
-                            type="button"
-                            onClick={handleRestoreOriginal}
-                            className="w-full bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-xs py-1.5 px-3 rounded-full flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                          >
-                            <RotateCcw className="w-3.5 h-3.5" />
-                            Восстановить оригинал
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
 
                 {/* Right Column: Item Fields */}
-                <div className="md:col-span-7 flex flex-col gap-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-6 gap-3.5">
-                    <div className="sm:col-span-6 space-y-1">
-                      <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal block">Наименование инвентаря</label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="например, Круглая арка-кольцо 2.2м"
-                        value={newItemName}
-                        onChange={(e) => setNewItemName(e.target.value)}
-                        className="w-full text-xs px-3.5 py-2.5 rounded-xl bg-white/80 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 text-[var(--ink)] focus:outline-none focus:border-[var(--lavenderAccent)] focus:ring-1 focus:ring-[var(--lavenderAccent)]/25 transition-all"
-                      />
-                    </div>
+                <div className="md:col-span-7 flex flex-col gap-3 sm:gap-3.5">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal block">
+                      Наименование инвентаря
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="например, Круглая арка-кольцо 2.2м"
+                      value={newItemName}
+                      onChange={(e) => setNewItemName(e.target.value)}
+                      className="w-full text-xs px-3.5 py-2.5 rounded-xl bg-white/80 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 text-[var(--ink)] focus:outline-none focus:border-[var(--lavenderAccent)] focus:ring-1 focus:ring-[var(--lavenderAccent)]/25 transition-all"
+                    />
+                  </div>
 
-                    <div className="sm:col-span-6 space-y-1">
-                      <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal block">Краткое описание</label>
-                      <textarea
-                        placeholder="например, Классический декор, золото"
-                        value={newItemDescription}
-                        onChange={(e) => setNewItemDescription(e.target.value)}
-                        rows={2}
-                        className="w-full text-xs px-3.5 py-2 rounded-xl bg-white/80 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 text-[var(--ink)] focus:outline-none focus:border-[var(--lavenderAccent)] focus:ring-1 focus:ring-[var(--lavenderAccent)]/25 transition-all resize-none"
-                      />
-                    </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal block">
+                      Категория
+                    </label>
+                    <select
+                      value={newItemCat}
+                      onChange={(e) => setNewItemCat(e.target.value)}
+                      className="w-full text-xs px-3 py-2.5 rounded-xl bg-white/80 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 text-[var(--ink)] focus:outline-none focus:border-[var(--lavenderAccent)] transition-all cursor-pointer"
+                    >
+                      {customCategories.map(cat => (
+                        <option key={cat.key} value={cat.label}>
+                          {cat.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                    <div className="sm:col-span-2 space-y-1">
-                      <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal block">Категория</label>
-                      <select
-                        value={newItemCat}
-                        onChange={(e) => setNewItemCat(e.target.value)}
-                        className="w-full text-xs px-3 py-2.5 rounded-xl bg-white/80 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 text-[var(--ink)] focus:outline-none focus:border-[var(--lavenderAccent)] transition-all cursor-pointer"
-                      >
-                        {customCategories.map(cat => (
-                          <option key={cat.key} value={cat.label}>
-                            {cat.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="sm:col-span-2 space-y-1">
-                      <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal block">Количество всего</label>
+                  {/* Quantity & Price always on a single row (2 columns) */}
+                  <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal block truncate">
+                        Количество всего
+                      </label>
                       <input
                         type="number"
                         min="1"
@@ -870,8 +744,10 @@ export default function WarehouseTab({
                       />
                     </div>
 
-                    <div className="sm:col-span-2 space-y-1">
-                      <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal block">Стоимость ₽</label>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal block truncate">
+                        Стоимость ₽
+                      </label>
                       <input
                         type="number"
                         min="0"
@@ -888,21 +764,12 @@ export default function WarehouseTab({
               </div>
             </form>
 
-            {/* Pinned Bottom Actions Row (Never scrolls off-screen on mobile) */}
-            <div className="px-5 sm:px-8 py-3.5 sm:py-4 border-t border-zinc-100 dark:border-zinc-800/60 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md flex items-center justify-end gap-3 shrink-0">
+            {/* Pinned Bottom Actions Row (Safe from mobile browser navigation bars) */}
+            <div className="px-4 sm:px-8 py-3 sm:py-4 border-t border-zinc-100 dark:border-zinc-800/60 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md flex items-center justify-end gap-2.5 sm:gap-3 shrink-0 pb-[calc(12px+env(safe-area-inset-bottom,0px))]">
               <button
                 type="button"
-                onClick={() => {
-                  setNewItemName('');
-                  setNewItemDescription('');
-                  setNewItemImageUrl('');
-                  setNewItemQty(1);
-                  setNewItemPrice(0);
-                  setOriginalImgBeforeBgRemoval('');
-                  setHasRemovedBg(false);
-                  setIsAdding(false);
-                }}
-                className="bg-white/60 dark:bg-zinc-800/60 hover:bg-zinc-100 dark:hover:bg-zinc-700/60 text-[var(--soft)] rounded-full py-2 px-5 text-xs font-semibold border border-zinc-200/60 dark:border-zinc-700/60 cursor-pointer transition-colors"
+                onClick={resetFormState}
+                className="flex-1 sm:flex-initial bg-white/60 dark:bg-zinc-800/60 hover:bg-zinc-100 dark:hover:bg-zinc-700/60 text-[var(--soft)] rounded-full py-2.5 sm:py-2 px-5 text-xs font-semibold border border-zinc-200/60 dark:border-zinc-700/60 cursor-pointer transition-colors text-center"
               >
                 Отмена
               </button>
@@ -910,10 +777,10 @@ export default function WarehouseTab({
                 type="submit"
                 form="add-warehouse-item-form"
                 style={{ background: 'linear-gradient(135deg, var(--primary-grad-from, #8C52D0) 0%, var(--primary-grad-to, #582F89) 100%)' }}
-                className="hover:opacity-95 text-white rounded-full py-2 px-6 text-xs font-semibold flex items-center gap-2 shadow-xs cursor-pointer transition-all"
+                className="flex-1 sm:flex-initial hover:opacity-95 text-white rounded-full py-2.5 sm:py-2 px-5 sm:px-6 text-xs font-semibold flex items-center justify-center gap-2 shadow-xs cursor-pointer transition-all"
               >
                 <Check className="w-4 h-4 stroke-[2.5]" />
-                <span>Добавить позицию</span>
+                <span className="truncate">Добавить позицию</span>
               </button>
             </div>
           </div>
@@ -933,10 +800,12 @@ export default function WarehouseTab({
               return (
                 <div 
                   key={item.id} 
-                  className="glass-panel rounded-[24px] overflow-hidden flex flex-col border border-[var(--glass-edge)]/70 hover:border-[var(--lavenderAccent)]/60 hover:shadow-xl hover:shadow-[var(--lavDeep)]/5 transition-all duration-300 group hover:-translate-y-1 w-full text-left bg-white dark:bg-zinc-900/25"
+                  className={`glass-panel rounded-[24px] flex flex-col border border-[var(--glass-edge)]/70 hover:border-[var(--lavenderAccent)]/60 hover:shadow-xl hover:shadow-[var(--lavDeep)]/5 transition-all duration-300 group hover:-translate-y-1 w-full text-left bg-white dark:bg-zinc-900/25 ${
+                    activeDropdownItemId === item.id ? 'z-30 overflow-visible' : 'overflow-hidden'
+                  }`}
                 >
                   {/* Image Cover Section (Top half) - 1:1 Aspect Ratio */}
-                  <div className="aspect-square relative shrink-0 overflow-hidden bg-zinc-100 dark:bg-zinc-800/40">
+                  <div className="aspect-square relative shrink-0 overflow-hidden bg-zinc-100 dark:bg-zinc-800/40 rounded-t-[24px]">
                     <img
                       src={itemImage}
                       alt={item.name}
@@ -944,22 +813,17 @@ export default function WarehouseTab({
                       referrerPolicy="no-referrer"
                     />
                     {/* Subtle bottom dark overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent pointer-events-none" />
                     
-                    {/* Floating Category Badge (matching transparent/blur capsule in top-right) */}
-                    <span className="absolute top-3 right-3 text-[10px] font-light tracking-wider text-white bg-black/60 backdrop-blur-md border border-white/10 px-2 py-0.5 rounded-full uppercase select-none">
-                      {item.category}
-                    </span>
-
-                    {/* Floating Quantity Capsule on Bottom Right (matching screenshot style with dot and edit) */}
+                    {/* Top-Left: Floating Quantity Capsule */}
                     {editingQtyId === item.id ? (
-                       <div 
-                        className="absolute bottom-3 right-3 flex items-center gap-1 bg-black/90 backdrop-blur-md px-2.5 py-1 rounded-full shadow-lg border border-white/10"
+                      <div 
+                        className="absolute top-2.5 left-2.5 z-20 flex items-center gap-1 bg-black/90 backdrop-blur-md px-2 py-0.5 rounded-full shadow-lg border border-white/10"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <input
                           type="number"
-                          className="w-14 px-2 py-0.5 text-xs bg-white text-black rounded-full font-medium focus:outline-none"
+                          className="w-12 px-1.5 py-0.5 text-xs bg-white text-black rounded-full font-medium focus:outline-none"
                           value={tempQty}
                           onChange={(e) => setTempQty(e.target.value)}
                           onKeyDown={(e) => {
@@ -972,9 +836,9 @@ export default function WarehouseTab({
                           type="button"
                           onMouseDown={(e) => e.preventDefault()}
                           onClick={() => handleSaveQty(item.id)}
-                          className="p-1 text-emerald-400 hover:text-emerald-500 rounded-full cursor-pointer transition-colors"
+                          className="p-0.5 text-emerald-400 hover:text-emerald-500 rounded-full cursor-pointer transition-colors"
                         >
-                          <Check className="w-4 h-4" />
+                          <Check className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     ) : (
@@ -984,16 +848,90 @@ export default function WarehouseTab({
                           setEditingQtyId(item.id);
                           setTempQty(String(item.total));
                         }}
-                        className="absolute bottom-3 right-3 flex items-center gap-2 bg-black/60 backdrop-blur-md border border-white/10 px-3.5 py-2 rounded-full text-white select-none cursor-pointer hover:bg-black/75 hover:scale-105 transition-all duration-200 shadow-md shadow-black/20"
+                        className="absolute top-2.5 left-2.5 z-10 flex items-center gap-1.5 bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/10 px-2.5 py-1 rounded-full text-white select-none cursor-pointer hover:scale-105 transition-all duration-200 shadow-sm"
                         title="Изменить общее количество (нажмите для редактирования)"
                       >
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#52D18D] shadow-[0_0_8px_#52D18D]" />
-                        <span className="text-xs font-medium tracking-wide">
+                        <span className="w-2 h-2 rounded-full bg-[#52D18D] shadow-[0_0_6px_#52D18D] shrink-0" />
+                        <span className="text-[11px] font-medium tracking-wide">
                           {item.available} шт.
                         </span>
-                        <Pencil className="w-3 h-3 text-zinc-200 hover:text-white shrink-0 ml-0.5" />
+                        <Pencil className="w-2.5 h-2.5 text-zinc-300 hover:text-white shrink-0 ml-0.5" />
                       </div>
                     )}
+
+                    {/* Top-Right: Magnifying Glass / Zoom Preview Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setZoomedWarehouseItem(item);
+                      }}
+                      className="absolute top-2.5 right-2.5 z-10 p-1.5 rounded-lg bg-black/60 hover:bg-black/85 text-white border border-white/15 backdrop-blur-md shadow-sm transition-all cursor-pointer hover:scale-105 active:scale-95"
+                      title="Увеличить изображение"
+                    >
+                      <Search className="w-3.5 h-3.5" />
+                    </button>
+
+                    {/* Bottom-Left: Floating Category Dropdown Selector */}
+                    <div className="absolute bottom-2.5 left-2.5 z-20 max-w-[85%] sm:max-w-[80%]">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveDropdownItemId(activeDropdownItemId === item.id ? null : item.id);
+                        }}
+                        className="text-[10px] sm:text-[11px] bg-black/60 hover:bg-black/80 text-white border border-white/10 backdrop-blur-md rounded-xl px-2.5 py-1 focus:outline-none font-medium cursor-pointer transition-all flex items-center justify-between gap-1 shadow-sm"
+                      >
+                        <span className="truncate max-w-[85px] sm:max-w-[105px]">
+                          {customCategories.find(c => c.key === item.category || c.label === item.category)?.label || item.category}
+                        </span>
+                        <ChevronDown className={`w-3 h-3 text-white/70 transition-transform duration-200 shrink-0 ${activeDropdownItemId === item.id ? 'rotate-180' : ''}`} />
+                      </button>
+
+                      <AnimatePresence>
+                        {activeDropdownItemId === item.id && (
+                          <>
+                            <div 
+                              className="fixed inset-0 z-40" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveDropdownItemId(null);
+                              }} 
+                            />
+                            <motion.div
+                              initial={{ opacity: 0, y: 5, scale: 0.95 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: 5, scale: 0.95 }}
+                              transition={{ duration: 0.15 }}
+                              onClick={(e) => e.stopPropagation()}
+                              className="absolute bottom-8 left-0 min-w-[130px] bg-zinc-900/95 dark:bg-zinc-950/95 backdrop-blur-md border border-white/10 rounded-xl p-1 shadow-2xl z-50 overflow-hidden max-h-40 overflow-y-auto"
+                            >
+                              {customCategories.map((cat) => {
+                                const isSelected = item.category === cat.key || item.category === cat.label;
+                                return (
+                                  <button
+                                    key={cat.key}
+                                    type="button"
+                                    onClick={() => {
+                                      handleItemCategoryChange(item.id, cat.label);
+                                      setActiveDropdownItemId(null);
+                                    }}
+                                    className={`w-full text-left px-2.5 py-1.5 rounded-lg text-[10px] sm:text-[11px] font-medium transition-all flex items-center justify-between cursor-pointer ${
+                                      isSelected
+                                        ? 'bg-[var(--lavDeep)] text-white font-semibold'
+                                        : 'text-zinc-200 hover:bg-[var(--lavDeep)]/40 hover:text-white'
+                                    }`}
+                                  >
+                                    <span className="truncate">{cat.label}</span>
+                                    {isSelected && <Check className="w-3 h-3 text-white shrink-0" />}
+                                  </button>
+                                );
+                              })}
+                            </motion.div>
+                          </>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </div>
 
                   {/* Body details - Tighter padding and lower height than the image */}
@@ -1048,9 +986,6 @@ export default function WarehouseTab({
                           <Pencil className="w-3 h-3 text-zinc-300 dark:text-zinc-600 group-hover/name:text-[var(--lavDeep)] dark:group-hover/name:text-[var(--lavenderAccent)] transition-colors shrink-0 mt-0.5" />
                         </div>
                       )}
-                      <p className="text-xs sm:text-xs text-zinc-500 dark:text-zinc-400 font-light leading-snug line-clamp-2">
-                        {item.description || 'Классический элемент оформления для создания великолепных свадебных концепций.'}
-                      </p>
                     </div>
 
                     {/* Bottom row - bold violet price & trash icon */}
@@ -1128,20 +1063,107 @@ export default function WarehouseTab({
               return (
                 <div 
                   key={item.id} 
-                  className="glass-panel rounded-[24px] overflow-hidden flex flex-row items-stretch border border-zinc-200/85 dark:border-zinc-800 shadow-[0_8px_30px_rgba(0,0,0,0.03)] bg-white dark:bg-zinc-900/40 backdrop-blur-md min-h-[148px] sm:min-h-[156px] h-auto w-full relative group hover:border-[var(--lavenderAccent)]/50 transition-all duration-300 text-left"
+                  className={`glass-panel rounded-[24px] flex flex-row items-stretch border border-zinc-200/85 dark:border-zinc-800 shadow-[0_8px_30px_rgba(0,0,0,0.03)] bg-white dark:bg-zinc-900/40 backdrop-blur-md min-h-[148px] sm:min-h-[156px] h-auto w-full relative group hover:border-[var(--lavenderAccent)]/50 transition-all duration-300 text-left ${
+                    activeDropdownItemId === item.id ? 'z-30 overflow-visible' : 'overflow-hidden'
+                  }`}
                 >
                   {/* Left part - Image section without padding */}
-                  <div className="w-[115px] sm:w-[150px] shrink-0 relative overflow-hidden bg-zinc-100 dark:bg-zinc-850">
+                  <div className="w-[125px] sm:w-[155px] shrink-0 relative overflow-hidden bg-zinc-100 dark:bg-zinc-850 rounded-l-[24px]">
                     <img 
                       src={itemImage} 
                       alt={item.name} 
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-103"
                       referrerPolicy="no-referrer" 
                     />
-                    {/* Category overlay label */}
-                    <span className="absolute top-2.5 left-2.5 text-[9px] sm:text-[10px] font-light tracking-wider text-white bg-black/60 backdrop-blur-md border border-white/10 px-2 py-0.5 rounded-full uppercase select-none">
-                      {item.category}
-                    </span>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent pointer-events-none" />
+
+                    {/* Top-Left: Quantity Badge */}
+                    <div 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingQtyId(item.id);
+                        setTempQty(String(item.total));
+                      }}
+                      className="absolute top-2 left-2 z-10 flex items-center gap-1 bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/10 px-2 py-0.5 rounded-full text-white select-none cursor-pointer shadow-sm text-[9px] sm:text-[10px]"
+                      title="Изменить количество"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#52D18D] shadow-[0_0_4px_#52D18D] shrink-0" />
+                      <span>{item.available} шт.</span>
+                    </div>
+
+                    {/* Top-Right: Zoom preview button */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setZoomedWarehouseItem(item);
+                      }}
+                      className="absolute top-2 right-2 z-10 p-1 rounded-lg bg-black/60 hover:bg-black/85 text-white border border-white/15 backdrop-blur-md shadow-sm transition-all cursor-pointer hover:scale-105"
+                      title="Увеличить фото"
+                    >
+                      <Search className="w-3 h-3" />
+                    </button>
+
+                    {/* Bottom-Left: Category dropdown */}
+                    <div className="absolute bottom-2 left-2 z-20 max-w-[90%]">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveDropdownItemId(activeDropdownItemId === item.id ? null : item.id);
+                        }}
+                        className="text-[9px] sm:text-[10px] bg-black/60 hover:bg-black/80 text-white border border-white/10 backdrop-blur-md rounded-lg px-2 py-0.5 focus:outline-none font-medium cursor-pointer transition-all flex items-center justify-between gap-1 shadow-sm"
+                      >
+                        <span className="truncate max-w-[70px] sm:max-w-[90px]">
+                          {customCategories.find(c => c.key === item.category || c.label === item.category)?.label || item.category}
+                        </span>
+                        <ChevronDown className={`w-2.5 h-2.5 text-white/70 transition-transform duration-200 shrink-0 ${activeDropdownItemId === item.id ? 'rotate-180' : ''}`} />
+                      </button>
+
+                      <AnimatePresence>
+                        {activeDropdownItemId === item.id && (
+                          <>
+                            <div 
+                              className="fixed inset-0 z-40" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveDropdownItemId(null);
+                              }} 
+                            />
+                            <motion.div
+                              initial={{ opacity: 0, y: 5, scale: 0.95 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: 5, scale: 0.95 }}
+                              transition={{ duration: 0.15 }}
+                              onClick={(e) => e.stopPropagation()}
+                              className="absolute bottom-6 left-0 min-w-[120px] bg-zinc-900/95 dark:bg-zinc-950/95 backdrop-blur-md border border-white/10 rounded-xl p-1 shadow-2xl z-50 overflow-hidden max-h-36 overflow-y-auto"
+                            >
+                              {customCategories.map((cat) => {
+                                const isSelected = item.category === cat.key || item.category === cat.label;
+                                return (
+                                  <button
+                                    key={cat.key}
+                                    type="button"
+                                    onClick={() => {
+                                      handleItemCategoryChange(item.id, cat.label);
+                                      setActiveDropdownItemId(null);
+                                    }}
+                                    className={`w-full text-left px-2 py-1 rounded-lg text-[9px] sm:text-[10px] font-medium transition-all flex items-center justify-between cursor-pointer ${
+                                      isSelected
+                                        ? 'bg-[var(--lavDeep)] text-white font-semibold'
+                                        : 'text-zinc-200 hover:bg-[var(--lavDeep)]/40 hover:text-white'
+                                    }`}
+                                  >
+                                    <span className="truncate">{cat.label}</span>
+                                    {isSelected && <Check className="w-2.5 h-2.5 text-white shrink-0" />}
+                                  </button>
+                                );
+                              })}
+                            </motion.div>
+                          </>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </div>
 
                   {/* Right part - Details */}
@@ -1195,10 +1217,6 @@ export default function WarehouseTab({
                           <Pencil className="w-3 h-3 text-zinc-300 dark:text-zinc-600 group-hover/name:text-[var(--lavDeep)] dark:group-hover/name:text-[var(--lavenderAccent)] transition-colors shrink-0 mt-0.5" />
                         </div>
                       )}
-                      
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400 font-light leading-snug line-clamp-1 sm:line-clamp-2 mt-0.5">
-                        {item.description || 'Классический элемент оформления для создания великолепных свадебных концепций.'}
-                      </p>
 
                       {/* Quantity field inside a pill badge */}
                       <div className="mt-1.5 sm:mt-2">
@@ -1304,6 +1322,146 @@ export default function WarehouseTab({
           )}
         </div>
       )}
+
+      {/* Zoom Modal for PNG preview */}
+      <AnimatePresence>
+        {zoomedWarehouseItem && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setZoomedWarehouseItem(null)}
+              className="absolute inset-0 bg-black/85 backdrop-blur-md"
+            />
+            
+            {/* Modal Content */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: "spring", duration: 0.4 }}
+              className="relative max-w-5xl w-full h-[90vh] max-h-[92vh] bg-zinc-950/95 backdrop-blur-2xl rounded-3xl border border-white/20 dark:border-zinc-700/80 overflow-hidden flex flex-col shadow-2xl z-10 select-none"
+              style={{
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+              }}
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setZoomedWarehouseItem(null)}
+                className="absolute top-3 right-3 p-2 rounded-full bg-black/60 hover:bg-black/85 text-white/80 hover:text-white border border-white/15 backdrop-blur-md transition-all cursor-pointer z-30 shadow-md"
+                title="Закрыть"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              {/* Image Container with Full Height & Interactive Wheel Zoom */}
+              <div 
+                className={`flex-1 w-full overflow-hidden flex items-center justify-center bg-zinc-950/80 p-4 sm:p-6 min-h-0 relative select-none ${
+                  modalZoom > 1 ? (isPanning ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-zoom-in'
+                }`}
+                onWheel={handleModalWheel}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
+                onDoubleClick={() => {
+                  if (modalZoom > 1) {
+                    setModalZoom(1);
+                    setModalPan({ x: 0, y: 0 });
+                  } else {
+                    setModalZoom(2);
+                  }
+                }}
+              >
+                {/* Transparency Grid Pattern */}
+                <div className="absolute inset-0 bg-[radial-gradient(#383838_1px,transparent_1px)] [background-size:16px_16px] opacity-40 pointer-events-none" />
+
+                {/* Zoom Controls Floating Toolbar */}
+                <div 
+                  className="absolute top-3 left-3 z-30 flex items-center gap-1.5 bg-black/70 hover:bg-black/85 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/15 text-white shadow-lg text-xs"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setModalZoom(prev => Math.max(Number((prev - 0.25).toFixed(2)), 0.5))}
+                    className="p-1 rounded-md hover:bg-white/20 text-white/80 hover:text-white transition-colors cursor-pointer"
+                    title="Уменьшить"
+                  >
+                    <ZoomOut className="w-3.5 h-3.5" />
+                  </button>
+                  <span className="font-semibold px-1 text-[11px] tabular-nums text-zinc-200 min-w-[36px] text-center">
+                    {Math.round(modalZoom * 100)}%
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setModalZoom(prev => Math.min(Number((prev + 0.25).toFixed(2)), 5))}
+                    className="p-1 rounded-md hover:bg-white/20 text-white/80 hover:text-white transition-colors cursor-pointer"
+                    title="Увеличить"
+                  >
+                    <ZoomIn className="w-3.5 h-3.5" />
+                  </button>
+                  {modalZoom !== 1 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setModalZoom(1);
+                        setModalPan({ x: 0, y: 0 });
+                      }}
+                      className="p-1 ml-0.5 rounded-md hover:bg-white/20 text-white/80 hover:text-white transition-colors cursor-pointer"
+                      title="Сбросить масштаб"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Zoomable Image Element */}
+                <div 
+                  className="relative flex items-center justify-center max-w-full max-h-full transition-transform duration-75 ease-out"
+                  style={{
+                    transform: `translate(${modalPan.x}px, ${modalPan.y}px) scale(${modalZoom})`,
+                    transformOrigin: 'center center',
+                  }}
+                >
+                  <img
+                    src={zoomedWarehouseItem.imageUrl || getCategoryPhoto(zoomedWarehouseItem.category, zoomedWarehouseItem.name)}
+                    alt={zoomedWarehouseItem.name}
+                    className="max-w-full max-h-[calc(90vh-140px)] object-contain rounded-lg shadow-2xl pointer-events-none select-none"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+              </div>
+
+              {/* Footer / Description with high-contrast light theme accent price */}
+              <div className="bg-zinc-900/95 px-6 py-4 border-t border-zinc-800 text-left shrink-0 z-20">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <h4 className="text-base sm:text-lg font-semibold text-zinc-100 truncate">
+                      {zoomedWarehouseItem.name}
+                    </h4>
+                    <div className="flex items-center gap-3 mt-1 text-xs text-zinc-400">
+                      <span>Категория: <strong className="text-zinc-200">{zoomedWarehouseItem.category}</strong></span>
+                      <span>•</span>
+                      <span>В наличии: <strong className="text-emerald-400">{zoomedWarehouseItem.available} шт.</strong></span>
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <span 
+                      className="text-lg sm:text-xl font-bold tracking-tight"
+                      style={{ color: 'var(--primary-grad-from, #C084FC)' }}
+                    >
+                      {zoomedWarehouseItem.pricePerDay.toLocaleString('ru')} ₽
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Item Delete Confirmation Dialog */}
       <DeleteConfirmModal

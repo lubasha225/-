@@ -228,7 +228,14 @@ export default function App() {
   const [sidebarTaskFilter, setSidebarTaskFilter] = useState<'date' | 'all'>('date');
 
   const [documents, setDocuments] = useState<DocumentItem[]>(initialDocuments);
-  const [images, setImages] = useState<ImageItem[]>(initialImages);
+  const [images, setImages] = useState<ImageItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('pop_images');
+      return saved ? JSON.parse(saved) : initialImages;
+    } catch (e) {
+      return initialImages;
+    }
+  });
 
   // Search & Filters on Projects
   const [projectQuery, setProjectQuery] = useState('');
@@ -383,6 +390,14 @@ export default function App() {
       console.warn('Failed to save warehouse to localStorage:', e);
     }
   }, [warehouseItems]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('pop_images', JSON.stringify(images));
+    } catch (e) {
+      console.warn('Failed to save images to localStorage:', e);
+    }
+  }, [images]);
 
   useEffect(() => {
     try {
@@ -1589,7 +1604,7 @@ export default function App() {
                       className="hidden sm:flex text-white rounded-full px-3.5 sm:px-4 h-9 text-xs font-semibold shadow-xs hover:shadow-md hover:opacity-95 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 items-center justify-center gap-1.5 cursor-pointer shrink-0"
                     >
                       <Plus className="w-3.5 h-3.5 shrink-0" />
-                      <span>Новый товар</span>
+                      <span>Добавить PNG</span>
                     </button>
                   )}
 
@@ -1647,7 +1662,7 @@ export default function App() {
                       style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
                       className="sm:hidden w-full hover:opacity-95 text-white rounded-full px-4 py-2.5 text-xs font-semibold shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                     >
-                      <Plus className="w-4 h-4" /> Новый товар
+                      <Plus className="w-4 h-4" /> Добавить PNG
                     </button>
                   )}
 
