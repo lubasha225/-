@@ -176,6 +176,9 @@ export interface CanvasElement {
   shadowBlur?: number;
   shadowOpacity?: number;
   shadowColor?: string;
+  shadowAnchorX?: number;
+  shadowAnchorY?: number;
+  shadowType?: 'drop' | 'floor';
 }
 
 const hexToRgba = (hex: string = '#000000', alpha: number = 0.5) => {
@@ -2549,6 +2552,9 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
   const [activeAction, setActiveAction] = useState<'move' | 'resize' | 'rotate' | 'move-group' | 'move-caption' | null>(null);
   const [activeHandle, setActiveHandle] = useState<string | null>(null);
   const [rotationInputId, setRotationInputId] = useState<string | null>(null);
+  const [shadowDragTarget, setShadowDragTarget] = useState<'anchor' | 'end' | 'slider' | null>(null);
+  const [shadowDragInfo, setShadowDragInfo] = useState<{ label: string; value: string; x: number; y: number } | null>(null);
+  const shadowMarkerColorInputRef = useRef<HTMLInputElement | null>(null);
 
   const rotateClickStartRef = useRef({ x: 0, y: 0, time: 0 });
   const isCaptionDraggingRef = useRef<boolean>(false);
@@ -2568,6 +2574,174 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
     elementId: '',
     elementRotation: 0
   });
+
+  const handleShadowStartDrag = (
+    e: React.MouseEvent,
+    target: 'end' | 'slider' | 'create',
+    el: CanvasElement,
+    customStartPoint?: { localX: number; localY: number }
+  ) => {
+    e.stopPropagation();
+    e.preventDefault();
+    isInteractingWithElementRef.current = true;
+    setShadowDragTarget(target === 'create' ? 'end' : target);
+
+    const originX = el.w * 0.5;
+    const originY = el.h * 0.5;
+
+    if (target === 'create' && customStartPoint) {
+      const dxFromCenter = customStartPoint.localX - originX;
+      const dyFromCenter = customStartPoint.localY - originY;
+      const distMouse = Math.hypot(dxFromCenter, dyFromCenter);
+      const hw = el.w / 2;
+      const hh = el.h / 2;
+
+      let newShX = 0;
+      let newShY = 0;
+
+      if (distMouse > 2) {
+        const angle = Math.atan2(dyFromCenter, dxFromCenter);
+        const cosA = Math.cos(angle);
+        const sinA = Math.sin(angle);
+        const tx = Math.abs(cosA) > 1e-6 ? hw / Math.abs(cosA) : Infinity;
+        const ty = Math.abs(sinA) > 1e-6 ? hh / Math.abs(sinA) : Infinity;
+        const distToEdge = Math.min(tx, ty);
+
+        const offsetDist = Math.max(0, distMouse - distToEdge);
+        newShX = Math.round(offsetDist * cosA);
+        newShY = Math.round(offsetDist * sinA);
+      }
+
+      updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? {
+        ...item,
+        shadowEnabled: true,
+        shadowAnchorX: 0.5,
+        shadowAnchorY: 0.5,
+        shadowX: newShX,
+        shadowY: newShY,
+        shadowBlur: item.shadowBlur ?? 6,
+        shadowOpacity: item.shadowOpacity ?? 50,
+        shadowColor: item.shadowColor ?? '#000000'
+      } : item));
+    }
+
+    const handleMouseMove = (moveEv: MouseEvent) => {
+      const rect = canvasContainerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const currentScale = canvasScale * zoomScale;
+      const canvasX = (moveEv.clientX - rect.left) / currentScale;
+      const canvasY = (moveEv.clientY - rect.top) / currentScale;
+
+      const rad = -((el.rotation || 0) * Math.PI / 180);
+      const flipH = el.isFlippedH ? -1 : 1;
+      const flipV = el.isFlippedV ? -1 : 1;
+
+      const cx = el.x + el.w / 2;
+      const cy = el.y + el.h / 2;
+      const dx = canvasX - cx;
+      const dy = canvasY - cy;
+
+      const localX = (dx * Math.cos(rad) - dy * Math.sin(rad)) * flipH + el.w / 2;
+      const localY = (dx * Math.sin(rad) + dy * Math.cos(rad)) * flipV + el.h / 2;
+
+      if (target === 'end' || target === 'create') {
+        const dxFromCenter = localX - originX;
+        const dyFromCenter = localY - originY;
+        const distMouse = Math.hypot(dxFromCenter, dyFromCenter);
+        const hw = el.w / 2;
+        const hh = el.h / 2;
+
+        let newShX = 0;
+        let newShY = 0;
+
+        if (distMouse > 2) {
+          const angle = Math.atan2(dyFromCenter, dxFromCenter);
+          const cosA = Math.cos(angle);
+          const sinA = Math.sin(angle);
+          const tx = Math.abs(cosA) > 1e-6 ? hw / Math.abs(cosA) : Infinity;
+          const ty = Math.abs(sinA) > 1e-6 ? hh / Math.abs(sinA) : Infinity;
+          const distToEdge = Math.min(tx, ty);
+
+          const offsetDist = Math.max(0, distMouse - distToEdge);
+          newShX = Math.round(offsetDist * cosA);
+          newShY = Math.round(offsetDist * sinA);
+
+          if (Math.abs(newShX) < 2) newShX = 0;
+          if (Math.abs(newShY) < 2) newShY = 0;
+        }
+
+        setShadowDragInfo({
+          label: 'Смещение тени',
+          value: `X: ${newShX > 0 ? `+${newShX}` : newShX}px, Y: ${newShY > 0 ? `+${newShY}` : newShY}px`,
+          x: moveEv.clientX,
+          y: moveEv.clientY
+        });
+
+        updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? {
+          ...item,
+          shadowEnabled: true,
+          shadowAnchorX: 0.5,
+          shadowAnchorY: 0.5,
+          shadowX: newShX,
+          shadowY: newShY
+        } : item));
+      } else if (target === 'slider') {
+        const hw = el.w / 2;
+        const hh = el.h / 2;
+        const shX = el.shadowX ?? 0;
+        const shY = el.shadowY ?? 0;
+        const offsetDist = Math.hypot(shX, shY);
+
+        let endX = originX;
+        let endY = originY + hh;
+
+        if (offsetDist > 0) {
+          const angle = Math.atan2(shY, shX);
+          const cosA = Math.cos(angle);
+          const sinA = Math.sin(angle);
+          const tx = Math.abs(cosA) > 1e-6 ? hw / Math.abs(cosA) : Infinity;
+          const ty = Math.abs(sinA) > 1e-6 ? hh / Math.abs(sinA) : Infinity;
+          const distToEdge = Math.min(tx, ty);
+          const totalDist = distToEdge + offsetDist;
+          endX = originX + totalDist * cosA;
+          endY = originY + totalDist * sinA;
+        }
+
+        const vecX = endX - originX;
+        const vecY = endY - originY;
+        const lenSq = vecX * vecX + vecY * vecY;
+        if (lenSq > 4) {
+          const proj = ((localX - originX) * vecX + (localY - originY) * vecY) / lenSq;
+          const newOpacity = Math.round(Math.max(5, Math.min(100, proj * 100)));
+
+          setShadowDragInfo({
+            label: 'Непрозрачность',
+            value: `${newOpacity}%`,
+            x: moveEv.clientX,
+            y: moveEv.clientY
+          });
+
+          updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? {
+            ...item,
+            shadowEnabled: true,
+            shadowOpacity: newOpacity
+          } : item));
+        }
+      }
+    };
+
+    const handleMouseUp = () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      setShadowDragTarget(null);
+      setShadowDragInfo(null);
+      isInteractingWithElementRef.current = false;
+      recordHistory(scenes);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  };
 
   const handleCaptionMouseDown = (e: React.MouseEvent, el: CanvasElement) => {
     e.stopPropagation();
@@ -2662,6 +2836,29 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
       setActiveHandle(null);
       return;
     }
+
+    // Direct canvas shadow dragging if shadow tool is active
+    if (activeFilterTool === 'shadow') {
+      const rect = canvasContainerRef.current?.getBoundingClientRect();
+      if (rect) {
+        const currentScale = canvasScale * zoomScale;
+        const canvasX = (e.clientX - rect.left) / currentScale;
+        const canvasY = (e.clientY - rect.top) / currentScale;
+        const rad = -((el.rotation || 0) * Math.PI / 180);
+        const flipH = el.isFlippedH ? -1 : 1;
+        const flipV = el.isFlippedV ? -1 : 1;
+        const cx = el.x + el.w / 2;
+        const cy = el.y + el.h / 2;
+        const dx = canvasX - cx;
+        const dy = canvasY - cy;
+        const localX = (dx * Math.cos(rad) - dy * Math.sin(rad)) * flipH + el.w / 2;
+        const localY = (dx * Math.sin(rad) + dy * Math.cos(rad)) * flipV + el.h / 2;
+
+        handleShadowStartDrag(e, 'create', el, { localX, localY });
+        return;
+      }
+    }
+
     setActiveAction('move');
     setActiveHandle(null);
     dragStartRef.current = {
@@ -4539,23 +4736,49 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                           {/* Shadow Tool Panel */}
                           {activeFilterTool === 'shadow' && selectedElem && (
                             <div className="flex flex-col gap-2 w-full text-xs">
-                              {/* Header & Toggle */}
+                              {/* Header: Title, Color Swatch & Toggle */}
                               <div className="flex items-center justify-between pb-1 border-b border-zinc-200/60 dark:border-zinc-800/60">
-                                <div className="flex items-center gap-1 font-bold text-zinc-800 dark:text-zinc-100 text-[11px]">
-                                  <ShadowToolIcon className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
-                                  <span>Тень</span>
+                                <div className="flex items-center gap-2 font-bold text-zinc-800 dark:text-zinc-100 text-[11px]">
+                                  <div className="flex items-center gap-1">
+                                    <ShadowToolIcon className="w-3.5 h-3.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
+                                    <span>Тень</span>
+                                  </div>
+
+                                  {/* Color Picker Swatch right opposite / next to Title */}
+                                  {selectedElem.shadowEnabled && (
+                                    <label
+                                      className="w-4 h-4 rounded-full border border-zinc-300 dark:border-zinc-600 cursor-pointer overflow-hidden shadow-2xs hover:scale-110 transition-transform flex items-center justify-center shrink-0"
+                                      style={{ backgroundColor: selectedElem.shadowColor || '#000000' }}
+                                      title="Выбрать цвет тени"
+                                    >
+                                      <input
+                                        type="color"
+                                        value={selectedElem.shadowColor || '#000000'}
+                                        onChange={(e) => {
+                                          const val = e.target.value;
+                                          updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, shadowColor: val } : item));
+                                        }}
+                                        className="opacity-0 w-0 h-0 p-0 border-0 cursor-pointer"
+                                      />
+                                    </label>
+                                  )}
                                 </div>
+
                                 <button
                                   onClick={() => {
                                     const currentEnabled = !!selectedElem.shadowEnabled;
+                                    const defaultX = 20;
+                                    const defaultY = 21;
                                     updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? {
                                       ...item,
                                       shadowEnabled: !currentEnabled,
-                                      shadowBlur: item.shadowBlur ?? 12,
+                                      shadowBlur: item.shadowBlur ?? 6,
                                       shadowOpacity: item.shadowOpacity ?? 50,
-                                      shadowX: item.shadowX ?? 0,
-                                      shadowY: item.shadowY ?? 8,
-                                      shadowColor: item.shadowColor ?? '#000000'
+                                      shadowX: (item.shadowX !== undefined && Math.abs(item.shadowX) > 0) ? item.shadowX : defaultX,
+                                      shadowY: (item.shadowY !== undefined && Math.abs(item.shadowY) > 0) ? item.shadowY : defaultY,
+                                      shadowColor: item.shadowColor ?? '#000000',
+                                      shadowAnchorX: 0.5,
+                                      shadowAnchorY: 0.5
                                     } : item));
                                   }}
                                   className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
@@ -4570,58 +4793,59 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
                               {selectedElem.shadowEnabled ? (
                                 <>
-                                  {/* Blur / Размытие */}
-                                  <div className="space-y-0.5">
-                                    <div className="flex justify-between text-[10px] font-bold text-zinc-600 dark:text-zinc-300">
-                                      <span>Размытие</span>
-                                      <span className="font-mono text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">{selectedElem.shadowBlur ?? 12}px</span>
+                                  {/* Row 1: Side-by-side Blur & Opacity */}
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div className="space-y-0.5">
+                                      <div className="flex justify-between text-[10px] font-bold text-zinc-600 dark:text-zinc-300">
+                                        <span>Размытие</span>
+                                        <span className="font-mono text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">{selectedElem.shadowBlur ?? 6}px</span>
+                                      </div>
+                                      <input
+                                        type="range"
+                                        min="0"
+                                        max="60"
+                                        value={selectedElem.shadowBlur ?? 6}
+                                        onChange={(e) => {
+                                          const val = parseInt(e.target.value);
+                                          updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, shadowBlur: val } : item));
+                                        }}
+                                        className="w-full accent-[var(--lavDeep)] dark:accent-[var(--lavenderAccent)] h-1 rounded-lg bg-zinc-200 dark:bg-zinc-700 cursor-pointer"
+                                      />
                                     </div>
-                                    <input
-                                      type="range"
-                                      min="0"
-                                      max="60"
-                                      value={selectedElem.shadowBlur ?? 12}
-                                      onChange={(e) => {
-                                        const val = parseInt(e.target.value);
-                                        updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, shadowBlur: val } : item));
-                                      }}
-                                      className="w-full accent-[var(--lavDeep)] dark:accent-[var(--lavenderAccent)] h-1 rounded-lg bg-zinc-200 dark:bg-zinc-700 cursor-pointer"
-                                    />
+
+                                    <div className="space-y-0.5">
+                                      <div className="flex justify-between text-[10px] font-bold text-zinc-600 dark:text-zinc-300">
+                                        <span>Прозрачность</span>
+                                        <span className="font-mono text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">{selectedElem.shadowOpacity ?? 50}%</span>
+                                      </div>
+                                      <input
+                                        type="range"
+                                        min="0"
+                                        max="100"
+                                        value={selectedElem.shadowOpacity ?? 50}
+                                        onChange={(e) => {
+                                          const val = parseInt(e.target.value);
+                                          updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, shadowOpacity: val } : item));
+                                        }}
+                                        className="w-full accent-[var(--lavDeep)] dark:accent-[var(--lavenderAccent)] h-1 rounded-lg bg-zinc-200 dark:bg-zinc-700 cursor-pointer"
+                                      />
+                                    </div>
                                   </div>
 
-                                  {/* Opacity / Прозрачность */}
-                                  <div className="space-y-0.5">
-                                    <div className="flex justify-between text-[10px] font-bold text-zinc-600 dark:text-zinc-300">
-                                      <span>Прозрачность</span>
-                                      <span className="font-mono text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">{selectedElem.shadowOpacity ?? 50}%</span>
-                                    </div>
-                                    <input
-                                      type="range"
-                                      min="0"
-                                      max="100"
-                                      value={selectedElem.shadowOpacity ?? 50}
-                                      onChange={(e) => {
-                                        const val = parseInt(e.target.value);
-                                        updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, shadowOpacity: val } : item));
-                                      }}
-                                      className="w-full accent-[var(--lavDeep)] dark:accent-[var(--lavenderAccent)] h-1 rounded-lg bg-zinc-200 dark:bg-zinc-700 cursor-pointer"
-                                    />
-                                  </div>
-
-                                  {/* Side-by-side Offset X & Y */}
+                                  {/* Row 2: Side-by-side Offset X & Y */}
                                   <div className="grid grid-cols-2 gap-2">
                                     <div className="space-y-0.5">
                                       <div className="flex justify-between text-[10px] font-bold text-zinc-600 dark:text-zinc-300">
                                         <span>Смещение X</span>
                                         <span className="font-mono text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">
-                                          {(selectedElem.shadowX ?? 0) > 0 ? `+${selectedElem.shadowX}` : (selectedElem.shadowX ?? 0)}
+                                          {(selectedElem.shadowX ?? 20) > 0 ? `+${selectedElem.shadowX ?? 20}` : (selectedElem.shadowX ?? 20)}
                                         </span>
                                       </div>
                                       <input
                                         type="range"
-                                        min="-40"
-                                        max="40"
-                                        value={selectedElem.shadowX ?? 0}
+                                        min="-120"
+                                        max="120"
+                                        value={selectedElem.shadowX ?? 20}
                                         onChange={(e) => {
                                           const val = parseInt(e.target.value);
                                           updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, shadowX: val } : item));
@@ -4634,78 +4858,20 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                       <div className="flex justify-between text-[10px] font-bold text-zinc-600 dark:text-zinc-300">
                                         <span>Смещение Y</span>
                                         <span className="font-mono text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]">
-                                          {(selectedElem.shadowY ?? 8) > 0 ? `+${selectedElem.shadowY}` : (selectedElem.shadowY ?? 8)}
+                                          {(selectedElem.shadowY ?? 21) > 0 ? `+${selectedElem.shadowY ?? 21}` : (selectedElem.shadowY ?? 21)}
                                         </span>
                                       </div>
                                       <input
                                         type="range"
-                                        min="-40"
-                                        max="40"
-                                        value={selectedElem.shadowY ?? 8}
+                                        min="-120"
+                                        max="120"
+                                        value={selectedElem.shadowY ?? 21}
                                         onChange={(e) => {
                                           const val = parseInt(e.target.value);
                                           updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, shadowY: val } : item));
                                         }}
                                         className="w-full accent-[var(--lavDeep)] dark:accent-[var(--lavenderAccent)] h-1 rounded-lg bg-zinc-200 dark:bg-zinc-700 cursor-pointer"
                                       />
-                                    </div>
-                                  </div>
-
-                                  {/* Color & Presets combined row */}
-                                  <div className="flex items-center justify-between gap-1 pt-1 border-t border-zinc-100 dark:border-zinc-800">
-                                    <div className="flex items-center gap-1">
-                                      {['#000000', '#27272a', '#3f2e21'].map(preset => (
-                                        <button
-                                          key={preset}
-                                          onClick={() => updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, shadowColor: preset } : item))}
-                                          className={`w-3.5 h-3.5 rounded-full border cursor-pointer transition-transform ${
-                                            (selectedElem.shadowColor || '#000000') === preset ? 'ring-2 ring-[var(--lavDeep)] scale-110' : 'border-zinc-300'
-                                          }`}
-                                          style={{ backgroundColor: preset }}
-                                          title={`Цвет: ${preset}`}
-                                        />
-                                      ))}
-                                      <input
-                                        type="color"
-                                        value={selectedElem.shadowColor || '#000000'}
-                                        onChange={(e) => {
-                                          const val = e.target.value;
-                                          updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? { ...item, shadowColor: val } : item));
-                                        }}
-                                        className="w-4 h-4 rounded cursor-pointer overflow-hidden p-0 border border-zinc-300 bg-transparent"
-                                        title="Выбрать цвет тени"
-                                      />
-                                    </div>
-
-                                    <div className="flex items-center gap-1">
-                                      <button
-                                        onClick={() => updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? {
-                                          ...item,
-                                          shadowEnabled: true,
-                                          shadowX: 0,
-                                          shadowY: 8,
-                                          shadowBlur: 14,
-                                          shadowOpacity: 40,
-                                          shadowColor: '#000000'
-                                        } : item))}
-                                        className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-[9px] font-bold cursor-pointer transition-colors"
-                                      >
-                                        Мягкий пол
-                                      </button>
-                                      <button
-                                        onClick={() => updateActiveSceneElements(prev => prev.map(item => item.id === selectedElem.id ? {
-                                          ...item,
-                                          shadowEnabled: true,
-                                          shadowX: 12,
-                                          shadowY: 10,
-                                          shadowBlur: 10,
-                                          shadowOpacity: 50,
-                                          shadowColor: '#000000'
-                                        } : item))}
-                                        className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-[9px] font-bold cursor-pointer transition-colors"
-                                      >
-                                        Свет
-                                      </button>
                                     </div>
                                   </div>
                                 </>
@@ -5567,17 +5733,24 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         </svg>
                       )}
 
-                      {/* Image / SVG Graphics */}
+                      {/* Shadow Container: strictly isolated so tint / recolor does not affect the shadow */}
                       <div
                         className="w-full h-full relative pointer-events-none select-none"
                         style={{
-                          filter: `brightness(${100 + el.exposure}%) saturate(${el.saturate}%) hue-rotate(${el.hue}deg) sepia(${el.temp > 0 ? el.temp * 0.4 : 0}%)${
-                            el.shadowEnabled
-                              ? ` drop-shadow(${el.shadowX ?? 0}px ${el.shadowY ?? 8}px ${el.shadowBlur ?? 12}px ${hexToRgba(el.shadowColor || '#000000', (el.shadowOpacity ?? 50) / 100)})`
-                              : ''
-                          }${el.tintColor ? ` url(#element-tint-${el.id})` : ''}`
+                          filter: el.shadowEnabled
+                            ? `drop-shadow(${el.shadowX ?? 20}px ${el.shadowY ?? 21}px ${el.shadowBlur ?? 6}px ${hexToRgba(el.shadowColor || '#000000', (el.shadowOpacity ?? 50) / 100)})`
+                            : undefined
                         }}
                       >
+                        {/* Image / SVG Graphics with isolated color correction & tinting */}
+                        <div
+                          className="w-full h-full relative pointer-events-none select-none"
+                          style={{
+                            filter: `brightness(${100 + el.exposure}%) saturate(${el.saturate}%) hue-rotate(${el.hue}deg) sepia(${el.temp > 0 ? el.temp * 0.4 : 0}%)${
+                              el.tintColor ? ` url(#element-tint-${el.id})` : ''
+                            }`
+                          }}
+                        >
                         {el.type === 'measurement' ? (() => {
                           const currentScale = canvasScale * zoomScale;
                           const scaleInv = 1 / (currentScale || 1);
@@ -5690,6 +5863,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                             }}
                           />
                         )}
+                        </div>
                       </div>
 
                       {/* Editable & Draggable Caption Label with Leader Line (ONLY IN SCHEMA MODE) */}
@@ -6051,6 +6225,158 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                               </>
                             )}
                           </>
+                        );
+                      })()}
+
+                      {/* Corel-Style Interactive Shadow Vector on Canvas */}
+                      {activeFilterTool === 'shadow' && !!el.shadowEnabled && isSelected && !el.isLocked && (() => {
+                        const currentScale = canvasScale * zoomScale;
+                        const scaleInv = 1 / (currentScale || 1);
+                        const originX = el.w * 0.5;
+                        const originY = el.h * 0.5;
+                        const hw = el.w * 0.5;
+                        const hh = el.h * 0.5;
+
+                        const shX = el.shadowX ?? 0;
+                        const shY = el.shadowY ?? 0;
+                        const offsetDist = Math.hypot(shX, shY);
+
+                        let endX = originX;
+                        let endY = originY + hh; // default down to bottom edge if offset is 0
+
+                        if (offsetDist > 0) {
+                          const angle = Math.atan2(shY, shX);
+                          const cosA = Math.cos(angle);
+                          const sinA = Math.sin(angle);
+                          const tx = Math.abs(cosA) > 1e-6 ? hw / Math.abs(cosA) : Infinity;
+                          const ty = Math.abs(sinA) > 1e-6 ? hh / Math.abs(sinA) : Infinity;
+                          const distToEdge = Math.min(tx, ty);
+                          const totalDist = distToEdge + offsetDist;
+                          endX = originX + totalDist * cosA;
+                          endY = originY + totalDist * sinA;
+                        }
+
+                        const angleRad = Math.atan2(endY - originY, endX - originX);
+                        const angleDeg = angleRad * (180 / Math.PI);
+
+                        const opacityVal = el.shadowOpacity ?? 50;
+                        const t = Math.max(0.06, Math.min(0.94, opacityVal / 100));
+                        const sliderX = originX + (endX - originX) * t;
+                        const sliderY = originY + (endY - originY) * t;
+
+                        return (
+                          <div className="absolute inset-0 pointer-events-none z-40 select-none">
+                            {/* 1. Vector Line & Halo */}
+                            <svg className="absolute inset-0 w-full h-full overflow-visible pointer-events-none">
+                              {/* Contrast white halo behind line */}
+                              <line
+                                x1={originX}
+                                y1={originY}
+                                x2={endX}
+                                y2={endY}
+                                stroke="#FFFFFF"
+                                strokeWidth={3.5 * scaleInv}
+                                strokeLinecap="round"
+                                opacity="0.95"
+                              />
+                              {/* Core dark vector line */}
+                              <line
+                                x1={originX}
+                                y1={originY}
+                                x2={endX}
+                                y2={endY}
+                                stroke="#18181B"
+                                strokeWidth={1.5 * scaleInv}
+                                strokeLinecap="round"
+                              />
+                            </svg>
+
+                            {/* 2. Center Anchor Handle (Белый квадрат в центре предмета) */}
+                            <div
+                              className="absolute pointer-events-auto cursor-crosshair z-40 w-7 h-7 flex items-center justify-center group/anchor"
+                              style={{
+                                left: `${originX}px`,
+                                top: `${originY}px`,
+                                transform: `translate(-50%, -50%) scale(${scaleInv})`,
+                                transformOrigin: 'center center'
+                              }}
+                              title="Центр предмета (потяните к краю для направления тени)"
+                              onMouseDown={(e) => handleShadowStartDrag(e, 'end', el)}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="w-3.5 h-3.5 bg-white border-2 border-zinc-900 rounded-[2px] shadow-sm flex items-center justify-center group-hover/anchor:scale-125 transition-transform">
+                                <div className="w-1 h-1 bg-zinc-900 rounded-full" />
+                              </div>
+                            </div>
+
+                            {/* 3. Slider Bar (Белая плашка непрозрачности поперек вектора) */}
+                            <div
+                              className="absolute pointer-events-auto cursor-pointer z-40 w-8 h-8 flex items-center justify-center group/slider"
+                              style={{
+                                left: `${sliderX}px`,
+                                top: `${sliderY}px`,
+                                transform: `translate(-50%, -50%) rotate(${angleDeg}deg) scale(${scaleInv})`,
+                                transformOrigin: 'center center'
+                              }}
+                              title={`Непрозрачность тени: ${opacityVal}% (потяните вдоль вектора)`}
+                              onMouseDown={(e) => handleShadowStartDrag(e, 'slider', el)}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="w-2 h-5 bg-white border-2 border-zinc-900 rounded-xs shadow-md flex items-center justify-center group-hover/slider:scale-125 group-hover/slider:border-[var(--lavDeep)] transition-transform">
+                                <div className="w-[1.5px] h-2.5 bg-zinc-600 rounded-full" />
+                              </div>
+                            </div>
+
+                            {/* 4. End Marker (Черный квадрат на конце вектора - граница тени) */}
+                            <div
+                              className="absolute pointer-events-auto cursor-grab active:cursor-grabbing z-40 w-7 h-7 flex items-center justify-center group/end"
+                              style={{
+                                left: `${endX}px`,
+                                top: `${endY}px`,
+                                transform: `translate(-50%, -50%) scale(${scaleInv})`,
+                                transformOrigin: 'center center'
+                              }}
+                              title={`Смещение тени (X: ${shX > 0 ? `+${shX}` : shX}px, Y: ${shY > 0 ? `+${shY}` : shY}px) • Двойной клик: цвет`}
+                              onMouseDown={(e) => handleShadowStartDrag(e, 'end', el)}
+                              onDoubleClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                if (shadowMarkerColorInputRef.current) {
+                                  if ('showPicker' in HTMLInputElement.prototype) {
+                                    try {
+                                      shadowMarkerColorInputRef.current.showPicker();
+                                    } catch {
+                                      shadowMarkerColorInputRef.current.click();
+                                    }
+                                  } else {
+                                    shadowMarkerColorInputRef.current.click();
+                                  }
+                                }
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div
+                                className="w-3.5 h-3.5 border-2 border-white rounded-[2px] shadow-md flex items-center justify-center group-hover/end:scale-125 group-hover/end:ring-2 group-hover/end:ring-[var(--lavDeep)] transition-transform"
+                                style={{ backgroundColor: el.shadowColor || '#18181b' }}
+                              >
+                                <div className="w-1 h-1 bg-white rounded-xs pointer-events-none" />
+                              </div>
+
+                              {/* Invisible color picker for direct double-click trigger */}
+                              <input
+                                ref={shadowMarkerColorInputRef}
+                                type="color"
+                                value={el.shadowColor || '#000000'}
+                                onChange={(colorEv) => {
+                                  const val = colorEv.target.value;
+                                  updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, shadowColor: val } : item));
+                                }}
+                                className="sr-only pointer-events-none"
+                                tabIndex={-1}
+                                aria-hidden="true"
+                              />
+                            </div>
+                          </div>
                         );
                       })()}
                     </div>
@@ -7288,6 +7614,20 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
           </div>
         )}
       </AnimatePresence>
+
+      {/* Floating HUD Tooltip for Interactive Shadow Manipulation */}
+      {shadowDragInfo && (
+        <div
+          className="fixed z-50 pointer-events-none -translate-x-1/2 -translate-y-full mb-3 px-3 py-1.5 rounded-full bg-zinc-900/90 text-white text-[11px] font-medium shadow-xl border border-white/20 backdrop-blur-md whitespace-nowrap animate-fadeIn flex items-center gap-1.5"
+          style={{
+            left: `${shadowDragInfo.x}px`,
+            top: `${shadowDragInfo.y - 10}px`
+          }}
+        >
+          <span className="text-zinc-400 font-normal">{shadowDragInfo.label}:</span>
+          <span className="text-white font-bold">{shadowDragInfo.value}</span>
+        </div>
+      )}
 
     </div>
   );
