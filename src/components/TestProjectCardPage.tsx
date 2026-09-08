@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { EditorSketchCanvasPreview } from './EditorSketchCanvasPreview';
 import { SketchLightboxModal } from './SketchLightboxModal';
+import PaletteColorPicker, { parsePaletteColors } from './PaletteColorPicker';
 import { toJpeg } from 'html-to-image';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -199,11 +200,20 @@ export default function TestProjectCardPage({
         }
       }
 
+      let updatedColors = project.brief?.colors;
+      if (key === "ПАЛИТРА ОФОРМЛЕНИЯ") {
+        updatedColors = value.split(',').map(s => s.trim()).filter(Boolean);
+      }
+
       onUpdateProject({
         ...project,
         briefValues: next,
         budget: updatedBudget,
-        clientPrice: updatedClientPrice
+        clientPrice: updatedClientPrice,
+        brief: {
+          ...project.brief,
+          colors: updatedColors !== undefined ? updatedColors : (project.brief?.colors || [])
+        }
       });
       return next;
     });
@@ -1062,7 +1072,7 @@ export default function TestProjectCardPage({
 
   // Brief field dataset grouped systematically: Client fields first, then Decorator fields
   const baseBriefFieldDefinitions: { key: string; filledBy: 'client' | 'designer'; multiline?: boolean }[] = [
-    // --- 1. КЛИЕНТСКИЙ БЛОК (22 поля) ---
+    // --- 1. КЛИЕНТСКИЙ БЛОК (14 полей) ---
     { key: "ИМЯ КЛИЕНТА", filledBy: 'client' },
     { key: "ТЕЛЕФОН", filledBy: 'client' },
     { key: "СОБЫТИЕ", filledBy: 'client' },
@@ -1071,25 +1081,25 @@ export default function TestProjectCardPage({
     { key: "ФОРМАТ СОБЫТИЯ", filledBy: 'client' },
     { key: "АДРЕС ПЛОЩАДКИ/НАЗВАНИЕ", filledBy: 'client' },
     { key: "КОНТАКТ ПЛОЩАДКИ", filledBy: 'client' },
-    { key: "РАЗМЕР ЗОНЫ МОНТАЖА", filledBy: 'client' },
-    { key: "КРЕПЕЖ К СТЕНАМ", filledBy: 'client' },
-    { key: "КРЕПЕЖ К ПОТОЛКУ", filledBy: 'client' },
-    { key: "СОГЛАСОВАНИЕ ОФОРМЛЕНИЯ", filledBy: 'client' },
-    { key: "ЭЛЕКТРИЧЕСТВО У СЦЕНЫ", filledBy: 'client' },
-    { key: "ПОДЪЕЗД / ГРУЗОВОЙ ЛИФТ", filledBy: 'client' },
     { key: "ПРАЗДНИК НА УЛИЦЕ", filledBy: 'client' },
-    { key: "ХРАНЕНИЕ НА ПЛОЩАДКЕ", filledBy: 'client' },
-    { key: "ДЕМОНТАЖ / ВЫВОЗ", filledBy: 'client' },
     { key: "КТО ПРИНИМАЕТ РАБОТЫ", filledBy: 'client' },
     { key: "ПАЛИТРА ОФОРМЛЕНИЯ", filledBy: 'client' },
     { key: "СТИЛЬ ОФОРМЛЕНИЯ", filledBy: 'client' },
     { key: "ОРИЕНТИРОВОЧНЫЙ БЮДЖЕТ", filledBy: 'client' },
     { key: "ДОПОЛНИТЕЛЬНАЯ ИНФОРМАЦИЯ", filledBy: 'client', multiline: true },
 
-    // --- 2. БЛОК ДЕКОРАТОРА (базовые + пользовательские поля) ---
+    // --- 2. БЛОК ДЕКОРАТОРА (11 базовых полей) ---
+    { key: "РАЗМЕР ЗОНЫ МОНТАЖА", filledBy: 'designer' },
+    { key: "КРЕПЕЖ К СТЕНАМ", filledBy: 'designer' },
+    { key: "КРЕПЕЖ К ПОТОЛКУ", filledBy: 'designer' },
+    { key: "СОГЛАСОВАНИЕ ОФОРМЛЕНИЯ", filledBy: 'designer' },
+    { key: "ЭЛЕКТРИЧЕСТВО У СЦЕНЫ", filledBy: 'designer' },
+    { key: "ПОДЪЕЗД / ГРУЗОВОЙ ЛИФТ", filledBy: 'designer' },
+    { key: "ХРАНЕНИЕ НА ПЛОЩАДКЕ", filledBy: 'designer' },
+    { key: "ДЕМОНТАЖ / ВЫВОЗ", filledBy: 'designer' },
     { key: "ДОСТУП НА МОНТАЖ", filledBy: 'designer' },
     { key: "ОКНО МОНТАЖА", filledBy: 'designer' },
-    { key: "КОНСТРУКЦИИ ДЕКОРА", filledBy: 'designer' },
+    { key: "КОНСТРУКЦИИ ДЕКОРА", filledBy: 'designer', multiline: true },
   ];
 
   const briefFieldDefinitions = [
@@ -1275,76 +1285,76 @@ export default function TestProjectCardPage({
         </div>
       </header>
 
-      {/* 2. 3 COMPACT FINANCIAL METRIC CARDS (HIGH CONTRAST & RESTORED DETAILS) */}
-      {(activeTab === 'all' || activeTab === 'calc') && (
+      {/* 2. 3 COMPACT FINANCIAL METRIC CARDS (HIGH CONTRAST & UNIFORM BACKGROUND) */}
+      {(activeTab === 'all' || activeTab === 'brief' || activeTab === 'calc') && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full relative z-10">
           {/* CARD 1: СТОИМОСТЬ */}
-          <div className="bg-gradient-to-br from-purple-100/90 via-white/80 to-indigo-50/70 dark:from-purple-950/40 dark:via-zinc-900/60 dark:to-zinc-900/60 backdrop-blur-xl border border-purple-200/80 dark:border-purple-900/50 rounded-[24px] p-4 shadow-2xs flex flex-col justify-between gap-3 relative overflow-hidden">
+          <div className="bg-purple-500/10 dark:bg-purple-950/40 backdrop-blur-xl border border-purple-500/20 dark:border-purple-800/50 rounded-[24px] p-4 shadow-2xs flex flex-col justify-between gap-3 relative overflow-hidden">
             <div className="flex items-center justify-between gap-2">
               <span className="text-[10px] uppercase font-normal text-zinc-600 dark:text-zinc-400 tracking-normal truncate">
                 Общая сметная стоимость
               </span>
-              <span className="px-2.5 py-0.5 rounded-full bg-white/90 dark:bg-zinc-800/90 text-[10px] font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/40 shadow-2xs shrink-0">
+              <span className="px-2.5 py-0.5 rounded-full bg-purple-500/15 dark:bg-purple-900/60 text-[10px] font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 border border-purple-500/20 dark:border-purple-800/40 shadow-2xs shrink-0">
                 Стоимость
               </span>
             </div>
             <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-purple-200/90 dark:bg-purple-900/70 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] rounded-xl shrink-0">
+              <div className="p-2 bg-purple-500/15 dark:bg-purple-900/60 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] rounded-xl shrink-0">
                 <Wallet className="w-4 h-4 stroke-[2.2]" />
               </div>
               <div className="text-xl sm:text-2xl font-black font-mono text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-200 tracking-tight truncate">
                 {finalPrice.toLocaleString('ru')} ₽
               </div>
             </div>
-            <div className="pt-2 border-t border-purple-200/60 dark:border-purple-900/40 flex items-center justify-between text-xs text-zinc-800 dark:text-zinc-200">
+            <div className="pt-2 border-t border-purple-500/15 dark:border-purple-800/40 flex items-center justify-between text-xs text-zinc-800 dark:text-zinc-200">
               <span className="font-medium text-zinc-700 dark:text-zinc-300">Фиксированный бюджет</span>
               <span className="font-extrabold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300">100% сметы</span>
             </div>
           </div>
 
           {/* CARD 2: ПРЕДОПЛАТА */}
-          <div className="bg-gradient-to-br from-emerald-100/90 via-white/80 to-teal-50/70 dark:from-emerald-950/40 dark:via-zinc-900/60 dark:to-zinc-900/60 backdrop-blur-xl border border-emerald-200/80 dark:border-emerald-900/50 rounded-[24px] p-4 shadow-2xs flex flex-col justify-between gap-3 relative overflow-hidden">
+          <div className="bg-emerald-500/10 dark:bg-emerald-950/40 backdrop-blur-xl border border-emerald-500/20 dark:border-emerald-800/50 rounded-[24px] p-4 shadow-2xs flex flex-col justify-between gap-3 relative overflow-hidden">
             <div className="flex items-center justify-between gap-2">
               <span className="text-[10px] uppercase font-normal text-zinc-600 dark:text-zinc-400 tracking-normal truncate">
                 Полученная предоплата
               </span>
-              <span className="px-2.5 py-0.5 rounded-full bg-emerald-100/90 dark:bg-emerald-900/80 text-[10px] font-semibold text-emerald-800 dark:text-emerald-200 border border-emerald-300/60 dark:border-emerald-700/40 shadow-2xs shrink-0">
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/15 dark:bg-emerald-900/60 text-[10px] font-semibold text-emerald-800 dark:text-emerald-200 border border-emerald-500/20 dark:border-emerald-700/40 shadow-2xs shrink-0">
                 {finalPrice > 0 ? Math.round((prepayment / finalPrice) * 100) : 0}% внесено
               </span>
             </div>
             <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-emerald-200/90 dark:bg-emerald-900/70 text-emerald-600 rounded-xl shrink-0">
+              <div className="p-2 bg-emerald-500/15 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-400 rounded-xl shrink-0">
                 <CheckCircle2 className="w-4 h-4 stroke-[2.2]" />
               </div>
               <div className="text-xl sm:text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400 tracking-tight truncate">
                 {prepayment.toLocaleString('ru')} ₽
               </div>
             </div>
-            <div className="pt-2 border-t border-emerald-200/60 dark:border-emerald-900/40 flex items-center justify-between text-xs text-zinc-800 dark:text-zinc-200">
+            <div className="pt-2 border-t border-emerald-500/15 dark:border-emerald-800/40 flex items-center justify-between text-xs text-zinc-800 dark:text-zinc-200">
               <span className="font-medium text-zinc-700 dark:text-zinc-300">Аванс забронирован</span>
               <span className="font-extrabold text-emerald-600 dark:text-emerald-400">Подтверждено ✓</span>
             </div>
           </div>
 
           {/* CARD 3: ОСТАТОК И ДНИ ДО МОНТАЖА */}
-          <div className="bg-gradient-to-br from-amber-100/90 via-white/80 to-orange-50/70 dark:from-amber-950/40 dark:via-zinc-900/60 dark:to-zinc-900/60 backdrop-blur-xl border border-amber-200/80 dark:border-amber-900/50 rounded-[24px] p-4 shadow-2xs flex flex-col justify-between gap-3 relative overflow-hidden">
+          <div className="bg-amber-500/10 dark:bg-amber-950/40 backdrop-blur-xl border border-amber-500/20 dark:border-amber-800/50 rounded-[24px] p-4 shadow-2xs flex flex-col justify-between gap-3 relative overflow-hidden">
             <div className="flex items-center justify-between gap-2">
               <span className="text-[10px] uppercase font-normal text-zinc-600 dark:text-zinc-400 tracking-normal truncate">
                 Остаток на день монтажа
               </span>
-              <span className="px-2.5 py-0.5 rounded-full bg-amber-100/90 dark:bg-amber-900/80 text-[10px] font-semibold text-amber-800 dark:text-amber-200 border border-amber-300/60 dark:border-amber-700/40 shadow-2xs shrink-0">
+              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/15 dark:bg-amber-900/60 text-[10px] font-semibold text-amber-800 dark:text-amber-200 border border-amber-500/20 dark:border-amber-700/40 shadow-2xs shrink-0">
                 К оплате
               </span>
             </div>
             <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-amber-200/90 dark:bg-amber-900/70 text-amber-600 rounded-xl shrink-0">
+              <div className="p-2 bg-amber-500/15 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400 rounded-xl shrink-0">
                 <CreditCard className="w-4 h-4 stroke-[2.2]" />
               </div>
               <div className="text-xl sm:text-2xl font-black font-mono text-amber-600 dark:text-amber-400 tracking-tight truncate">
                 {Math.max(0, finalPrice - prepayment).toLocaleString('ru')} ₽
               </div>
             </div>
-            <div className="pt-2 border-t border-amber-200/60 dark:border-amber-900/40 flex items-center justify-between text-xs text-zinc-800 dark:text-zinc-200">
+            <div className="pt-2 border-t border-amber-500/15 dark:border-amber-800/40 flex items-center justify-between text-xs text-zinc-800 dark:text-zinc-200">
               <span className="font-medium text-zinc-700 dark:text-zinc-300 flex items-center gap-1">
                 До монтажа: <strong className="font-extrabold text-amber-800 dark:text-amber-200">
                   {daysUntilEvent !== null
@@ -1508,7 +1518,10 @@ export default function TestProjectCardPage({
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5">
                         {briefFieldDefinitions.filter(f => f.filledBy === 'client').map((field) => {
                           const val = briefValues[field.key] || '';
-                          const isEmpty = !val.trim() || val === "(требует заполнения)";
+                          const isPalette = field.key === "ПАЛИТРА ОФОРМЛЕНИЯ";
+                          const isEmpty = isPalette
+                            ? parsePaletteColors(val).length === 0
+                            : (!val.trim() || val === "(требует заполнения)");
 
                           return (
                             <div
@@ -1525,15 +1538,20 @@ export default function TestProjectCardPage({
                                 </span>
                               </div>
 
-                              {field.multiline ? (
+                              {isPalette ? (
+                                <PaletteColorPicker
+                                  value={val}
+                                  onChange={(newVal) => handleUpdateBriefField(field.key, newVal)}
+                                />
+                              ) : field.multiline ? (
                                 <textarea
                                   rows={2}
                                   value={val === "(требует заполнения)" ? "" : val}
                                   onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                                   placeholder=""
-                                  className={`w-full text-sm font-semibold rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)] resize-none ${
+                                  className={`w-full text-sm font-normal rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)] resize-none ${
                                     isEmpty
-                                      ? 'bg-purple-50/50 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] italic font-medium border-purple-200/60 dark:bg-zinc-900/90 dark:text-purple-300/80 dark:border-zinc-800'
+                                      ? 'bg-purple-50/50 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] italic font-normal border-purple-200/60 dark:bg-zinc-900/90 dark:text-purple-300/80 dark:border-zinc-800'
                                       : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
                                   }`}
                                 />
@@ -1543,9 +1561,9 @@ export default function TestProjectCardPage({
                                   value={val === "(требует заполнения)" ? "" : val}
                                   onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                                   placeholder=""
-                                  className={`w-full text-sm font-semibold rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)] ${
+                                  className={`w-full text-sm font-normal rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)] ${
                                     isEmpty
-                                      ? 'bg-purple-50/50 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] italic font-medium border-purple-200/60 dark:bg-zinc-900/90 dark:text-purple-300/80 dark:border-zinc-800'
+                                      ? 'bg-purple-50/50 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] italic font-normal border-purple-200/60 dark:bg-zinc-900/90 dark:text-purple-300/80 dark:border-zinc-800'
                                       : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
                                   }`}
                                 />
@@ -1605,15 +1623,15 @@ export default function TestProjectCardPage({
                                 )}
                               </div>
 
-                              {field.multiline ? (
+                               {field.multiline ? (
                                 <textarea
                                   rows={2}
                                   value={val === "(требует заполнения)" ? "" : val}
                                   onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                                   placeholder=""
-                                  className={`w-full text-sm font-semibold rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)] resize-none ${
+                                  className={`w-full text-sm font-normal rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)] resize-none ${
                                     isEmpty
-                                      ? 'bg-zinc-100/50 text-zinc-600 italic font-medium border-zinc-200 dark:bg-zinc-900/80 dark:text-zinc-400 dark:border-zinc-800'
+                                      ? 'bg-zinc-100/50 text-zinc-600 italic font-normal border-zinc-200 dark:bg-zinc-900/80 dark:text-zinc-400 dark:border-zinc-800'
                                       : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
                                   }`}
                                 />
@@ -1623,9 +1641,9 @@ export default function TestProjectCardPage({
                                   value={val === "(требует заполнения)" ? "" : val}
                                   onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                                   placeholder=""
-                                  className={`w-full text-sm font-semibold rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)] ${
+                                  className={`w-full text-sm font-normal rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)] ${
                                     isEmpty
-                                      ? 'bg-zinc-100/50 text-zinc-600 italic font-medium border-zinc-200 dark:bg-zinc-900/80 dark:text-zinc-400 dark:border-zinc-800'
+                                      ? 'bg-zinc-100/50 text-zinc-600 italic font-normal border-zinc-200 dark:bg-zinc-900/80 dark:text-zinc-400 dark:border-zinc-800'
                                       : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
                                   }`}
                                 />
@@ -1658,7 +1676,7 @@ export default function TestProjectCardPage({
                                   showToast('Поле добавлено', `Добавлено новое поле: ${keyUpper}`, 'success');
                                 }
                               }}
-                              className="w-full text-xs font-semibold rounded-lg px-2 py-1 border border-purple-200 dark:border-purple-800 bg-white dark:bg-zinc-900 text-stone-800 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)]"
+                              className="w-full text-xs font-normal rounded-lg px-2 py-1 border border-purple-200 dark:border-purple-800 bg-white dark:bg-zinc-900 text-stone-800 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)]"
                             />
                             <div className="flex items-center gap-1.5 pt-0.5">
                               <button
@@ -2136,7 +2154,7 @@ export default function TestProjectCardPage({
                                       type="text"
                                       value={sc.name || `Декор ${idx + 1}`}
                                       onChange={(e) => handleUpdateSceneName(sc.id, e.target.value)}
-                                      className={`font-semibold text-sm bg-transparent border-b border-transparent hover:border-purple-300 focus:border-[var(--lavDeep)] focus:outline-none transition-colors ${
+                                      className={`font-normal text-sm bg-transparent border-b border-transparent hover:border-purple-300 focus:border-[var(--lavDeep)] focus:outline-none transition-colors ${
                                         isIncluded ? 'text-stone-900 dark:text-stone-100' : 'line-through text-stone-400 dark:text-zinc-500'
                                       }`}
                                     />
@@ -2233,7 +2251,7 @@ export default function TestProjectCardPage({
                                   type="text"
                                   value={item.name}
                                   onChange={(e) => handleUpdateEstimateItemName(item.id, e.target.value)}
-                                  className="font-semibold text-sm bg-transparent border-b border-transparent hover:border-purple-300 focus:border-[var(--lavDeep)] focus:outline-none transition-colors text-stone-900 dark:text-stone-100"
+                                  className="font-normal text-sm bg-transparent border-b border-transparent hover:border-purple-300 focus:border-[var(--lavDeep)] focus:outline-none transition-colors text-stone-900 dark:text-stone-100"
                                 />
                                 <span className="text-[10px] text-zinc-600 dark:text-zinc-300 font-normal leading-normal">
                                   Сервисная позиция / услуга

@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { EditorSketchCanvasPreview } from './EditorSketchCanvasPreview';
 import { PrivacyPolicyModal } from './PrivacyPolicyModal';
 import { SketchLightboxModal } from './SketchLightboxModal';
+import PaletteColorPicker, { parsePaletteColors } from './PaletteColorPicker';
 import { toJpeg } from 'html-to-image';
 import {
   Clipboard,
@@ -175,7 +176,10 @@ export const BriefBlock: React.FC<BriefBlockProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5">
               {briefFieldDefinitions.filter(f => f.filledBy === 'client').map((field) => {
                 const val = briefValues[field.key] || '';
-                const isEmpty = !val.trim() || val === "(требует заполнения)";
+                const isPalette = field.key === "ПАЛИТРА ОФОРМЛЕНИЯ";
+                const isEmpty = isPalette
+                  ? parsePaletteColors(val).length === 0
+                  : (!val.trim() || val === "(требует заполнения)");
 
                 return (
                   <div
@@ -192,15 +196,20 @@ export const BriefBlock: React.FC<BriefBlockProps> = ({
                       </span>
                     </div>
 
-                    {field.multiline ? (
+                    {isPalette ? (
+                      <PaletteColorPicker
+                        value={val}
+                        onChange={(newVal) => handleUpdateBriefField(field.key, newVal)}
+                      />
+                    ) : field.multiline ? (
                       <textarea
                         rows={2}
                         value={val === "(требует заполнения)" ? "" : val}
                         onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                         placeholder="Заполните информацию..."
-                        className={`w-full text-xs font-semibold rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)] resize-none ${
+                        className={`w-full text-xs font-normal rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)] resize-none ${
                           isEmpty
-                            ? 'bg-purple-50/50 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] italic font-medium border-purple-200/60 dark:bg-zinc-900/90 dark:text-purple-300/80 dark:border-zinc-800'
+                            ? 'bg-purple-50/50 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] italic font-normal border-purple-200/60 dark:bg-zinc-900/90 dark:text-purple-300/80 dark:border-zinc-800'
                             : 'bg-white/90 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100 border-zinc-200 dark:border-zinc-800'
                         }`}
                       />
@@ -210,9 +219,9 @@ export const BriefBlock: React.FC<BriefBlockProps> = ({
                         value={val === "(требует заполнения)" ? "" : val}
                         onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                         placeholder="Заполните значение..."
-                        className={`w-full text-xs font-semibold rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)] ${
+                        className={`w-full text-xs font-normal rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)] ${
                           isEmpty
-                            ? 'bg-purple-50/50 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] italic font-medium border-purple-200/60 dark:bg-zinc-900/90 dark:text-purple-300/80 dark:border-zinc-800'
+                            ? 'bg-purple-50/50 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] italic font-normal border-purple-200/60 dark:bg-zinc-900/90 dark:text-purple-300/80 dark:border-zinc-800'
                             : 'bg-white/90 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100 border-zinc-200 dark:border-zinc-800'
                         }`}
                       />
@@ -281,9 +290,9 @@ export const BriefBlock: React.FC<BriefBlockProps> = ({
                         value={val === "(требует заполнения)" ? "" : val}
                         onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                         placeholder="Заполните информацию..."
-                        className={`w-full text-xs font-semibold rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)] resize-none ${
+                        className={`w-full text-xs font-normal rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)] resize-none ${
                           isEmpty
-                            ? 'bg-zinc-100/60 text-zinc-600 italic font-medium border-zinc-200 dark:bg-zinc-800/60 dark:text-zinc-400'
+                            ? 'bg-zinc-100/60 text-zinc-600 italic font-normal border-zinc-200 dark:bg-zinc-800/60 dark:text-zinc-400'
                             : 'bg-white/90 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100 border-zinc-200 dark:border-zinc-800'
                         }`}
                       />
@@ -293,9 +302,9 @@ export const BriefBlock: React.FC<BriefBlockProps> = ({
                         value={val === "(требует заполнения)" ? "" : val}
                         onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                         placeholder="Заполните значение..."
-                        className={`w-full text-xs font-semibold rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)] ${
+                        className={`w-full text-xs font-normal rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)] ${
                           isEmpty
-                            ? 'bg-zinc-100/60 text-zinc-600 italic font-medium border-zinc-200 dark:bg-zinc-800/60 dark:text-zinc-400'
+                            ? 'bg-zinc-100/60 text-zinc-600 italic font-normal border-zinc-200 dark:bg-zinc-800/60 dark:text-zinc-400'
                             : 'bg-white/90 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100 border-zinc-200 dark:border-zinc-800'
                         }`}
                       />
@@ -326,7 +335,7 @@ export const BriefBlock: React.FC<BriefBlockProps> = ({
                         showToast?.('Поле добавлено', `Добавлено поле: ${keyUpper}`, 'success');
                       }
                     }}
-                    className="w-full text-xs font-semibold rounded-lg px-2 py-1 border border-purple-200 dark:border-purple-800 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)]"
+                    className="w-full text-xs font-normal rounded-lg px-2 py-1 border border-purple-200 dark:border-purple-800 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-[var(--lavenderAccent)]"
                   />
                   <div className="flex items-center gap-1.5 pt-0.5">
                     <button
@@ -980,12 +989,12 @@ export const CalcBlock: React.FC<CalcBlockProps> = ({
                                   type="text"
                                   value={sc.name || `Декор ${idx + 1}`}
                                   onChange={(e) => handleUpdateSceneName(sc.id, e.target.value)}
-                                  className={`font-semibold text-xs sm:text-sm bg-transparent border-b border-transparent hover:border-purple-300 focus:border-[var(--lavDeep)] focus:outline-none transition-colors w-full ${
+                                  className={`font-normal text-xs sm:text-sm bg-transparent border-b border-transparent hover:border-purple-300 focus:border-[var(--lavDeep)] focus:outline-none transition-colors w-full ${
                                     isIncluded ? 'text-stone-900 dark:text-stone-100' : 'line-through text-stone-400 dark:text-zinc-500'
                                   }`}
                                 />
                               ) : (
-                                <span className={`font-semibold text-xs sm:text-sm truncate ${isIncluded ? 'text-stone-900 dark:text-stone-100' : 'line-through text-stone-400 dark:text-zinc-500'}`}>
+                                <span className={`font-normal text-xs sm:text-sm truncate ${isIncluded ? 'text-stone-900 dark:text-stone-100' : 'line-through text-stone-400 dark:text-zinc-500'}`}>
                                   {sc.name || `Декор ${idx + 1}`}
                                 </span>
                               )}
@@ -1085,7 +1094,7 @@ export const CalcBlock: React.FC<CalcBlockProps> = ({
                                             value={el.name || ''}
                                             onChange={(e) => handleUpdateElementInScene(sceneId, elKey, 'name', e.target.value)}
                                             placeholder="Название элемента..."
-                                            className="font-semibold text-xs text-stone-900 dark:text-stone-100 bg-transparent border-b border-transparent hover:border-purple-300 focus:border-[var(--lavDeep)] focus:outline-none flex-1 min-w-0"
+                                            className="font-normal text-xs text-stone-900 dark:text-stone-100 bg-transparent border-b border-transparent hover:border-purple-300 focus:border-[var(--lavDeep)] focus:outline-none flex-1 min-w-0"
                                           />
                                           <span className="text-[10px] text-stone-400 shrink-0 hidden sm:inline">
                                             {el.category || 'Декор'} • {el.quantity || 1} шт.
@@ -1162,10 +1171,10 @@ export const CalcBlock: React.FC<CalcBlockProps> = ({
                               type="text"
                               value={item.name}
                               onChange={(e) => handleUpdateEstimateItemName(item.id, e.target.value)}
-                              className="font-semibold text-xs sm:text-sm bg-transparent text-stone-900 dark:text-stone-100 border-b border-transparent hover:border-stone-300 focus:border-[var(--lavDeep)] focus:outline-none w-full"
+                              className="font-normal text-xs sm:text-sm bg-transparent text-stone-900 dark:text-stone-100 border-b border-transparent hover:border-stone-300 focus:border-[var(--lavDeep)] focus:outline-none w-full"
                             />
                           ) : (
-                            <span className="font-semibold text-xs sm:text-sm text-stone-900 dark:text-stone-100 truncate">{item.name}</span>
+                            <span className="font-normal text-xs sm:text-sm text-stone-900 dark:text-stone-100 truncate">{item.name}</span>
                           )}
                           <span className="text-[10px] text-zinc-600 dark:text-zinc-400 font-normal truncate">
                             {item.category || 'Услуга'} • {item.quantity || 1} шт.

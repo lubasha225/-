@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { EditorSketchCanvasPreview } from './EditorSketchCanvasPreview';
 import { SketchLightboxModal } from './SketchLightboxModal';
+import PaletteColorPicker, { parsePaletteColors } from './PaletteColorPicker';
 import { toJpeg } from 'html-to-image';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -177,11 +178,20 @@ export default function ProjectDetailModal({
         }
       }
 
+      let updatedColors = project.brief?.colors;
+      if (key === "ПАЛИТРА ОФОРМЛЕНИЯ") {
+        updatedColors = value.split(',').map(s => s.trim()).filter(Boolean);
+      }
+
       onUpdateProject({
         ...project,
         briefValues: next,
         budget: updatedBudget,
-        clientPrice: updatedClientPrice
+        clientPrice: updatedClientPrice,
+        brief: {
+          ...project.brief,
+          colors: updatedColors !== undefined ? updatedColors : (project.brief?.colors || [])
+        }
       });
       return next;
     });
@@ -944,7 +954,7 @@ export default function ProjectDetailModal({
 
   // Brief field dataset grouped systematically: Client fields first, then Decorator fields
   const baseBriefFieldDefinitions: { key: string; filledBy: 'client' | 'designer'; multiline?: boolean }[] = [
-    // --- 1. КЛИЕНТСКИЙ БЛОК (22 поля) ---
+    // --- 1. КЛИЕНТСКИЙ БЛОК (14 полей) ---
     { key: "ИМЯ КЛИЕНТА", filledBy: 'client' },
     { key: "ТЕЛЕФОН", filledBy: 'client' },
     { key: "СОБЫТИЕ", filledBy: 'client' },
@@ -953,25 +963,25 @@ export default function ProjectDetailModal({
     { key: "ФОРМАТ СОБЫТИЯ", filledBy: 'client' },
     { key: "АДРЕС ПЛОЩАДКИ/НАЗВАНИЕ", filledBy: 'client' },
     { key: "КОНТАКТ ПЛОЩАДКИ", filledBy: 'client' },
-    { key: "РАЗМЕР ЗОНЫ МОНТАЖА", filledBy: 'client' },
-    { key: "КРЕПЕЖ К СТЕНАМ", filledBy: 'client' },
-    { key: "КРЕПЕЖ К ПОТОЛКУ", filledBy: 'client' },
-    { key: "СОГЛАСОВАНИЕ ОФОРМЛЕНИЯ", filledBy: 'client' },
-    { key: "ЭЛЕКТРИЧЕСТВО У СЦЕНЫ", filledBy: 'client' },
-    { key: "ПОДЪЕЗД / ГРУЗОВОЙ ЛИФТ", filledBy: 'client' },
     { key: "ПРАЗДНИК НА УЛИЦЕ", filledBy: 'client' },
-    { key: "ХРАНЕНИЕ НА ПЛОЩАДКЕ", filledBy: 'client' },
-    { key: "ДЕМОНТАЖ / ВЫВОЗ", filledBy: 'client' },
     { key: "КТО ПРИНИМАЕТ РАБОТЫ", filledBy: 'client' },
     { key: "ПАЛИТРА ОФОРМЛЕНИЯ", filledBy: 'client' },
     { key: "СТИЛЬ ОФОРМЛЕНИЯ", filledBy: 'client' },
     { key: "ОРИЕНТИРОВОЧНЫЙ БЮДЖЕТ", filledBy: 'client' },
     { key: "ДОПОЛНИТЕЛЬНАЯ ИНФОРМАЦИЯ", filledBy: 'client', multiline: true },
 
-    // --- 2. БЛОК ДЕКОРАТОРА (базовые + пользовательские поля) ---
+    // --- 2. БЛОК ДЕКОРАТОРА (11 базовых полей) ---
+    { key: "РАЗМЕР ЗОНЫ МОНТАЖА", filledBy: 'designer' },
+    { key: "КРЕПЕЖ К СТЕНАМ", filledBy: 'designer' },
+    { key: "КРЕПЕЖ К ПОТОЛКУ", filledBy: 'designer' },
+    { key: "СОГЛАСОВАНИЕ ОФОРМЛЕНИЯ", filledBy: 'designer' },
+    { key: "ЭЛЕКТРИЧЕСТВО У СЦЕНЫ", filledBy: 'designer' },
+    { key: "ПОДЪЕЗД / ГРУЗОВОЙ ЛИФТ", filledBy: 'designer' },
+    { key: "ХРАНЕНИЕ НА ПЛОЩАДКЕ", filledBy: 'designer' },
+    { key: "ДЕМОНТАЖ / ВЫВОЗ", filledBy: 'designer' },
     { key: "ДОСТУП НА МОНТАЖ", filledBy: 'designer' },
     { key: "ОКНО МОНТАЖА", filledBy: 'designer' },
-    { key: "КОНСТРУКЦИИ ДЕКОРА", filledBy: 'designer' },
+    { key: "КОНСТРУКЦИИ ДЕКОРА", filledBy: 'designer', multiline: true },
   ];
 
   const briefFieldDefinitions = [
@@ -1335,7 +1345,10 @@ export default function ProjectDetailModal({
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5">
                         {briefFieldDefinitions.filter(f => f.filledBy === 'client').map((field) => {
                           const val = briefValues[field.key] || '';
-                          const isEmpty = !val.trim() || val === "(требует заполнения)";
+                          const isPalette = field.key === "ПАЛИТРА ОФОРМЛЕНИЯ";
+                          const isEmpty = isPalette
+                            ? parsePaletteColors(val).length === 0
+                            : (!val.trim() || val === "(требует заполнения)");
 
                           return (
                             <div
@@ -1352,15 +1365,20 @@ export default function ProjectDetailModal({
                                 </span>
                               </div>
 
-                              {field.multiline ? (
+                              {isPalette ? (
+                                <PaletteColorPicker
+                                  value={val}
+                                  onChange={(newVal) => handleUpdateBriefField(field.key, newVal)}
+                                />
+                              ) : field.multiline ? (
                                 <textarea
                                   rows={2}
                                   value={val === "(требует заполнения)" ? "" : val}
                                   onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                                   placeholder=""
-                                  className={`w-full text-[15px] font-semibold rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--primary-accent)] resize-none ${
+                                  className={`w-full text-sm font-normal rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--primary-accent)] resize-none ${
                                     isEmpty
-                                      ? 'bg-purple-50/50 text-[var(--lavDeep)] italic font-medium border-purple-200/60 dark:bg-zinc-900/90 dark:text-purple-300/80 dark:border-zinc-800'
+                                      ? 'bg-purple-50/50 text-[var(--lavDeep)] italic font-normal border-purple-200/60 dark:bg-zinc-900/90 dark:text-purple-300/80 dark:border-zinc-800'
                                       : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
                                   }`}
                                 />
@@ -1370,9 +1388,9 @@ export default function ProjectDetailModal({
                                   value={val === "(требует заполнения)" ? "" : val}
                                   onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                                   placeholder=""
-                                  className={`w-full text-[15px] font-semibold rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--primary-accent)] ${
+                                  className={`w-full text-sm font-normal rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--primary-accent)] ${
                                     isEmpty
-                                      ? 'bg-purple-50/50 text-[var(--lavDeep)] italic font-medium border-purple-200/60 dark:bg-zinc-900/90 dark:text-purple-300/80 dark:border-zinc-800'
+                                      ? 'bg-purple-50/50 text-[var(--lavDeep)] italic font-normal border-purple-200/60 dark:bg-zinc-900/90 dark:text-purple-300/80 dark:border-zinc-800'
                                       : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
                                   }`}
                                 />
@@ -1438,9 +1456,9 @@ export default function ProjectDetailModal({
                                   value={val === "(требует заполнения)" ? "" : val}
                                   onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                                   placeholder=""
-                                  className={`w-full text-[15px] font-semibold rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--primary-accent)] resize-none ${
+                                  className={`w-full text-sm font-normal rounded-lg p-1.5 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--primary-accent)] resize-none ${
                                     isEmpty
-                                      ? 'bg-zinc-100/50 text-zinc-600 italic font-medium border-zinc-200 dark:bg-zinc-900/80 dark:text-zinc-400 dark:border-zinc-800'
+                                      ? 'bg-zinc-100/50 text-zinc-600 italic font-normal border-zinc-200 dark:bg-zinc-900/80 dark:text-zinc-400 dark:border-zinc-800'
                                       : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
                                   }`}
                                 />
@@ -1450,9 +1468,9 @@ export default function ProjectDetailModal({
                                   value={val === "(требует заполнения)" ? "" : val}
                                   onChange={(e) => handleUpdateBriefField(field.key, e.target.value)}
                                   placeholder=""
-                                  className={`w-full text-[15px] font-semibold rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--primary-accent)] ${
+                                  className={`w-full text-sm font-normal rounded-lg px-2 py-1 border transition-all focus:outline-none focus:ring-1 focus:ring-[var(--primary-accent)] ${
                                     isEmpty
-                                      ? 'bg-zinc-100/50 text-zinc-600 italic font-medium border-zinc-200 dark:bg-zinc-900/80 dark:text-zinc-400 dark:border-zinc-800'
+                                      ? 'bg-zinc-100/50 text-zinc-600 italic font-normal border-zinc-200 dark:bg-zinc-900/80 dark:text-zinc-400 dark:border-zinc-800'
                                       : 'bg-white/90 dark:bg-zinc-900 text-stone-800 dark:text-stone-100 border-stone-200 dark:border-zinc-800'
                                   }`}
                                 />
@@ -1485,7 +1503,7 @@ export default function ProjectDetailModal({
                                   showToast('Поле добавлено', `Добавлено новое поле: ${keyUpper}`, 'success');
                                 }
                               }}
-                              className="w-full text-xs font-semibold rounded-lg px-2 py-1 border border-purple-200 dark:border-purple-800 bg-white dark:bg-zinc-900 text-stone-800 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-[var(--primary-accent)]"
+                              className="w-full text-xs font-normal rounded-lg px-2 py-1 border border-purple-200 dark:border-purple-800 bg-white dark:bg-zinc-900 text-stone-800 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-[var(--primary-accent)]"
                             />
                             <div className="flex items-center gap-1.5 pt-0.5">
                               <button
@@ -1890,7 +1908,7 @@ export default function ProjectDetailModal({
                                       type="text"
                                       value={sc.name || `Декор ${idx + 1}`}
                                       onChange={(e) => handleUpdateSceneName(sc.id, e.target.value)}
-                                      className={`font-bold text-xs bg-transparent border-b border-transparent hover:border-purple-300 focus:border-[var(--lavDeep)] focus:outline-none transition-colors ${
+                                      className={`font-normal text-xs bg-transparent border-b border-transparent hover:border-purple-300 focus:border-[var(--lavDeep)] focus:outline-none transition-colors ${
                                         isIncluded ? 'text-stone-900 dark:text-stone-100' : 'line-through text-stone-400 dark:text-zinc-500'
                                       }`}
                                     />
@@ -1984,12 +2002,12 @@ export default function ProjectDetailModal({
                                 <Truck className="w-4 h-4 stroke-[2]" />
                               </div>
                             </td>
-                            <td className="py-2.5 px-3 font-bold text-stone-800 dark:text-stone-100">
+                            <td className="py-2.5 px-3 font-normal text-stone-800 dark:text-stone-100">
                               <input
                                 type="text"
                                 value={item.name}
                                 onChange={(e) => handleUpdateEstimateItemName(item.id, e.target.value)}
-                                className="bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-stone-400 rounded px-1 py-0.5 w-full font-bold text-stone-800 dark:text-stone-100 text-xs"
+                                className="bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-stone-400 rounded px-1 py-0.5 w-full font-normal text-stone-800 dark:text-stone-100 text-xs"
                               />
                             </td>
                             <td className="py-2.5 px-3 text-center">
@@ -2179,15 +2197,15 @@ export default function ProjectDetailModal({
                     })()}
 
                     {/* CARD 3: CLIENT CHECK */}
-                    <div className="p-4 bg-gradient-to-br from-purple-50/90 via-purple-50/50 to-white dark:from-purple-950/40 dark:via-purple-950/20 dark:to-zinc-900 rounded-2xl border border-purple-200/90 dark:border-purple-800/60 shadow-2xs flex flex-col justify-between space-y-2">
-                      <div className="flex items-center justify-between pb-1 border-b border-purple-100 dark:border-purple-900/50">
+                    <div className="p-4 bg-purple-500/10 dark:bg-purple-950/30 rounded-2xl border border-purple-500/20 dark:border-purple-800/50 shadow-2xs flex flex-col justify-between space-y-2">
+                      <div className="flex items-center justify-between pb-1 border-b border-purple-500/15 dark:border-purple-900/50">
                         <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-lg bg-purple-100 dark:bg-purple-900/60 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 flex items-center justify-center">
+                          <div className="w-7 h-7 rounded-lg bg-purple-500/15 dark:bg-purple-900/60 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 flex items-center justify-center">
                             <Award className="w-4 h-4" />
                           </div>
                           <span className="text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 font-bold uppercase text-[10px] tracking-wider">Чек клиента</span>
                         </div>
-                        <span className="text-[10px] font-bold text-white bg-gradient-to-r from-[var(--primary-grad-from,#8C52D0)] to-[var(--primary-grad-to,#582F89)] px-2.5 py-0.5 rounded-full shadow-2xs">
+                        <span className="text-[10px] font-semibold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] bg-purple-500/15 dark:bg-purple-900/60 px-2.5 py-0.5 rounded-full border border-purple-500/20 dark:border-purple-800/40 shadow-2xs">
                           Ручной ввод
                         </span>
                       </div>

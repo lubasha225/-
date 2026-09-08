@@ -59,7 +59,7 @@ interface BlankTestPageProps {
 }
 
 const baseBriefFieldDefinitions: { key: string; filledBy: 'client' | 'designer'; multiline?: boolean }[] = [
-  // --- 1. КЛИЕНТСКИЙ БЛОК (22 поля) ---
+  // --- 1. КЛИЕНТСКИЙ БЛОК (14 полей) ---
   { key: "ИМЯ КЛИЕНТА", filledBy: 'client' },
   { key: "ТЕЛЕФОН", filledBy: 'client' },
   { key: "СОБЫТИЕ", filledBy: 'client' },
@@ -68,22 +68,22 @@ const baseBriefFieldDefinitions: { key: string; filledBy: 'client' | 'designer';
   { key: "ФОРМАТ СОБЫТИЯ", filledBy: 'client' },
   { key: "АДРЕС ПЛОЩАДКИ/НАЗВАНИЕ", filledBy: 'client' },
   { key: "КОНТАКТ ПЛОЩАДКИ", filledBy: 'client' },
-  { key: "РАЗМЕР ЗОНЫ МОНТАЖА", filledBy: 'client' },
-  { key: "КРЕПЕЖ К СТЕНАМ", filledBy: 'client' },
-  { key: "КРЕПЕЖ К ПОТОЛКУ", filledBy: 'client' },
-  { key: "СОГЛАСОВАНИЕ ОФОРМЛЕНИЯ", filledBy: 'client' },
-  { key: "ЭЛЕКТРИЧЕСТВО У СЦЕНЫ", filledBy: 'client' },
-  { key: "ПОДЪЕЗД / ГРУЗОВОЙ ЛИФТ", filledBy: 'client' },
   { key: "ПРАЗДНИК НА УЛИЦЕ", filledBy: 'client' },
-  { key: "ХРАНЕНИЕ НА ПЛОЩАДКЕ", filledBy: 'client' },
-  { key: "ДЕМОНТАЖ / ВЫВОЗ", filledBy: 'client' },
   { key: "КТО ПРИНИМАЕТ РАБОТЫ", filledBy: 'client' },
   { key: "ПАЛИТРА ОФОРМЛЕНИЯ", filledBy: 'client' },
   { key: "СТИЛЬ ОФОРМЛЕНИЯ", filledBy: 'client' },
   { key: "ОРИЕНТИРОВОЧНЫЙ БЮДЖЕТ", filledBy: 'client' },
   { key: "ДОПОЛНИТЕЛЬНАЯ ИНФОРМАЦИЯ", filledBy: 'client', multiline: true },
 
-  // --- 2. БЛОК ДЕКОРАТОРА (3 базовых поля) ---
+  // --- 2. БЛОК ДЕКОРАТОРА (11 базовых полей) ---
+  { key: "РАЗМЕР ЗОНЫ МОНТАЖА", filledBy: 'designer' },
+  { key: "КРЕПЕЖ К СТЕНАМ", filledBy: 'designer' },
+  { key: "КРЕПЕЖ К ПОТОЛКУ", filledBy: 'designer' },
+  { key: "СОГЛАСОВАНИЕ ОФОРМЛЕНИЯ", filledBy: 'designer' },
+  { key: "ЭЛЕКТРИЧЕСТВО У СЦЕНЫ", filledBy: 'designer' },
+  { key: "ПОДЪЕЗД / ГРУЗОВОЙ ЛИФТ", filledBy: 'designer' },
+  { key: "ХРАНЕНИЕ НА ПЛОЩАДКЕ", filledBy: 'designer' },
+  { key: "ДЕМОНТАЖ / ВЫВОЗ", filledBy: 'designer' },
   { key: "ДОСТУП НА МОНТАЖ", filledBy: 'designer' },
   { key: "ОКНО МОНТАЖА", filledBy: 'designer' },
   { key: "КОНСТРУКЦИИ ДЕКОРА", filledBy: 'designer', multiline: true },
@@ -518,6 +518,83 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
   const taxAmount = finalPrice * (taxRate / 100);
   const calculatedProfit = finalPrice - totalCost - taxAmount;
   const profitMarginPercent = finalPrice > 0 ? Math.round((calculatedProfit / finalPrice) * 100) : 0;
+
+  const renderFinancialCards = () => (
+    <div className="grid grid-cols-3 gap-1.5 sm:gap-3">
+      {/* CARD 1: СМЕТНАЯ СТОИМОСТЬ / ЧЕК КЛИЕНТА */}
+      <div className="bg-purple-500/10 dark:bg-purple-950/40 backdrop-blur-md border border-purple-500/20 dark:border-purple-800/50 rounded-2xl p-2 sm:p-3 flex flex-col justify-between shadow-xs hover:border-purple-500/40 transition-all min-h-[90px] sm:min-h-[100px]">
+        <div className="flex items-center justify-between gap-1">
+          <span className="text-[9px] sm:text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal truncate">
+            Смета
+          </span>
+          <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-md bg-purple-500/15 dark:bg-purple-900/60 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 flex items-center justify-center shrink-0">
+            <Wallet className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2]" />
+          </div>
+        </div>
+
+        <div className="my-1">
+          <div className="text-sm sm:text-lg md:text-xl font-[800] text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-200 tracking-tight leading-none font-mono">
+            {finalPrice.toLocaleString('ru')} ₽
+          </div>
+        </div>
+
+        <div className="pt-1 border-t border-purple-500/15 dark:border-purple-900/50 flex items-center justify-between text-[9px] sm:text-[10px]">
+          <span className="text-zinc-600 dark:text-zinc-400 font-normal truncate hidden sm:inline">Бюджет</span>
+          <span className="font-bold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] ml-auto">100%</span>
+        </div>
+      </div>
+
+      {/* CARD 2: ПОЛУЧЕННАЯ ПРЕДОПЛАТА */}
+      <div className="bg-emerald-500/10 dark:bg-emerald-950/40 backdrop-blur-md border border-emerald-500/20 dark:border-emerald-800/50 rounded-2xl p-2 sm:p-3 flex flex-col justify-between shadow-xs hover:border-emerald-500/40 transition-all min-h-[90px] sm:min-h-[100px]">
+        <div className="flex items-center justify-between gap-1">
+          <span className="text-[9px] sm:text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal truncate">
+            Аванс
+          </span>
+          <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-md bg-emerald-500/15 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2]" />
+          </div>
+        </div>
+
+        <div className="my-1">
+          <div className="text-sm sm:text-lg md:text-xl font-[800] text-emerald-600 dark:text-emerald-300 tracking-tight leading-none font-mono">
+            {advanceAmount.toLocaleString('ru')} ₽
+          </div>
+        </div>
+
+        <div className="pt-1 border-t border-emerald-500/15 dark:border-emerald-800/40 flex items-center justify-between text-[9px] sm:text-[10px]">
+          <span className="text-zinc-600 dark:text-zinc-400 font-normal truncate hidden sm:inline">Внесено</span>
+          <span className="font-bold text-emerald-600 dark:text-emerald-400 ml-auto">
+            {finalPrice > 0 ? Math.round((advanceAmount / finalPrice) * 100) : 0}% ✓
+          </span>
+        </div>
+      </div>
+
+      {/* CARD 3: ОСТАТОК (ЖЕЛТЫЙ / ЯНТАРНЫЙ) */}
+      <div className="bg-amber-500/10 dark:bg-amber-950/40 backdrop-blur-md border border-amber-500/20 dark:border-amber-800/50 rounded-2xl p-2 sm:p-3 flex flex-col justify-between shadow-xs hover:border-amber-500/40 transition-all min-h-[90px] sm:min-h-[100px]">
+        <div className="flex items-center justify-between gap-1">
+          <span className="text-[9px] sm:text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal truncate">
+            Остаток
+          </span>
+          <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-md bg-amber-500/15 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+            <CreditCard className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2]" />
+          </div>
+        </div>
+
+        <div className="my-1">
+          <div className="text-sm sm:text-lg md:text-xl font-[800] text-amber-600 dark:text-amber-300 tracking-tight leading-none font-mono">
+            {Math.max(0, finalPrice - advanceAmount).toLocaleString('ru')} ₽
+          </div>
+        </div>
+
+        <div className="pt-1 border-t border-amber-500/15 dark:border-amber-800/40 flex items-center justify-between text-[9px] sm:text-[10px]">
+          <span className="text-zinc-600 dark:text-zinc-400 font-normal truncate hidden sm:inline">К оплате</span>
+          <span className="font-bold text-amber-600 dark:text-amber-300 ml-auto">
+            {finalPrice > 0 ? Math.max(0, 100 - Math.round((advanceAmount / finalPrice) * 100)) : 0}%
+          </span>
+        </div>
+      </div>
+    </div>
+  );
 
   const handleToggleSceneInEstimate = (sceneId: string) => {
     const isCurrentlyDisabled = disabledSceneIds.includes(sceneId);
@@ -1230,84 +1307,10 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
                 transition={{ duration: 0.2 }}
                 className="space-y-6"
               >
-          {/* 2. FINANCIAL SUMMARY CARDS IN A SINGLE ROW */}
-          <div className="grid grid-cols-3 gap-1.5 sm:gap-3">
-        
-        {/* CARD 1: СМЕТНАЯ СТОИМОСТЬ / ЧЕК КЛИЕНТА */}
-        <div className="bg-gradient-to-r from-purple-100/70 via-white/70 to-purple-100/70 dark:from-purple-950/70 dark:via-zinc-900/70 dark:to-purple-950/70 backdrop-blur-md border border-purple-300/80 dark:border-purple-800/60 rounded-2xl p-2 sm:p-3 flex flex-col justify-between shadow-xs hover:border-purple-400 transition-all min-h-[90px] sm:min-h-[100px]">
-          <div className="flex items-center justify-between gap-1">
-            <span className="text-[9px] sm:text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal truncate">
-              Смета
-            </span>
-            <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-md bg-purple-100/90 dark:bg-purple-950/80 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-300 flex items-center justify-center shrink-0">
-              <Wallet className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2]" />
-            </div>
-          </div>
+                {/* 2. FINANCIAL SUMMARY CARDS IN A SINGLE ROW */}
+                {renderFinancialCards()}
 
-          <div className="my-1">
-            <div className="text-sm sm:text-lg md:text-xl font-[800] text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] dark:text-purple-200 tracking-tight leading-none font-mono">
-              {finalPrice.toLocaleString('ru')} ₽
-            </div>
-          </div>
-
-          <div className="pt-1 border-t border-purple-200/50 dark:border-purple-900/50 flex items-center justify-between text-[9px] sm:text-[10px]">
-            <span className="text-zinc-600 dark:text-zinc-400 font-normal truncate hidden sm:inline">Бюджет</span>
-            <span className="font-bold text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] ml-auto">100%</span>
-          </div>
-        </div>
-
-        {/* CARD 2: ПОЛУЧЕННАЯ ПРЕДОПЛАТА */}
-        <div className="bg-gradient-to-r from-emerald-100/70 via-white/70 to-emerald-100/70 dark:from-emerald-950/70 dark:via-zinc-900/70 dark:to-emerald-950/70 backdrop-blur-md border border-emerald-300/80 dark:border-emerald-800/60 rounded-2xl p-2 sm:p-3 flex flex-col justify-between shadow-xs hover:border-emerald-400 transition-all min-h-[90px] sm:min-h-[100px]">
-          <div className="flex items-center justify-between gap-1">
-            <span className="text-[9px] sm:text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal truncate">
-              Аванс
-            </span>
-            <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-md bg-emerald-100/90 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-              <CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2]" />
-            </div>
-          </div>
-
-          <div className="my-1">
-            <div className="text-sm sm:text-lg md:text-xl font-[800] text-[#059669] dark:text-emerald-300 tracking-tight leading-none font-mono">
-              {advanceAmount.toLocaleString('ru')} ₽
-            </div>
-          </div>
-
-          <div className="pt-1 border-t border-emerald-200/50 dark:border-emerald-900/50 flex items-center justify-between text-[9px] sm:text-[10px]">
-            <span className="text-zinc-600 dark:text-zinc-400 font-normal truncate hidden sm:inline">Внесено</span>
-            <span className="font-bold text-emerald-600 dark:text-emerald-400 ml-auto">
-              {finalPrice > 0 ? Math.round((advanceAmount / finalPrice) * 100) : 0}% ✓
-            </span>
-          </div>
-        </div>
-
-        {/* CARD 3: ОСТАТОК (ЖЕЛТЫЙ / ЯНТАРНЫЙ) */}
-        <div className="bg-gradient-to-r from-amber-100/70 via-white/70 to-amber-100/70 dark:from-amber-950/70 dark:via-zinc-900/70 dark:to-amber-950/70 backdrop-blur-md border border-amber-300/80 dark:border-amber-800/60 rounded-2xl p-2 sm:p-3 flex flex-col justify-between shadow-xs hover:border-amber-400 transition-all min-h-[90px] sm:min-h-[100px]">
-          <div className="flex items-center justify-between gap-1">
-            <span className="text-[9px] sm:text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal truncate">
-              Остаток
-            </span>
-            <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-md bg-amber-100/90 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
-              <CreditCard className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2]" />
-            </div>
-          </div>
-
-          <div className="my-1">
-            <div className="text-sm sm:text-lg md:text-xl font-[800] text-[#EA580C] dark:text-amber-300 tracking-tight leading-none font-mono">
-              {Math.max(0, finalPrice - advanceAmount).toLocaleString('ru')} ₽
-            </div>
-          </div>
-
-          <div className="pt-1 border-t border-amber-200/50 dark:border-amber-900/50 flex items-center justify-between text-[9px] sm:text-[10px]">
-            <span className="text-zinc-600 dark:text-zinc-400 font-normal truncate hidden sm:inline">К оплате</span>
-            <span className="font-bold text-[#EA580C] dark:text-amber-300 ml-auto">
-              {finalPrice > 0 ? Math.max(0, 100 - Math.round((advanceAmount / finalPrice) * 100)) : 0}%
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <BriefBlock
+                <BriefBlock
                     isOverview={true}
                     overviewCollapsed={overviewCollapsed}
                     toggleOverviewSection={toggleOverviewSection}
@@ -1417,7 +1420,11 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.2 }}
+                  className="space-y-6"
                 >
+                  {/* FINANCIAL SUMMARY CARDS */}
+                  {renderFinancialCards()}
+
                   <BriefBlock
                     isOverview={false}
                     overviewCollapsed={overviewCollapsed}
