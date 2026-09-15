@@ -47,7 +47,8 @@ import {
   Maximize2,
   ShieldCheck,
   Scissors,
-  UploadCloud
+  UploadCloud,
+  ClipboardList
 } from 'lucide-react';
 
 import { Project, WarehouseItem, Task, DocumentItem, ImageItem, ProjectStatus, EstimateItem } from './types';
@@ -71,6 +72,7 @@ import SidebarStatisticsWidget from './components/SidebarStatisticsWidget';
 import DetailedCalendarTab from './components/DetailedCalendarTab';
 import AdminCabinetTab from './components/AdminCabinetTab';
 import RemoveBackgroundTab, { CutoutScissorsIcon } from './components/RemoveBackgroundTab';
+import ClientBriefTab from './components/ClientBriefTab';
 
 export default function App() {
   // Theme state
@@ -94,7 +96,12 @@ export default function App() {
   });
 
   // Main active tab state
-  const [activeTab, setActiveTab] = useState<'projects' | 'projectCard' | 'testCard' | 'testPage' | 'warehouse' | 'images' | 'removeBackground' | 'documents' | 'profile' | 'moodboard' | 'calendar' | 'statistics' | 'settings' | 'admin'>('projects');
+  const [activeTab, setActiveTab] = useState<'projects' | 'projectCard' | 'testCard' | 'testPage' | 'warehouse' | 'images' | 'removeBackground' | 'documents' | 'profile' | 'moodboard' | 'calendar' | 'statistics' | 'settings' | 'admin' | 'clientBrief'>(() => {
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/brief')) {
+      return 'clientBrief';
+    }
+    return 'projects';
+  });
 
   // Right sidebar tab state (calendar & tasks combined vs statistics)
   const [rightSidebarTab, setRightSidebarTab] = useState<'calendar' | 'statistics'>('calendar');
@@ -307,7 +314,23 @@ export default function App() {
   const [isNewProjOpen, setIsNewProjOpen] = useState(false);
   const [isWarehouseAdding, setIsWarehouseAdding] = useState(false);
   const [projectViewMode, setProjectViewMode] = useState<'grid' | 'list'>('grid');
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(() => {
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/brief/')) {
+      const parts = window.location.pathname.split('/').filter(Boolean);
+      const briefId = parts[1];
+      if (briefId) {
+        try {
+          const saved = localStorage.getItem('pop_projects');
+          const list = saved ? JSON.parse(saved) : initialProjects;
+          const found = list.find((p: Project) => p.id === briefId);
+          if (found) return found;
+        } catch (e) {
+          // fallback
+        }
+      }
+    }
+    return null;
+  });
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isHeaderCalendarOpen, setIsHeaderCalendarOpen] = useState(false);
   const [headerMenuTab, setHeaderMenuTab] = useState<'calendar' | 'statistics'>('calendar');
@@ -930,6 +953,7 @@ export default function App() {
               <div className="flex flex-col gap-1.5 flex-1">
                 {[
                   { value: 'projects', label: 'Проекты', icon: <FolderKanban className="w-4 h-4" /> },
+                  { value: 'clientBrief', label: 'Бриф для заказчика', icon: <ClipboardList className="w-4 h-4" /> },
                   { value: 'moodboard', label: 'Редактор', icon: <Layout className="w-4 h-4" /> },
                   { value: 'removeBackground', label: 'Удаление фона', icon: <CutoutScissorsIcon className="w-4 h-4" /> },
                   { value: 'calendar', label: 'Календарь', icon: <Calendar className="w-4 h-4" /> },
@@ -1323,6 +1347,7 @@ export default function App() {
         <nav className={`flex flex-col gap-1 w-full ${!isLeftSidebarExpanded ? 'items-center' : ''}`}>
           {[
             { key: 'projects', label: 'Проекты', icon: <FolderKanban className="w-[17px] h-[17px] shrink-0" /> },
+            { key: 'clientBrief', label: 'Бриф для заказчика', icon: <ClipboardList className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'moodboard', label: 'Редактор', icon: <Layout className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'removeBackground', label: 'Удаление фона', icon: <CutoutScissorsIcon className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'warehouse', label: 'Склад', icon: <Warehouse className="w-[17px] h-[17px] shrink-0" /> },
@@ -1500,6 +1525,14 @@ export default function App() {
                         <span>{selectedProject ? selectedProject.name : 'Проекты'}</span>
                       </>
                     )}
+                    {activeTab === 'clientBrief' && (
+                      <>
+                        <span className="p-1.5 sm:p-2 bg-[var(--lavenderSoft)] rounded-xl shrink-0 inline-flex items-center justify-center">
+                          <ClipboardList className="w-5 h-5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
+                        </span>
+                        <span>Бриф для заказчика</span>
+                      </>
+                    )}
                     {activeTab === 'calendar' && (
                       <>
                         <span className="p-1.5 sm:p-2 bg-[var(--lavenderSoft)] rounded-xl shrink-0 inline-flex items-center justify-center">
@@ -1634,6 +1667,7 @@ export default function App() {
                     activeTab === 'removeBackground' ? 'hidden sm:block' : ''
                   }`}>
                     {activeTab === 'projects' && !selectedProject && 'Создавайте макеты, открывайте сметный калькулятор и возвращайтесь к ним в любой момент.'}
+                    {activeTab === 'clientBrief' && 'Форма онлайн-опроса для клиента. Заполненные данные автоматически синхронизируются с карточкой проекта и сметой.'}
                     {activeTab === 'calendar' && 'График монтажей, сдачи проектов, выездов команды и встреч с клиентами.'}
                     {activeTab === 'statistics' && 'Наглядный финансовый учет, конверсия смет и структура расходов студии.'}
                     {activeTab === 'warehouse' && 'Каталог вашего декора, флористики и оборудования. Учет остатков и задействованных в проектах позиций.'}
@@ -2449,6 +2483,30 @@ export default function App() {
                     onUpdateProject={handleUpdateProject}
                     showToast={showToast}
                     onOpenEditor={() => setActiveTab('moodboard')}
+                  />
+                </motion.div>
+              )}
+
+              {/* CLIENT BRIEF TAB */}
+              {activeTab === 'clientBrief' && (
+                <motion.div
+                  key="client-brief-tab"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <ClientBriefTab
+                    projects={projects}
+                    selectedProject={selectedProject}
+                    onSelectProject={setSelectedProject}
+                    onUpdateProject={handleUpdateProject}
+                    showToast={showToast}
+                    initialClientPreview={typeof window !== 'undefined' && window.location.pathname.startsWith('/brief')}
+                    onOpenProjectCard={(proj) => {
+                      setSelectedProject(proj);
+                      setActiveTab('projectCard');
+                    }}
                   />
                 </motion.div>
               )}

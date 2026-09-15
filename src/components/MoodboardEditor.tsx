@@ -158,6 +158,7 @@ export interface CanvasElement {
   caption?: string;
   captionOffsetX?: number;
   captionOffsetY?: number;
+  isCaptionHidden?: boolean;
   measurementValue?: string;
   isLocked: boolean;
   isVisible: boolean;
@@ -2124,7 +2125,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
       id: `${item.id}-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       name: item.name,
       type: isMeasurementItem ? 'measurement' : item.category,
-      caption: isMeasurementItem ? (item.caption || '250 см') : undefined,
+      caption: isMeasurementItem ? (item.caption || '250 см') : (activeWorkspaceTab === 'floorplan' ? (item.caption || item.name) : undefined),
       measurementValue: isMeasurementItem ? (item.caption || '250 см') : undefined,
       x: 180,
       y: 100,
@@ -2163,7 +2164,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
       id: `${item.id}-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       name: item.name,
       type: isMeasurementItem ? 'measurement' : item.category,
-      caption: isMeasurementItem ? (item.caption || '250 см') : undefined,
+      caption: isMeasurementItem ? (item.caption || '250 см') : (activeWorkspaceTab === 'floorplan' ? (item.caption || item.name) : undefined),
       measurementValue: isMeasurementItem ? (item.caption || '250 см') : undefined,
       x: posX,
       y: posY,
@@ -2877,6 +2878,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
       ...el,
       id: `${el.type}-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       name: `${el.name} (Копия)`,
+      caption: el.caption ? `${el.caption} (Копия)` : (activeWorkspaceTab === 'floorplan' ? `${el.name} (Копия)` : undefined),
       x: Math.min(canvasWidthMm / 10 - el.w, el.x + 30),
       y: Math.min(canvasHeightMm / 10 - el.h, el.y + 30),
       isLocked: false
@@ -3625,7 +3627,7 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
 
               {/* CARDS GRID AREA */}
               <div className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden max-h-full scrollbar-none pr-1">
-                <div className="grid grid-cols-2 md:portrait:grid-cols-2 md:landscape:grid-cols-3 lg:grid-cols-4 lg:landscape:grid-cols-4 xl:grid-cols-4 gap-1.5 sm:gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 md:portrait:grid-cols-3 md:landscape:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-1.5 sm:gap-2">
                   {getCategoryItems().map((item) => {
                     const isFav = favoritesList.includes(item.id);
                     return (
@@ -5867,13 +5869,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                       </div>
 
                       {/* Editable & Draggable Caption Label with Leader Line (ONLY IN SCHEMA MODE) */}
-                      {activeWorkspaceTab === 'floorplan' && el.type !== 'measurement' && Boolean(
-                        el.caption &&
-                        el.caption.trim() &&
-                        el.caption !== el.name &&
-                        !el.caption.startsWith('Загружен в') &&
-                        !el.caption.startsWith('Пакетная') &&
-                        !el.caption.includes('каркас для украшения')
+                      {activeWorkspaceTab === 'floorplan' && el.type !== 'measurement' && !el.isCaptionHidden && Boolean(
+                        (el.caption && el.caption.trim()) || isSelected
                       ) && (() => {
                         const offX = el.captionOffsetX || 0;
                         const offY = el.captionOffsetY || 0;
@@ -5883,6 +5880,8 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                         const startY = el.h / 2;
                         const endX = el.w / 2 + offX;
                         const endY = el.h + 8 + offY;
+
+                        const currentCaptionDisplay = (el.caption && el.caption.trim()) ? el.caption : (el.name || 'Подпись...');
 
                         return (
                           <>
@@ -5922,17 +5921,17 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                   value={editingCaptionText}
                                   onChange={(e) => setEditingCaptionText(e.target.value)}
                                   onBlur={() => {
-                                    updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, caption: editingCaptionText } : item));
+                                    updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, caption: editingCaptionText, name: editingCaptionText || item.name } : item));
                                     setEditingCaptionId(null);
                                   }}
                                   onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
-                                      updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, caption: editingCaptionText } : item));
+                                      updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, caption: editingCaptionText, name: editingCaptionText || item.name } : item));
                                       setEditingCaptionId(null);
                                     }
                                   }}
                                   onMouseDown={(e) => e.stopPropagation()}
-                                  className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border border-[var(--lavDeep)] dark:border-[var(--lavenderAccent)] rounded-full h-5.5 sm:h-6 px-2 text-[10px] sm:text-[11px] font-semibold text-center outline-none shadow-xs min-w-[60px]"
+                                  className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border border-[var(--lavDeep)] dark:border-[var(--lavenderAccent)] rounded-full h-5.5 sm:h-6 px-2 text-[10px] sm:text-[11px] font-semibold text-center outline-none shadow-xs min-w-[70px]"
                                 />
                               ) : (
                                 <div className="relative group/badge flex items-center gap-1">
@@ -5944,27 +5943,25 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                                         return;
                                       }
                                       setEditingCaptionId(el.id);
-                                      setEditingCaptionText(el.caption || '');
+                                      setEditingCaptionText(el.caption || el.name || '');
                                     }}
                                     className="h-5.5 sm:h-6 px-2 py-0.5 rounded-full bg-white/95 dark:bg-zinc-900/95 hover:bg-white dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-[var(--lavenderAccent)]/60 hover:border-[var(--lavDeep)] dark:hover:border-[var(--lavenderAccent)] shadow-xs text-[10px] sm:text-[11px] font-semibold transition-all flex items-center gap-1 whitespace-nowrap active:scale-95 cursor-pointer"
-                                    title="Зажмите и перетащите для перемещения подписи. Кликните для редактирования."
+                                    title="Зажмите и перетащите для перемещения подписи. Кликните для редактирования текста."
                                   >
                                     <Move className="w-2.5 h-2.5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] opacity-80 group-hover/caption:opacity-100 shrink-0" />
-                                    <span>{el.caption || 'Подпись...'}</span>
+                                    <span>{currentCaptionDisplay}</span>
                                   </button>
 
-                                  {hasOffset && (
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, captionOffsetX: 0, captionOffsetY: 0 } : item));
-                                      }}
-                                      className="w-5 h-5 sm:w-5.5 sm:h-5.5 rounded-full bg-white/90 dark:bg-zinc-800/90 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 border border-zinc-200 dark:border-zinc-700 transition-colors shadow-xs flex items-center justify-center shrink-0 cursor-pointer"
-                                      title="Сбросить положение подписи"
-                                    >
-                                      <X className="w-2.5 h-2.5" />
-                                    </button>
-                                  )}
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, isCaptionHidden: true } : item));
+                                    }}
+                                    className="w-5 h-5 sm:w-5.5 sm:h-5.5 rounded-full bg-white/95 dark:bg-zinc-900/95 text-zinc-500 hover:text-[var(--lavDeep)] dark:hover:text-[var(--lavenderAccent)] hover:bg-[var(--lavenderSoft)] border border-zinc-200 dark:border-zinc-700 transition-all shadow-xs flex items-center justify-center shrink-0 cursor-pointer"
+                                    title="Скрыть подпись"
+                                  >
+                                    <Eye className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                                  </button>
                                 </div>
                               )}
                             </div>
@@ -6482,6 +6479,28 @@ export default function MoodboardEditor({ projects, initialProjectId, onSaveToPr
                           >
                             <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] stroke-[2.3] group-hover:scale-110 transition-transform" />
                           </button>
+
+                          {/* Toggle Caption Visibility on Schema */}
+                          {activeWorkspaceTab === 'floorplan' && el.type !== 'measurement' && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateActiveSceneElements(prev => prev.map(item => item.id === el.id ? { ...item, isCaptionHidden: !item.isCaptionHidden } : item));
+                              }}
+                              className={`w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-full active:scale-90 transition-all cursor-pointer flex items-center justify-center shrink-0 group ${
+                                el.isCaptionHidden
+                                  ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25'
+                                  : 'hover:bg-[var(--lavenderSoft)] text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]'
+                              }`}
+                              title={el.isCaptionHidden ? 'Показать подпись на схеме' : 'Скрыть подпись на схеме'}
+                            >
+                              {el.isCaptionHidden ? (
+                                <EyeOff className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.3] group-hover:scale-110 transition-transform" />
+                              ) : (
+                                <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.3] group-hover:scale-110 transition-transform" />
+                              )}
+                            </button>
+                          )}
 
                           <div className="w-[1px] h-3.5 sm:h-4 bg-[var(--lavenderAccent)]/30 dark:bg-zinc-700/60 mx-0.5 shrink-0" />
 
