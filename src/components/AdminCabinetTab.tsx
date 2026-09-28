@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { getStorageItem, setStorageItem, getSyncStorageItem } from '../lib/asyncStorage';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -38,8 +38,15 @@ import {
   FolderOpen,
   AlertCircle,
   DollarSign,
-  Save
+  Save,
+  Handshake,
+  ExternalLink,
+  Ticket,
+  GripVertical,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
+import { Partner, getStoredPartners, saveStoredPartners, INITIAL_PARTNERS_DATA } from '../lib/partnersData';
 
 interface ToolIconItem {
   id: string;
@@ -252,7 +259,351 @@ const CategoryIconDisplay: React.FC<{
 };
 
 export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
-  const [adminTab, setAdminTab] = useState<'library' | 'icons' | 'categories' | 'logo' | 'backup'>('library');
+  const [adminTab, setAdminTab] = useState<'library' | 'partners' | 'icons' | 'categories' | 'logo' | 'backup'>('library');
+
+  // Partners State
+  const [partnersList, setPartnersList] = useState<Partner[]>(() => getStoredPartners());
+  const [isPartnerModalOpen, setIsPartnerModalOpen] = useState(false);
+  const [editingPartner, setEditingPartner] = useState<Partner | null>(null);
+  const [partnerSearch, setPartnerSearch] = useState('');
+  const [partnerCategoryFilter, setPartnerCategoryFilter] = useState('Все');
+  const [renamingPartnerCategory, setRenamingPartnerCategory] = useState<string | null>(null);
+  const [newPartnerCategoryName, setNewPartnerCategoryName] = useState<string>('');
+
+  // Dynamically compute partner categories from partnersList
+  const partnerCategories = useMemo(() => {
+    const set = new Set<string>();
+    partnersList.forEach(p => {
+      if (p.category && p.category.trim()) set.add(p.category.trim());
+    });
+    if (set.size === 0) {
+      ['Флористика & Оазис', 'Конструкции & Арки', 'Неон & Свет', 'Текстиль & Скатерти', 'Шары & Аэродизайн', 'Полиграфия & Баннеры'].forEach(c => set.add(c));
+    }
+    return Array.from(set);
+  }, [partnersList]);
+
+  const handleStartRenamePartnerCategory = (cat: string) => {
+    setRenamingPartnerCategory(cat);
+    setNewPartnerCategoryName(cat);
+  };
+
+  const handleSaveRenamePartnerCategory = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!renamingPartnerCategory || !newPartnerCategoryName.trim()) return;
+
+    const oldName = renamingPartnerCategory.trim();
+    const newName = newPartnerCategoryName.trim();
+
+    if (oldName === newName) {
+      setRenamingPartnerCategory(null);
+      return;
+    }
+
+    if (partnerCategories.some(c => c.toLowerCase() === newName.toLowerCase() && c.toLowerCase() !== oldName.toLowerCase())) {
+      showToast('Внимание', `Категория «${newName}» уже существует`, 'warn');
+      return;
+    }
+
+    const updatedPartners = partnersList.map(p => {
+      if (p.category.trim() === oldName) {
+        return { ...p, category: newName };
+      }
+      return p;
+    });
+
+    setPartnersList(updatedPartners);
+    saveStoredPartners(updatedPartners);
+
+    if (partnerCategoryFilter === oldName) {
+      setPartnerCategoryFilter(newName);
+    }
+
+    setRenamingPartnerCategory(null);
+    setNewPartnerCategoryName('');
+    showToast(
+      'Категория переименована',
+      `Категория «${oldName}» успешно изменена на «${newName}». Обновлено партнёров: ${updatedPartners.filter(p => p.category === newName).length}.`,
+      'success'
+    );
+  };
+
+  // Partner Form State
+  const [pName, setPName] = useState('');
+  const [pCategory, setPCategory] = useState('Флористика & Оазис');
+  const [pDiscount, setPDiscount] = useState('-15%');
+  const [pBadgeText, setPBadgeText] = useState('СКИДКА ДЛЯ ДЕКОРАТОРОВ');
+  const [pBadgeColor, setPBadgeColor] = useState('from-purple-500 to-indigo-600');
+  const [pPromoCode, setPPromoCode] = useState('');
+  const [pWebsite, setPWebsite] = useState('');
+  const [pTelegram, setPTelegram] = useState('');
+  const [pCity, setPCity] = useState('Москва + РФ');
+  const [pValidUntil, setPValidUntil] = useState('Бессрочно для подписчиков');
+  const [pShortDesc, setPShortDesc] = useState('');
+  const [pFullDesc, setPFullDesc] = useState('');
+  const [pTerms, setPTerms] = useState('');
+  const [pBannerImage, setPBannerImage] = useState('');
+  const [pLogoUrl, setPLogoUrl] = useState('');
+  const [pLogoText, setPLogoText] = useState('');
+
+  // Confirmation Modals for Delete & Reset (Replaces window.confirm blocked in sandboxed iframes)
+  const [partnerToDelete, setPartnerToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [isResetPartnersConfirmOpen, setIsResetPartnersConfirmOpen] = useState(false);
+
+  // Drag and drop states for Partners reordering
+  const [draggedPartnerId, setDraggedPartnerId] = useState<string | null>(null);
+  const [dragOverPartnerId, setDragOverPartnerId] = useState<string | null>(null);
+
+  // Drag and drop states for Categories reordering
+  const [draggedCategoryId, setDraggedCategoryId] = useState<string | null>(null);
+  const [dragOverCategoryId, setDragOverCategoryId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handlePartnersUpdate = (e?: any) => {
+      if (e?.detail && Array.isArray(e.detail)) {
+        setPartnersList([...e.detail]);
+      } else {
+        setPartnersList(getStoredPartners());
+      }
+    };
+    window.addEventListener('storage', handlePartnersUpdate);
+    window.addEventListener('partners_updated', handlePartnersUpdate as EventListener);
+    window.addEventListener('focus', handlePartnersUpdate);
+    return () => {
+      window.removeEventListener('storage', handlePartnersUpdate);
+      window.removeEventListener('partners_updated', handlePartnersUpdate as EventListener);
+      window.removeEventListener('focus', handlePartnersUpdate);
+    };
+  }, []);
+
+  // Compress image before base64 stringification to ensure it never exceeds browser localStorage quota
+  const compressImageFile = (file: File, maxWidth: number, maxHeight: number, quality = 0.82): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        if (!result) {
+          resolve('');
+          return;
+        }
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let { width, height } = img;
+          if (width > maxWidth || height > maxHeight) {
+            const ratio = Math.min(maxWidth / width, maxHeight / height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          } else {
+            resolve(result);
+          }
+        };
+        img.onerror = () => resolve(result);
+        img.src = result;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleUploadPartnerBanner = async (file: File) => {
+    try {
+      const compressed = await compressImageFile(file, 1000, 700, 0.82);
+      setPBannerImage(compressed);
+      showToast('Баннер загружен', 'Основное фото партнёра успешно оптимизировано и обновлено.', 'success');
+    } catch {
+      showToast('Ошибка загрузки', 'Не удалось обработать изображение.', 'warn');
+    }
+  };
+
+  const handleUploadPartnerLogo = async (file: File) => {
+    try {
+      const compressed = await compressImageFile(file, 300, 300, 0.85);
+      setPLogoUrl(compressed);
+      showToast('Логотип загружен', 'Логотип партнёра успешно оптимизирован и обновлен.', 'success');
+    } catch {
+      showToast('Ошибка загрузки', 'Не удалось обработать файл логотипа.', 'warn');
+    }
+  };
+
+  const handleOpenAddPartner = () => {
+    setEditingPartner(null);
+    setPName('');
+    setPCategory(partnerCategories[0] || 'Флористика & Оазис');
+    setPDiscount('-15%');
+    setPBadgeText('СКИДКА ДЛЯ ДЕКОРАТОРОВ');
+    setPBadgeColor('from-purple-500 to-indigo-600');
+    setPPromoCode(`IQDECO-${Math.random().toString(36).substring(2, 7).toUpperCase()}`);
+    setPWebsite('https://');
+    setPTelegram('');
+    setPCity('Москва + доставка СДЭК');
+    setPValidUntil('Бессрочно для подписчиков');
+    setPShortDesc('');
+    setPFullDesc('');
+    setPTerms('Скидка действует при оформлении заказа на сайте или через менеджера компании по промокоду. Скидка не суммируется с другими специальными акциями.');
+    setPBannerImage('https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800');
+    setPLogoUrl('');
+    setPLogoText('');
+    setIsPartnerModalOpen(true);
+  };
+
+  const handleOpenEditPartner = (p: Partner) => {
+    setEditingPartner(p);
+    setPName(p.name);
+    setPCategory(p.category);
+    setPDiscount(p.discount);
+    setPBadgeText(p.badgeText);
+    setPBadgeColor(p.badgeColor || 'from-purple-500 to-indigo-600');
+    setPPromoCode(p.promoCode);
+    setPWebsite(p.website);
+    setPTelegram(p.telegram || '');
+    setPCity(p.city);
+    setPValidUntil(p.validUntil);
+    setPShortDesc(p.shortDesc);
+    setPFullDesc(p.fullDesc || '');
+    setPTerms(p.terms || 'Скидка действует при оформлении заказа на сайте или через менеджера компании по промокоду. Скидка не суммируется с другими специальными акциями.');
+    setPBannerImage(p.bannerImage);
+    setPLogoUrl(p.logoUrl || '');
+    setPLogoText(p.logoText);
+    setIsPartnerModalOpen(true);
+  };
+
+  const handleSavePartner = () => {
+    if (!pName.trim()) {
+      showToast('Заполните название', 'Пожалуйста, введите название компании партнёра.', 'warn');
+      return;
+    }
+    if (!pPromoCode.trim()) {
+      showToast('Заполните промокод', 'Пожалуйста, укажите код купона.', 'warn');
+      return;
+    }
+
+    const initials = pLogoText.trim() || pName.trim().slice(0, 2).toUpperCase();
+    const updatedPartner: Partner = {
+      id: editingPartner ? editingPartner.id : `partner_${Date.now()}`,
+      name: pName.trim(),
+      category: pCategory.trim() || 'Флористика & Оазис',
+      discount: pDiscount.trim() || '-15%',
+      badgeText: pBadgeText.trim() || 'СКИДКА ДЛЯ ДЕКОРАТОРОВ',
+      badgeColor: pBadgeColor || editingPartner?.badgeColor || 'from-purple-500 to-indigo-600',
+      shortDesc: pShortDesc.trim() || 'Поставщик декора и материалов для оформления праздников.',
+      fullDesc: pFullDesc.trim() || pShortDesc.trim() || 'Официальный партнер IQ Deco с эксклюзивными условиями для декораторов.',
+      terms: pTerms.trim() || editingPartner?.terms || 'Скидка действует при оформлении заказа на сайте или через менеджера компании по промокоду. Скидка не суммируется с другими специальными акциями.',
+      logoText: initials,
+      logoUrl: pLogoUrl.trim(),
+      bannerImage: pBannerImage.trim() || 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800',
+      promoCode: pPromoCode.trim().toUpperCase(),
+      website: pWebsite.trim().startsWith('http') ? pWebsite.trim() : `https://${pWebsite.trim()}`,
+      telegram: pTelegram.trim() ? (pTelegram.trim().startsWith('http') ? pTelegram.trim() : `https://t.me/${pTelegram.trim().replace('@', '')}`) : undefined,
+      city: pCity.trim() || 'Москва + РФ',
+      validUntil: pValidUntil.trim() || 'Бессрочно для подписчиков'
+    };
+
+    let nextList: Partner[];
+    if (editingPartner) {
+      nextList = partnersList.map(item => item.id === editingPartner.id ? updatedPartner : item);
+      showToast('Партнёр обновлён', `Данные «${updatedPartner.name}» успешно сохранены.`, 'success');
+    } else {
+      nextList = [updatedPartner, ...partnersList];
+      showToast('Партнёр добавлен', `«${updatedPartner.name}» добавлен в каталог партнёров.`, 'success');
+    }
+
+    setPartnersList(nextList);
+    saveStoredPartners(nextList);
+    setIsPartnerModalOpen(false);
+  };
+
+  const handleDeletePartner = (id: string, name: string) => {
+    setPartnerToDelete({ id, name });
+  };
+
+  const handleConfirmDeletePartner = () => {
+    if (!partnerToDelete) return;
+    const { id, name } = partnerToDelete;
+    const nextList = partnersList.filter(p => p.id !== id);
+    setPartnersList(nextList);
+    saveStoredPartners(nextList);
+    showToast('Партнёр удалён', `«${name}» удалён из каталога.`, 'info');
+    setPartnerToDelete(null);
+  };
+
+  const handleResetPartners = () => {
+    setIsResetPartnersConfirmOpen(true);
+  };
+
+  const handleConfirmResetPartners = () => {
+    setPartnersList(INITIAL_PARTNERS_DATA);
+    saveStoredPartners(INITIAL_PARTNERS_DATA);
+    showToast('Сброс выполнен', 'Список партнёров восстановлен к исходному каталогу.', 'success');
+    setIsResetPartnersConfirmOpen(false);
+  };
+
+  // Reorder Partners: Drag & Drop
+  const handleMovePartner = (draggedId: string, targetId: string) => {
+    if (draggedId === targetId) return;
+    const fromIndex = partnersList.findIndex(p => p.id === draggedId);
+    const toIndex = partnersList.findIndex(p => p.id === targetId);
+    if (fromIndex === -1 || toIndex === -1) return;
+
+    const updated = [...partnersList];
+    const [moved] = updated.splice(fromIndex, 1);
+    updated.splice(toIndex, 0, moved);
+
+    setPartnersList(updated);
+    saveStoredPartners(updated);
+    showToast('Порядок изменён', `«${moved.name}» перемещён на ${toIndex + 1}-е место.`, 'success');
+  };
+
+  // Shift Partner up or down by 1 position
+  const handleShiftPartner = (partnerId: string, direction: 'up' | 'down') => {
+    const currentIndex = partnersList.findIndex(p => p.id === partnerId);
+    if (currentIndex === -1) return;
+    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (targetIndex < 0 || targetIndex >= partnersList.length) return;
+
+    const updated = [...partnersList];
+    const [moved] = updated.splice(currentIndex, 1);
+    updated.splice(targetIndex, 0, moved);
+
+    setPartnersList(updated);
+    saveStoredPartners(updated);
+    showToast('Порядок изменён', `«${moved.name}» перемещён на ${targetIndex + 1}-е место.`, 'success');
+  };
+
+  // Reorder Categories: Drag & Drop
+  const handleMoveCategory = (draggedId: string, targetId: string) => {
+    if (draggedId === targetId) return;
+    const fromIndex = libraryCategories.findIndex(c => c.id === draggedId);
+    const toIndex = libraryCategories.findIndex(c => c.id === targetId);
+    if (fromIndex === -1 || toIndex === -1) return;
+
+    const updated = [...libraryCategories];
+    const [moved] = updated.splice(fromIndex, 1);
+    updated.splice(toIndex, 0, moved);
+
+    setLibraryCategories(updated);
+    showToast('Порядок изменён', `Категория «${moved.title}» перемещена на ${toIndex + 1}-е место.`, 'success');
+  };
+
+  // Shift Category up or down by 1 position
+  const handleShiftCategory = (catId: string, direction: 'up' | 'down') => {
+    const currentIndex = libraryCategories.findIndex(c => c.id === catId);
+    if (currentIndex === -1) return;
+    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (targetIndex < 0 || targetIndex >= libraryCategories.length) return;
+
+    const updated = [...libraryCategories];
+    const [moved] = updated.splice(currentIndex, 1);
+    updated.splice(targetIndex, 0, moved);
+
+    setLibraryCategories(updated);
+    showToast('Порядок изменён', `Категория «${moved.title}» перемещена на ${targetIndex + 1}-е место.`, 'success');
+  };
 
   // App Logo State
   const [appLogo, setAppLogo] = useState<string>(() => {
@@ -322,6 +673,9 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
   const [isAddIconModalOpen, setIsAddIconModalOpen] = useState(false);
   const [isAddDecorModalOpen, setIsAddDecorModalOpen] = useState(false);
   const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<AdminLibraryCategory | null>(null);
+  const [editCatTitle, setEditCatTitle] = useState('');
+  const [editCatDesc, setEditCatDesc] = useState('');
   const [editingItem, setEditingItem] = useState<DecorLibraryItem | null>(null);
 
   // Drag over dropzone state
@@ -734,6 +1088,56 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
     showToast('Категория добавлена', `Категория «${newCat.title}» создана.`, 'success');
   };
 
+  // Rename / Edit category handler
+  const handleRenameCategory = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCategory || !editCatTitle.trim()) return;
+
+    const oldTitle = editingCategory.title;
+    const newTitle = editCatTitle.trim();
+    const newDesc = editCatDesc.trim();
+
+    // Check if another category already has this title
+    if (
+      libraryCategories.some(
+        c => c.id !== editingCategory.id && c.title.toLowerCase() === newTitle.toLowerCase()
+      )
+    ) {
+      showToast('Внимание', 'Категория с таким названием уже существует', 'warn');
+      return;
+    }
+
+    // 1. Update category in libraryCategories
+    setLibraryCategories(prev =>
+      prev.map(c =>
+        c.id === editingCategory.id
+          ? { ...c, title: newTitle, description: newDesc || c.description }
+          : c
+      )
+    );
+
+    // 2. Cascade rename into all decorItems that were categorized under oldTitle or old id
+    setDecorItems(prev =>
+      prev.map(item => {
+        if (
+          item.category.toLowerCase() === oldTitle.toLowerCase() ||
+          item.category.toLowerCase() === editingCategory.id.toLowerCase()
+        ) {
+          return { ...item, category: newTitle };
+        }
+        return item;
+      })
+    );
+
+    // 3. Update openedCategory if currently viewing it
+    if (openedCategory?.id === editingCategory.id) {
+      setOpenedCategory(prev => prev ? { ...prev, title: newTitle, description: newDesc || prev.description } : null);
+    }
+
+    setEditingCategory(null);
+    showToast('Категория обновлена', `Категория «${oldTitle}» успешно переименована в «${newTitle}».`, 'success');
+  };
+
   // Delete category
   const handleDeleteCategory = (catId: string, catTitle: string) => {
     setLibraryCategories(prev => prev.filter(c => c.id !== catId));
@@ -804,73 +1208,55 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* 1. GLASSMORPHISM HEADER CANVAS (AGENTS_md Standard) */}
-      <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[28px] sm:rounded-[32px] border border-zinc-200/50 dark:border-zinc-800/40 shadow-xs p-5 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
-          <div className="p-2.5 bg-[var(--lavenderSoft)] rounded-xl shrink-0">
-            <ShieldCheck className="w-6 h-6 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)] stroke-[2.2]" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-                Кабинет администратора
-              </h1>
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[var(--primary-accent)]/10 text-[var(--primary-accent)] dark:text-purple-300 border border-[var(--primary-accent)]/20">
-                ADMIN V2
-              </span>
-            </div>
-            <p className="text-sm font-normal text-zinc-700 dark:text-zinc-300 leading-relaxed mt-0.5">
-              Управление библиотекой редактора: категории, иконки категорий и загрузка файлов
-            </p>
-          </div>
+      {/* ADMIN TABS SWITCHER & ACTIONS */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar flex-1">
+          {[
+            { key: 'library', label: 'Библиотека редактора', icon: <Package className="w-4 h-4" />, count: decorItems.length },
+            { key: 'partners', label: 'Партнёры и скидки', icon: <Handshake className="w-4 h-4" />, count: partnersList.length },
+            { key: 'icons', label: 'Иконки инструментов', icon: <Palette className="w-4 h-4" />, count: toolIcons.length },
+            { key: 'categories', label: 'Категории каталога', icon: <Tag className="w-4 h-4" />, count: libraryCategories.length },
+            { key: 'logo', label: 'Логотип приложения', icon: <Sparkles className="w-4 h-4" /> },
+            { key: 'backup', label: 'Резервные копии', icon: <FileJson className="w-4 h-4" /> }
+          ].map(tab => {
+            const isActive = adminTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => {
+                  setAdminTab(tab.key as any);
+                  if (tab.key !== 'library') setOpenedCategory(null);
+                }}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                  isActive
+                    ? 'text-white shadow-md'
+                    : 'bg-white/40 dark:bg-zinc-900/30 text-zinc-700 dark:text-zinc-300 hover:bg-white/60 dark:hover:bg-zinc-800/50 border border-zinc-200/50 dark:border-zinc-800/40'
+                }`}
+                style={isActive ? { background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' } : undefined}
+              >
+                <span>{tab.icon}</span>
+                <span>{tab.label}</span>
+                {tab.count !== undefined && (
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                    isActive ? 'bg-white/20 text-white' : 'bg-zinc-200/60 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
+                  }`}>
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* Action Button */}
         <button
           onClick={handleExportBackup}
-          className="bg-transparent border border-zinc-300 dark:border-zinc-700 hover:border-[var(--primary-accent)] rounded-full px-4 py-2 text-xs font-semibold text-zinc-800 dark:text-zinc-200 flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0"
+          className="bg-white/40 dark:bg-zinc-900/30 hover:bg-white/70 dark:hover:bg-zinc-800/60 border border-zinc-200/50 dark:border-zinc-800/40 rounded-full px-4 py-2 text-xs font-semibold text-zinc-800 dark:text-zinc-200 flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0 shadow-2xs self-start sm:self-auto"
+          title="Экспортировать JSON бэкап"
         >
           <Download className="w-3.5 h-3.5 text-[var(--primary-accent)]" />
           <span>Скачать бэкап JSON</span>
         </button>
-      </div>
-
-      {/* 2. ADMIN TABS SWITCHER */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-        {[
-          { key: 'library', label: 'Библиотека редактора', icon: <Package className="w-4 h-4" />, count: decorItems.length },
-          { key: 'icons', label: 'Иконки инструментов', icon: <Palette className="w-4 h-4" />, count: toolIcons.length },
-          { key: 'categories', label: 'Категории каталога', icon: <Tag className="w-4 h-4" />, count: libraryCategories.length },
-          { key: 'logo', label: 'Логотип приложения', icon: <Sparkles className="w-4 h-4" /> },
-          { key: 'backup', label: 'Резервные копии', icon: <FileJson className="w-4 h-4" /> }
-        ].map(tab => {
-          const isActive = adminTab === tab.key;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => {
-                setAdminTab(tab.key as any);
-                if (tab.key !== 'library') setOpenedCategory(null);
-              }}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-                isActive
-                  ? 'text-white shadow-md'
-                  : 'bg-white/40 dark:bg-zinc-900/30 text-zinc-700 dark:text-zinc-300 hover:bg-white/60 dark:hover:bg-zinc-800/50 border border-zinc-200/50 dark:border-zinc-800/40'
-              }`}
-              style={isActive ? { background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' } : undefined}
-            >
-              <span>{tab.icon}</span>
-              <span>{tab.label}</span>
-              {tab.count !== undefined && (
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                  isActive ? 'bg-white/20 text-white' : 'bg-zinc-200/60 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
-                }`}>
-                  {tab.count}
-                </span>
-              )}
-            </button>
-          );
-        })}
       </div>
 
       {/* 3. TAB 1: LIBRARY MANAGER (CATEGORIES GRID OR OPENED CATEGORY FILES) */}
@@ -1034,6 +1420,17 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                         <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
                           Категория: {openedCategory.title}
                         </h2>
+                        <button
+                          onClick={() => {
+                            setEditingCategory(openedCategory);
+                            setEditCatTitle(openedCategory.title);
+                            setEditCatDesc(openedCategory.description);
+                          }}
+                          className="p-1.5 rounded-lg text-zinc-400 hover:text-[var(--primary-accent)] hover:bg-[var(--lavenderSoft)] transition-colors cursor-pointer"
+                          title="Переименовать категорию"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
                         <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[var(--primary-accent)]/10 text-[var(--primary-accent)] dark:text-purple-300">
                           {openedCategoryFiles.length} файл(ов)
                         </span>
@@ -1222,6 +1619,331 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
         </div>
       )}
 
+      {/* TAB: PARTNERS & DISCOUNT COUPONS MANAGER */}
+      {adminTab === 'partners' && (
+        <div className="space-y-5">
+          {/* Top Panel Banner */}
+          <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-md rounded-[28px] border border-zinc-200/50 dark:border-zinc-800/40 shadow-xs p-5 sm:p-6 space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-zinc-200/50 dark:border-zinc-800/40">
+              <div className="flex items-center gap-3.5">
+                <div className="p-2.5 bg-[var(--lavenderSoft)] text-[var(--primary-accent)] dark:text-[var(--lavenderAccent)] rounded-2xl shrink-0">
+                  <Handshake className="w-6 h-6 stroke-[2]" />
+                </div>
+                <div>
+                  <h2 className="text-base sm:text-lg font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
+                    Управление партнёрами и скидочными купонами
+                  </h2>
+                  <p className="text-xs sm:text-sm font-normal text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                    Добавляйте поставщиков, загружайте логотипы и основные фото, настраивайте размер скидки и секретные промокоды
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 flex-wrap">
+                <button
+                  onClick={handleResetPartners}
+                  className="px-3.5 py-2 rounded-full border border-zinc-300 dark:border-zinc-700 hover:border-zinc-400 text-zinc-600 dark:text-zinc-300 text-xs font-semibold hover:bg-white/60 dark:hover:bg-zinc-800 transition-all cursor-pointer flex items-center gap-1.5"
+                  title="Восстановить список партнёров по умолчанию"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Сброс</span>
+                </button>
+
+                <button
+                  onClick={handleOpenAddPartner}
+                  style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
+                  className="flex-1 sm:flex-initial text-white rounded-full px-4 sm:px-5 py-2 text-xs font-semibold shadow-xs hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Новый партнёр</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Search & Category Filter */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+                <button
+                  onClick={() => setPartnerCategoryFilter('Все')}
+                  style={partnerCategoryFilter === 'Все' ? { background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' } : undefined}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                    partnerCategoryFilter === 'Все'
+                      ? 'text-white shadow-2xs'
+                      : 'bg-white/60 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60 hover:bg-white dark:hover:bg-zinc-800'
+                  }`}
+                >
+                  Все
+                </button>
+
+                {partnerCategories.map(cat => {
+                  const isSel = partnerCategoryFilter === cat;
+                  return (
+                    <div key={cat} className="inline-flex items-center shrink-0">
+                      <button
+                        onClick={() => setPartnerCategoryFilter(cat)}
+                        style={isSel ? { background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' } : undefined}
+                        className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+                          isSel
+                            ? 'text-white shadow-2xs'
+                            : 'bg-white/60 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60 hover:bg-white dark:hover:bg-zinc-800'
+                        }`}
+                      >
+                        <span>{cat}</span>
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleStartRenamePartnerCategory(cat);
+                          }}
+                          className={`p-0.5 rounded-md transition-all cursor-pointer ${
+                            isSel
+                              ? 'hover:bg-white/20 text-white/80 hover:text-white'
+                              : 'hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-400 hover:text-[var(--primary-accent)]'
+                          }`}
+                          title={`Переименовать категорию «${cat}»`}
+                        >
+                          <Edit className="w-3 h-3 stroke-[2.2]" />
+                        </span>
+                      </button>
+                    </div>
+                  );
+                })}
+
+                <button
+                  onClick={() => {
+                    const activeCat = partnerCategoryFilter !== 'Все' ? partnerCategoryFilter : (partnerCategories[0] || 'Флористика & Оазис');
+                    handleStartRenamePartnerCategory(activeCat);
+                  }}
+                  className="px-3 py-1.5 rounded-full text-xs font-medium bg-zinc-100/90 dark:bg-zinc-800/80 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 border border-dashed border-zinc-300 dark:border-zinc-700 flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer shrink-0"
+                  title="Переименовать категорию партнёров"
+                >
+                  <Edit className="w-3 h-3 text-[var(--primary-accent)]" />
+                  <span>Переименовать категорию</span>
+                </button>
+              </div>
+
+              <div className="relative sm:w-64">
+                <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Поиск по названию или коду..."
+                  value={partnerSearch}
+                  onChange={e => setPartnerSearch(e.target.value)}
+                  className="w-full pl-8 pr-3 py-1.5 rounded-full bg-white/60 dark:bg-zinc-800/60 border border-zinc-200/60 dark:border-zinc-700/60 text-xs text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-[var(--primary-accent)]"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Reorder notice */}
+          <div className="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400 px-1">
+            <span className="flex items-center gap-1.5 font-medium">
+              <GripVertical className="w-4 h-4 text-[var(--primary-accent)]" />
+              <span>Перетаскивайте карточки для изменения порядка отображения в каталоге</span>
+            </span>
+            <span className="text-[11px] text-zinc-400">
+              Всего: {partnersList.length}
+            </span>
+          </div>
+
+          {/* Partners Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {partnersList
+              .filter(p => {
+                const matchCat = partnerCategoryFilter === 'Все' || p.category === partnerCategoryFilter;
+                const matchQuery = p.name.toLowerCase().includes(partnerSearch.toLowerCase()) ||
+                  p.promoCode.toLowerCase().includes(partnerSearch.toLowerCase()) ||
+                  p.category.toLowerCase().includes(partnerSearch.toLowerCase());
+                return matchCat && matchQuery;
+              })
+              .map(partner => {
+                const globalIndex = partnersList.findIndex(p => p.id === partner.id);
+                const isDragging = draggedPartnerId === partner.id;
+                const isDragOver = dragOverPartnerId === partner.id;
+
+                return (
+                  <div
+                    key={partner.id}
+                    draggable={true}
+                    onDragStart={(e) => {
+                      setDraggedPartnerId(partner.id);
+                      e.dataTransfer.setData('text/plain', partner.id);
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                      if (dragOverPartnerId !== partner.id) {
+                        setDragOverPartnerId(partner.id);
+                      }
+                    }}
+                    onDragLeave={() => {
+                      if (dragOverPartnerId === partner.id) {
+                        setDragOverPartnerId(null);
+                      }
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      if (draggedPartnerId) {
+                        handleMovePartner(draggedPartnerId, partner.id);
+                      }
+                      setDraggedPartnerId(null);
+                      setDragOverPartnerId(null);
+                    }}
+                    onDragEnd={() => {
+                      setDraggedPartnerId(null);
+                      setDragOverPartnerId(null);
+                    }}
+                    className={`bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md rounded-[24px] border shadow-xs hover:shadow-md transition-all flex flex-col overflow-hidden relative cursor-grab active:cursor-grabbing select-none ${
+                      isDragging
+                        ? 'opacity-40 scale-95 border-[var(--primary-accent)] ring-2 ring-[var(--primary-accent)]'
+                        : isDragOver
+                        ? 'border-[var(--primary-accent)] ring-2 ring-[var(--primary-accent)]/60 scale-[1.02]'
+                        : 'border-zinc-200/60 dark:border-zinc-800/60'
+                    }`}
+                  >
+                    {/* Photo Banner with Discount & Logo */}
+                    <div className="relative h-36 w-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
+                      <img
+                        src={partner.bannerImage}
+                        alt={partner.name}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+
+                      {/* Top Row: Rank/Position badge + Discount badge */}
+                      <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+                        <span 
+                          className="px-2.5 py-0.5 rounded-full bg-white/90 dark:bg-zinc-900/90 text-zinc-900 dark:text-zinc-100 font-extrabold text-xs shadow-xs border border-white/40 flex items-center gap-1 cursor-grab"
+                          title="Позиция в каталоге (перетащите для изменения)"
+                        >
+                          <GripVertical className="w-3 h-3 text-[var(--primary-accent)]" />
+                          <span>№{globalIndex + 1}</span>
+                        </span>
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-500 text-white font-extrabold text-xs shadow-xs">
+                          {partner.discount}
+                        </span>
+                      </div>
+
+                      {/* Category */}
+                      <div className="absolute top-2.5 right-2.5">
+                        <span className="px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-xs text-white/90 text-[10px] font-medium border border-white/20">
+                          {partner.category}
+                        </span>
+                      </div>
+
+                      {/* Logo & Name on Banner */}
+                      <div className="absolute bottom-2.5 left-3 right-3 flex items-center gap-2">
+                        <div className="w-10 h-10 rounded-xl bg-white dark:bg-zinc-900 shadow-md p-1 border border-white/40 flex items-center justify-center shrink-0 overflow-hidden">
+                          {partner.logoUrl ? (
+                            <img
+                              src={partner.logoUrl}
+                              alt={partner.name}
+                              className="w-full h-full object-contain"
+                            />
+                          ) : (
+                            <span className="font-black text-xs text-[var(--primary-accent)]">
+                              {partner.logoText || partner.name.slice(0, 2).toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                        <div className="min-w-0 text-white">
+                          <h4 className="font-bold text-sm truncate">{partner.name}</h4>
+                          <p className="text-[10px] text-zinc-300 truncate">{partner.badgeText}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Body Info */}
+                    <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                      <p className="text-xs text-zinc-600 dark:text-zinc-300 line-clamp-2 leading-relaxed">
+                        {partner.shortDesc}
+                      </p>
+
+                      <div className="space-y-2 pt-1 border-t border-zinc-200/50 dark:border-zinc-800/50 text-[11px]">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-zinc-500 font-medium">Промокод:</span>
+                          <span 
+                            className="font-mono font-extrabold px-2 py-0.5 rounded-md border text-[11px]"
+                            style={{
+                              backgroundColor: 'var(--lavenderSoft)',
+                              borderColor: 'rgba(var(--primary-accent-rgb, 140, 82, 208), 0.3)',
+                              color: 'var(--lavDeep)'
+                            }}
+                          >
+                            {partner.promoCode}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between text-zinc-500 text-[10px]">
+                          <span>{partner.city}</span>
+                          <a
+                            href={partner.website}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[var(--primary-accent)] hover:underline flex items-center gap-0.5 font-semibold"
+                          >
+                            <span>Сайт</span>
+                            <ExternalLink className="w-2.5 h-2.5" />
+                          </a>
+                        </div>
+                      </div>
+
+                      {/* Action buttons with quick reorder arrows */}
+                      <div className="pt-2 flex items-center gap-1.5 border-t border-zinc-200/40 dark:border-zinc-800/40">
+                        {/* Quick Move Up/Down buttons */}
+                        <div className="flex items-center gap-0.5 shrink-0 bg-zinc-100 dark:bg-zinc-800/80 p-0.5 rounded-full border border-zinc-200/80 dark:border-zinc-700/80">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleShiftPartner(partner.id, 'up');
+                            }}
+                            disabled={globalIndex === 0}
+                            className="p-1 rounded-full text-zinc-600 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                            title="Переместить выше"
+                          >
+                            <ArrowUp className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleShiftPartner(partner.id, 'down');
+                            }}
+                            disabled={globalIndex === partnersList.length - 1}
+                            className="p-1 rounded-full text-zinc-600 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                            title="Переместить ниже"
+                          >
+                            <ArrowDown className="w-3 h-3" />
+                          </button>
+                        </div>
+
+                        <button
+                          onClick={() => handleOpenEditPartner(partner)}
+                          className="flex-1 py-1.5 px-3 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:border-[var(--primary-accent)] text-zinc-700 dark:text-zinc-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <Edit className="w-3 h-3 text-[var(--primary-accent)]" />
+                          <span>Редактировать</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleDeletePartner(partner.id, partner.name)}
+                          className="p-1.5 rounded-full text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer shrink-0"
+                          title="Удалить партнёра"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      )}
+
       {/* 4. TAB 2: TOOL ICON MANAGER */}
       {adminTab === 'icons' && (
         <div className="space-y-4">
@@ -1336,31 +2058,120 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {libraryCategories.map(cat => {
+            {libraryCategories.map((cat, catIdx) => {
               const count = decorItems.filter(i => i.category.toLowerCase() === cat.title.toLowerCase() || i.category.toLowerCase() === cat.id.toLowerCase()).length;
+              const isDragging = draggedCategoryId === cat.id;
+              const isDragOver = dragOverCategoryId === cat.id;
+
               return (
                 <div
                   key={cat.id}
-                  className="p-4 rounded-2xl bg-white/60 dark:bg-zinc-800/40 border border-zinc-200/60 dark:border-zinc-700/50 flex items-center justify-between gap-3"
+                  draggable={true}
+                  onDragStart={(e) => {
+                    setDraggedCategoryId(cat.id);
+                    e.dataTransfer.setData('text/plain', cat.id);
+                    e.dataTransfer.effectAllowed = 'move';
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    if (dragOverCategoryId !== cat.id) {
+                      setDragOverCategoryId(cat.id);
+                    }
+                  }}
+                  onDragLeave={() => {
+                    if (dragOverCategoryId === cat.id) {
+                      setDragOverCategoryId(null);
+                    }
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (draggedCategoryId) {
+                      handleMoveCategory(draggedCategoryId, cat.id);
+                    }
+                    setDraggedCategoryId(null);
+                    setDragOverCategoryId(null);
+                  }}
+                  onDragEnd={() => {
+                    setDraggedCategoryId(null);
+                    setDragOverCategoryId(null);
+                  }}
+                  className={`p-4 rounded-2xl bg-white/60 dark:bg-zinc-800/40 border transition-all flex items-center justify-between gap-3 cursor-grab active:cursor-grabbing select-none ${
+                    isDragging
+                      ? 'opacity-40 scale-95 border-[var(--primary-accent)] ring-2 ring-[var(--primary-accent)]'
+                      : isDragOver
+                      ? 'border-[var(--primary-accent)] ring-2 ring-[var(--primary-accent)]/60 scale-[1.02]'
+                      : 'border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-xs'
+                  }`}
                 >
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div 
+                      className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-grab shrink-0"
+                      title="Перетащите для изменения порядка"
+                    >
+                      <GripVertical className="w-4 h-4" />
+                    </div>
+
                     <div className="p-2.5 bg-[var(--lavenderSoft)] rounded-xl shrink-0">
                       <CategoryIconDisplay catId={cat.id} catTitle={cat.title} className="w-5 h-5 text-[var(--primary-accent)] dark:text-[#C084FC]" />
                     </div>
                     <div className="min-w-0">
-                      <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">
-                        {cat.title}
-                      </h4>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold text-zinc-400">
+                          №{catIdx + 1}
+                        </span>
+                        <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+                          {cat.title}
+                        </h4>
+                      </div>
                       <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
                         {cat.description}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="flex items-center gap-0.5 bg-zinc-100 dark:bg-zinc-800/80 p-0.5 rounded-full border border-zinc-200/80 dark:border-zinc-700/80">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleShiftCategory(cat.id, 'up');
+                        }}
+                        disabled={catIdx === 0}
+                        className="p-1 rounded-full text-zinc-600 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                        title="Переместить выше"
+                      >
+                        <ArrowUp className="w-3 h-3" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleShiftCategory(cat.id, 'down');
+                        }}
+                        disabled={catIdx === libraryCategories.length - 1}
+                        className="p-1 rounded-full text-zinc-600 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                        title="Переместить ниже"
+                      >
+                        <ArrowDown className="w-3 h-3" />
+                      </button>
+                    </div>
+
                     <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-[var(--primary-accent)]/10 text-[var(--primary-accent)] dark:text-purple-300">
                       {count} об.
                     </span>
+                    <button
+                      onClick={() => {
+                        setEditingCategory(cat);
+                        setEditCatTitle(cat.title);
+                        setEditCatDesc(cat.description);
+                      }}
+                      className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700/60 text-zinc-500 hover:text-[var(--primary-accent)] dark:hover:text-purple-300 transition-colors cursor-pointer"
+                      title="Переименовать категорию"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
                     <button
                       onClick={() => handleDeleteCategory(cat.id, cat.title)}
                       className="p-1.5 rounded-lg hover:bg-rose-500/10 text-rose-500 transition-colors cursor-pointer"
@@ -1565,6 +2376,186 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                     className="px-5 py-2 rounded-full text-xs font-semibold text-white shadow-md hover:opacity-90"
                   >
                     Создать
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal 1b: Edit / Rename Category */}
+      <AnimatePresence>
+        {editingCategory && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-[28px] p-6 max-w-md w-full shadow-2xl space-y-4"
+            >
+              <div className="flex items-center justify-between pb-2 border-b border-zinc-200 dark:border-zinc-800">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-[var(--lavenderSoft)] rounded-xl">
+                    <Edit className="w-4 h-4 text-[var(--primary-accent)]" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+                      Переименовать категорию
+                    </h3>
+                    <p className="text-[11px] text-zinc-500">
+                      Название обновится у всех привязанных объектов библиотеки
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setEditingCategory(null)}
+                  className="p-1 rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleRenameCategory} className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal block mb-1">
+                    НАЗВАНИЕ КАТЕГОРИИ *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editCatTitle}
+                    onChange={e => setEditCatTitle(e.target.value)}
+                    placeholder="Например: Свадебные арки"
+                    className="w-full px-4 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40"
+                    autoFocus
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal block mb-1">
+                    ОПИСАНИЕ КАТЕГОРИИ
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={editCatDesc}
+                    onChange={e => setEditCatDesc(e.target.value)}
+                    placeholder="Краткое описание содержимого..."
+                    className="w-full px-4 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40 resize-none"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditingCategory(null)}
+                    className="px-4 py-2 rounded-full text-xs font-semibold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
+                  >
+                    Отмена
+                  </button>
+                  <button
+                    type="submit"
+                    style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
+                    className="px-5 py-2 rounded-full text-xs font-semibold text-white shadow-md hover:opacity-90 transition-all cursor-pointer"
+                  >
+                    Сохранить изменения
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal 1c: Edit / Rename Partner Category */}
+      <AnimatePresence>
+        {renamingPartnerCategory && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-[28px] p-6 max-w-md w-full shadow-2xl space-y-4"
+            >
+              <div className="flex items-center justify-between pb-2 border-b border-zinc-200 dark:border-zinc-800">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-[var(--lavenderSoft)] rounded-xl">
+                    <Edit className="w-4 h-4 text-[var(--primary-accent)]" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+                      Переименовать категорию партнёров
+                    </h3>
+                    <p className="text-[11px] text-zinc-500">
+                      Категория обновится у всех партнёров и в витрине скидок
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setRenamingPartnerCategory(null)}
+                  className="p-1 rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveRenamePartnerCategory} className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal block mb-1">
+                    ТЕКУЩАЯ КАТЕГОРИЯ
+                  </label>
+                  <select
+                    value={renamingPartnerCategory}
+                    onChange={(e) => {
+                      setRenamingPartnerCategory(e.target.value);
+                      setNewPartnerCategoryName(e.target.value);
+                    }}
+                    className="w-full px-3.5 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40"
+                  >
+                    {partnerCategories.map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 tracking-normal block mb-1">
+                    НОВОЕ НАЗВАНИЕ КАТЕГОРИИ *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newPartnerCategoryName}
+                    onChange={e => setNewPartnerCategoryName(e.target.value)}
+                    placeholder="Например: Живые цветы и оазис"
+                    className="w-full px-4 py-2.5 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40"
+                    autoFocus
+                  />
+                </div>
+
+                <div className="p-3 bg-zinc-50 dark:bg-zinc-800/60 rounded-xl text-[11px] text-zinc-500 space-y-1">
+                  <p>
+                    Сейчас в категории: <strong className="text-zinc-800 dark:text-zinc-200">{partnersList.filter(p => p.category === renamingPartnerCategory).length} партнёра(ов)</strong>
+                  </p>
+                  <p className="text-[10px] text-zinc-400">
+                    При сохранении название моментально изменится в каталоге и на всех купонах.
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setRenamingPartnerCategory(null)}
+                    className="px-4 py-2 rounded-full text-xs font-semibold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
+                  >
+                    Отмена
+                  </button>
+                  <button
+                    type="submit"
+                    style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
+                    className="px-5 py-2 rounded-full text-xs font-semibold text-white shadow-md hover:opacity-90 transition-all cursor-pointer"
+                  >
+                    Сохранить изменения
                   </button>
                 </div>
               </form>
@@ -2001,6 +2992,505 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
           </div>
         )}
       </AnimatePresence>
+
+      {/* ADD / EDIT PARTNER MODAL */}
+      <AnimatePresence>
+        {isPartnerModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsPartnerModalOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="relative w-full max-w-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-[28px] p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto z-10"
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-zinc-200 dark:border-zinc-800">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 bg-[var(--lavenderSoft)] text-[var(--primary-accent)] rounded-xl shrink-0">
+                    <Handshake className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-zinc-100">
+                      {editingPartner ? 'Редактировать партнёра' : 'Добавить нового партнёра'}
+                    </h3>
+                    <p className="text-xs text-zinc-500">
+                      Заполните карточку купона и загрузите фото и логотип
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsPartnerModalOpen(false)}
+                  className="p-1.5 rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Form */}
+              <div className="space-y-4">
+                {/* 1. Basic Company Info */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 block mb-1">
+                      НАЗВАНИЕ КОМПАНИИ *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={pName}
+                      onChange={e => setPName(e.target.value)}
+                      placeholder="Например: 7ЦВЕТОВ или Декор-Конструкт"
+                      className="w-full px-3.5 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 block mb-1">
+                      КАТЕГОРИЯ *
+                    </label>
+                    <select
+                      value={pCategory}
+                      onChange={e => setPCategory(e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40"
+                    >
+                      {partnerCategories.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                      {!partnerCategories.includes(pCategory) && pCategory && (
+                        <option value={pCategory}>{pCategory}</option>
+                      )}
+                    </select>
+                  </div>
+                </div>
+
+                {/* 2. Discount & Badge */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 block mb-1">
+                      РАЗМЕР СКИДКИ *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={pDiscount}
+                      onChange={e => setPDiscount(e.target.value)}
+                      placeholder="-15% или -20%"
+                      className="w-full px-3.5 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 block mb-1">
+                      ТЕКСТ НА БЕЙДЖЕ СКИДКИ
+                    </label>
+                    <input
+                      type="text"
+                      value={pBadgeText}
+                      onChange={e => setPBadgeText(e.target.value)}
+                      placeholder="НА ВСЕ КАРКАСЫ И АРКИ"
+                      className="w-full px-3.5 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40"
+                    />
+                  </div>
+                </div>
+
+                {/* 3. Promo Code & Site */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 block mb-1">
+                      СЕКРЕТНЫЙ ПРОМОКОД *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={pPromoCode}
+                      onChange={e => setPPromoCode(e.target.value)}
+                      placeholder="IQDECO-PRO15"
+                      className="w-full px-3.5 py-2 rounded-xl font-mono text-xs uppercase bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 block mb-1">
+                      САЙТ КОМПАНИИ *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={pWebsite}
+                      onChange={e => setPWebsite(e.target.value)}
+                      placeholder="https://company.ru"
+                      className="w-full px-3.5 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40"
+                    />
+                  </div>
+                </div>
+
+                {/* 4. Geography & Telegram & Validity */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 block mb-1">
+                      ГОРОД / ГЕОГРАФИЯ
+                    </label>
+                    <input
+                      type="text"
+                      value={pCity}
+                      onChange={e => setPCity(e.target.value)}
+                      placeholder="Москва, Санкт-Петербург + РФ"
+                      className="w-full px-3.5 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 block mb-1">
+                      TELEGRAM (НЕОБЯЗАТЕЛЬНО)
+                    </label>
+                    <input
+                      type="text"
+                      value={pTelegram}
+                      onChange={e => setPTelegram(e.target.value)}
+                      placeholder="https://t.me/channel"
+                      className="w-full px-3.5 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 block mb-1">
+                      СРОК ДЕЙСТВИЯ КУПОНА
+                    </label>
+                    <input
+                      type="text"
+                      value={pValidUntil}
+                      onChange={e => setPValidUntil(e.target.value)}
+                      placeholder="Бессрочно для подписчиков"
+                      className="w-full px-3.5 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40"
+                    />
+                  </div>
+                </div>
+
+                {/* 5. Short & Full Description */}
+                <div>
+                  <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 block mb-1">
+                    КРАТКОЕ ОПИСАНИЕ (ОТОБРАЖАЕТСЯ НА КАРТОЧКЕ) *
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={pShortDesc}
+                    onChange={e => setPShortDesc(e.target.value)}
+                    placeholder="Крупнейший оптовый склад живых цветов, экзотики и флористических расходников..."
+                    className="w-full px-3.5 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 block mb-1">
+                    ПОДРОБНОЕ ОПИСАНИЕ (ДЛЯ ОКНА «ПОДРОБНЕЕ»)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={pFullDesc}
+                    onChange={e => setPFullDesc(e.target.value)}
+                    placeholder="Подробная информация об ассортименте, доставке и сервисе..."
+                    className="w-full px-3.5 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 block mb-1">
+                    УСЛОВИЯ ПРИМЕНЕНИЯ СКИДКИ (ОТОБРАЖАЮТСЯ НА ОБОРОТЕ КАРТОЧКИ)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={pTerms}
+                    onChange={e => setPTerms(e.target.value)}
+                    placeholder="Скидка действует при оформлении заказа на сайте или через менеджера компании по промокоду..."
+                    className="w-full px-3.5 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40"
+                  />
+                </div>
+
+                {/* 6. UPLOAD MAIN BANNER IMAGE */}
+                <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                        Основное фото / Баннер партнёра *
+                      </span>
+                      <p className="text-[10px] text-zinc-500">
+                        Красочное изображение продукции или декора для шапки купона
+                      </p>
+                    </div>
+
+                    <label className="px-3 py-1.5 rounded-full text-xs font-semibold bg-[var(--primary-accent)] text-white hover:opacity-95 cursor-pointer flex items-center gap-1.5 shadow-2xs">
+                      <UploadCloud className="w-3.5 h-3.5" />
+                      <span>Загрузить фото</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={e => {
+                          if (e.target.files && e.target.files[0]) {
+                            handleUploadPartnerBanner(e.target.files[0]);
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+
+                  {/* Banner Preview */}
+                  {pBannerImage ? (
+                    <div className="relative h-32 w-full rounded-xl overflow-hidden border border-zinc-300 dark:border-zinc-600 bg-zinc-100 dark:bg-zinc-800">
+                      <img
+                        src={pBannerImage}
+                        alt="Предпросмотр баннера"
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setPBannerImage('')}
+                        className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80"
+                        title="Удалить фото"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="h-24 rounded-xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 flex flex-col items-center justify-center text-zinc-400 text-xs">
+                      <ImageIcon className="w-6 h-6 mb-1 opacity-50" />
+                      <span>Изображение не выбрано</span>
+                    </div>
+                  )}
+
+                  {/* Optional direct URL input */}
+                  <div>
+                    <label className="text-[10px] text-zinc-500 block mb-0.5">
+                      Или вставьте прямую ссылку на изображение:
+                    </label>
+                    <input
+                      type="text"
+                      value={pBannerImage}
+                      onChange={e => setPBannerImage(e.target.value)}
+                      placeholder="https://..."
+                      className="w-full px-3 py-1.5 rounded-lg text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200"
+                    />
+                  </div>
+                </div>
+
+                {/* 7. UPLOAD PARTNER LOGO */}
+                <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                        Логотип партнёра
+                      </span>
+                      <p className="text-[10px] text-zinc-500">
+                        Загрузите файл логотипа (PNG/SVG/JPG) или укажите короткие инициалы
+                      </p>
+                    </div>
+
+                    <label className="px-3 py-1.5 rounded-full text-xs font-semibold bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 cursor-pointer flex items-center gap-1.5 shadow-2xs">
+                      <UploadCloud className="w-3.5 h-3.5" />
+                      <span>Выбрать файл лого</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={e => {
+                          if (e.target.files && e.target.files[0]) {
+                            handleUploadPartnerLogo(e.target.files[0]);
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    {/* Logo Box Preview */}
+                    <div className="w-14 h-14 rounded-2xl bg-white dark:bg-zinc-900 shadow-md p-1 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shrink-0 overflow-hidden">
+                      {pLogoUrl ? (
+                        <img
+                          src={pLogoUrl}
+                          alt="Логотип"
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <span className="font-black text-sm text-[var(--primary-accent)]">
+                          {pLogoText || pName.slice(0, 2).toUpperCase() || 'ЛОГО'}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex-1 space-y-1">
+                      <label className="text-[10px] text-zinc-500 block">
+                        Инициалы для текстового бейджа (если нет картинки):
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={5}
+                        value={pLogoText}
+                        onChange={e => setPLogoText(e.target.value.toUpperCase())}
+                        placeholder="Например: 7F или ДК"
+                        className="w-full px-3 py-1.5 rounded-lg text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 font-bold uppercase"
+                      />
+                      {pLogoUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setPLogoUrl('')}
+                          className="text-[10px] text-rose-500 hover:underline cursor-pointer"
+                        >
+                          Удалить загруженный файл логотипа
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Submit Actions */}
+                <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-zinc-200 dark:border-zinc-800">
+                  <button
+                    type="button"
+                    onClick={() => setIsPartnerModalOpen(false)}
+                    className="px-4 py-2 rounded-full text-xs font-semibold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-all"
+                  >
+                    Отмена
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSavePartner}
+                    style={{ background: 'linear-gradient(135deg, var(--primary-grad-from) 0%, var(--primary-grad-to) 100%)' }}
+                    className="px-6 py-2 rounded-full text-xs font-semibold text-white shadow-md hover:opacity-95 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Check className="w-4 h-4" />
+                    <span>{editingPartner ? 'Сохранить изменения' : 'Добавить партнёра'}</span>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* CONFIRM DELETE PARTNER MODAL */}
+      <AnimatePresence>
+        {partnerToDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setPartnerToDelete(null)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="relative w-full max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-[28px] p-6 shadow-2xl space-y-4 z-10"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center shrink-0 border border-rose-500/20">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+                    Удалить партнёра?
+                  </h3>
+                  <p className="text-xs text-zinc-500">
+                    Карточка будет навсегда удалена из каталога
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed font-normal">
+                Вы действительно хотите удалить поставщика <strong className="text-zinc-900 dark:text-zinc-100 font-semibold">«{partnerToDelete.name}»</strong>?
+              </p>
+
+              <div className="flex items-center justify-end gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setPartnerToDelete(null)}
+                  className="px-4 py-2 rounded-full text-xs font-semibold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-all"
+                >
+                  Отмена
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmDeletePartner}
+                  className="px-5 py-2 rounded-full text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 shadow-md transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Удалить</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* CONFIRM RESET PARTNERS MODAL */}
+      <AnimatePresence>
+        {isResetPartnersConfirmOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsResetPartnersConfirmOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="relative w-full max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-[28px] p-6 shadow-2xl space-y-4 z-10"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0 border border-amber-500/20">
+                  <RotateCcw className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+                    Сбросить список партнёров?
+                  </h3>
+                  <p className="text-xs text-zinc-500">
+                    Восстановление начального каталога
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed font-normal">
+                Все созданные и отредактированные карточки партнёров будут сброшены к стандартному списку IQ Deco.
+              </p>
+
+              <div className="flex items-center justify-end gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsResetPartnersConfirmOpen(false)}
+                  className="px-4 py-2 rounded-full text-xs font-semibold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-all"
+                >
+                  Отмена
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmResetPartners}
+                  className="px-5 py-2 rounded-full text-xs font-semibold text-white bg-amber-600 hover:bg-amber-700 shadow-md transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Сбросить</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      
 
       {/* Floating Action Bar for Unsaved Changes inside Opened Category */}
       <AnimatePresence>

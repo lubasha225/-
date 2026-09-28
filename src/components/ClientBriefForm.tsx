@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Upload,
   Trash2,
@@ -11,7 +11,10 @@ import {
   Palette,
   Wallet,
   Sparkles,
-  Check
+  Check,
+  Pipette,
+  X,
+  RotateCcw
 } from 'lucide-react';
 
 interface ClientBriefFormProps {
@@ -20,20 +23,31 @@ interface ClientBriefFormProps {
   customColors: string[];
   handleAddCustomColor: (color: string) => void;
   handleRemoveCustomColor: (index: number) => void;
-  handleSelectPresetPalette: (colors: string[], name: string) => void;
+  handleClearCustomColors?: () => void;
+  handleGenerateHarmoniousPalette: () => void;
   referenceImages: string[];
   setReferenceImages: React.Dispatch<React.SetStateAction<string[]>>;
   handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   filledCount: number;
 }
 
-const PRESET_PALETTES = [
-  { name: 'Лавандовый закат', colors: ['#8C52D0', '#D8B4F8', '#F5E8C7', '#4A154B'] },
-  { name: 'Эвкалипт и золото', colors: ['#5F7161', '#D4AF37', '#EFEAD8', '#6D8B74'] },
-  { name: 'Пыльная роза', colors: ['#DDA7A5', '#F7ECE1', '#8C52D0', '#B5838D'] },
-  { name: 'Терракота и песок', colors: ['#C86D51', '#E0A96D', '#F4E0C8', '#4A2810'] },
-  { name: 'Изумруд и крем', colors: ['#1B4332', '#2D6A4F', '#D8F3DC', '#F8F9FA'] },
-  { name: 'Монохром и шампань', colors: ['#1E1E24', '#F4F1DE', '#E07A5F', '#81B29A'] },
+const QUICK_COLOR_SWATCHES = [
+  { name: 'Белый', hex: '#FFFFFF' },
+  { name: 'Шампань', hex: '#F7F4EE' },
+  { name: 'Айвори', hex: '#F2E8DC' },
+  { name: 'Пудровый', hex: '#F5DDD6' },
+  { name: 'Пыльная роза', hex: '#DCA7A6' },
+  { name: 'Марсала', hex: '#782839' },
+  { name: 'Лаванда', hex: '#8C52D0' },
+  { name: 'Слива', hex: '#582F89' },
+  { name: 'Шалфей', hex: '#8FA382' },
+  { name: 'Эвкалипт', hex: '#5B7065' },
+  { name: 'Изумруд', hex: '#1C4938' },
+  { name: 'Олива', hex: '#7A843B' },
+  { name: 'Небесный', hex: '#7CA1C2' },
+  { name: 'Терракота', hex: '#C86D51' },
+  { name: 'Золото', hex: '#D4AF37' },
+  { name: 'Графит', hex: '#2A2B2A' },
 ];
 
 export const ClientBriefForm: React.FC<ClientBriefFormProps> = ({
@@ -42,14 +56,35 @@ export const ClientBriefForm: React.FC<ClientBriefFormProps> = ({
   customColors,
   handleAddCustomColor,
   handleRemoveCustomColor,
-  handleSelectPresetPalette,
+  handleClearCustomColors,
+  handleGenerateHarmoniousPalette,
   referenceImages,
   setReferenceImages,
   handleImageUpload,
   filledCount,
 }) => {
-  const [showPalettePresets, setShowPalettePresets] = useState(false);
+  const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
+  const [tempColor, setTempColor] = useState('#8C52D0');
+  const colorPickerRef = useRef<HTMLDivElement>(null);
 
+  // Close popover when clicking outside or pressing Escape
+  useEffect(() => {
+    if (!isColorPickerOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (colorPickerRef.current && !colorPickerRef.current.contains(e.target as Node)) {
+        setIsColorPickerOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsColorPickerOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isColorPickerOpen]);
   return (
     <div className="space-y-3 sm:space-y-4">
       {/* 14 QUESTIONS GRID */}
@@ -250,73 +285,171 @@ export const ClientBriefForm: React.FC<ClientBriefFormProps> = ({
         </div>
 
         {/* 11. ПАЛИТРА ОФОРМЛЕНИЯ */}
-        <div className="p-3.5 rounded-2xl border border-zinc-200/70 dark:border-zinc-800/70 border-l-[3px] border-l-[var(--primary-accent)] bg-white/70 dark:bg-zinc-900/60 backdrop-blur-md shadow-2xs flex flex-col justify-between hover:border-[var(--primary-accent)]/50 transition-all">
+        <div className={`p-3.5 rounded-2xl border border-zinc-200/70 dark:border-zinc-800/70 border-l-[3px] border-l-[var(--primary-accent)] bg-white/70 dark:bg-zinc-900/60 backdrop-blur-md shadow-2xs flex flex-col justify-between hover:border-[var(--primary-accent)]/50 transition-all ${isColorPickerOpen ? 'relative z-40' : 'relative z-0'}`}>
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 uppercase tracking-normal block">
                 11. ПАЛИТРА ОФОРМЛЕНИЯ
               </label>
-              <button
-                type="button"
-                onClick={() => setShowPalettePresets(prev => !prev)}
-                className="text-[9px] font-medium text-[var(--primary-accent)] hover:underline cursor-pointer"
-              >
-                {showPalettePresets ? 'Скрыть гаммы' : 'Готовые гаммы'}
-              </button>
+              {customColors.length > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[9px] text-zinc-500 dark:text-zinc-400">
+                    {customColors.length} {customColors.length === 1 ? 'оттенок' : customColors.length < 5 ? 'оттенка' : 'оттенков'}
+                  </span>
+                  {handleClearCustomColors && (
+                    <button
+                      type="button"
+                      onClick={handleClearCustomColors}
+                      className="text-[9px] text-zinc-400 hover:text-red-500 transition-colors cursor-pointer"
+                      title="Очистить все выбранные оттенки"
+                    >
+                      Очистить
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Color swatches with add button */}
-            <div className="flex items-center gap-1.5 flex-wrap min-h-[32px] p-1 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/60 dark:border-zinc-700/60">
-              {customColors.map((hex, idx) => (
-                <div
-                  key={idx}
-                  className="group relative w-6 h-6 rounded-full border border-black/10 dark:border-white/20 shadow-2xs flex items-center justify-center shrink-0 cursor-pointer"
-                  style={{ backgroundColor: hex }}
-                  title={`Цвет: ${hex}. Нажмите, чтобы удалить`}
-                  onClick={() => handleRemoveCustomColor(idx)}
-                >
-                  <Trash2 className="w-2.5 h-2.5 text-white drop-shadow opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
-              ))}
+            <div className="relative">
+              <div className="flex items-center gap-1.5 flex-wrap min-h-[36px] p-1.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/60 dark:border-zinc-700/60">
+                {customColors.map((hex, idx) => (
+                  <div
+                    key={idx}
+                    className="group relative w-6 h-6 sm:w-6.5 sm:h-6.5 rounded-full border border-black/10 dark:border-white/20 shadow-2xs flex items-center justify-center shrink-0 cursor-pointer hover:scale-105 transition-transform"
+                    style={{ backgroundColor: hex }}
+                    title={`Цвет: ${hex}. Нажмите, чтобы удалить`}
+                    onClick={() => handleRemoveCustomColor(idx)}
+                  >
+                    <Trash2 className="w-2.5 h-2.5 text-white drop-shadow opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                ))}
 
-              {/* Add color button */}
-              <label className="w-6 h-6 rounded-full border-2 border-dashed border-zinc-300 dark:border-zinc-600 hover:border-[var(--primary-accent)] flex items-center justify-center text-zinc-500 hover:text-[var(--primary-accent)] transition-all cursor-pointer shrink-0">
-                <Plus className="w-3 h-3" />
-                <input
-                  type="color"
-                  className="sr-only"
-                  onChange={(e) => handleAddCustomColor(e.target.value)}
-                />
-              </label>
+                {/* Add color button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTempColor('#8C52D0');
+                    setIsColorPickerOpen(prev => !prev);
+                  }}
+                  className="w-6 h-6 sm:w-6.5 sm:h-6.5 rounded-full border-2 border-dashed border-zinc-300 dark:border-zinc-600 hover:border-[var(--primary-accent)] flex items-center justify-center text-zinc-500 hover:text-[var(--primary-accent)] transition-all cursor-pointer shrink-0"
+                  title="Добавить оттенок (открыть выбор цвета)"
+                >
+                  <Plus className="w-3 h-3" />
+                </button>
+              </div>
+
+              {/* Popover: Выбор цвета */}
+              {isColorPickerOpen && (
+                <div
+                  ref={colorPickerRef}
+                  className="absolute left-0 top-full mt-2 z-50 w-72 max-w-[calc(100vw-48px)] p-3.5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-700/90 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
+                >
+                  <div className="flex items-center justify-between pb-2 border-b border-zinc-100 dark:border-zinc-800">
+                    <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                      Добавить цвет
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsColorPickerOpen(false)}
+                      className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded-lg transition-colors cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {/* Picker row with OK button */}
+                  <div className="pt-2.5 space-y-2">
+                    <div className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                      Выберите оттенок и нажмите «ОК»:
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {/* Swatch preview */}
+                      <div
+                        className="w-8 h-8 rounded-xl border border-black/10 dark:border-white/20 shadow-xs shrink-0 transition-colors"
+                        style={{ backgroundColor: tempColor }}
+                      />
+
+                      {/* Native color picker launcher */}
+                      <label className="relative flex-1 flex items-center justify-between px-2.5 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:border-[var(--primary-accent)] bg-zinc-50 dark:bg-zinc-800/80 cursor-pointer text-xs font-medium text-zinc-700 dark:text-zinc-200 transition-all">
+                        <div className="flex items-center gap-1.5">
+                          <Pipette className="w-3.5 h-3.5 text-zinc-400" />
+                          <span className="font-mono text-[11px] uppercase font-semibold text-zinc-800 dark:text-zinc-200">
+                            {tempColor}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-[var(--primary-accent)] font-semibold">
+                          Палитра
+                        </span>
+                        <input
+                          type="color"
+                          value={tempColor}
+                          onChange={(e) => setTempColor(e.target.value)}
+                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                        />
+                      </label>
+
+                      {/* OK Button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleAddCustomColor(tempColor);
+                          setIsColorPickerOpen(false);
+                        }}
+                        className="btn-primary px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 shrink-0 cursor-pointer shadow-xs active:scale-95"
+                        title="Подтвердить и добавить этот цвет"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        <span>ОК</span>
+                      </button>
+                    </div>
+
+                    {/* Quick swatches */}
+                    <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                      <div className="text-[10px] text-zinc-500 dark:text-zinc-400 mb-1.5">
+                        Или щёлкните готовый оттенок:
+                      </div>
+                      <div className="grid grid-cols-8 gap-1.5">
+                        {QUICK_COLOR_SWATCHES.map((swatch) => (
+                          <button
+                            key={swatch.hex}
+                            type="button"
+                            onClick={() => {
+                              handleAddCustomColor(swatch.hex);
+                              setIsColorPickerOpen(false);
+                            }}
+                            className="w-6 h-6 rounded-full border border-black/10 dark:border-white/20 shadow-2xs hover:scale-115 active:scale-95 transition-transform cursor-pointer shrink-0"
+                            style={{ backgroundColor: swatch.hex }}
+                            title={`${swatch.name} (${swatch.hex})`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Presets dropdown */}
-            {showPalettePresets && (
-              <div className="mt-2 space-y-1 pt-1.5 border-t border-zinc-200/60 dark:border-zinc-700/60 max-h-36 overflow-y-auto">
-                {PRESET_PALETTES.map((preset) => (
-                  <button
-                    key={preset.name}
-                    type="button"
-                    onClick={() => {
-                      handleSelectPresetPalette(preset.colors, preset.name);
-                      setShowPalettePresets(false);
-                    }}
-                    className="w-full flex items-center justify-between p-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-[10px] text-zinc-700 dark:text-zinc-300 cursor-pointer transition-colors"
-                  >
-                    <span className="truncate pr-1">{preset.name}</span>
-                    <div className="flex -space-x-1 shrink-0">
-                      {preset.colors.map((c, ci) => (
-                        <span
-                          key={ci}
-                          className="w-3.5 h-3.5 rounded-full border border-white dark:border-zinc-900 shadow-2xs"
-                          style={{ backgroundColor: c }}
-                        />
-                      ))}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
+            {/* Button: Создать гамму на основе выбранных цветов */}
+            <button
+              type="button"
+              disabled={customColors.length === 0}
+              onClick={handleGenerateHarmoniousPalette}
+              className={`w-full mt-2 py-1.5 px-2.5 rounded-xl text-[10px] sm:text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                customColors.length > 0
+                  ? 'bg-[var(--lavenderSoft)] text-[var(--primary-accent)] dark:text-[var(--lavenderAccent)] hover:opacity-90 border border-[var(--primary-accent)]/30 shadow-2xs active:scale-[0.98]'
+                  : 'bg-zinc-100 dark:bg-zinc-800/60 text-zinc-400 dark:text-zinc-500 border border-zinc-200/50 dark:border-zinc-700/50 cursor-not-allowed opacity-50'
+              }`}
+              title={
+                customColors.length > 0
+                  ? 'Сформировать красивую гармоничную гамму на основе выбранных цветов'
+                  : 'Сначала выберите хотя бы один цвет через «+»'
+              }
+            >
+              <Sparkles className="w-3 h-3 shrink-0" />
+              <span>Создать гамму на основе выбранных цветов</span>
+            </button>
           </div>
         </div>
 

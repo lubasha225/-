@@ -48,7 +48,8 @@ import {
   ShieldCheck,
   Scissors,
   UploadCloud,
-  ClipboardList
+  ClipboardList,
+  Handshake
 } from 'lucide-react';
 
 import { Project, WarehouseItem, Task, DocumentItem, ImageItem, ProjectStatus, EstimateItem } from './types';
@@ -58,21 +59,20 @@ import { initialProjects, initialWarehouseItems, initialTasks, initialDocuments,
 import Toast from './components/Toast';
 import DeleteConfirmModal from './components/DeleteConfirmModal';
 import NewProjectModal from './components/NewProjectModal';
-import ProjectDetailModal from './components/ProjectDetailModal';
-import TestProjectCardPage from './components/TestProjectCardPage';
 import MoodboardEditor from './components/MoodboardEditor';
 import WarehouseTab from './components/WarehouseTab';
 import ImagesTab from './components/ImagesTab';
 import DocumentsTab from './components/DocumentsTab';
 import ProfileTab from './components/ProfileTab';
 import SettingsTab from './components/SettingsTab';
-import BlankTestPage from './components/BlankTestPage';
+import ProjectCardPage from './components/ProjectCardPage';
 import StatisticsTab from './components/StatisticsTab';
 import SidebarStatisticsWidget from './components/SidebarStatisticsWidget';
 import DetailedCalendarTab from './components/DetailedCalendarTab';
 import AdminCabinetTab from './components/AdminCabinetTab';
 import RemoveBackgroundTab, { CutoutScissorsIcon } from './components/RemoveBackgroundTab';
 import ClientBriefTab from './components/ClientBriefTab';
+import PartnersTab from './components/PartnersTab';
 
 export default function App() {
   // Theme state
@@ -96,7 +96,7 @@ export default function App() {
   });
 
   // Main active tab state
-  const [activeTab, setActiveTab] = useState<'projects' | 'projectCard' | 'testCard' | 'testPage' | 'warehouse' | 'images' | 'removeBackground' | 'documents' | 'profile' | 'moodboard' | 'calendar' | 'statistics' | 'settings' | 'admin' | 'clientBrief'>(() => {
+  const [activeTab, setActiveTab] = useState<'projects' | 'projectCard' | 'warehouse' | 'images' | 'removeBackground' | 'partners' | 'documents' | 'profile' | 'moodboard' | 'calendar' | 'statistics' | 'settings' | 'admin' | 'clientBrief'>(() => {
     if (typeof window !== 'undefined' && window.location.pathname.startsWith('/brief')) {
       return 'clientBrief';
     }
@@ -960,6 +960,7 @@ export default function App() {
                   { value: 'statistics', label: 'Статистика', icon: <TrendingUp className="w-4 h-4" /> },
                   { value: 'warehouse', label: 'Склад', icon: <Warehouse className="w-4 h-4" /> },
                   { value: 'images', label: 'Изображения', icon: <ImageIcon className="w-4 h-4" /> },
+                  { value: 'partners', label: 'Партнёры', icon: <Handshake className="w-4 h-4" /> },
                   { value: 'documents', label: 'Документы', icon: <FileText className="w-4 h-4" /> },
                   { value: 'profile', label: 'Профиль бренда', icon: <User className="w-4 h-4" /> },
                   { value: 'admin', label: 'Кабинет админа', icon: <ShieldCheck className="w-4 h-4" /> },
@@ -1352,6 +1353,7 @@ export default function App() {
             { key: 'removeBackground', label: 'Удаление фона', icon: <CutoutScissorsIcon className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'warehouse', label: 'Склад', icon: <Warehouse className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'images', label: 'Изображения', icon: <ImageIcon className="w-[17px] h-[17px] shrink-0" /> },
+            { key: 'partners', label: 'Партнёры', icon: <Handshake className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'documents', label: 'Документы', icon: <FileText className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'profile', label: 'Профиль бренда', icon: <User className="w-[17px] h-[17px] shrink-0" /> },
             { key: 'admin', label: 'Кабинет админа', icon: <ShieldCheck className="w-[17px] h-[17px] shrink-0" /> },
@@ -1499,7 +1501,7 @@ export default function App() {
               {/* Top Row: Title on Left, Notifications + Calendar + Hamburger Menu on Right */}
               <div className="flex items-center justify-between gap-3 w-full">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  {(selectedProject || activeTab === 'testPage') && (
+                  {selectedProject && (
                     <button
                       onClick={() => {
                         setSelectedProject(null);
@@ -1573,6 +1575,14 @@ export default function App() {
                         <span>Удаление фона</span>
                       </>
                     )}
+                    {activeTab === 'partners' && (
+                      <>
+                        <span className="p-1.5 sm:p-2 bg-[var(--lavenderSoft)] rounded-xl shrink-0 inline-flex items-center justify-center">
+                          <Handshake className="w-5 h-5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
+                        </span>
+                        <span>Партнёры</span>
+                      </>
+                    )}
                     {activeTab === 'documents' && (
                       <>
                         <span className="p-1.5 sm:p-2 bg-[var(--lavenderSoft)] rounded-xl shrink-0 inline-flex items-center justify-center">
@@ -1603,14 +1613,6 @@ export default function App() {
                           <Palette className="w-5 h-5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
                         </span>
                         <span>Настройки</span>
-                      </>
-                    )}
-                    {activeTab === 'testPage' && (
-                      <>
-                        <span className="p-1.5 sm:p-2 bg-[var(--lavenderSoft)] rounded-xl shrink-0 inline-flex items-center justify-center">
-                          <FlaskConical className="w-5 h-5 text-[var(--lavDeep)] dark:text-[var(--lavenderAccent)]" />
-                        </span>
-                        <span>{selectedProject ? selectedProject.name : 'Тестовая страница'}</span>
                       </>
                     )}
                   </h1>
@@ -1661,7 +1663,7 @@ export default function App() {
               </div>
 
               {/* Subtitle / Description & Mobile Primary Action Buttons */}
-              {activeTab !== 'projectCard' && activeTab !== 'testPage' && (
+              {activeTab !== 'projectCard' && (
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <p className={`text-[var(--soft)] text-xs sm:text-sm font-normal leading-tight sm:leading-relaxed ${
                     activeTab === 'removeBackground' ? 'hidden sm:block' : ''
@@ -1673,6 +1675,7 @@ export default function App() {
                     {activeTab === 'warehouse' && 'Каталог вашего декора, флористики и оборудования. Учет остатков и задействованных в проектах позиций.'}
                     {activeTab === 'images' && 'Ваша галерея загруженных референсов, сгенерированных ИИ фонов, элементов флористики и декора для оформления.'}
                     {activeTab === 'removeBackground' && 'Интеллектуальное вырезание объектов декора и очистка фона.'}
+                    {activeTab === 'partners' && 'Скидки поставщиков для декораторов с активной подпиской IQ Deco.'}
                     {activeTab === 'documents' && 'Реквизиты, на кого оформляется договор, шаблоны договора и акта. Только автоматическая генерация и печать, оплата не принимается в сервисе.'}
                     {activeTab === 'profile' && 'Настройки реквизитов и контактов студии для формирования коммерческих предложений.'}
                     {activeTab === 'admin' && 'Управление библиотекой декора, иконками инструментов, категориями и логотипом приложения.'}
@@ -2432,54 +2435,12 @@ export default function App() {
                   transition={{ duration: 0.3 }}
                   className="space-y-6"
                 >
-                  <BlankTestPage
+                  <ProjectCardPage
                     project={selectedProject || projects[0]}
                     onClose={() => {
                       setSelectedProject(null);
                       setActiveTab('projects');
                     }}
-                    onUpdateProject={handleUpdateProject}
-                    showToast={showToast}
-                    onOpenEditor={() => setActiveTab('moodboard')}
-                  />
-                </motion.div>
-              )}
-
-              {/* TEST PROJECT CARD TAB */}
-              {activeTab === 'testCard' && (
-                <motion.div
-                  key="test-card-tab"
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -15 }}
-                  transition={{ duration: 0.3 }}
-                  className="space-y-6"
-                >
-                  <BlankTestPage
-                    project={selectedProject || projects[0]}
-                    onClose={() => {
-                      setSelectedProject(null);
-                      setActiveTab('projects');
-                    }}
-                    onUpdateProject={handleUpdateProject}
-                    showToast={showToast}
-                    onOpenEditor={() => setActiveTab('moodboard')}
-                  />
-                </motion.div>
-              )}
-
-              {/* BLANK TEST PAGE TAB */}
-              {activeTab === 'testPage' && (
-                <motion.div
-                  key="blank-test-page-tab"
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -15 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <BlankTestPage
-                    project={selectedProject || projects[0]}
-                    onClose={() => setActiveTab('projects')}
                     onUpdateProject={handleUpdateProject}
                     showToast={showToast}
                     onOpenEditor={() => setActiveTab('moodboard')}
@@ -2604,6 +2565,22 @@ export default function App() {
                     onAddWarehouseItem={handleAddWarehouseItem}
                     onOpenMoodboard={() => setActiveTab('moodboard')}
                     showToast={showToast}
+                  />
+                </motion.div>
+              )}
+
+              {/* PARTNERS COUPONS TAB */}
+              {activeTab === 'partners' && (
+                <motion.div
+                  key="partners-tab"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <PartnersTab
+                    showToast={showToast}
+                    userTariff="Расширенный"
                   />
                 </motion.div>
               )}

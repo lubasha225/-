@@ -1,6 +1,6 @@
 import React, { useState, useRef, useLayoutEffect, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { BriefBlock, DesignBlock, CalcBlock, JournalBlock, DocsBlock } from './BlankTestTabBlocks';
+import { BriefBlock, DesignBlock, CalcBlock, JournalBlock, DocsBlock } from './ProjectCardTabBlocks';
 import { Project } from '../types';
 import { 
   Sparkles, 
@@ -50,7 +50,7 @@ import {
   Hand
 } from 'lucide-react';
 
-interface BlankTestPageProps {
+interface ProjectCardPageProps {
   project?: Project;
   onClose?: () => void;
   onUpdateProject?: (updatedProject: Project) => void;
@@ -89,7 +89,7 @@ const baseBriefFieldDefinitions: { key: string; filledBy: 'client' | 'designer';
   { key: "КОНСТРУКЦИИ ДЕКОРА", filledBy: 'designer', multiline: true },
 ];
 
-export default function BlankTestPage({ project, onClose, onUpdateProject, showToast, onOpenEditor }: BlankTestPageProps) {
+export default function ProjectCardPage({ project, onClose, onUpdateProject, showToast, onOpenEditor }: ProjectCardPageProps) {
   // Helper functions for formatting date and budget
   const formatProjectDate = (dateStr?: any) => {
     if (!dateStr) return '';
@@ -1185,7 +1185,7 @@ export default function BlankTestPage({ project, onClose, onUpdateProject, showT
           {/* SHARE / SEND TO CLIENT BUTTON */}
           <button
             onClick={() => {
-              const briefUrl = `${window.location.origin}/brief/test-project`;
+              const briefUrl = `${window.location.origin}/brief/${project?.id || 'project'}`;
               navigator.clipboard.writeText(briefUrl);
               showToast?.('Ссылка скопирована', `Ссылка для клиента скопирована в буфер обмена: ${briefUrl}`, 'success');
             }}

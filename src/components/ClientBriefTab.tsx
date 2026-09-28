@@ -21,7 +21,6 @@ import {
   Trash2,
   Upload,
   Image as ImageIcon,
-  MessageCircle,
   Clock,
   Send,
   Building,
@@ -51,16 +50,6 @@ interface ClientBriefTabProps {
   onOpenProjectCard?: (proj: Project) => void;
   initialClientPreview?: boolean;
 }
-
-// Preset color palettes for decorators & brides
-const PRESET_PALETTES = [
-  { name: 'Пудра & Шалфей', colors: ['#E8D5CE', '#D2C2B8', '#B7C4B0', '#F9F6F0'] },
-  { name: 'Лаванда & Шампань', colors: ['#D6C7E8', '#9B72CF', '#F7E7CE', '#FFFFFF'] },
-  { name: 'Золото & Изумруд', colors: ['#D4AF37', '#1B4D3E', '#F5F5DC', '#2E2D2F'] },
-  { name: 'Пыльная роза & Марсала', colors: ['#C5828C', '#6E2639', '#F4EBE8', '#D6B4BC'] },
-  { name: 'Бохо & Терракота', colors: ['#C86D51', '#E3A857', '#DFD3C3', '#685D55'] },
-  { name: 'Монохром & Эвкалипт', colors: ['#FFFFFF', '#EAEAEA', '#586A5E', '#1F2421'] },
-];
 
 // Quick suggestions
 const EVENT_TYPES = [
@@ -238,7 +227,100 @@ export default function ClientBriefTab({
     'Столы гостей (композиции, текстиль)'
   ]);
   const [referenceImages, setReferenceImages] = useState<string[]>(() => currentProject?.photos || []);
-  const [showPalettePresets, setShowPalettePresets] = useState<boolean>(false);
+
+  // Generate harmonious decorator palette based on client-selected colors
+  const generateHarmoniousPalette = (baseColors: string[]): string[] => {
+    if (!baseColors || baseColors.length === 0) return [];
+
+    const normalize = (hex: string) => {
+      let clean = hex.trim();
+      if (!clean.startsWith('#')) clean = '#' + clean;
+      return clean.toUpperCase();
+    };
+
+    const selected = Array.from(new Set(baseColors.map(normalize)));
+    if (selected.length >= 5) {
+      return selected.slice(0, 6);
+    }
+
+    const hexToHsl = (hex: string): [number, number, number] => {
+      let c = hex.replace('#', '');
+      if (c.length === 3) c = c.split('').map(x => x + x).join('');
+      const r = parseInt(c.substring(0, 2), 16) / 255;
+      const g = parseInt(c.substring(2, 4), 16) / 255;
+      const b = parseInt(c.substring(4, 6), 16) / 255;
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      let h = 0, s = 0, l = (max + min) / 2;
+      if (max !== min) {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+          case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+          case g: h = ((b - r) / d + 2) / 6; break;
+          case b: h = ((r - g) / d + 4) / 6; break;
+        }
+      }
+      return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+    };
+
+    const hslToHex = (h: number, s: number, l: number): string => {
+      h = ((h % 360) + 360) % 360;
+      s = Math.max(0, Math.min(100, s)) / 100;
+      l = Math.max(0, Math.min(100, l)) / 100;
+      const c = (1 - Math.abs(2 * l - 1)) * s;
+      const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+      const m = l - c / 2;
+      let r = 0, g = 0, b = 0;
+      if (h < 60) { r = c; g = x; }
+      else if (h < 120) { r = x; g = c; }
+      else if (h < 180) { g = c; b = x; }
+      else if (h < 240) { g = x; b = c; }
+      else if (h < 300) { r = x; b = c; }
+      else { r = c; b = x; }
+      const toHex = (n: number) => {
+        const hex = Math.round((n + m) * 255).toString(16);
+        return hex.length === 1 ? '0' + hex : hex;
+      };
+      return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
+    };
+
+    const result: string[] = [...selected];
+
+    if (selected.length === 1) {
+      const [h, s, l] = hexToHsl(selected[0]);
+      result.push(hslToHex(h, Math.max(18, Math.round(s * 0.5)), Math.min(93, Math.max(82, l + 25))));
+      result.push(hslToHex((h + 35) % 360, 16, 96));
+      result.push(hslToHex(h, Math.min(85, Math.round(s * 1.15)), Math.max(18, Math.min(32, l - 25))));
+      result.push(hslToHex((h + 150) % 360, Math.min(60, Math.max(25, s * 0.7)), 78));
+    } else if (selected.length === 2) {
+      const [h1, s1, l1] = hexToHsl(selected[0]);
+      const [h2, s2, l2] = hexToHsl(selected[1]);
+      result.push(hslToHex(Math.round((h1 + h2) / 2), 15, 96));
+      result.push(hslToHex(Math.round((h1 + h2) / 2), Math.round((s1 + s2) / 2 * 0.8), Math.min(90, Math.max(70, (l1 + l2) / 2 + 10))));
+      result.push(hslToHex(h1, Math.min(80, Math.max(30, s1)), 26));
+    } else if (selected.length === 3) {
+      const [h1, s1] = hexToHsl(selected[0]);
+      result.push(hslToHex(h1, 14, 96));
+      result.push(hslToHex(h1, Math.min(75, s1), 24));
+    } else if (selected.length === 4) {
+      const [h1] = hexToHsl(selected[0]);
+      result.push(hslToHex(h1, 12, 97));
+    }
+
+    return Array.from(new Set(result));
+  };
+
+  // Generate harmonious palette handler
+  const handleGenerateHarmoniousPalette = () => {
+    if (customColors.length === 0) {
+      showToast('Выберите цвета', 'Сначала добавьте хотя бы один цвет через «+».', 'info');
+      return;
+    }
+    const balanced = generateHarmoniousPalette(customColors);
+    setCustomColors(balanced);
+    handleFieldChange("ПАЛИТРА ОФОРМЛЕНИЯ", balanced.join(', '));
+    showToast('Гамма создана', 'Сформирована гармоничная палитра на основе выбранных цветов.', 'success');
+  };
 
   // Load project's brief on project change
   useEffect(() => {
@@ -249,10 +331,11 @@ export default function ClientBriefTab({
 
     // Parse colors
     if (currentProject.brief?.colors && currentProject.brief.colors.length > 0 && currentProject.brief.colors[0] !== '#FFFFFF') {
-      setCustomColors(currentProject.brief.colors);
+      const colors = currentProject.brief.colors.map(c => c.toUpperCase());
+      setCustomColors(Array.from(new Set(colors)));
     } else if (data["ПАЛИТРА ОФОРМЛЕНИЯ"]) {
-      const parsed = data["ПАЛИТРА ОФОРМЛЕНИЯ"].split(',').map(s => s.trim()).filter(s => s.startsWith('#'));
-      setCustomColors(parsed.length > 0 ? parsed : ['#F6EEFF', '#E2D4F0', '#C08EF4', '#FFFFFF']);
+      const parsed = data["ПАЛИТРА ОФОРМЛЕНИЯ"].split(',').map(s => s.trim().toUpperCase()).filter(s => s.startsWith('#'));
+      setCustomColors(parsed.length > 0 ? Array.from(new Set(parsed)) : ['#F6EEFF', '#E2D4F0', '#C08EF4', '#FFFFFF']);
     } else {
       setCustomColors(['#E8D5CE', '#B7C4B0', '#F9F6F0']);
     }
@@ -283,17 +366,12 @@ export default function ClientBriefTab({
     });
   };
 
-  // Quick preset palette apply
-  const handleSelectPresetPalette = (colors: string[], name: string) => {
-    setCustomColors(colors);
-    handleFieldChange("ПАЛИТРА ОФОРМЛЕНИЯ", colors.join(', '));
-    showToast('Палитра выбрана', `Применена цветовая гамма «${name}».`, 'info');
-  };
-
   // Add custom hex color
   const handleAddCustomColor = (colorHex: string) => {
-    if (customColors.includes(colorHex)) return;
-    const next = [...customColors, colorHex];
+    let clean = colorHex.trim().toUpperCase();
+    if (!clean.startsWith('#')) clean = '#' + clean;
+    if (customColors.map(c => c.toUpperCase()).includes(clean)) return;
+    const next = [...customColors, clean];
     setCustomColors(next);
     handleFieldChange("ПАЛИТРА ОФОРМЛЕНИЯ", next.join(', '));
   };
@@ -303,6 +381,13 @@ export default function ClientBriefTab({
     const next = customColors.filter((_, i) => i !== index);
     setCustomColors(next);
     handleFieldChange("ПАЛИТРА ОФОРМЛЕНИЯ", next.join(', '));
+  };
+
+  // Clear all custom colors
+  const handleClearCustomColors = () => {
+    setCustomColors([]);
+    handleFieldChange("ПАЛИТРА ОФОРМЛЕНИЯ", "");
+    showToast('Палитра очищена', 'Все выбранные оттенки удалены.', 'info');
   };
 
   // Upload reference image via file reader
@@ -421,14 +506,6 @@ export default function ClientBriefTab({
       navigator.clipboard.writeText(clientBriefUrl);
       showToast('Ссылка скопирована', 'Персональная ссылка на бриф скопирована в буфер обмена.', 'success');
     }
-  };
-
-  // WhatsApp share
-  const handleShareWhatsApp = () => {
-    const text = encodeURIComponent(
-      `Здравствуйте! Пожалуйста, заполните бриф на оформление мероприятия «${formData["СОБЫТИЕ"] || currentProject?.name || 'Праздник'}»: ${clientBriefUrl}`
-    );
-    window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
   if (!currentProject) {
@@ -574,17 +651,6 @@ export default function ClientBriefTab({
               <Copy className="w-3 h-3" />
               <span className="hidden sm:inline">Ссылка</span>
             </button>
-
-            {/* WhatsApp share */}
-            <button
-              type="button"
-              onClick={handleShareWhatsApp}
-              className="rounded-full px-2.5 py-1 text-[11px] font-semibold border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 bg-emerald-50/70 dark:bg-emerald-950/50 hover:bg-emerald-100/70 transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
-              title="Отправить бриф в WhatsApp"
-            >
-              <MessageCircle className="w-3 h-3" />
-              <span>WhatsApp</span>
-            </button>
           </div>
         </div>
       )}
@@ -702,7 +768,8 @@ export default function ClientBriefTab({
           customColors={customColors}
           handleAddCustomColor={handleAddCustomColor}
           handleRemoveCustomColor={handleRemoveCustomColor}
-          handleSelectPresetPalette={handleSelectPresetPalette}
+          handleClearCustomColors={handleClearCustomColors}
+          handleGenerateHarmoniousPalette={handleGenerateHarmoniousPalette}
           referenceImages={referenceImages}
           setReferenceImages={setReferenceImages}
           handleImageUpload={handleImageUpload}
