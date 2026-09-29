@@ -48,6 +48,17 @@ import {
 } from 'lucide-react';
 import { Partner, getStoredPartners, saveStoredPartners, INITIAL_PARTNERS_DATA } from '../lib/partnersData';
 
+export const DISCOUNT_BADGE_PRESETS = [
+  { id: 'purple-indigo', name: 'Фиолетовый индиго', gradient: 'from-purple-600 to-indigo-600' },
+  { id: 'emerald-teal', name: 'Изумрудный мятный', gradient: 'from-emerald-500 to-teal-600' },
+  { id: 'rose-pink', name: 'Малиновый закат', gradient: 'from-rose-500 to-pink-600' },
+  { id: 'amber-orange', name: 'Золотистый янтарь', gradient: 'from-amber-500 to-orange-600' },
+  { id: 'cyan-blue', name: 'Морская лазурь', gradient: 'from-cyan-500 to-blue-600' },
+  { id: 'violet-fuchsia', name: 'Пурпурная фуксия', gradient: 'from-violet-500 to-fuchsia-600' },
+  { id: 'ruby-red', name: 'Рубиновый огонь', gradient: 'from-red-500 to-rose-600' },
+  { id: 'dark-graphite', name: 'Тёмный графит', gradient: 'from-zinc-700 to-zinc-900' }
+];
+
 interface ToolIconItem {
   id: string;
   toolName: string;
@@ -336,6 +347,10 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
   const [pPromoCode, setPPromoCode] = useState('');
   const [pWebsite, setPWebsite] = useState('');
   const [pTelegram, setPTelegram] = useState('');
+  const [pMax, setPMax] = useState('');
+  const [pWildberries, setPWildberries] = useState('');
+  const [pOzon, setPOzon] = useState('');
+  const [pYandexMarket, setPYandexMarket] = useState('');
   const [pCity, setPCity] = useState('Москва + РФ');
   const [pValidUntil, setPValidUntil] = useState('Бессрочно для подписчиков');
   const [pShortDesc, setPShortDesc] = useState('');
@@ -375,9 +390,23 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
     };
   }, []);
 
-  // Compress image before base64 stringification to ensure it never exceeds browser localStorage quota
-  const compressImageFile = (file: File, maxWidth: number, maxHeight: number, quality = 0.82): Promise<string> => {
+  // Compress image before base64 stringification while preserving alpha channel for PNG/SVG
+  const compressImageFile = (
+    file: File, 
+    maxWidth: number, 
+    maxHeight: number, 
+    quality = 0.82,
+    preferFormat?: 'image/png' | 'image/jpeg'
+  ): Promise<string> => {
     return new Promise((resolve) => {
+      // If SVG file, keep intact
+      if (file.type === 'image/svg+xml' || file.name.toLowerCase().endsWith('.svg')) {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve((e.target?.result as string) || '');
+        reader.readAsDataURL(file);
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
@@ -398,8 +427,20 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           if (ctx) {
+            const isPng = file.type === 'image/png' || file.name.toLowerCase().endsWith('.png');
+            const format = preferFormat || (isPng ? 'image/png' : 'image/jpeg');
+
+            if (format === 'image/jpeg') {
+              // Fill clean white background so transparent parts don't turn black
+              ctx.fillStyle = '#FFFFFF';
+              ctx.fillRect(0, 0, width, height);
+            } else {
+              // Clear for pristine transparency
+              ctx.clearRect(0, 0, width, height);
+            }
+
             ctx.drawImage(img, 0, 0, width, height);
-            resolve(canvas.toDataURL('image/jpeg', quality));
+            resolve(canvas.toDataURL(format, quality));
           } else {
             resolve(result);
           }
@@ -411,11 +452,29 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
     });
   };
 
+  const uploadFileToServer = async (dataUrl: string, type: 'logo' | 'banner', filename?: string): Promise<string> => {
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dataUrl, type, filename })
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json?.url) return json.url;
+      }
+    } catch (e) {
+      console.warn('Server upload fallback to dataUrl:', e);
+    }
+    return dataUrl;
+  };
+
   const handleUploadPartnerBanner = async (file: File) => {
     try {
-      const compressed = await compressImageFile(file, 1000, 700, 0.82);
-      setPBannerImage(compressed);
-      showToast('Баннер загружен', 'Основное фото партнёра успешно оптимизировано и обновлено.', 'success');
+      const compressed = await compressImageFile(file, 1000, 700, 0.82, 'image/jpeg');
+      const savedUrl = await uploadFileToServer(compressed, 'banner', file.name || pName || 'banner');
+      setPBannerImage(savedUrl);
+      showToast('Баннер загружен', 'Основное фото партнёра успешно сохранено в проект.', 'success');
     } catch {
       showToast('Ошибка загрузки', 'Не удалось обработать изображение.', 'warn');
     }
@@ -423,12 +482,47 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
 
   const handleUploadPartnerLogo = async (file: File) => {
     try {
-      const compressed = await compressImageFile(file, 300, 300, 0.85);
-      setPLogoUrl(compressed);
-      showToast('Логотип загружен', 'Логотип партнёра успешно оптимизирован и обновлен.', 'success');
+      // Always preserve PNG transparency for logos to eliminate unwanted black background
+      const compressed = await compressImageFile(file, 400, 400, 0.9, 'image/png');
+      const savedUrl = await uploadFileToServer(compressed, 'logo', file.name || pName || 'logo');
+      setPLogoUrl(savedUrl);
+      showToast('Логотип загружен', 'Файл логотипа сохранён в проект с прозрачным фоном.', 'success');
     } catch {
       showToast('Ошибка загрузки', 'Не удалось обработать файл логотипа.', 'warn');
     }
+  };
+
+  // Convert black or dark background in current logo to transparent
+  const handleRemoveBlackBackgroundFromLogo = () => {
+    if (!pLogoUrl) return;
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.drawImage(img, 0, 0);
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imgData.data;
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        // If color is black or dark gray, convert to transparent
+        if (r < 45 && g < 45 && b < 45) {
+          data[i + 3] = 0;
+        }
+      }
+      ctx.putImageData(imgData, 0, 0);
+      const transparentDataUrl = canvas.toDataURL('image/png');
+      uploadFileToServer(transparentDataUrl, 'logo', `${pName || 'logo'}-clean`).then((savedUrl) => {
+        setPLogoUrl(savedUrl);
+      });
+      showToast('Фон удалён', 'Чёрный фон успешно удалён, файл сохранён в проект.', 'success');
+    };
+    img.src = pLogoUrl;
   };
 
   const handleOpenAddPartner = () => {
@@ -441,6 +535,10 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
     setPPromoCode(`IQDECO-${Math.random().toString(36).substring(2, 7).toUpperCase()}`);
     setPWebsite('https://');
     setPTelegram('');
+    setPMax('');
+    setPWildberries('');
+    setPOzon('');
+    setPYandexMarket('');
     setPCity('Москва + доставка СДЭК');
     setPValidUntil('Бессрочно для подписчиков');
     setPShortDesc('');
@@ -462,6 +560,10 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
     setPPromoCode(p.promoCode);
     setPWebsite(p.website);
     setPTelegram(p.telegram || '');
+    setPMax(p.max || '');
+    setPWildberries(p.wildberries || '');
+    setPOzon(p.ozon || '');
+    setPYandexMarket(p.yandexMarket || '');
     setPCity(p.city);
     setPValidUntil(p.validUntil);
     setPShortDesc(p.shortDesc);
@@ -500,6 +602,10 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
       promoCode: pPromoCode.trim().toUpperCase(),
       website: pWebsite.trim().startsWith('http') ? pWebsite.trim() : `https://${pWebsite.trim()}`,
       telegram: pTelegram.trim() ? (pTelegram.trim().startsWith('http') ? pTelegram.trim() : `https://t.me/${pTelegram.trim().replace('@', '')}`) : undefined,
+      max: pMax.trim() ? (pMax.trim().startsWith('http') ? pMax.trim() : `https://max.ru/${pMax.trim().replace('@', '')}`) : undefined,
+      wildberries: pWildberries.trim() ? (pWildberries.trim().startsWith('http') ? pWildberries.trim() : `https://${pWildberries.trim()}`) : undefined,
+      ozon: pOzon.trim() ? (pOzon.trim().startsWith('http') ? pOzon.trim() : `https://${pOzon.trim()}`) : undefined,
+      yandexMarket: pYandexMarket.trim() ? (pYandexMarket.trim().startsWith('http') ? pYandexMarket.trim() : `https://${pYandexMarket.trim()}`) : undefined,
       city: pCity.trim() || 'Москва + РФ',
       validUntil: pValidUntil.trim() || 'Бессрочно для подписчиков'
     };
@@ -1835,12 +1941,12 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
 
                       {/* Logo & Name on Banner */}
                       <div className="absolute bottom-2.5 left-3 right-3 flex items-center gap-2">
-                        <div className="w-10 h-10 rounded-xl bg-white dark:bg-zinc-900 shadow-md p-1 border border-white/40 flex items-center justify-center shrink-0 overflow-hidden">
+                        <div className="w-12 h-12 rounded-full bg-white dark:bg-zinc-900 shadow-md p-1 border border-white/40 flex items-center justify-center shrink-0 overflow-hidden">
                           {partner.logoUrl ? (
                             <img
                               src={partner.logoUrl}
                               alt={partner.name}
-                              className="w-full h-full object-contain"
+                              className="w-full h-full object-contain rounded-full"
                             />
                           ) : (
                             <span className="font-black text-xs text-[var(--primary-accent)]">
@@ -3077,14 +3183,14 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 block mb-1">
-                      РАЗМЕР СКИДКИ *
+                      РАЗМЕР СКИДКИ ИЛИ БОНУС (НАПРИМЕР: -15%, ПОДАРОК, 1+1, БЕСПЛАТНО) *
                     </label>
                     <input
                       type="text"
                       required
                       value={pDiscount}
                       onChange={e => setPDiscount(e.target.value)}
-                      placeholder="-15% или -20%"
+                      placeholder="-15%, -20%, Подарок, 1+1..."
                       className="w-full px-3.5 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40"
                     />
                   </div>
@@ -3100,6 +3206,56 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                       placeholder="НА ВСЕ КАРКАСЫ И АРКИ"
                       className="w-full px-3.5 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40"
                     />
+                  </div>
+                </div>
+
+                {/* 2.1 Gradient Palette Selector for Discount / Bonus Badge */}
+                <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
+                      ЦВЕТОВАЯ ПАЛИТРА КРУГА СКИДКИ
+                    </label>
+                    <span className="text-[10px] text-zinc-400">
+                      Нажмите на оттенок для применения
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    {DISCOUNT_BADGE_PRESETS.map((preset) => {
+                      const isSelected = pBadgeColor === preset.gradient;
+                      return (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => setPBadgeColor(preset.gradient)}
+                          title={preset.name}
+                          className={`relative group w-8 h-8 rounded-full bg-gradient-to-br ${preset.gradient} transition-all duration-200 cursor-pointer shadow-xs hover:scale-110 active:scale-95 flex items-center justify-center ${
+                            isSelected 
+                              ? 'ring-2 ring-offset-2 ring-zinc-900 dark:ring-zinc-100 ring-offset-white dark:ring-offset-zinc-900 scale-110 shadow-md' 
+                              : 'hover:ring-1 hover:ring-white/40 opacity-80 hover:opacity-100'
+                          }`}
+                        >
+                          {isSelected && (
+                            <Check className="w-4 h-4 text-white stroke-[3] drop-shadow-xs" />
+                          )}
+                        </button>
+                      );
+                    })}
+
+                    {/* Live Miniature Circular Preview */}
+                    <div className="ml-auto flex items-center gap-2 pl-2 border-l border-zinc-200 dark:border-zinc-700">
+                      <span className="text-[10px] text-zinc-400">Вид на карточке:</span>
+                      <div 
+                        className={`w-11 h-11 rounded-full text-white shadow-md bg-gradient-to-br ${pBadgeColor || 'from-purple-500 to-indigo-600'} border border-white/50 flex flex-col items-center justify-center p-0.5 text-center select-none shrink-0`}
+                      >
+                        <span className="font-black text-[9px] leading-tight uppercase truncate px-0.5">
+                          {pDiscount || '-15%'}
+                        </span>
+                        <span className="text-[6px] font-bold text-white/90 uppercase leading-none">
+                          {(pDiscount || '').includes('%') ? 'скидка' : 'бонус'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -3134,8 +3290,8 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                   </div>
                 </div>
 
-                {/* 4. Geography & Telegram & Validity */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* 4. Geography & Messengers (Telegram, MAX) & Validity */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 block mb-1">
                       ГОРОД / ГЕОГРАФИЯ
@@ -3151,19 +3307,6 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
 
                   <div>
                     <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 block mb-1">
-                      TELEGRAM (НЕОБЯЗАТЕЛЬНО)
-                    </label>
-                    <input
-                      type="text"
-                      value={pTelegram}
-                      onChange={e => setPTelegram(e.target.value)}
-                      placeholder="https://t.me/channel"
-                      className="w-full px-3.5 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 block mb-1">
                       СРОК ДЕЙСТВИЯ КУПОНА
                     </label>
                     <input
@@ -3173,6 +3316,89 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                       placeholder="Бессрочно для подписчиков"
                       className="w-full px-3.5 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40"
                     />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 block mb-1">
+                      TELEGRAM (НЕОБЯЗАТЕЛЬНО)
+                    </label>
+                    <input
+                      type="text"
+                      value={pTelegram}
+                      onChange={e => setPTelegram(e.target.value)}
+                      placeholder="https://t.me/channel или @логин"
+                      className="w-full px-3.5 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-normal text-zinc-600 dark:text-zinc-400 block mb-1">
+                      МЕССЕНДЖЕР MAX (НЕОБЯЗАТЕЛЬНО)
+                    </label>
+                    <input
+                      type="text"
+                      value={pMax}
+                      onChange={e => setPMax(e.target.value)}
+                      placeholder="https://max.ru/... или id"
+                      className="w-full px-3.5 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40"
+                    />
+                  </div>
+                </div>
+
+                {/* 5. Marketplaces (Wildberries, Ozon, Yandex Market) */}
+                <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
+                      Магазины на маркетплейсах (необязательно)
+                    </span>
+                    <span className="text-[10px] text-zinc-400">
+                      Кнопки отображаются на обороте карточки
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="text-[10px] font-medium text-zinc-600 dark:text-zinc-400 block mb-1 flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-[#CB11AB]" />
+                        <span>Wildberries</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={pWildberries}
+                        onChange={e => setPWildberries(e.target.value)}
+                        placeholder="https://wildberries.ru/..."
+                        className="w-full px-3 py-1.5 rounded-xl text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-medium text-zinc-600 dark:text-zinc-400 block mb-1 flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-[#005BFF]" />
+                        <span>Ozon</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={pOzon}
+                        onChange={e => setPOzon(e.target.value)}
+                        placeholder="https://ozon.ru/..."
+                        className="w-full px-3 py-1.5 rounded-xl text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-medium text-zinc-600 dark:text-zinc-400 block mb-1 flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-[#FC3F1D]" />
+                        <span>Яндекс.Маркет</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={pYandexMarket}
+                        onChange={e => setPYandexMarket(e.target.value)}
+                        placeholder="https://market.yandex.ru/..."
+                        className="w-full px-3 py-1.5 rounded-xl text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[var(--primary-accent)]/40"
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -3312,22 +3538,22 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                   </div>
 
                   <div className="flex items-center gap-4">
-                    {/* Logo Box Preview */}
-                    <div className="w-14 h-14 rounded-2xl bg-white dark:bg-zinc-900 shadow-md p-1 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shrink-0 overflow-hidden">
+                    {/* Logo Box Preview (Enlarged circle with transparency) */}
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white dark:bg-zinc-900 shadow-md p-2 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shrink-0 overflow-hidden relative">
                       {pLogoUrl ? (
                         <img
                           src={pLogoUrl}
                           alt="Логотип"
-                          className="w-full h-full object-contain"
+                          className="w-full h-full object-contain rounded-full"
                         />
                       ) : (
-                        <span className="font-black text-sm text-[var(--primary-accent)]">
+                        <span className="font-black text-sm sm:text-base text-[var(--primary-accent)]">
                           {pLogoText || pName.slice(0, 2).toUpperCase() || 'ЛОГО'}
                         </span>
                       )}
                     </div>
 
-                    <div className="flex-1 space-y-1">
+                    <div className="flex-1 space-y-1.5">
                       <label className="text-[10px] text-zinc-500 block">
                         Инициалы для текстового бейджа (если нет картинки):
                       </label>
@@ -3340,13 +3566,23 @@ export default function AdminCabinetTab({ showToast }: AdminCabinetTabProps) {
                         className="w-full px-3 py-1.5 rounded-lg text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 font-bold uppercase"
                       />
                       {pLogoUrl && (
-                        <button
-                          type="button"
-                          onClick={() => setPLogoUrl('')}
-                          className="text-[10px] text-rose-500 hover:underline cursor-pointer"
-                        >
-                          Удалить загруженный файл логотипа
-                        </button>
+                        <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                          <button
+                            type="button"
+                            onClick={handleRemoveBlackBackgroundFromLogo}
+                            className="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-[var(--lavenderSoft)] text-[var(--primary-accent)] dark:text-[var(--lavenderAccent)] hover:opacity-90 transition-all cursor-pointer border border-[var(--primary-accent)]/20"
+                            title="Сделать чёрный фон прозрачным"
+                          >
+                            <span>Убрать чёрный фон</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPLogoUrl('')}
+                            className="text-[10px] text-rose-500 hover:underline cursor-pointer"
+                          >
+                            Удалить логотип
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>

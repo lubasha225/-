@@ -25,15 +25,100 @@ export function TelegramIcon({ className = "w-4 h-4" }: { className?: string }) 
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
     >
-      <path
-        d="M12 24C18.6274 24 24 18.6274 24 12C24 5.37258 18.6274 0 12 0C5.37258 0 0 5.37258 0 12C0 18.6274 5.37258 24 12 24Z"
-        fill="#24A1DE"
-      />
+      <circle cx="12" cy="12" r="12" fill="#24A1DE" />
       <path
         fillRule="evenodd"
         clipRule="evenodd"
         d="M5.3999 11.9999L17.2039 7.27791C17.7519 7.07991 18.2309 7.41191 18.0539 8.21991L16.0469 17.6779C15.8979 18.3499 15.4989 18.5139 14.9369 18.1979L11.8799 15.9449L10.4049 17.3639C10.2419 17.5269 10.1059 17.6639 9.7919 17.6639L10.0119 14.5499L15.6809 9.42891C15.9279 9.20891 15.6269 9.08691 15.2979 9.30691L8.2919 13.7179L5.2759 12.7759C4.6199 12.5709 4.6069 12.1189 5.3999 11.9999Z"
         fill="white"
+      />
+    </svg>
+  );
+}
+
+export function MaxMessengerIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg 
+      className={className} 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id="maxIconGrad" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#471AFF" />
+          <stop offset="1" stopColor="#9500FF" />
+        </linearGradient>
+      </defs>
+      <circle cx="12" cy="12" r="12" fill="url(#maxIconGrad)" />
+      {/* MAX speech bubble cloud with stylized M */}
+      <path
+        d="M6.5 14.2V9.5C6.5 8.1 7.6 7 9 7H15C16.4 7 17.5 8.1 17.5 9.5V12.8C17.5 14.2 16.4 15.3 15 15.3H10.2L7.6 16.8C7.1 17.1 6.5 16.7 6.5 16.2V14.2Z"
+        fill="white"
+      />
+      <path
+        d="M9 13V10M9 10L10.7 12.2L12.4 10M12.4 10V13M14 10L15.5 13M15.5 10L14 13"
+        stroke="#5A10E8"
+        strokeWidth="1.25"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function WildberriesIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <linearGradient id="wbGrad" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#CB11AB" />
+          <stop offset="1" stopColor="#481173" />
+        </linearGradient>
+      </defs>
+      <rect width="24" height="24" rx="7" fill="url(#wbGrad)" />
+      <path
+        d="M4.5 9L6.5 15L8.5 10L10.5 15L12.5 9M13.5 9H16.5C17.4 9 18 9.6 18 10.5C18 11.3 17.4 11.9 16.5 11.9H14.5M14.5 11.9H17C17.9 11.9 18.5 12.6 18.5 13.5C18.5 14.4 17.9 15 17 15H13.5V9Z"
+        stroke="white"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function OzonIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect width="24" height="24" rx="7" fill="#005BFF" />
+      <circle cx="7.5" cy="12" r="3" stroke="white" strokeWidth="1.6" />
+      <path
+        d="M13 9.5H17.5L13.5 14.5H18"
+        stroke="white"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function YandexMarketIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect width="24" height="24" rx="7" fill="#FC3F1D" />
+      <circle cx="12" cy="12" r="8" fill="#FFCC00" />
+      <path
+        d="M9 8.5H11.5V15.5H9V8.5ZM13 8.5H15.5V15.5H13V8.5Z"
+        fill="#222222"
+      />
+      <path
+        d="M7 14.5L17 9.5"
+        stroke="#FC3F1D"
+        strokeWidth="2.2"
+        strokeLinecap="round"
       />
     </svg>
   );
@@ -596,11 +681,20 @@ export default function PartnersTab({ showToast, userTariff = 'Расширен�
                     {/* Gradient overlay for contrast */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/20" />
 
-                    {/* Floating Discount Badge */}
-                    <div className="absolute top-3.5 left-3.5">
-                      <div className={`px-3 py-1 rounded-full text-white font-black text-xs sm:text-sm tracking-wider shadow-md bg-gradient-to-r ${partner.badgeColor || 'from-purple-500 to-indigo-600'} flex items-center gap-1`}>
-                        <Tag className="w-3 h-3 stroke-[3]" />
-                        <span>{partner.discount}</span>
+                    {/* Floating Circular Discount/Bonus Seal Badge with 50% opacity subtle border */}
+                    <div className="absolute top-2.5 left-2.5 z-10">
+                      <div 
+                        className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full text-white shadow-xl bg-gradient-to-br ${partner.badgeColor || 'from-purple-500 to-indigo-600'} border border-white/50 flex flex-col items-center justify-center p-1 text-center transition-transform duration-300 hover:scale-105 select-none`}
+                        style={{
+                          boxShadow: '0 8px 20px -2px rgba(0, 0, 0, 0.4)'
+                        }}
+                      >
+                        <span className="font-black text-xs sm:text-sm leading-tight tracking-tight uppercase px-0.5 line-clamp-2 drop-shadow-sm">
+                          {partner.discount}
+                        </span>
+                        <span className="text-[7.5px] sm:text-[8px] font-bold text-white/90 uppercase tracking-widest leading-none mt-0.5">
+                          {partner.discount.includes('%') ? 'скидка' : 'бонус'}
+                        </span>
                       </div>
                     </div>
 
@@ -611,19 +705,19 @@ export default function PartnersTab({ showToast, userTariff = 'Расширен�
                       </span>
                     </div>
 
-                    {/* Partner Logo Badge & Title on Banner */}
+                    {/* Partner Logo Badge & Title on Banner (Enlarged prominent logo) */}
                     <div className="absolute bottom-3 left-3.5 right-3.5 flex items-end justify-between gap-3">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        {/* Brand Logo Box with uploaded image or text logo */}
-                        <div className="w-11 h-11 rounded-2xl bg-white dark:bg-zinc-900 shadow-md p-1 border border-white/40 dark:border-zinc-700/60 flex items-center justify-center shrink-0 overflow-hidden">
+                      <div className="flex items-center gap-3 min-w-0">
+                        {/* Brand Logo Circle with uploaded image or text logo (same circle size as discount: w-14 h-14 sm:w-16 sm:h-16) */}
+                        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/95 dark:bg-zinc-900/95 shadow-md p-1.5 sm:p-2 border border-white/60 dark:border-zinc-700/60 flex items-center justify-center shrink-0 overflow-hidden">
                           {partner.logoUrl ? (
                             <img
                               src={partner.logoUrl}
                               alt={partner.name}
-                              className="w-full h-full object-contain"
+                              className="w-full h-full object-contain rounded-full"
                             />
                           ) : (
-                            <span className="font-black text-xs tracking-tight text-[var(--primary-accent)]">
+                            <span className="font-black text-sm sm:text-base tracking-tight text-[var(--primary-accent)]">
                               {partner.logoText || partner.name.slice(0, 2).toUpperCase()}
                             </span>
                           )}
@@ -717,9 +811,17 @@ export default function PartnersTab({ showToast, userTariff = 'Расширен�
                 >
                   {/* Top Bar of Back Face: Partner Name, Category & Close/Flip Button */}
                   <div className="flex items-center justify-between gap-3 pb-3 border-b border-zinc-200/60 dark:border-zinc-800/60 shrink-0">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-8 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/60 dark:border-zinc-700/60 flex items-center justify-center shrink-0 font-bold text-xs text-[var(--primary-accent)]">
-                        {partner.logoText || partner.name.slice(0, 2)}
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700/80 flex items-center justify-center shrink-0 font-bold text-xs text-[var(--primary-accent)] overflow-hidden p-1 shadow-2xs">
+                        {partner.logoUrl ? (
+                          <img
+                            src={partner.logoUrl}
+                            alt={partner.name}
+                            className="w-full h-full object-contain rounded-full"
+                          />
+                        ) : (
+                          <span>{partner.logoText || partner.name.slice(0, 2).toUpperCase()}</span>
+                        )}
                       </div>
                       <div className="min-w-0">
                         <h4 className="font-extrabold text-sm text-zinc-900 dark:text-zinc-100 truncate">
@@ -751,10 +853,10 @@ export default function PartnersTab({ showToast, userTariff = 'Расширен�
                     <div className="space-y-1.5">
                       <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[var(--primary-accent)] dark:text-[var(--lavenderAccent)]">
                         <FileText className="w-3.5 h-3.5" />
-                        <span>Условия применения скидки</span>
+                        <span>Условия акции и получения бонуса</span>
                       </div>
                       <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/70 dark:border-zinc-700/50 text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed font-normal">
-                        {partner.terms || 'Скидка действует при оформлении заказа на сайте или через менеджера компании по промокоду. Скидка не суммируется с другими специальными акциями.'}
+                        {partner.terms || 'Специальное предложение действует при оформлении заказа на сайте или через менеджера компании по промокоду. Не суммируется с другими специальными акциями.'}
                       </div>
                     </div>
 
@@ -768,17 +870,54 @@ export default function PartnersTab({ showToast, userTariff = 'Расширен�
                       </p>
                     </div>
 
-                    {/* How to activate steps */}
-                    <div className="space-y-1.5">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                        Как воспользоваться:
-                      </span>
-                      <ul className="text-[11px] text-zinc-600 dark:text-zinc-400 space-y-1 list-disc list-inside">
-                        <li>Переверните купон и сотрите защитный слой</li>
-                        <li>Скопируйте промокод в буфер обмена</li>
-                        <li>Укажите промокод в корзине на сайте поставщика или назовите менеджеру</li>
-                      </ul>
-                    </div>
+                    {/* Marketplaces Store Badges (Wildberries, Ozon, Yandex Market) */}
+                    {(partner.wildberries || partner.ozon || partner.yandexMarket) && (
+                      <div className="space-y-1.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                          Магазины на маркетплейсах:
+                        </span>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {partner.wildberries && (
+                            <a
+                              href={partner.wildberries}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#CB11AB]/10 hover:bg-[#CB11AB]/20 border border-[#CB11AB]/30 text-[#A20B88] dark:text-[#F376DC] text-xs font-bold transition-all shadow-2xs hover:scale-105 active:scale-95 cursor-pointer"
+                              title="Открыть витрину на Wildberries"
+                            >
+                              <WildberriesIcon className="w-4 h-4 shrink-0" />
+                              <span>Wildberries</span>
+                            </a>
+                          )}
+
+                          {partner.ozon && (
+                            <a
+                              href={partner.ozon}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#005BFF]/10 hover:bg-[#005BFF]/20 border border-[#005BFF]/30 text-[#005BFF] dark:text-[#4D8EFF] text-xs font-bold transition-all shadow-2xs hover:scale-105 active:scale-95 cursor-pointer"
+                              title="Открыть витрину на Ozon"
+                            >
+                              <OzonIcon className="w-4 h-4 shrink-0" />
+                              <span>Ozon</span>
+                            </a>
+                          )}
+
+                          {partner.yandexMarket && (
+                            <a
+                              href={partner.yandexMarket}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FC3F1D]/10 hover:bg-[#FC3F1D]/20 border border-[#FC3F1D]/30 text-[#D12B0C] dark:text-[#FF7961] text-xs font-bold transition-all shadow-2xs hover:scale-105 active:scale-95 cursor-pointer"
+                              title="Открыть витрину на Яндекс.Маркете"
+                            >
+                              <YandexMarketIcon className="w-4 h-4 shrink-0" />
+                              <span>Яндекс.Маркет</span>
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    )}
 
                     {/* City info */}
                     <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 pt-1">
@@ -787,7 +926,7 @@ export default function PartnersTab({ showToast, userTariff = 'Расширен�
                     </div>
                   </div>
 
-                  {/* Back Face Actions: Flip back button + Telegram button */}
+                  {/* Back Face Actions: Flip back button + Icon-only Messengers (Telegram, MAX) */}
                   <div className="pt-3 pb-2 border-t border-zinc-200/60 dark:border-zinc-800/60 flex items-center justify-between gap-2 shrink-0">
                     <button
                       onClick={() => toggleCardFlip(partner.id)}
@@ -797,18 +936,33 @@ export default function PartnersTab({ showToast, userTariff = 'Расширен�
                       <span>Вернуться к купону</span>
                     </button>
 
-                    {partner.telegram && (
-                      <a
-                        href={partner.telegram}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-3.5 py-2 rounded-full bg-[#24A1DE]/10 hover:bg-[#24A1DE]/20 text-[#24A1DE] border border-[#24A1DE]/25 flex items-center gap-1.5 text-xs font-semibold transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 shrink-0"
-                        title="Telegram поставщика"
-                      >
-                        <TelegramIcon className="w-4 h-4 shrink-0" />
-                        <span>Telegram</span>
-                      </a>
-                    )}
+                    <div className="flex items-center gap-2 shrink-0">
+                      {partner.telegram && (
+                        <a
+                          href={partner.telegram}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="w-8 h-8 rounded-full bg-[#24A1DE]/10 hover:bg-[#24A1DE]/20 text-[#24A1DE] border border-[#24A1DE]/30 flex items-center justify-center transition-all cursor-pointer shadow-2xs hover:scale-110 active:scale-95 shrink-0"
+                          title="Написать в Telegram"
+                          aria-label="Telegram"
+                        >
+                          <TelegramIcon className="w-4.5 h-4.5 shrink-0" />
+                        </a>
+                      )}
+
+                      {partner.max && (
+                        <a
+                          href={partner.max}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="w-8 h-8 rounded-full bg-[#6E1AFF]/10 hover:bg-[#6E1AFF]/20 text-[#6E1AFF] border border-[#6E1AFF]/30 flex items-center justify-center transition-all cursor-pointer shadow-2xs hover:scale-110 active:scale-95 shrink-0"
+                          title="Написать в мессенджер MAX"
+                          aria-label="Мессенджер MAX"
+                        >
+                          <MaxMessengerIcon className="w-4.5 h-4.5 shrink-0" />
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
 

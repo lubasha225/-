@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
@@ -10,9 +11,95 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // Maximize payload size to allow raw background image analysis
+  // Ensure persistent directories exist
+  const publicDir = path.join(process.cwd(), "public");
+  const uploadsDir = path.join(publicDir, "uploads");
+  const logosDir = path.join(uploadsDir, "logos");
+  const bannersDir = path.join(uploadsDir, "banners");
+  const dataDir = path.join(publicDir, "data");
+  [publicDir, uploadsDir, logosDir, bannersDir, dataDir].forEach((dir) => {
+    if (!fs.existsSync(dir)) {
+      try {
+        fs.mkdirSync(dir, { recursive: true });
+      } catch {}
+    }
+  });
+
+  // Maximize payload size to allow raw background image analysis & uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+  // Serve static public folder files directly
+  app.use(express.static(publicDir));
+
+  // Persistent Partners API: Read from server file
+  app.get("/api/partners", async (req, res) => {
+    try {
+      const filePath = path.join(dataDir, "partners.json");
+      if (fs.existsSync(filePath)) {
+        const raw = await fs.promises.readFile(filePath, "utf-8");
+        return res.json(JSON.parse(raw));
+      }
+      return res.json([]);
+    } catch (e: any) {
+      console.error("Error reading partners.json:", e);
+      return res.status(500).json({ error: "Failed to read partners data" });
+    }
+  });
+
+  // Persistent Partners API: Save to server file
+  app.post("/api/partners", async (req, res) => {
+    try {
+      const filePath = path.join(dataDir, "partners.json");
+      await fs.promises.writeFile(filePath, JSON.stringify(req.body, null, 2), "utf-8");
+      return res.json({ success: true, count: Array.isArray(req.body) ? req.body.length : 0 });
+    } catch (e: any) {
+      console.error("Error saving partners.json:", e);
+      return res.status(500).json({ error: "Failed to save partners data" });
+    }
+  });
+
+  // Real File Upload API: Writes actual PNG/JPG files to public/uploads/
+  app.post("/api/upload", async (req, res) => {
+    try {
+      const { dataUrl, type, filename } = req.body;
+      if (!dataUrl) {
+        return res.status(400).json({ error: "Missing dataUrl" });
+      }
+
+      const match = dataUrl.match(/^data:image\/(\w+);base64,(.+)$/);
+      if (!match) {
+        return res.status(400).json({ error: "Invalid data URL format" });
+      }
+
+      let ext = match[1] === "jpeg" ? "jpg" : match[1];
+      if (ext === "svg+xml") ext = "svg";
+      const base64Data = match[2];
+      const buffer = Buffer.from(base64Data, "base64");
+
+      const subfolder = type === "banner" ? "banners" : "logos";
+      const targetDir = path.join(uploadsDir, subfolder);
+      if (!fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true });
+      }
+
+      const safeName = (filename || `${type || "file"}`)
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]/g, "-")
+        .replace(/-+/g, "-")
+        .slice(0, 30);
+      const finalFileName = `${safeName}-${Date.now()}.${ext}`;
+      const filePath = path.join(targetDir, finalFileName);
+
+      await fs.promises.writeFile(filePath, buffer);
+      const publicUrl = `/uploads/${subfolder}/${finalFileName}`;
+
+      return res.json({ success: true, url: publicUrl, filename: finalFileName });
+    } catch (err: any) {
+      console.error("Upload error in server.ts:", err);
+      return res.status(500).json({ error: "Upload failed" });
+    }
+  });
 
   // API FIRST: Server-side Gemini API interaction
   app.post("/api/ai-analyze-room", async (req, res) => {

@@ -14,6 +14,10 @@ export interface Partner {
   promoCode: string;
   website: string;
   telegram?: string;
+  max?: string;
+  wildberries?: string;
+  ozon?: string;
+  yandexMarket?: string;
   city: string;
   validUntil: string;
 }
@@ -35,6 +39,9 @@ export const INITIAL_PARTNERS_DATA: Partner[] = [
     promoCode: 'IQDECO-7FLOWERS',
     website: 'https://7flowers.ru',
     telegram: 'https://t.me/flowers7_opt',
+    max: 'https://max.ru',
+    ozon: 'https://ozon.ru',
+    yandexMarket: 'https://market.yandex.ru',
     city: 'Москва, Санкт-Петербург + РФ',
     validUntil: 'Бессрочно для подписчиков'
   },
@@ -110,39 +117,88 @@ export const INITIAL_PARTNERS_DATA: Partner[] = [
     promoCode: 'BALLOONS-IQ12',
     website: 'https://balloons-pro-opt.ru',
     telegram: 'https://t.me/balloons_pro',
+    max: 'https://max.ru',
+    wildberries: 'https://wildberries.ru',
+    ozon: 'https://ozon.ru',
+    yandexMarket: 'https://market.yandex.ru',
     city: 'Филиалы в 18 городах РФ',
     validUntil: 'Бессрочно для подписчиков'
   },
   {
-    id: 'print-cut',
-    name: 'Print & Cut Декор',
-    category: 'Полиграфия & Баннеры',
-    discount: '-20%',
-    badgeText: 'НА ПЕРВЫЙ ЗАКАЗ УФ-ПЕЧАТИ',
-    badgeColor: 'from-violet-500 to-fuchsia-600',
-    shortDesc: 'УФ-печать на акриле, зеркальном пластике, ПВХ и пенокартоне. Лазерная и плоттерная резка сложных вензелей за 24 часа.',
-    fullDesc: 'Интерьерная типография полного цикла с акцентом на свадебную и событийную полиграфию. Изготовление объемных планов рассадки, приветственных зеркал, напольных глянцевых наклеек и фотобаннеров без заломов.',
-    terms: 'Предоставляется скидка 20% на УФ-печать и фрезеровку при предоставлении макета в векторном формате.',
-    logoText: 'P&C',
-    logoUrl: '',
-    bannerImage: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=800&q=80',
-    promoCode: 'PRINT-IQDECO20',
-    website: 'https://printcut-decor.ru',
-    city: 'Москва + экспресс-доставка СДЭК',
-    validUntil: 'До 31 декабря 2026'
+    "id": "sol-air",
+    "name": "SolaAir",
+    "category": "Панели с пайетками",
+    "discount": "-5%",
+    "badgeText": "ПАНЕЛИ С ПАЙЕТКАМИ ДЛЯ ФОТОЗОН",
+    "badgeColor": "from-rose-500 to-pink-600",
+    "shortDesc": "Декоративные панели с пайетками SolaAir — эффектное решение для праздничного декора.",
+    "fullDesc": "Оригинальные запатентованные живые панели с пайетками SolaAir для создания мерцающих фотозон, праздничных стендов и сценических задников. Легкий монтаж, долговечность и яркий визуальный эффект при малейшем движении воздуха.",
+    "terms": "Скидка предоставляется по промокоду при заказе через сайт или менеджера.",
+    "logoText": "SOLA",
+    "logoUrl": "",
+    "bannerImage": "https://static.tildacdn.com/tild3238-3135-4536-a664-313861623832/Sleekshot_2026-09-28.webp",
+    "promoCode": "PAYETKI-IQPRO15",
+    "website": "https://solaair.com",
+    "telegram": "https://t.me/solaair",
+    "max": "https://max.ru",
+    "city": "Производство в Краснодаре",
+    "validUntil": "Бессрочно для подписчиков"
+  },
+  {
+    "id": "agura",
+    "name": "AGURA",
+    "category": "Шары & Аэродизайн",
+    "discount": "WB",
+    "badgeText": "ФОЛЬГИРОВАННЫЕ ШАРЫ СОБСТВЕННОГО ПРОИЗВОДСТВА",
+    "badgeColor": "from-purple-600 to-indigo-600",
+    "shortDesc": "Agura — крупнейший и единственный производитель фольгированных шаров на территории России.",
+    "fullDesc": "В нашем каталоге фольгированных воздушных шаров — сотни моделей на любой праздник: цифры, фигуры, шары с дизайном, сезонные коллекции и лимитированные выпуски. Наша компания оснащена высокотехнологичным оборудованием.",
+    "terms": "Скидка действует при оформлении заказа на сайте или через менеджера компании по промокоду. Скидка не суммируется с другими специальными акциями.",
+    "logoText": "AGURA",
+    "logoUrl": "",
+    "bannerImage": "https://static.tildacdn.com/tild3238-3135-4536-a664-313861623832/Sleekshot_2026-09-28.webp",
+    "promoCode": "AGURA-DECO2026",
+    "website": "https://agura.ru",
+    "telegram": "https://t.me/agura_balloons",
+    "wildberries": "https://www.wildberries.ru/brands/agura",
+    "ozon": "https://www.ozon.ru/brand/agura",
+    "yandexMarket": "https://market.yandex.ru/search?text=agura",
+    "city": "фабрика в Яхроме Московской области",
+    "validUntil": "Бессрочно для подписчиков"
   }
 ];
 
-export const PARTNERS_STORAGE_KEY = 'pop_partners_data_v1';
+export const PARTNERS_STORAGE_KEY = 'pop_partners_data_v2';
 
 let memoryPartnersCache: Partner[] | null = null;
+
+// Initial server synchronization to guarantee published version has identical data
+export async function syncPartnersWithServer(): Promise<Partner[]> {
+  try {
+    const res = await fetch('/api/partners');
+    if (res.ok) {
+      const serverData = await res.json();
+      if (Array.isArray(serverData) && serverData.length > 0) {
+        memoryPartnersCache = serverData;
+        try {
+          localStorage.setItem(PARTNERS_STORAGE_KEY, JSON.stringify(serverData));
+        } catch {}
+        window.dispatchEvent(new CustomEvent('partners_updated', { detail: serverData }));
+        return serverData;
+      }
+    }
+  } catch (err) {
+    console.warn('Initial server partners sync error, using local fallback:', err);
+  }
+  return getStoredPartners();
+}
 
 export function getStoredPartners(): Partner[] {
   try {
     const raw = localStorage.getItem(PARTNERS_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
+      if (Array.isArray(parsed) && parsed.length > 0) {
         memoryPartnersCache = parsed;
         return parsed;
       }
@@ -163,12 +219,11 @@ export function saveStoredPartners(partners: Partner[]): void {
   } catch (e) {
     console.error('Failed to save partners to storage, trying cleanup for quota:', e);
     try {
-      // If quota exceeded, sanitize heavy base64 strings
       const sanitized = partners.map(p => {
         let banner = p.bannerImage;
         let logo = p.logoUrl;
         if (banner && banner.startsWith('data:') && banner.length > 200000) {
-          banner = 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800';
+          banner = 'https://static.tildacdn.com/tild3238-3135-4536-a664-313861623832/Sleekshot_2026-09-28.webp';
         }
         if (logo && logo.startsWith('data:') && logo.length > 100000) {
           logo = '';
@@ -182,10 +237,24 @@ export function saveStoredPartners(partners: Partner[]): void {
     }
   }
 
+  // Persist to server JSON storage
+  try {
+    fetch('/api/partners', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(memoryPartnersCache || partners)
+    }).catch(err => console.warn('Could not sync partners with server:', err));
+  } catch {}
+
   // Broadcast to all tabs/components
   try {
     window.dispatchEvent(new CustomEvent('partners_updated', { detail: memoryPartnersCache || partners }));
   } catch {
     window.dispatchEvent(new Event('partners_updated'));
   }
+}
+
+// Auto-run sync on module initialization in browser environment
+if (typeof window !== 'undefined') {
+  syncPartnersWithServer();
 }
