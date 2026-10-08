@@ -666,50 +666,185 @@ export default function PartnersTab({ showToast, userTariff = 'Расширен�
                 {/* ========================================================= */}
                 {/* FRONT FACE: TICKET WITH HERO, LOGO & SCRATCH-OFF PROMO    */}
                 {/* ========================================================= */}
-                <div 
-                  style={couponCardMaskStyle}
-                  className="absolute inset-0 [backface-visibility:hidden] [-webkit-backface-visibility:hidden] bg-white/70 dark:bg-zinc-900/75 backdrop-blur-md rounded-[28px] border border-zinc-200/70 dark:border-zinc-800/70 shadow-xs hover:shadow-xl transition-shadow flex flex-col justify-between overflow-hidden"
-                >
-                  {/* TICKET HEADER: VIBRANT PARTNER HERO BANNER (Fixed h-44 = 176px) */}
-                  <div className="relative h-44 w-full overflow-hidden shrink-0 bg-zinc-100 dark:bg-zinc-800">
-                    <img
-                      src={partner.bannerImage}
-                      alt={partner.name}
-                      className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                    />
-                    
-                    {/* Gradient overlay for contrast */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/20" />
+                <div className="absolute inset-0 [backface-visibility:hidden] [-webkit-backface-visibility:hidden]">
+                  <div 
+                    style={couponCardMaskStyle}
+                    className="w-full h-full bg-white/70 dark:bg-zinc-900/80 backdrop-blur-md rounded-[28px] border border-zinc-200/80 dark:border-zinc-700/60 shadow-xs hover:shadow-xl transition-shadow flex flex-col justify-between overflow-hidden"
+                  >
+                    {/* TICKET HEADER: VIBRANT PARTNER HERO BANNER (Fixed h-44 = 176px) */}
+                    <div className="relative h-44 w-full overflow-hidden shrink-0 bg-zinc-100 dark:bg-zinc-800">
+                      <img
+                        src={partner.bannerImage}
+                        alt={partner.name}
+                        className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                      />
+                      
+                      {/* Gradient overlay for contrast */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/20" />
 
-                    {/* Floating Circular Discount/Bonus Seal Badge with 50% opacity subtle border */}
-                    <div className="absolute top-2.5 left-2.5 z-10">
-                      <div 
-                        className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full text-white shadow-xl bg-gradient-to-br ${partner.badgeColor || 'from-purple-500 to-indigo-600'} border border-white/50 flex flex-col items-center justify-center p-1 text-center transition-transform duration-300 hover:scale-105 select-none`}
-                        style={{
-                          boxShadow: '0 8px 20px -2px rgba(0, 0, 0, 0.4)'
-                        }}
-                      >
-                        <span className="font-black text-xs sm:text-sm leading-tight tracking-tight uppercase px-0.5 line-clamp-2 drop-shadow-sm">
-                          {partner.discount}
+                      {/* Floating Circular Discount/Bonus Seal Badge with 50% opacity subtle border */}
+                      <div className="absolute top-2.5 left-2.5 z-10">
+                        <div 
+                          className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full text-white shadow-xl bg-gradient-to-br ${partner.badgeColor || 'from-purple-500 to-indigo-600'} border border-white/50 flex flex-col items-center justify-center p-1 text-center transition-transform duration-300 hover:scale-105 select-none`}
+                          style={{
+                            boxShadow: '0 8px 20px -2px rgba(0, 0, 0, 0.4)'
+                          }}
+                        >
+                          <span className="font-black text-xs sm:text-sm leading-tight tracking-tight uppercase px-0.5 line-clamp-2 drop-shadow-sm">
+                            {partner.discount}
+                          </span>
+                          <span className="text-[7.5px] sm:text-[8px] font-bold text-white/90 uppercase tracking-widest leading-none mt-0.5">
+                            {partner.discount.includes('%') ? 'скидка' : 'бонус'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Category Badge */}
+                      <div className="absolute top-3.5 right-3.5 flex items-center gap-1.5">
+                        <span className="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white/90 text-[10px] font-semibold border border-white/20">
+                          {partner.category}
                         </span>
-                        <span className="text-[7.5px] sm:text-[8px] font-bold text-white/90 uppercase tracking-widest leading-none mt-0.5">
-                          {partner.discount.includes('%') ? 'скидка' : 'бонус'}
-                        </span>
+                      </div>
+
+                      {/* Partner Logo Badge & Title on Banner (Enlarged prominent logo) */}
+                      <div className="absolute bottom-3 left-3.5 right-3.5 flex items-end justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          {/* Brand Logo Circle with uploaded image or text logo (same circle size as discount: w-14 h-14 sm:w-16 sm:h-16) */}
+                          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/95 dark:bg-zinc-900/95 shadow-md p-1.5 sm:p-2 border border-white/60 dark:border-zinc-700/60 flex items-center justify-center shrink-0 overflow-hidden">
+                            {partner.logoUrl ? (
+                              <img
+                                src={partner.logoUrl}
+                                alt={partner.name}
+                                className="w-full h-full object-contain rounded-full"
+                              />
+                            ) : (
+                              <span className="font-black text-sm sm:text-base tracking-tight text-[var(--primary-accent)]">
+                                {partner.logoText || partner.name.slice(0, 2).toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Brand Name & Short Badge */}
+                          <div className="min-w-0 text-white drop-shadow-sm">
+                            <h3 className="font-extrabold text-base sm:text-lg tracking-tight leading-tight truncate">
+                              {partner.name}
+                            </h3>
+                            <p className="text-[10px] text-zinc-300 font-medium tracking-wide uppercase truncate">
+                              {partner.badgeText}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Category Badge */}
-                    <div className="absolute top-3.5 right-3.5 flex items-center gap-1.5">
-                      <span className="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white/90 text-[10px] font-semibold border border-white/20">
-                        {partner.category}
-                      </span>
+                    {/* PARTNER BODY DESCRIPTION (Height aligns perforation exactly at 268px) */}
+                    <div className="h-[84px] px-5 py-2.5 flex flex-col justify-between shrink-0">
+                      <p className="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed font-normal line-clamp-2">
+                        {partner.shortDesc}
+                      </p>
+
+                      <div className="flex items-center gap-2 text-[10px] text-zinc-500 dark:text-zinc-400">
+                        <MapPin className="w-3 h-3 shrink-0 text-zinc-400" />
+                        <span className="truncate">{partner.city}</span>
+                      </div>
                     </div>
 
-                    {/* Partner Logo Badge & Title on Banner (Enlarged prominent logo) */}
-                    <div className="absolute bottom-3 left-3.5 right-3.5 flex items-end justify-between gap-3">
+                    {/* TICKET PERFORATION LINE: GENUINELY CUT OUT AT SIDES WITH SCISSORS IN CENTER */}
+                    <div className="relative w-full h-[16px] my-0 flex items-center justify-center shrink-0">
+                      {/* Dashed Perforation Line with scissors icon in center */}
+                      <div className="w-full border-t-2 border-dashed border-zinc-300/80 dark:border-zinc-700/80 relative flex items-center justify-center">
+                        <div className="absolute w-6 h-6 rounded-full bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-700/80 flex items-center justify-center shadow-2xs text-zinc-400 dark:text-zinc-500">
+                          <Scissors className="w-3 h-3 rotate-90 stroke-[2.2]" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* TICKET STUB: SCRATCH-OFF PROMO CODE AREA */}
+                    <div className="px-5 pt-2.5 pb-3.5 bg-zinc-50/50 dark:bg-zinc-900/40 flex-1 flex flex-col justify-between">
+                      {/* Header & Scratch Area grouped tightly */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-[10px]">
+                          <span className="font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
+                            <Ticket className="w-3.5 h-3.5 text-[var(--primary-accent)]" />
+                            <span>Купон на скидку</span>
+                          </span>
+                        </div>
+
+                        {/* Scratch-Off Area */}
+                        <ScratchOffArea
+                          key={`${partner.id}_${partner.promoCode}`}
+                          promoCode={partner.promoCode}
+                          isUnlocked={isSubscriptionActive}
+                          onReveal={() => handleRevealPartner(partner.id)}
+                          showToast={showToast}
+                        />
+                      </div>
+
+                      {/* Card Actions Footer: Compact & aligned */}
+                      <div className="pt-2 flex items-center justify-between gap-2 border-t border-zinc-200/50 dark:border-zinc-800/50">
+                        <button
+                          onClick={() => toggleCardFlip(partner.id)}
+                          className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-[var(--primary-accent)] dark:hover:text-[var(--lavenderAccent)] transition-colors cursor-pointer flex items-center gap-1.5"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span>Подробнее</span>
+                        </button>
+
+                        <a
+                          href={partner.website}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-xs font-bold text-[var(--primary-accent)] dark:text-[var(--lavenderAccent)] hover:underline cursor-pointer ml-auto"
+                        >
+                          <span>Сайт партнёра</span>
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Notch contour matching card border 1-to-1 */}
+                  <div className="absolute inset-0 pointer-events-none z-30 overflow-hidden rounded-[28px]">
+                    {/* Left Notch Contour */}
+                    <svg 
+                      className="absolute left-0 top-[255px] w-[13px] h-[26px] text-zinc-200/80 dark:text-zinc-700/60"
+                      viewBox="0 0 13 26" 
+                      fill="none"
+                    >
+                      <path 
+                        d="M 0,0 A 13,13 0 0,1 0,26" 
+                        stroke="currentColor" 
+                        strokeWidth="1" 
+                      />
+                    </svg>
+
+                    {/* Right Notch Contour */}
+                    <svg 
+                      className="absolute right-0 top-[255px] w-[13px] h-[26px] text-zinc-200/80 dark:text-zinc-700/60"
+                      viewBox="0 0 13 26" 
+                      fill="none"
+                    >
+                      <path 
+                        d="M 13,0 A 13,13 0 0,0 13,26" 
+                        stroke="currentColor" 
+                        strokeWidth="1" 
+                      />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* ========================================================= */}
+                {/* BACK FACE: DETAILED CONDITIONS & PARTNER INFO             */}
+                {/* ========================================================= */}
+                <div className="absolute inset-0 [backface-visibility:hidden] [-webkit-backface-visibility:hidden] [transform:rotateY(180deg)]">
+                  <div 
+                    style={couponCardMaskStyle}
+                    className="w-full h-full bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-[28px] border border-zinc-200/80 dark:border-zinc-700/60 shadow-xl flex flex-col justify-between overflow-hidden p-5 sm:p-6 space-y-4"
+                  >
+                    {/* Top Bar of Back Face: Partner Name, Category & Close/Flip Button */}
+                    <div className="flex items-center justify-between gap-3 pb-3 border-b border-zinc-200/60 dark:border-zinc-800/60 shrink-0">
                       <div className="flex items-center gap-3 min-w-0">
-                        {/* Brand Logo Circle with uploaded image or text logo (same circle size as discount: w-14 h-14 sm:w-16 sm:h-16) */}
-                        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/95 dark:bg-zinc-900/95 shadow-md p-1.5 sm:p-2 border border-white/60 dark:border-zinc-700/60 flex items-center justify-center shrink-0 overflow-hidden">
+                        <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700/80 flex items-center justify-center shrink-0 font-bold text-xs text-[var(--primary-accent)] overflow-hidden p-1 shadow-2xs">
                           {partner.logoUrl ? (
                             <img
                               src={partner.logoUrl}
@@ -717,252 +852,179 @@ export default function PartnersTab({ showToast, userTariff = 'Расширен�
                               className="w-full h-full object-contain rounded-full"
                             />
                           ) : (
-                            <span className="font-black text-sm sm:text-base tracking-tight text-[var(--primary-accent)]">
-                              {partner.logoText || partner.name.slice(0, 2).toUpperCase()}
-                            </span>
+                            <span>{partner.logoText || partner.name.slice(0, 2).toUpperCase()}</span>
                           )}
                         </div>
-
-                        {/* Brand Name & Short Badge */}
-                        <div className="min-w-0 text-white drop-shadow-sm">
-                          <h3 className="font-extrabold text-base sm:text-lg tracking-tight leading-tight truncate">
+                        <div className="min-w-0">
+                          <h4 className="font-extrabold text-sm text-zinc-900 dark:text-zinc-100 truncate">
                             {partner.name}
-                          </h3>
-                          <p className="text-[10px] text-zinc-300 font-medium tracking-wide uppercase truncate">
-                            {partner.badgeText}
-                          </p>
+                          </h4>
+                          <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                            {partner.category}
+                          </span>
                         </div>
                       </div>
-                    </div>
-                  </div>
 
-                  {/* PARTNER BODY DESCRIPTION (Height aligns perforation exactly at 268px) */}
-                  <div className="h-[84px] px-5 py-2.5 flex flex-col justify-between shrink-0">
-                    <p className="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed font-normal line-clamp-2">
-                      {partner.shortDesc}
-                    </p>
-
-                    <div className="flex items-center gap-2 text-[10px] text-zinc-500 dark:text-zinc-400">
-                      <MapPin className="w-3 h-3 shrink-0 text-zinc-400" />
-                      <span className="truncate">{partner.city}</span>
-                    </div>
-                  </div>
-
-                  {/* TICKET PERFORATION LINE: GENUINELY CUT OUT AT SIDES WITH SCISSORS IN CENTER */}
-                  <div className="relative w-full h-[16px] my-0 flex items-center justify-center shrink-0">
-                    {/* Dashed Perforation Line with scissors icon in center */}
-                    <div className="w-full border-t-2 border-dashed border-zinc-300/80 dark:border-zinc-700/80 relative flex items-center justify-center">
-                      <div className="absolute w-6 h-6 rounded-full bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-700/80 flex items-center justify-center shadow-2xs text-zinc-400 dark:text-zinc-500">
-                        <Scissors className="w-3 h-3 rotate-90 stroke-[2.2]" />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* TICKET STUB: SCRATCH-OFF PROMO CODE AREA */}
-                  <div className="px-5 pt-2.5 pb-3.5 bg-zinc-50/50 dark:bg-zinc-900/40 flex-1 flex flex-col justify-between">
-                    {/* Header & Scratch Area grouped tightly */}
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between text-[10px]">
-                        <span className="font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
-                          <Ticket className="w-3.5 h-3.5 text-[var(--primary-accent)]" />
-                          <span>Купон на скидку</span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-extrabold text-xs border border-emerald-500/20">
+                          {partner.discount}
                         </span>
-                      </div>
-
-                      {/* Scratch-Off Area */}
-                      <ScratchOffArea
-                        key={`${partner.id}_${partner.promoCode}`}
-                        promoCode={partner.promoCode}
-                        isUnlocked={isSubscriptionActive}
-                        onReveal={() => handleRevealPartner(partner.id)}
-                        showToast={showToast}
-                      />
-                    </div>
-
-                    {/* Card Actions Footer: Compact & aligned */}
-                    <div className="pt-2 flex items-center justify-between gap-2 border-t border-zinc-200/50 dark:border-zinc-800/50">
-                      <button
-                        onClick={() => toggleCardFlip(partner.id)}
-                        className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-[var(--primary-accent)] dark:hover:text-[var(--lavenderAccent)] transition-colors cursor-pointer flex items-center gap-1.5"
-                      >
-                        <RotateCcw className="w-3.5 h-3.5" />
-                        <span>Подробнее</span>
-                      </button>
-
-                      <a
-                        href={partner.website}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1 text-xs font-bold text-[var(--primary-accent)] dark:text-[var(--lavenderAccent)] hover:underline cursor-pointer ml-auto"
-                      >
-                        <span>Сайт партнёра</span>
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
-                    </div>
-                  </div>
-                </div>
-
-                {/* ========================================================= */}
-                {/* BACK FACE: DETAILED CONDITIONS & PARTNER INFO             */}
-                {/* ========================================================= */}
-                <div 
-                  style={couponCardMaskStyle}
-                  className="absolute inset-0 [backface-visibility:hidden] [-webkit-backface-visibility:hidden] [transform:rotateY(180deg)] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-[28px] border border-zinc-200/80 dark:border-zinc-800/80 shadow-xl flex flex-col justify-between overflow-hidden p-5 sm:p-6 space-y-4"
-                >
-                  {/* Top Bar of Back Face: Partner Name, Category & Close/Flip Button */}
-                  <div className="flex items-center justify-between gap-3 pb-3 border-b border-zinc-200/60 dark:border-zinc-800/60 shrink-0">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700/80 flex items-center justify-center shrink-0 font-bold text-xs text-[var(--primary-accent)] overflow-hidden p-1 shadow-2xs">
-                        {partner.logoUrl ? (
-                          <img
-                            src={partner.logoUrl}
-                            alt={partner.name}
-                            className="w-full h-full object-contain rounded-full"
-                          />
-                        ) : (
-                          <span>{partner.logoText || partner.name.slice(0, 2).toUpperCase()}</span>
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <h4 className="font-extrabold text-sm text-zinc-900 dark:text-zinc-100 truncate">
-                          {partner.name}
-                        </h4>
-                        <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                          {partner.category}
-                        </span>
+                        <button
+                          onClick={() => toggleCardFlip(partner.id)}
+                          className="w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center transition-colors cursor-pointer"
+                          title="Перевернуть обратно к купону"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-extrabold text-xs border border-emerald-500/20">
-                        {partner.discount}
-                      </span>
-                      <button
-                        onClick={() => toggleCardFlip(partner.id)}
-                        className="w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center transition-colors cursor-pointer"
-                        title="Перевернуть обратно к купону"
-                      >
-                        <RotateCcw className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Scrollable Conditions Body */}
-                  <div className="flex-1 overflow-y-auto space-y-3.5 pr-1 custom-scrollbar text-left select-text">
-                    {/* Primary Conditions Box */}
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[var(--primary-accent)] dark:text-[var(--lavenderAccent)]">
-                        <FileText className="w-3.5 h-3.5" />
-                        <span>Условия акции и получения бонуса</span>
+                    {/* Scrollable Conditions Body */}
+                    <div className="flex-1 overflow-y-auto space-y-3.5 pr-1 custom-scrollbar text-left select-text">
+                      {/* Primary Conditions Box */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[var(--primary-accent)] dark:text-[var(--lavenderAccent)]">
+                          <FileText className="w-3.5 h-3.5" />
+                          <span>Условия акции и получения бонуса</span>
+                        </div>
+                        <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/70 dark:border-zinc-700/50 text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed font-normal">
+                          {partner.terms || 'Специальное предложение действует при оформлении заказа на сайте или через менеджера компании по промокоду. Не суммируется с другими специальными акциями.'}
+                        </div>
                       </div>
-                      <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/70 dark:border-zinc-700/50 text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed font-normal">
-                        {partner.terms || 'Специальное предложение действует при оформлении заказа на сайте или через менеджера компании по промокоду. Не суммируется с другими специальными акциями.'}
-                      </div>
-                    </div>
 
-                    {/* About Partner */}
-                    <div className="space-y-1.5">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                        О компании
-                      </span>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed font-normal">
-                        {partner.fullDesc || partner.shortDesc}
-                      </p>
-                    </div>
-
-                    {/* Marketplaces Store Badges (Wildberries, Ozon, Yandex Market) */}
-                    {(partner.wildberries || partner.ozon || partner.yandexMarket) && (
+                      {/* About Partner */}
                       <div className="space-y-1.5">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                          Магазины на маркетплейсах:
+                          О компании
                         </span>
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {partner.wildberries && (
-                            <a
-                              href={partner.wildberries}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#CB11AB]/10 hover:bg-[#CB11AB]/20 border border-[#CB11AB]/30 text-[#A20B88] dark:text-[#F376DC] text-xs font-bold transition-all shadow-2xs hover:scale-105 active:scale-95 cursor-pointer"
-                              title="Открыть витрину на Wildberries"
-                            >
-                              <WildberriesIcon className="w-4 h-4 shrink-0" />
-                              <span>Wildberries</span>
-                            </a>
-                          )}
-
-                          {partner.ozon && (
-                            <a
-                              href={partner.ozon}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#005BFF]/10 hover:bg-[#005BFF]/20 border border-[#005BFF]/30 text-[#005BFF] dark:text-[#4D8EFF] text-xs font-bold transition-all shadow-2xs hover:scale-105 active:scale-95 cursor-pointer"
-                              title="Открыть витрину на Ozon"
-                            >
-                              <OzonIcon className="w-4 h-4 shrink-0" />
-                              <span>Ozon</span>
-                            </a>
-                          )}
-
-                          {partner.yandexMarket && (
-                            <a
-                              href={partner.yandexMarket}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FC3F1D]/10 hover:bg-[#FC3F1D]/20 border border-[#FC3F1D]/30 text-[#D12B0C] dark:text-[#FF7961] text-xs font-bold transition-all shadow-2xs hover:scale-105 active:scale-95 cursor-pointer"
-                              title="Открыть витрину на Яндекс.Маркете"
-                            >
-                              <YandexMarketIcon className="w-4 h-4 shrink-0" />
-                              <span>Яндекс.Маркет</span>
-                            </a>
-                          )}
-                        </div>
+                        <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed font-normal">
+                          {partner.fullDesc || partner.shortDesc}
+                        </p>
                       </div>
-                    )}
 
-                    {/* City info */}
-                    <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 pt-1">
-                      <MapPin className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                      <span>{partner.city}</span>
+                      {/* Marketplaces Store Badges (Wildberries, Ozon, Yandex Market) */}
+                      {(partner.wildberries || partner.ozon || partner.yandexMarket) && (
+                        <div className="space-y-1.5">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                            Магазины на маркетплейсах:
+                          </span>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {partner.wildberries && (
+                              <a
+                                href={partner.wildberries}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#CB11AB]/10 hover:bg-[#CB11AB]/20 border border-[#CB11AB]/30 text-[#A20B88] dark:text-[#F376DC] text-xs font-bold transition-all shadow-2xs hover:scale-105 active:scale-95 cursor-pointer"
+                                title="Открыть витрину на Wildberries"
+                              >
+                                <WildberriesIcon className="w-4 h-4 shrink-0" />
+                                <span>Wildberries</span>
+                              </a>
+                            )}
+
+                            {partner.ozon && (
+                              <a
+                                href={partner.ozon}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#005BFF]/10 hover:bg-[#005BFF]/20 border border-[#005BFF]/30 text-[#005BFF] dark:text-[#4D8EFF] text-xs font-bold transition-all shadow-2xs hover:scale-105 active:scale-95 cursor-pointer"
+                                title="Открыть витрину на Ozon"
+                              >
+                                <OzonIcon className="w-4 h-4 shrink-0" />
+                                <span>Ozon</span>
+                              </a>
+                            )}
+
+                            {partner.yandexMarket && (
+                              <a
+                                href={partner.yandexMarket}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FC3F1D]/10 hover:bg-[#FC3F1D]/20 border border-[#FC3F1D]/30 text-[#D12B0C] dark:text-[#FF7961] text-xs font-bold transition-all shadow-2xs hover:scale-105 active:scale-95 cursor-pointer"
+                                title="Открыть витрину на Яндекс.Маркете"
+                              >
+                                <YandexMarketIcon className="w-4 h-4 shrink-0" />
+                                <span>Яндекс.Маркет</span>
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* City info */}
+                      <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 pt-1">
+                        <MapPin className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                        <span>{partner.city}</span>
+                      </div>
+                    </div>
+
+                    {/* Back Face Actions: Flip back button + Icon-only Messengers (Telegram, MAX) */}
+                    <div className="pt-3 pb-2 border-t border-zinc-200/60 dark:border-zinc-800/60 flex items-center justify-between gap-2 shrink-0">
+                      <button
+                        onClick={() => toggleCardFlip(partner.id)}
+                        className="px-3.5 py-2 rounded-full border border-zinc-300 dark:border-zinc-700 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>Вернуться к купону</span>
+                      </button>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        {partner.telegram && (
+                          <a
+                            href={partner.telegram}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="w-8 h-8 rounded-full bg-[#24A1DE]/10 hover:bg-[#24A1DE]/20 text-[#24A1DE] border border-[#24A1DE]/30 flex items-center justify-center transition-all cursor-pointer shadow-2xs hover:scale-110 active:scale-95 shrink-0"
+                            title="Написать в Telegram"
+                            aria-label="Telegram"
+                          >
+                            <TelegramIcon className="w-4.5 h-4.5 shrink-0" />
+                          </a>
+                        )}
+
+                        {partner.max && (
+                          <a
+                            href={partner.max}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="w-8 h-8 rounded-full bg-[#6E1AFF]/10 hover:bg-[#6E1AFF]/20 text-[#6E1AFF] border border-[#6E1AFF]/30 flex items-center justify-center transition-all cursor-pointer shadow-2xs hover:scale-110 active:scale-95 shrink-0"
+                            title="Написать в мессенджер MAX"
+                            aria-label="Мессенджер MAX"
+                          >
+                            <MaxMessengerIcon className="w-4.5 h-4.5 shrink-0" />
+                          </a>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Back Face Actions: Flip back button + Icon-only Messengers (Telegram, MAX) */}
-                  <div className="pt-3 pb-2 border-t border-zinc-200/60 dark:border-zinc-800/60 flex items-center justify-between gap-2 shrink-0">
-                    <button
-                      onClick={() => toggleCardFlip(partner.id)}
-                      className="px-3.5 py-2 rounded-full border border-zinc-300 dark:border-zinc-700 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                  {/* Notch contour matching card border 1-to-1 */}
+                  <div className="absolute inset-0 pointer-events-none z-30 overflow-hidden rounded-[28px]">
+                    {/* Left Notch Contour */}
+                    <svg 
+                      className="absolute left-0 top-[255px] w-[13px] h-[26px] text-zinc-200/80 dark:text-zinc-700/60"
+                      viewBox="0 0 13 26" 
+                      fill="none"
                     >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                      <span>Вернуться к купону</span>
-                    </button>
+                      <path 
+                        d="M 0,0 A 13,13 0 0,1 0,26" 
+                        stroke="currentColor" 
+                        strokeWidth="1" 
+                      />
+                    </svg>
 
-                    <div className="flex items-center gap-2 shrink-0">
-                      {partner.telegram && (
-                        <a
-                          href={partner.telegram}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="w-8 h-8 rounded-full bg-[#24A1DE]/10 hover:bg-[#24A1DE]/20 text-[#24A1DE] border border-[#24A1DE]/30 flex items-center justify-center transition-all cursor-pointer shadow-2xs hover:scale-110 active:scale-95 shrink-0"
-                          title="Написать в Telegram"
-                          aria-label="Telegram"
-                        >
-                          <TelegramIcon className="w-4.5 h-4.5 shrink-0" />
-                        </a>
-                      )}
-
-                      {partner.max && (
-                        <a
-                          href={partner.max}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="w-8 h-8 rounded-full bg-[#6E1AFF]/10 hover:bg-[#6E1AFF]/20 text-[#6E1AFF] border border-[#6E1AFF]/30 flex items-center justify-center transition-all cursor-pointer shadow-2xs hover:scale-110 active:scale-95 shrink-0"
-                          title="Написать в мессенджер MAX"
-                          aria-label="Мессенджер MAX"
-                        >
-                          <MaxMessengerIcon className="w-4.5 h-4.5 shrink-0" />
-                        </a>
-                      )}
-                    </div>
+                    {/* Right Notch Contour */}
+                    <svg 
+                      className="absolute right-0 top-[255px] w-[13px] h-[26px] text-zinc-200/80 dark:text-zinc-700/60"
+                      viewBox="0 0 13 26" 
+                      fill="none"
+                    >
+                      <path 
+                        d="M 13,0 A 13,13 0 0,0 13,26" 
+                        stroke="currentColor" 
+                        strokeWidth="1" 
+                      />
+                    </svg>
                   </div>
                 </div>
 
